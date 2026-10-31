@@ -6,6 +6,12 @@ Play your favorite games at the aspect ratio you want, on the platform you choos
 
 Many ready-made game mods are already available in [Lyall's repository](https://codeberg.org/Lyall); check there to see whether a mod for your game already exists. This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
 
+## In action
+
+Resident Evil 3 running on a handheld:
+
+![Resident Evil 3 running on a handheld](resources/demo.jpg)
+
 ## Notes
 
 - Each project folder keeps its `README.md`. Release archives are based on the upstream `v1.0.0` release; the nine applicable ZIPs also contain `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
