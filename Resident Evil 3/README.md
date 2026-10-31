@@ -1,7 +1,7 @@
 # RESIDENT-EVIL-3-Any-Aspect-Ratio
 
 Why?
-- This mod adjusts Resident Evil 3 Remake's aspect ratio for handheld screens. Unlike some other mods, it does not include an FOV adjustment.
+- REFramework currently blows up on ARM64EC containers. It crashes straight away once the x86 instrumentation gets dispatched.
 
 1. Install
 
