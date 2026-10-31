@@ -1,7 +1,7 @@
 # RESIDENT-EVIL-4-Any-Aspect-Ratio
 
 Why?
-- This mod adjusts Resident Evil 4's aspect ratio for different displays.
+- This mod adjusts Resident Evil 4's aspect ratio for handheld screens. Unlike some other mods, it does not require x86 REFramework.
 
 1. Install
 
