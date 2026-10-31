@@ -6,22 +6,6 @@ Play your favorite games at the aspect ratio you want, on the platform you choos
 
 Many ready-made game mods are already available in [Lyall's repository](https://codeberg.org/Lyall); check there to see whether a mod for your game already exists. This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
 
-## Projects
-
-
-| Game                                                                                                       | Source                                   | Release package                                                |
-| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------- |
-| [Resident Evil 2](./Resident%20Evil%202/)                                                                  | `re2.cpp`                                | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Resident Evil 3 Remake](./Resident%20Evil%203/)                                                           | `re3.cpp`                                | `Release-v1.0.0.zip` (+ ASI Loader license; no FOV adjustment) |
-| [Warriors Orochi 3 Ultimate](./Warriors%20Orochi%203%20Ultimate/)                                          | `wo3u.cpp`                               | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Monster Hunter Rise](./Monster%20Hunter%20Rise/)                                                          | `rise.cpp`                               | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Tales of Arise](./Tales%20of%20Arise/)                                                                    | `arise.cpp`                              | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Ori and the Will of the Wisps](./Ori%20and%20the%20Will%20of%20the%20Wisps/)                              | `ori2arfix.cpp`                          | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Ori and the Blind Forest: Definitive Edition](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/) | `ori1dll.cpp`                            | Not included (see note below)                                  |
-| [Warriors Orochi 4 Ultimate](./Warriors%20Orochi%204%20Ultimate/)                                          | `wo4u.cpp`                               | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Dark Souls III](./Dark%20Souls%20III/)                                                                    | `ds3.cpp`                                | `Release-v1.0.0.zip` (+ ASI Loader license)                    |
-| [Ninja Gaiden Sigma 2](./Ninja%20Gaiden%20Sigma%202/)                                                      | No C++ source in the original repository | Not included (see note below)                                  |
-
 ## Notes
 
 - Each project folder keeps its `README.md`. Release archives are based on the upstream `v1.0.0` release; the eight applicable ZIPs also contain `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
