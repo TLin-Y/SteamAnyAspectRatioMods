@@ -127,26 +127,37 @@ DWORD __stdcall FOVThread(void*) {
     uintptr_t basePlayerPtr = ResolveRIP(reinterpret_cast<uintptr_t>(scan), 3, 7);
     SPDLOG_INFO("FOV BasePlayer resolved to: 0x{:X}", basePlayerPtr);
 
+    bool bFovLogged = false;
+
     while (true) {
         Sleep(100);
 
         __try {
             uintptr_t ptr = *reinterpret_cast<uintptr_t*>(basePlayerPtr);
-            if (!ptr) continue;
+            if (!ptr) { bFovLogged = false; continue; }
 
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x1F8); if (!ptr) continue;
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x68);  if (!ptr) continue;
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x78);  if (!ptr) continue;
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x128); if (!ptr) continue;
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x20);  if (!ptr) continue;
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x20);  if (!ptr) continue;
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x50);  if (!ptr) continue;
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x1F8); if (!ptr) { bFovLogged = false; continue; }
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x68);  if (!ptr) { bFovLogged = false; continue; }
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x78);  if (!ptr) { bFovLogged = false; continue; }
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x130); if (!ptr) { bFovLogged = false; continue; }
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x20);  if (!ptr) { bFovLogged = false; continue; }
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x20);  if (!ptr) { bFovLogged = false; continue; }
+            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x50);  if (!ptr) { bFovLogged = false; continue; }
 
             float* idleFov = reinterpret_cast<float*>(ptr + 0x38);
             float* adsFov  = reinterpret_cast<float*>(ptr + 0x3C);
             
+            if (!bFovLogged) {
+                SPDLOG_INFO("Original FOV detected -> Idle: {:.2f}, ADS: {:.2f}", *idleFov, *adsFov);
+            }
+
             *idleFov = fTargetFOV;
             *adsFov = fTargetFOVADS;
+
+            if (!bFovLogged) {
+                SPDLOG_INFO("New FOV successfully applied -> Idle: {:.2f}, ADS: {:.2f}", *idleFov, *adsFov);
+                bFovLogged = true;
+            }
 
         } __except (EXCEPTION_EXECUTE_HANDLER) {
         }

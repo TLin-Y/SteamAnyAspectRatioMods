@@ -1,5 +1,9 @@
 # RESIDENT-EVIL-VILLAGE-Any-Aspect-Ratio-and-FOV
 
+## v1.0.1 update
+
+- Corrected the FOV BasePlayer pointer offset from `0x128` to `0x130`.
+
 Why?
 - REFramework is incompatible with ARM64EC containers and can crash when its x86 instrumentation is dispatched. This mod applies aspect-ratio and FOV fixes without relying on REFramework.
 
@@ -21,4 +25,4 @@ Open RE8_AR_FOV_Fix.ini with any text editor. Change AspectWidth and AspectHeigh
 
 Set your display scaling to "Stretch" in your game settings. For a handheld, setting your container resolution to 1280x720 and stretching to full screen can fill the display.
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-Village-v1.0.0.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-Village-v1.0.1.zip and in the repository root.
