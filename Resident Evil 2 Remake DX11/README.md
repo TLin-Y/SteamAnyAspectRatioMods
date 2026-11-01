@@ -1,4 +1,6 @@
-# RESIDENT-EVIL-2-Stretch-to-Any-Aspect-Ratio
+# RESIDENT-EVIL-2-DX11-Stretch-to-Any-Aspect-Ratio
+
+**Compatibility: DirectX 11 (DX11) version only. The DirectX 12 version is not supported.**
 
 Why?
 - REFramework currently blows up on ARM64EC containers. It crashes straight away once the x86 instrumentation gets dispatched.
