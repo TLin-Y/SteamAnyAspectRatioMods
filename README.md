@@ -14,7 +14,7 @@ Resident Evil 3 running on a handheld:
 
 ## Notes
 
-- Each project folder keeps its `README.md`. ZIP filenames identify the game and version (for example, `Resident-Evil-4-Remake-v1.0.0.zip`). Release archives are based on the upstream `v1.0.0` release; the ten applicable ZIPs also contain `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
+- Each project folder keeps its `README.md`. ZIP filenames identify the game and version (for example, `Resident-Evil-4-Remake-v1.0.0.zip`). All ten ZIPs include a README and `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
 - The ASI Loader proxy DLLs in those release archives are from [ThirteenAG/Ultimate-ASI-Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases). The upstream project is MIT-licensed; its copyright and license notice is included in this repository and in each applicable release ZIP.
 - The Resident Evil 3 Remake mod adjusts aspect ratio only; it has no FOV adjustment.
 - Resident Evil 2, 3, and 4 folders are labeled as Remakes to distinguish them from the original games.
