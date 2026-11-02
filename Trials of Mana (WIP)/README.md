@@ -1,6 +1,6 @@
 # Trials of Mana - Narrow Aspect Ratio Fix (WIP)
 
-This work-in-progress patch supplements the [Steam community ultrawide workaround](https://steamcommunity.com/app/924980/discussions/0/2268068817146932077/). That guide changes a game executable byte for a particular 5120x1440 setup. This patch makes the target resolution and FOV byte configurable, with the goal of supporting narrower displays such as 16:10 handheld screens.
+This work-in-progress patch supplements the [Steam community ultrawide workaround](https://steamcommunity.com/app/924980/discussions/0/2268068817146932077/) and UUU (https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm). That guide changes a game executable byte for a particular 5120x1440 setup. This patch makes the target resolution and FOV byte configurable, with the goal of supporting narrower displays such as 16:10 handheld screens.
 
 ![Trials of Mana gameplay](demo.jpg)
 
