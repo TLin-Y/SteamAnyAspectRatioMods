@@ -11,7 +11,10 @@ Extract the mod files directly into your game root folder (where re4.exe is loca
 
 2. For SteamOS / Winlator (Wine Users)
 
-If you are playing on Linux (Proton/SteamOS) or Android (Winlator/Wine), add the following environment variable to your game or container settings to load the mod:
+For Steam Deck / SteamOS, open the game's Properties, then General > Launch Options, and use:
+`WINEDLLOVERRIDES="dinput8=n,b" %command%`
+
+For Winlator / Wine, add the following environment variable to the game or container settings:
 Name: WINEDLLOVERRIDES
 Value: dinput8=n,b
 

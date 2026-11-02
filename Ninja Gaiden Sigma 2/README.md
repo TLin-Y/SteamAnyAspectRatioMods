@@ -30,7 +30,13 @@ Special thanks to the mod writers:
 
 1. Copy all files from **one** of the mod folders into your game root directory.
 2. Refer to the screenshots for Winlator (Cmodv13, GameHub/Light etc.) container config and driver setup. 
-3. Set the Winlator environment variable:
+3. For Steam Deck / SteamOS, open the game's Properties, then General > Launch Options, and use:
+
+```
+WINEDLLOVERRIDES="dinput8=n,b" %command%
+```
+
+   For Winlator / Wine, set this environment variable:
 
 ```
 WINEDLLOVERRIDES=dinput8=n,b

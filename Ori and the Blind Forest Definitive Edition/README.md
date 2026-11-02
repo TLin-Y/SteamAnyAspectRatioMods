@@ -4,7 +4,7 @@ I've recompiled Assembly-CSharp.dll to unlock all built-in aspect ratio limits.
 It now automatically detects and matches your current display resolution—no extra setup required. 
 Tested and confirmed working on everything from 32:9 to 1:1 ratios.
 ## Installation
-PC: Copy and replace the SteamLibrary\steamapps\common\Ori DE\oriDE_Data\Managed\Assembly-CSharp.dll
+PC / Steam Deck: Copy and replace the SteamLibrary\steamapps\common\Ori DE\oriDE_Data\Managed\Assembly-CSharp.dll. The V2 managed-assembly replacement does not require a Steam launch-option DLL override.
 
 Wine: In GameNative container: select your A: disk, replace the oriDE_Data\Managed\Assembly-CSharp.dll
 
