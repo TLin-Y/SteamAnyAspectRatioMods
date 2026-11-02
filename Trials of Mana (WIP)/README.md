@@ -47,6 +47,5 @@ FovHex = 0A
 
 - Some GUI elements are cropped.
 - Black borders may still appear. If they do, reopen the in-game display settings and reselect the desired resolution and window mode.
-- In Wine/Proton, using Ultimate ASI Loader (UUU) is inconvenient to set up; this does not mean the mod itself is incompatible with Wine/Proton.
 
 No release package is provided while these issues remain.
