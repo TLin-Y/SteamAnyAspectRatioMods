@@ -22,7 +22,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 
 ## Notes
 
-- Each project folder keeps its `README.md`. ZIP filenames identify the game and version (for example, `Resident-Evil-4-Remake-v1.0.0.zip`); the RE2 and RE3 DX11 ZIPs are named `Resident-Evil-2-Remake-DX11-v1.0.0.zip` and `Resident-Evil-3-Remake-DX11-v1.0.0.zip`. All thirteen ZIPs include a README and `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
+- Each project folder keeps its `README.md`. ZIP filenames identify the game and version (for example, `Resident-Evil-4-Remake-v1.0.0.zip`); the RE2 and RE3 DX11 ZIPs are named `Resident-Evil-2-Remake-DX11-v1.0.0.zip` and `Resident-Evil-3-Remake-DX11-v1.0.0.zip`. All fourteen ZIPs include a README and `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
 - The ASI Loader proxy DLLs in those release archives are from [ThirteenAG/Ultimate-ASI-Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases). The upstream project is MIT-licensed; its copyright and license notice is included in this repository and in each applicable release ZIP.
 - The Resident Evil 3 Remake mod adjusts aspect ratio only; it has no FOV adjustment.
 - Resident Evil 2 and 3 fixes are for the DirectX 11 versions only; the DirectX 12 versions are not supported. Their folders and ZIP filenames include `DX11`; the folder names also identify them as Remakes to distinguish them from the original games.
@@ -33,3 +33,4 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 - The additional `d3d11.dll` and `mods/fix.dll` in the Dark Souls III and Warriors Orochi 3 Ultimate packages are separate mod files, not identified here as ASI Loader proxy DLLs.
 - The Ori and the Blind Forest Definitive Edition folder includes the `Assembly-CSharp.dll` aspect-ratio mod, along with its C++ source and installation instructions.
 - The Ninja Gaiden Sigma 2 upstream repository has no C++ source. Its two mod folders are included; the upstream 123 MB release archive is not.
+- [Dynasty Warriors: Origins](./Dynasty%20Warriors%20Origins/README.md) defaults to 1280x800 for Steam Deck and supports custom aspect ratios from 4:3 to ultrawide.
