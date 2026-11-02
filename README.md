@@ -21,6 +21,7 @@ Resident Evil 3 running on a handheld:
 - The Resident Evil 7 mod avoids the REFramework ARM64EC compatibility issue and adjusts aspect ratio without an FOV setting.
 - The Resident Evil Village mod avoids the REFramework ARM64EC compatibility issue and provides aspect-ratio and FOV fixes.
 - The Final Fantasy XIII patch targets custom resolutions narrower than 21:9, with a default of 1280x800 for Steam Deck.
+- [Trials of Mana (WIP)](./Trials%20of%20Mana%20(WIP)/README.md) supplements a community ultrawide workaround for narrower resolutions such as 16:10. GUI cropping and black borders remain; reselect the in-game resolution and window mode if borders appear. Setting up Ultimate ASI Loader in Wine/Proton is inconvenient. No release is available yet.
 - The additional `d3d11.dll` and `mods/fix.dll` in the Dark Souls III and Warriors Orochi 3 Ultimate packages are separate mod files, not identified here as ASI Loader proxy DLLs.
 - The Ori and the Blind Forest Definitive Edition folder includes the `Assembly-CSharp.dll` aspect-ratio mod, along with its C++ source and installation instructions.
 - The Ninja Gaiden Sigma 2 upstream repository has no C++ source. Its two mod folders are included; the upstream 123 MB release archive is not.
