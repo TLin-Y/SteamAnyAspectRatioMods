@@ -16,6 +16,10 @@ Resident Evil 3 running on a handheld:
 
 The reusable Windows/x64 ASI compiler is in [compiler](./compiler/README.md). Its build files and dependencies are isolated from the game mods in this repository. The sample implementation is based on the clean source layout of Lyall's [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix); replace `compiler/dllmain.cpp` and set `compiler/build_config.json` for each game. Lyall's license and attribution remain with the derived source, while the generated plugin's version metadata identifies AnyAspectRatio as its publisher.
 
+## License
+
+The [MIT License](./LICENSE) applies only to original code and documentation authored by TLin-Y, unless a file or directory states otherwise. It does not grant rights to third-party code, game files, or other assets. The compiler's Lyall-derived files and the bundled Ultimate ASI Loader each retain their separate license and attribution.
+
 ## Notes
 
 - Each project folder keeps its `README.md`. ZIP filenames identify the game and version (for example, `Resident-Evil-4-Remake-v1.0.0.zip`); the RE2 and RE3 DX11 ZIPs are named `Resident-Evil-2-Remake-DX11-v1.0.0.zip` and `Resident-Evil-3-Remake-DX11-v1.0.0.zip`. All thirteen ZIPs include a README and `LICENSE-Ultimate-ASI-Loader.txt` for the bundled ASI Loader proxy DLL.
