@@ -73,7 +73,6 @@ void ApplyExactFovPatch() {
     PIMAGE_NT_HEADERS ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(moduleBase + dosHeader->e_lfanew);
     PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
 
-    // 上下文特征码[cite: 2]
     std::vector<uint8_t> pattern = {
         0xD0, 0x07, 0x25, 0x40,
         0x01, 0x00, 0x00, 0x00,
