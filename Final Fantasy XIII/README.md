@@ -1,11 +1,11 @@
 # FINAL-FANTASY-XIII-Any-Aspect-Ratio
 
 Why?
-- The [existing Final Fantasy XIII Ultrawide Fix](https://community.pcgamingwiki.com/files/file/2017-final-fantasy-xiii-ultrawide-fix/page/2/) crops the image to fill handheld screens. I made this patch to preserve the full image at narrower custom resolutions below 21:9, such as the Steam Deck's 16:10 display.  
+- The [existing Final Fantasy XIII Ultrawide Fix](https://community.pcgamingwiki.com/files/file/2017-final-fantasy-xiii-ultrawide-fix/page/2/) crops the image to fill handheld screens. I made this patch to preserve the full image at narrower custom resolutions below 21:9, such as the Steam Deck's 16:10 display.
+  
+0.Optional (vibration fix, +7fps): https://github.com/rebtd7/FF13Fix
 
 1. Install
-Optional (vibration fix, +7fps): https://github.com/rebtd7/FF13Fix
-
 Extract the contents of `Final-Fantasy-XIII-v1.0.0.zip` into the game's `bin` folder:
 
 `steamapps\common\FINAL FANTASY XIII\white_data\prog\win\bin`
