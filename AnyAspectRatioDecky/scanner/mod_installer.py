@@ -158,9 +158,12 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
             raise
         return
 
+    if cached_path is not None:
+        cached_path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix="anyaspectratio-",
         suffix=".zip",
+        dir=cached_path.parent if cached_path is not None else None,
     )
     archive_path = Path(temporary_name)
     try:
@@ -173,7 +176,6 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
                     "Mod archive download",
                 )
         if cached_path is not None and is_zipfile(archive_path):
-            cached_path.parent.mkdir(parents=True, exist_ok=True)
             os.replace(archive_path, cached_path)
             archive_path = cached_path
         yield archive_path
