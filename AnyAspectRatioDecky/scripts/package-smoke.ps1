@@ -1,3 +1,5 @@
+param([string]$Version = "")
+
 $ErrorActionPreference = "Stop"
 
 $pluginRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -49,7 +51,8 @@ $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $outputRoot = Join-Path $pluginRoot "out"
 $stageRoot = Join-Path $outputRoot "smoke-$timestamp"
 $packageRoot = Join-Path $stageRoot "AnyAspectRatio"
-$archivePath = Join-Path $outputRoot "AnyAspectRatio-smoke-$timestamp.zip"
+$archiveName = if ($Version) { "AnyAspectRatio-$Version.zip" } else { "AnyAspectRatio-smoke-$timestamp.zip" }
+$archivePath = Join-Path $outputRoot $archiveName
 
 New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
 try {

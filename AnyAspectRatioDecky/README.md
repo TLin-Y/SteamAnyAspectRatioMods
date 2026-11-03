@@ -1,117 +1,19 @@
-# AnyAspectRatio Decky
+# AnyAspectRatio for Decky
 
-A Decky plugin for discovering and managing supported AnyAspectRatio game fixes on SteamOS.
+Decky Loader plugin that installs the aspect-ratio fixes from this repository into your Steam games.
 
-> **Development status:** the plugin scans Steam libraries, matches installed games against `catalog.json`, and can apply/remove catalogued files and manage required `WINEDLLOVERRIDES` in Steam launch options when the Steam client APIs are available. Launch-option behavior still needs SteamOS end-to-end validation.
+## Install
 
-## Requirements
+Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-- Node.js 20 or newer
-- pnpm 9.15.9
-- Python 3.11 or newer for backend syntax checks
-- A Steam Deck or SteamOS environment with Decky Loader for runtime testing
+1. Download `AnyAspectRatio-1.0.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
+2. Put the zip on the Deck (for example in `Downloads`).
+3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
+4. Open **Settings → Developer → Install Plugin from ZIP**, pick the zip, and confirm.
+5. Open **AnyAspectRatio** in the Decky menu and use **Scan Steam libraries**.
 
-The frontend is based on the official [Decky plugin template](https://github.com/SteamDeckHomebrew/decky-plugin-template) and uses [Decky UI](https://github.com/SteamDeckHomebrew/decky-frontend-lib). The backend runs through Decky's Python plugin interface.
+To update, install the newer zip the same way. To remove, uninstall from the Decky plugin list.
 
-## Reproducible frontend build
+## License
 
-Run these commands from this directory. The checked-in `pnpm-lock.yaml` pins the resolved dependency graph; `--frozen-lockfile` fails rather than silently changing it.
-
-```sh
-corepack enable
-corepack prepare pnpm@9.15.9 --activate
-pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm build
-```
-
-The compiled frontend is written to `dist/index.js`. Do not edit generated files in `dist/`; they are ignored by Git.
-
-On Windows PowerShell, run the same commands from `AnyAspectRatioDecky`. If Corepack is unavailable, install the pinned pnpm version with `npm install --global pnpm@9.15.9`.
-
-## Backend check
-
-The plugin backend entry point is `main.py`. `logger/plugin_logger.py` wraps Decky's logger and uses its persistent per-plugin log location (on the tested Deck: `/home/deck/homebrew/logs/AnyAspectRatio/`); the plugin does not create a second log file or manage rotation. Log events use a small structured format with operation/game/mod IDs; do not pass launch-option strings, credentials, or arbitrary user data as context.
-
-Decky supplies the `decky` module when it loads the plugin, so `main.py` is not a standalone Python application. The logger and Steam VDF parser have no Decky dependency and can be tested locally:
-
-```sh
-python -m py_compile main.py
-python -m unittest discover -s test -v
-```
-
-In Decky, open the plugin menu and select **Scan for supported games**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. The catalog covers all 18 game mods in the repository. Only entries with a matching Steam App ID and install directory are listed. A fix is shown as applied only when every file listed for it in the catalog exists in that game's install directory; missing or partial files leave the toggle off.
-
-Turning **Apply** on reads the game's current Steam launch options through Steam's `RegisterForAppDetails` API. If an update is needed, the plugin asks before changing them and shows the current and proposed command. This is separate from applying mod files: files are still applied if the Steam launch-options API is unavailable or the user declines the launch-options change. In those cases, the UI reports the required manual Steam Properties setting and provides a copy button. When confirmed, the plugin adds only missing override groups, preserves other launch options, records the original command and injected groups in plugin-local browser storage, writes through `SetAppLaunchOptions`, and verifies the updated command through app details; failed writes attempt to restore the previous command. Applying downloads the selected catalog entry from its configured GitHub repository/ref and checks each catalogued target against the source. HTTPS downloads use the SteamOS system CA certificates. Mod archives and individual files are capped at 256 MiB each, and a mod's total installed source files are capped at 512 MiB. If any existing file differs from the source—including an INI or a DLL installed by another mod—the plugin asks whether to replace the conflicting files. Choosing to keep existing files preserves them while applying other missing or matching mod files. A successful Apply is silent unless Steam launch options need attention. Turning Apply off removes catalogued files even if the detected installation is partial. If its INI differs from the catalogued source, the plugin asks whether to keep that configuration while removing the other mod files. It rereads the live Steam launch options and removes only the exact override groups this plugin recorded, preserving other current launch-option edits. The unApply result displays the live command before and after cleanup, with copy buttons. If an operation or status refresh fails, the UI displays an error dialog and refreshes the toggle from the files on disk.
-
-Each supported game is listed by number and game name, with **Edit** and **ReadMe** actions side by side. **Edit** shows the catalogued filenames and lets you edit that mod's catalogued INI. The INI editor uses one Decky `TextField` per setting line for Steam on-screen keyboard input; section headers, blank lines, and comment-only lines remain visible but disabled. Modified settings are saved automatically when the field loses focus. INI edits are saved as UTF-8 text with a 256 KiB size limit; mods without an INI show the file list only. **ReadMe** fetches the mod's `README.md` from the catalogued repository and renders its Markdown in a scrollable view; network or decoding errors are reported in a dialog.
-
-`catalog.json` covers all 18 game mods and points to their assets already stored in this repository: 15 ZIP archives, one complete mod folder, and two sets of individual files. It does not depend on creating or publishing GitHub Releases. Each source path is relative to the configured repository and ref; archive entries include their destination inside the game install, while directory and file entries describe repository-relative source paths and game-relative targets. The WIP Trials of Mana fix is represented by its checked-in files rather than excluded for lacking a ZIP.
-
-## Local smoke-test package
-
-The local PowerShell packager creates a timestamped ZIP under `out/` containing only the runtime plugin files. It does not install the plugin or connect to a Steam Deck:
-
-```powershell
-.\scripts\package-smoke.ps1
-```
-
-This is not a release package. Use the official [Decky CLI](https://github.com/SteamDeckHomebrew/cli) and current plugin-store requirements for distribution; its build process uses a container engine.
-
-For a real Decky integration test, install the reviewed ZIP through Decky's supported developer workflow or an explicitly approved SSH session. The plugin directory is root-owned on the tested Deck, so deployment may require an interactive local sudo prompt. Do not put a Deck password in scripts, command arguments, or repository files. A loader restart affects all installed plugins.
-
-After installation, select **Scan Steam libraries** in the plugin UI, then inspect Decky Loader logs if it fails. Remove only the test plugin directory when rolling back; do not remove or synchronize the entire plugins directory.
-
-## Settings, cache, and updates
-
-The plugin has **Games** and **Settings** tabs. Settings lets you change the GitHub repository, branch/tag/commit, and catalog file path that supply the catalog and mod archives, and choose a local folder of `*.zip` mods.
-
-Everything persistent lives in Decky's plugin data directory (`DECKY_PLUGIN_RUNTIME_DIR`, shown in Settings):
-
-```text
-settings.json              user overrides (empty value = default)
-cache/catalog.json         catalog downloaded by Update (bundled catalog.json is the fallback)
-cache/catalog.meta.json    fetch time, SHA-256, and the source it was fetched for
-cache/archives/            downloaded mod archives, reused by later Apply operations
-cache/local_archives.json  zip member index for the local folder, keyed by size and mtime
-cache/last_scan.json       last scan result, shown immediately on open
-logs/plugin.log            rotating copy of the plugin's structured log events
-```
-
-**Update catalog & mods** downloads the catalog from the configured repository, validates it, replaces the cached copy atomically, and clears cached mod archives so the next Apply fetches current files. A catalog that fails validation never replaces the working one. Changing the repository, ref, or catalog path automatically triggers an update.
-
-**Local archives**: a zip is matched to an installed game when its name (ignoring version suffixes and bracketed text) equals the Steam app name or install folder, or when it contains the Steam app ID. Its files are extracted relative to the directory containing the game's main executable (the game root if that is ambiguous), and proxy DLLs such as `dinput8.dll` produce the matching `WINEDLLOVERRIDES` launch option. Games that already have a catalog mod ignore local archives. Archives with unsafe paths are rejected.
-
-## Project layout
-
-```text
-AnyAspectRatioDecky/
-  main.py             Decky Python backend and API entry point
-  helper/             Shared Python constants
-  logger/             Structured wrapper around Decky's persistent logger
-  scanner/            Read-only Steam scan, catalog validation, game matching, and local zip loader
-  store/              Persistent settings, cached catalog/archives/scan results, and catalog updates
-  catalog.json        Audited supported-fix metadata (bundled fallback)
-  utils/              Reusable parsing and API helpers
-  plugin.json         Decky plugin metadata
-  LICENSE-*           Upstream template and bundled Decky API license texts
-  THIRD_PARTY_NOTICES.md
-  package.json        Pinned frontend toolchain and scripts
-  pnpm-lock.yaml      Resolved dependency lockfile
-  rollup.config.js    Decky Rollup build configuration
-  scripts/            Local smoke-test packaging helper
-  src/index.tsx       Supported-game scan and catalog match UI
-  src/launch_options/ Steam launch-option read, merge, ownership, and removal
-  test/               Local backend and Steam discovery tests
-  tsconfig.json       TypeScript build configuration
-```
-
-## Current validation boundary
-
-`pnpm typecheck` and `pnpm build` validate the frontend bundle. Python syntax checks and backend unit tests cover logger formatting, Steam VDF/library discovery, and apply/remove file operations using temporary fixtures and mocked downloads. A successful local build does not replace SteamOS validation of the Steam launch-options APIs, user confirmation flow, or readback behavior.
-
-## Credits and licensing
-
-The plugin UI in `src/index.tsx` and backend in `main.py` were written for this project. The frontend follows the official [Decky plugin template](https://github.com/SteamDeckHomebrew/decky-plugin-template); `rollup.config.js` and `tsconfig.json` are adapted from its build configuration. The template's BSD 3-Clause notice is preserved in [LICENSE-Decky-Plugin-Template.txt](./LICENSE-Decky-Plugin-Template.txt).
-
-The project-authored code is covered by the repository's [MIT license](../LICENSE). The built frontend also contains code from `@decky/api` 1.1.3, which is licensed under LGPL-2.1; the license text is included as [LICENSE-LGPL-2.1.txt](./LICENSE-LGPL-2.1.txt). [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) records the relevant upstream components and license scope. Other dependencies retain their respective licenses.
+MIT, see [LICENSE](../LICENSE). Third-party notices: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
