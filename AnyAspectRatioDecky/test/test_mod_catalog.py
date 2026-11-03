@@ -24,9 +24,30 @@ from scanner import (
     match_supported_games,
 )
 from scanner.mod_installer import mod_readme_path
+from scanner.mod_catalog import summarize_credits
 
 
 class ModCatalogTests(unittest.TestCase):
+    def test_credits_default_override_and_ranking(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        document["mods"][0]["credits"] = [{"name": "Other", "url": "https://example.com/o"}]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            authors = summarize_credits(load_mod_catalog(path))
+            self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
+            self.assertEqual([17, 1], [author["mod_count"] for author in authors])
+
+            document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
+            path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_mod_catalog(path)
+
+        everyone = summarize_credits(load_mod_catalog())
+        self.assertEqual([("TLin-Y", 18)], [(a["name"], a["mod_count"]) for a in everyone])
+
     def test_loads_audited_repository_catalog(self) -> None:
         catalog = load_mod_catalog()
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")

@@ -38,19 +38,27 @@ def create_ssl_context() -> ssl.SSLContext:
     return ssl.create_default_context()
 
 
-def repository_file_url(repository_url: str, repository_ref: str, path: str) -> str:
+def _repository_parts(repository_url: str) -> str:
     repository = urlparse(repository_url)
     if repository.hostname != "github.com":
         raise ValueError("Mod source repository must be hosted on github.com")
     owner_and_repo = repository.path.strip("/").split("/")
     if len(owner_and_repo) != 2 or not all(owner_and_repo):
         raise ValueError("Mod source repository URL must identify an owner and repository")
-    repository_path = "/".join(quote(part, safe="") for part in owner_and_repo)
-    encoded_ref = quote(repository_ref, safe="")
-    encoded_path = quote(path, safe="/")
+    return "/".join(quote(part, safe="") for part in owner_and_repo)
+
+
+def repository_file_url(repository_url: str, repository_ref: str, path: str) -> str:
     return (
-        f"https://raw.githubusercontent.com/{repository_path}/"
-        f"{encoded_ref}/{encoded_path}"
+        f"https://raw.githubusercontent.com/{_repository_parts(repository_url)}/"
+        f"{quote(repository_ref, safe='')}/{quote(path, safe='/')}"
+    )
+
+
+def repository_archive_url(repository_url: str, repository_ref: str) -> str:
+    return (
+        f"https://github.com/{_repository_parts(repository_url)}/archive/"
+        f"{quote(repository_ref, safe='')}.zip"
     )
 
 
@@ -58,12 +66,48 @@ def open_url(url: str):
     return urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=create_ssl_context())
 
 
-def read_url_limited(url: str, max_bytes: int, description: str) -> bytes:
-    with open_url(url) as response:
-        content = response.read(max_bytes + 1)
+def _read_limited(stream, max_bytes: int, description: str) -> bytes:
+    content = stream.read(max_bytes + 1)
     if len(content) > max_bytes:
         raise ValueError(f"{description} exceeds the size limit")
     return content
+
+
+def read_url_limited(url: str, max_bytes: int, description: str) -> bytes:
+    with open_url(url) as response:
+        return _read_limited(response, max_bytes, description)
+
+
+_pack_dir: Path | None = None
+
+
+def set_pack_dir(path: Path | None) -> None:
+    """Offline pack: a directory laid out like the repository, used before the network."""
+    global _pack_dir
+    _pack_dir = path
+
+
+def _pack_file(path: str) -> Path | None:
+    if _pack_dir is None:
+        return None
+    candidate = _pack_dir / PurePosixPath(path)
+    try:
+        candidate.resolve().relative_to(_pack_dir.resolve())
+    except ValueError:
+        return None
+    return candidate if candidate.is_file() else None
+
+
+@contextmanager
+def open_repository_file(source: ModSource, path: str):
+    local = _pack_file(path)
+    if local is not None:
+        with local.open("rb") as stream:
+            yield stream
+        return
+    url = repository_file_url(source.repository_url, source.repository_ref, path)
+    with open_url(url) as stream:
+        yield stream
 
 
 def _mib(size: int) -> int:
@@ -102,6 +146,10 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
             raise ValueError("Local mod archive is unavailable")
         yield local_path
         return
+    packed = _pack_file(source.path)
+    if packed is not None:
+        yield packed
+        return
 
     archive_url = repository_file_url(
         source.repository_url,
@@ -125,7 +173,7 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
     try:
         with os.fdopen(descriptor, "wb") as archive_file:
             with open_url(archive_url) as response:
-                _copy_limited(
+                copy_limited(
                     response,
                     archive_file,
                     MAX_MOD_DOWNLOAD_SIZE_BYTES,
@@ -176,12 +224,8 @@ def _read_local_archive_readme(mod: ModDefinition) -> str:
 def fetch_mod_readme(mod: ModDefinition) -> str:
     if mod.source.kind == MOD_SOURCE_LOCAL_ARCHIVE:
         return _read_local_archive_readme(mod)
-    readme_url = repository_file_url(
-        mod.source.repository_url,
-        mod.source.repository_ref,
-        mod_readme_path(mod),
-    )
-    content = read_url_limited(readme_url, MAX_README_SIZE_BYTES, "Mod README")
+    with open_repository_file(mod.source, mod_readme_path(mod)) as stream:
+        content = _read_limited(stream, MAX_README_SIZE_BYTES, "Mod README")
     try:
         return content.decode("utf-8-sig")
     except UnicodeDecodeError as error:
@@ -255,19 +299,15 @@ def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
         except BadZipFile as error:
             raise ValueError("Mod archive is invalid") from error
     else:
-        source_url = repository_file_url(
-            source.repository_url,
-            source.repository_ref,
-            source_path,
-        )
-        content = read_url_limited(source_url, MAX_INI_SIZE_BYTES, "Mod INI source")
+        with open_repository_file(source, source_path) as stream:
+            content = _read_limited(stream, MAX_INI_SIZE_BYTES, "Mod INI source")
 
     if len(content) > MAX_INI_SIZE_BYTES:
         raise ValueError("Mod INI source exceeds the 256 KiB comparison limit")
     return content
 
 
-def _copy_limited(stream, target, max_bytes: int, description: str) -> int:
+def copy_limited(stream, target, max_bytes: int, description: str) -> int:
     total_bytes = 0
     while True:
         chunk = stream.read(min(1024 * 1024, max_bytes - total_bytes + 1))
@@ -288,7 +328,7 @@ def _stage_stream(stream, target: Path, max_bytes: int) -> tuple[Path, int]:
     temporary_path = Path(temporary_name)
     try:
         with os.fdopen(descriptor, "wb") as staged:
-            size = _copy_limited(stream, staged, max_bytes, "Mod file")
+            size = copy_limited(stream, staged, max_bytes, "Mod file")
     except BaseException:
         temporary_path.unlink(missing_ok=True)
         raise
@@ -375,12 +415,7 @@ def apply_mod_files(
         else:
             total_download_size = 0
             for relative_path, source_path in source_files.items():
-                source_url = repository_file_url(
-                    mod.source.repository_url,
-                    mod.source.repository_ref,
-                    source_path,
-                )
-                with open_url(source_url) as response:
+                with open_repository_file(mod.source, source_path) as response:
                     staged, file_size = _stage_stream(
                         response,
                         targets[relative_path],

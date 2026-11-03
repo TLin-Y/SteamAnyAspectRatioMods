@@ -101,6 +101,11 @@ MOD_CATALOG_SOURCE_REPOSITORY_KEY = "source_repository"
 MOD_CATALOG_SOURCE_REPOSITORY_URL_KEY = "url"
 MOD_CATALOG_SOURCE_REPOSITORY_REF_KEY = "ref"
 MOD_CATALOG_MODS_KEY = "mods"
+MOD_CATALOG_CREDITS_KEY = "credits"
+MOD_CATALOG_DEFAULT_CREDITS_KEY = "default_credits"
+MOD_CATALOG_INVALID_CREDITS_MESSAGE = (
+    "Catalog credits must be a list of objects with a name and an https url"
+)
 MOD_ID_KEY = "id"
 MOD_NAME_KEY = "name"
 MOD_STEAM_APP_ID_KEY = "steam_app_id"

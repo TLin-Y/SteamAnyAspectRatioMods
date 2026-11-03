@@ -99,6 +99,7 @@ class PluginStore:
         self.catalog_path = self.cache_dir / "catalog.json"
         self.catalog_meta_path = self.cache_dir / "catalog.meta.json"
         self.archive_cache_dir = self.cache_dir / "archives"
+        self.pack_dir = data_dir / "pack"
         self.local_index_path = self.cache_dir / "local_archives.json"
         self.last_scan_path = self.cache_dir / "last_scan.json"
         self.log_dir = data_dir / "logs"
@@ -134,6 +135,13 @@ class PluginStore:
     def clear_catalog_cache(self) -> None:
         self.catalog_path.unlink(missing_ok=True)
         self.catalog_meta_path.unlink(missing_ok=True)
+
+    def clear_pack(self) -> None:
+        shutil.rmtree(self.pack_dir, ignore_errors=True)
+
+    def pack_stats(self) -> dict[str, int]:
+        files = [path for path in self.pack_dir.rglob("*") if path.is_file()]
+        return {"file_count": len(files), "size_bytes": sum(p.stat().st_size for p in files)}
 
     def save_last_scan(self, report: dict[str, object]) -> None:
         write_json_atomic(self.last_scan_path, {"scanned_at": utc_now(), "report": report})

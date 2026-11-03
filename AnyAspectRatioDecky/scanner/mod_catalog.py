@@ -11,6 +11,9 @@ from helper.constants import (
     MOD_CATALOG_FILENAME,
     MOD_CATALOG_ID_PATTERN,
     MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE,
+    MOD_CATALOG_CREDITS_KEY,
+    MOD_CATALOG_DEFAULT_CREDITS_KEY,
+    MOD_CATALOG_INVALID_CREDITS_MESSAGE,
     MOD_CATALOG_INVALID_APP_ID_MESSAGE,
     MOD_CATALOG_INVALID_ENTRY_MESSAGE,
     MOD_CATALOG_INVALID_FILE_LIST_MESSAGE,
@@ -71,6 +74,12 @@ class ModSource:
 
 
 @dataclass(frozen=True)
+class ModCredit:
+    name: str
+    url: str
+
+
+@dataclass(frozen=True)
 class ModDefinition:
     mod_id: str
     name: str
@@ -81,6 +90,41 @@ class ModDefinition:
     files: tuple[str, ...]
     ini_file: str | None
     wine_dll_overrides: tuple[str, ...]
+    credits: tuple[ModCredit, ...] = ()
+
+
+def _parse_credits(raw: object) -> tuple[ModCredit, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise ValueError(MOD_CATALOG_INVALID_CREDITS_MESSAGE)
+    credits = []
+    for item in raw:
+        name = item.get("name") if isinstance(item, dict) else None
+        url = item.get("url") if isinstance(item, dict) else None
+        if (
+            not isinstance(name, str)
+            or not name.strip()
+            or not isinstance(url, str)
+            or urlparse(url).scheme != "https"
+        ):
+            raise ValueError(MOD_CATALOG_INVALID_CREDITS_MESSAGE)
+        credits.append(ModCredit(name.strip(), url))
+    return tuple(credits)
+
+
+def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]]:
+    """Group mods by author, most mods first."""
+    authors: dict[tuple[str, str], list[str]] = {}
+    for mod in mods:
+        for credit in mod.credits:
+            authors.setdefault((credit.name, credit.url), []).append(mod.name)
+    return [
+        {"name": name, "url": url, "mod_count": len(names), "mods": sorted(names)}
+        for (name, url), names in sorted(
+            authors.items(), key=lambda item: (-len(item[1]), item[0][0].lower())
+        )
+    ]
 
 
 def _require_string(entry: dict[str, object], key: str, mod_id: str) -> str:
@@ -167,6 +211,7 @@ def _parse_mod(
     index: int,
     repository_url: str,
     repository_ref: str,
+    default_credits: tuple[ModCredit, ...] = (),
 ) -> ModDefinition:
     if not isinstance(entry, dict):
         raise ValueError(MOD_CATALOG_INVALID_ENTRY_MESSAGE.format(index=index))
@@ -241,6 +286,7 @@ def _parse_mod(
         files=files,
         ini_file=ini_file,
         wine_dll_overrides=tuple(raw_overrides),
+        credits=_parse_credits(entry.get(MOD_CATALOG_CREDITS_KEY)) or default_credits,
     )
 
 
@@ -304,8 +350,10 @@ def load_mod_catalog(
     repository_url = repository_url or catalog_url
     repository_ref = repository_ref or catalog_ref
 
+    default_credits = _parse_credits(document.get(MOD_CATALOG_DEFAULT_CREDITS_KEY))
+
     mods = tuple(
-        _parse_mod(entry, index, repository_url, repository_ref)
+        _parse_mod(entry, index, repository_url, repository_ref, default_credits)
         for index, entry in enumerate(document[MOD_CATALOG_MODS_KEY])
     )
     ids: set[str] = set()

@@ -32,6 +32,7 @@ $runtimeFiles = @(
     "scanner\supported_game_scanner.py",
     "store\__init__.py",
     "store\dependencies.py",
+    "store\pack.py",
     "store\plugin_store.py",
     "utils\__init__.py",
     "utils\steam_vdf.py"

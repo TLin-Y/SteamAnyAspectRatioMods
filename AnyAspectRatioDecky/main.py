@@ -36,19 +36,23 @@ from helper.constants import (
 from logger.plugin_logger import PluginLogger, attach_file_handler
 from scanner import scan_supported_games as scan_supported_games_report
 from scanner.local_archives import scan_local_archives
-from scanner.mod_catalog import ModDefinition, read_catalog_repository
+from scanner.mod_catalog import ModDefinition, read_catalog_repository, summarize_credits
 from scanner.mod_installer import (
     apply_mod_files,
     fetch_mod_readme,
     read_mod_ini,
     remove_mod_files,
     set_archive_cache_dir,
+    set_pack_dir,
     write_mod_ini,
 )
 from store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
     Settings,
+    download_pack,
+    export_pack,
+    install_pack,
     load_active_catalog,
     update_dependencies,
     validate_settings,
@@ -71,6 +75,7 @@ def get_store() -> PluginStore:
         store = PluginStore(Path(data_dir))
         store.ensure_directories()
         set_archive_cache_dir(store.archive_cache_dir)
+        set_pack_dir(store.pack_dir)
         attach_file_handler(decky.logger, store.log_path)
         _store = store
     return _store
@@ -134,6 +139,42 @@ class Plugin:
     async def get_cached_scan(self) -> dict[str, object] | None:
         return get_store().load_last_scan()
 
+    async def get_credits(self) -> dict[str, object]:
+        store = get_store()
+        source = load_active_catalog(store, store.load_settings())
+        return {
+            "mod_count": len(source.mods),
+            "authors": summarize_credits(source.mods),
+            "pack": store.pack_stats(),
+        }
+
+    @staticmethod
+    def _run_pack_action(phase: str, action) -> dict[str, object]:
+        store = get_store()
+        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase=phase)
+        try:
+            result = action(store, store.load_settings())
+        except (OSError, URLError, ValueError) as error:
+            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase=phase)
+            return {"error": str(error) or type(error).__name__}
+        log.info(LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED, phase=phase)
+        return result
+
+    async def download_offline_pack(self) -> dict[str, object]:
+        return self._run_pack_action("pack-download", download_pack)
+
+    async def import_offline_pack(self, archive_path: str) -> dict[str, object]:
+        return self._run_pack_action(
+            "pack-import",
+            lambda store, settings: install_pack(store, settings, Path(archive_path)),
+        )
+
+    async def export_offline_pack(self, directory: str) -> dict[str, object]:
+        return self._run_pack_action(
+            "pack-export",
+            lambda store, settings: {"path": export_pack(store, directory)},
+        )
+
     async def get_settings(self) -> dict[str, object]:
         store = get_store()
         settings = store.load_settings()
@@ -196,6 +237,7 @@ class Plugin:
         if source_changed:
             store.clear_catalog_cache()
             store.clear_archive_cache()
+            store.clear_pack()
         if previous.local_archive_dir != settings.local_archive_dir:
             store.local_index_path.unlink(missing_ok=True)
         log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"source-changed-{source_changed}")

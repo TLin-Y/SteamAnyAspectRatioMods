@@ -30,7 +30,7 @@ class CatalogSource:
     warning: str | None = None
 
 
-def _repository_overrides(settings: Settings) -> dict[str, str | None]:
+def repository_overrides(settings: Settings) -> dict[str, str | None]:
     return {
         "repository_url": settings.catalog_repository_url or None,
         "repository_ref": settings.catalog_ref or None,
@@ -39,7 +39,7 @@ def _repository_overrides(settings: Settings) -> dict[str, str | None]:
 
 def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource:
     """Prefer the cached catalog fetched for the current settings; fall back to the bundled one."""
-    overrides = _repository_overrides(settings)
+    overrides = repository_overrides(settings)
     meta = store.catalog_meta()
     warning = None
     if (
@@ -70,22 +70,20 @@ def _download_catalog(url: str) -> bytes:
         raise ValueError(f"Catalog download failed: {error.reason}") from error
 
 
-def update_dependencies(store: PluginStore, settings: Settings) -> dict[str, object]:
-    """Fetch the catalog from the configured repository and drop cached mod archives."""
-    bundled_url, bundled_ref = read_catalog_repository()
-    repository_url = settings.catalog_repository_url or bundled_url
-    repository_ref = settings.catalog_ref or bundled_ref
-    catalog_path = settings.catalog_path or DEFAULT_CATALOG_PATH
-    url = repository_file_url(repository_url, repository_ref, catalog_path)
-
+def save_catalog(
+    store: PluginStore,
+    settings: Settings,
+    content: bytes,
+    source_url: str,
+) -> tuple[tuple[ModDefinition, ...], bool, str]:
+    """Validate catalog bytes and atomically make them the cached catalog."""
     store.ensure_directories()
     descriptor, temporary_name = tempfile.mkstemp(dir=store.cache_dir, suffix=".json.tmp")
     os.close(descriptor)
     temporary_path = Path(temporary_name)
     try:
-        content = _download_catalog(url)
         temporary_path.write_bytes(content)
-        mods = load_mod_catalog(temporary_path, **_repository_overrides(settings))
+        mods = load_mod_catalog(temporary_path, **repository_overrides(settings))
         digest = hashlib.sha256(content).hexdigest()
         previous = store.catalog_meta()
         changed = previous is None or previous.get("sha256") != digest
@@ -100,10 +98,34 @@ def update_dependencies(store: PluginStore, settings: Settings) -> dict[str, obj
             "fetched_at": fetched_at,
             "sha256": digest,
             "mod_count": len(mods),
-            "source_url": url,
+            "source_url": source_url,
             "source": list(settings.source_key()),
         },
     )
+    return mods, changed, fetched_at
+
+
+def repository_for(settings: Settings) -> tuple[str, str]:
+    bundled_url, bundled_ref = read_catalog_repository()
+    return (
+        settings.catalog_repository_url or bundled_url,
+        settings.catalog_ref or bundled_ref,
+    )
+
+
+def catalog_url(settings: Settings) -> str:
+    repository_url, repository_ref = repository_for(settings)
+    return repository_file_url(
+        repository_url,
+        repository_ref,
+        settings.catalog_path or DEFAULT_CATALOG_PATH,
+    )
+
+
+def update_dependencies(store: PluginStore, settings: Settings) -> dict[str, object]:
+    """Fetch the catalog from the configured repository and drop cached mod archives."""
+    url = catalog_url(settings)
+    mods, changed, fetched_at = save_catalog(store, settings, _download_catalog(url), url)
     store.clear_archive_cache()
     return {
         "catalog_changed": changed,
