@@ -11,6 +11,7 @@ $requiredFiles = @(
     "main.py",
     "package.json",
     "plugin.json",
+    "catalog.json",
     "README.md",
     "THIRD_PARTY_NOTICES.md",
     "LICENSE-Decky-Plugin-Template.txt",
@@ -22,7 +23,9 @@ $runtimeFiles = @(
     "logger\__init__.py",
     "logger\plugin_logger.py",
     "scanner\__init__.py",
+    "scanner\mod_catalog.py",
     "scanner\steam_library_scanner.py",
+    "scanner\supported_game_scanner.py",
     "utils\__init__.py",
     "utils\steam_vdf.py"
 )

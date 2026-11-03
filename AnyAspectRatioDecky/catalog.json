@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "mods": [
+    {
+      "id": "dw3re",
+      "name": "Dynasty Warriors 3: Complete Edition Remastered - Custom Resolution",
+      "steam_app_id": "3841510",
+      "install_dir": "DW3CE_RE",
+      "executable": "DW3CE_RE.exe",
+      "release": {
+        "version": "1.0.0",
+        "url": "https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/download/DW3RE-v1.0.0/DW3RE-v1.0.0.zip",
+        "sha256": "75a14ee61566f902bd98f4b1e0130f0556122904fbbddb9269674736201aaeb5",
+        "size_bytes": 4003712,
+        "max_size_bytes": 5000000
+      },
+      "files": [
+        "dxgi.dll",
+        "DW3RE_ARFix.asi",
+        "DW3RE_ARFix.ini"
+      ],
+      "ini_file": "DW3RE_ARFix.ini",
+      "wine_dll_overrides": [
+        "dxgi=n,b"
+      ]
+    }
+  ]
+}

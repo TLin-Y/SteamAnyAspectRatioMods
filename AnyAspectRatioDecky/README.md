@@ -2,7 +2,7 @@
 
 A Decky plugin for discovering and managing supported AnyAspectRatio game fixes on SteamOS.
 
-> **Development status:** this subproject has a reproducible Decky scaffold and a read-only Steam library inventory scan. It does not yet match games to audited fixes, download or install mods, edit launch options, or change game files.
+> **Development status:** the plugin provides a read-only Steam library scan and matches installed games against the audited entries in `catalog.json`. It does not yet download or install mods, edit launch options, or change game files.
 
 ## Requirements
 
@@ -40,7 +40,9 @@ python -m py_compile main.py
 python -m unittest discover -s test -v
 ```
 
-In Decky, open the plugin menu and select **Scan Steam libraries**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. Per-game fix matching will be added after the supported game catalog is audited.
+In Decky, open the plugin menu and select **Scan for supported games**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. Only catalog entries with a matching Steam App ID and install directory are listed. For each match, the UI shows whether the expected executable and catalogued mod files are present.
+
+`catalog.json` is the maintained metadata source for supported fixes. Entries must be audited for Steam App ID, install directory, executable, package contents, release URL, SHA-256, size, INI file, and Wine DLL overrides before inclusion. The backend validates the catalog at scan time.
 
 ## Local smoke-test package
 
@@ -63,7 +65,8 @@ AnyAspectRatioDecky/
   main.py             Decky Python backend and API entry point
   helper/             Shared Python constants
   logger/             Structured wrapper around Decky's persistent logger
-  scanner/            Read-only Steam library and appmanifest scanner
+  scanner/            Read-only Steam scan, catalog validation, and game matching
+  catalog.json        Audited supported-fix metadata
   utils/              Reusable parsing and API helpers
   plugin.json         Decky plugin metadata
   LICENSE-*           Upstream template and bundled Decky API license texts
@@ -72,7 +75,7 @@ AnyAspectRatioDecky/
   pnpm-lock.yaml      Resolved dependency lockfile
   rollup.config.js    Decky Rollup build configuration
   scripts/            Local smoke-test packaging helper
-  src/index.tsx       Minimal plugin UI and backend health check
+  src/index.tsx       Supported-game scan and catalog match UI
   test/               Local backend and Steam discovery tests
   tsconfig.json       TypeScript build configuration
 ```

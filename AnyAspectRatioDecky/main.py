@@ -15,12 +15,13 @@ from helper.constants import (
     LOG_EVENT_BACKEND_STATUS_REQUESTED,
     LOG_EVENT_PLUGIN_STARTED,
     LOG_EVENT_PLUGIN_STOPPED,
-    LOG_EVENT_STEAM_SCAN_COMPLETED,
-    LOG_EVENT_STEAM_SCAN_STARTED,
+    LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED,
+    LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED,
+    LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED,
     LOG_SCAN_PHASE_FORMAT,
 )
 from logger.plugin_logger import PluginLogger
-from scanner import discover_steam_apps
+from scanner import scan_supported_games as scan_supported_games_report
 
 
 log = PluginLogger(decky.logger)
@@ -34,14 +35,19 @@ class Plugin:
             BACKEND_MESSAGE_FIELD: BACKEND_READY_MESSAGE,
         }
 
-    async def scan_steam_libraries(self) -> dict[str, object]:
-        log.info(LOG_EVENT_STEAM_SCAN_STARTED)
-        report = discover_steam_apps()
+    async def scan_supported_games(self) -> dict[str, object]:
+        log.info(LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED)
+        try:
+            report = scan_supported_games_report()
+        except (OSError, ValueError):
+            log.exception(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED)
+            raise
         log.info(
-            LOG_EVENT_STEAM_SCAN_COMPLETED,
+            LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED,
             phase=LOG_SCAN_PHASE_FORMAT.format(
-                libraries=report.libraries_scanned,
-                apps=report.apps_scanned,
+                libraries=report.steam_scan.libraries_scanned,
+                apps=report.steam_scan.apps_scanned,
+                supported=len(report.supported_games),
             ),
         )
         return report.to_dict()
