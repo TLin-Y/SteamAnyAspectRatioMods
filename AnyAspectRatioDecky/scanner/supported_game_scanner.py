@@ -18,6 +18,7 @@ from helper.constants import (
     MOD_CATALOG_MOD_ID_FIELD,
     MOD_CATALOG_MOD_NAME_FIELD,
     MOD_CATALOG_SOURCE_KIND_FIELD,
+    MOD_WINE_OVERRIDES_KEY,
     MOD_CATALOG_COUNT_FIELD,
     MOD_CATALOG_SCAN_REPORT_FIELD,
     MOD_CATALOG_GAMES_FIELD,
@@ -47,6 +48,7 @@ class SupportedGame:
     ini_file: str | None
     mod_files: list[str]
     source_kind: str
+    wine_dll_overrides: list[str]
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -64,6 +66,7 @@ class SupportedGame:
             MOD_CATALOG_INI_FILE_FIELD: self.ini_file,
             MOD_CATALOG_MOD_FILES_FIELD: self.mod_files,
             MOD_CATALOG_SOURCE_KIND_FIELD: self.source_kind,
+            MOD_WINE_OVERRIDES_KEY: self.wine_dll_overrides,
         }
 
 
@@ -151,6 +154,7 @@ def match_supported_games(
                 ini_file=mod.ini_file,
                 mod_files=list(mod.files),
                 source_kind=mod.source.kind,
+                wine_dll_overrides=list(mod.wine_dll_overrides),
             )
         )
 

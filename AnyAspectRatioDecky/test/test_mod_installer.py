@@ -274,7 +274,7 @@ class ModInstallerTests(unittest.TestCase):
                 replace_existing_files=False,
             )
 
-        self.assertEqual([], conflicting_files)
+        self.assertEqual(["fix.ini"], conflicting_files)
         self.assertEqual(b"mod binary", (self.game_path / "fix.dll").read_bytes())
         self.assertEqual(
             b"user configuration",
@@ -356,7 +356,7 @@ class ModInstallerTests(unittest.TestCase):
                 replace_existing_files=False,
             )
 
-        self.assertEqual([], conflicts)
+        self.assertEqual(["fix.dll"], conflicts)
         self.assertEqual(
             b"another mod's binary",
             (self.game_path / "fix.dll").read_bytes(),
@@ -507,6 +507,79 @@ class ModInstallerTests(unittest.TestCase):
         self.assertFalse((self.game_path / "mods" / "fix.dat").exists())
         self.assertFalse((self.game_path / "fix.ini").exists())
         self.assertEqual(b"user", (self.game_path / "mods" / "user.dat").read_bytes())
+
+    def test_removing_mod_prompts_before_deleting_modified_ini(self) -> None:
+        mod = self._mod(
+            "files",
+            ("fix.dll", "fix.ini"),
+            source_files=(
+                ModSourceFile("source/fix.dll", "fix.dll"),
+                ModSourceFile("source/fix.ini", "fix.ini"),
+            ),
+            ini_file="fix.ini",
+        )
+        (self.game_path / "fix.dll").write_bytes(b"mod")
+        (self.game_path / "fix.ini").write_bytes(b"user configuration")
+        source_url = (
+            "https://raw.githubusercontent.com/example/mods/main/source/fix.ini"
+        )
+
+        with patch(
+            "scanner.mod_installer.urlopen",
+            return_value=io.BytesIO(b"default configuration"),
+        ):
+            conflicts = remove_mod_files(mod, str(self.game_path))
+
+        self.assertEqual(["fix.ini"], conflicts)
+        self.assertEqual(b"mod", (self.game_path / "fix.dll").read_bytes())
+        self.assertEqual(
+            b"user configuration",
+            (self.game_path / "fix.ini").read_bytes(),
+        )
+
+        with patch(
+            "scanner.mod_installer.urlopen",
+            return_value=io.BytesIO(b"default configuration"),
+        ) as open_source:
+            conflicts = remove_mod_files(
+                mod,
+                str(self.game_path),
+                preserve_modified_ini=True,
+            )
+
+        self.assertEqual([], conflicts)
+        open_source.assert_called_once_with(
+            source_url,
+            timeout=30,
+            context=ANY,
+        )
+        self.assertFalse((self.game_path / "fix.dll").exists())
+        self.assertEqual(
+            b"user configuration",
+            (self.game_path / "fix.ini").read_bytes(),
+        )
+
+    def test_removing_mod_can_delete_modified_ini_when_confirmed(self) -> None:
+        mod = self._mod(
+            "files",
+            ("fix.ini",),
+            source_files=(ModSourceFile("source/fix.ini", "fix.ini"),),
+            ini_file="fix.ini",
+        )
+        (self.game_path / "fix.ini").write_bytes(b"user configuration")
+
+        with patch(
+            "scanner.mod_installer.urlopen",
+            return_value=io.BytesIO(b"default configuration"),
+        ):
+            conflicts = remove_mod_files(
+                mod,
+                str(self.game_path),
+                preserve_modified_ini=False,
+            )
+
+        self.assertEqual([], conflicts)
+        self.assertFalse((self.game_path / "fix.ini").exists())
 
 
 if __name__ == "__main__":

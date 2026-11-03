@@ -167,6 +167,10 @@ class SupportedGameScannerTests(unittest.TestCase):
         self.assertEqual(list(self.mod.files), game.files_missing)
         self.assertEqual(list(self.mod.files), game.to_dict()["mod_files"])
         self.assertEqual(self.mod.ini_file, game.to_dict()["ini_file"])
+        self.assertEqual(
+            list(self.mod.wine_dll_overrides),
+            game.to_dict()["wine_dll_overrides"],
+        )
         self.assertEqual(1, len(report.to_dict()["supported_games"]))
 
     def test_reports_partial_and_complete_mod_file_presence(self) -> None:

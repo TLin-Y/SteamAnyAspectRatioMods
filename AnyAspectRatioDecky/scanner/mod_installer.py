@@ -122,6 +122,71 @@ def _source_file_map(mod: ModDefinition) -> dict[str, str]:
     raise ValueError(f"Unsupported mod source kind: {source.kind}")
 
 
+def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
+    source_path = _source_file_map(mod)[relative_path]
+    source = mod.source
+    if source.kind == MOD_SOURCE_ARCHIVE:
+        if source.path is None:
+            raise ValueError("Archive source path is missing")
+        archive_url = _repository_file_url(
+            source.repository_url,
+            source.repository_ref,
+            source.path,
+        )
+        with urlopen(
+            archive_url,
+            timeout=DOWNLOAD_TIMEOUT_SECONDS,
+            context=_create_ssl_context(),
+        ) as response:
+            descriptor, temporary_name = tempfile.mkstemp(
+                prefix="anyaspectratio-",
+                suffix=".zip",
+            )
+            archive_path = Path(temporary_name)
+            try:
+                with os.fdopen(descriptor, "wb") as archive_file:
+                    _copy_limited(
+                        response,
+                        archive_file,
+                        MAX_MOD_DOWNLOAD_SIZE_BYTES,
+                        "Mod archive download",
+                    )
+                try:
+                    with ZipFile(archive_path) as archive:
+                        try:
+                            info = archive.getinfo(source_path)
+                        except KeyError as error:
+                            raise ValueError(
+                                f"Mod archive is missing {relative_path}"
+                            ) from error
+                        if info.file_size > MAX_INI_SIZE_BYTES:
+                            raise ValueError(
+                                "Mod INI source exceeds the 256 KiB comparison limit"
+                            )
+                        with archive.open(info) as source_file:
+                            content = source_file.read(MAX_INI_SIZE_BYTES + 1)
+                except BadZipFile as error:
+                    raise ValueError("Mod archive is invalid") from error
+            finally:
+                archive_path.unlink(missing_ok=True)
+    else:
+        source_url = _repository_file_url(
+            source.repository_url,
+            source.repository_ref,
+            source_path,
+        )
+        with urlopen(
+            source_url,
+            timeout=DOWNLOAD_TIMEOUT_SECONDS,
+            context=_create_ssl_context(),
+        ) as response:
+            content = response.read(MAX_INI_SIZE_BYTES + 1)
+
+    if len(content) > MAX_INI_SIZE_BYTES:
+        raise ValueError("Mod INI source exceeds the 256 KiB comparison limit")
+    return content
+
+
 def _copy_limited(stream, target, max_bytes: int, description: str) -> int:
     total_bytes = 0
     while True:
@@ -296,7 +361,7 @@ def apply_mod_files(
             ):
                 continue
             os.replace(staged, target)
-        return []
+        return conflicting_files if replace_existing_files is False else []
     finally:
         for staged, _ in staged_files:
             staged.unlink(missing_ok=True)
@@ -361,16 +426,39 @@ def write_mod_ini(mod: ModDefinition, game_path: str, content: str) -> None:
         temporary_path.unlink(missing_ok=True)
 
 
-def remove_mod_files(mod: ModDefinition, game_path: str) -> None:
+def remove_mod_files(
+    mod: ModDefinition,
+    game_path: str,
+    *,
+    preserve_modified_ini: bool | None = None,
+) -> list[str]:
     game_root = Path(game_path).resolve(strict=True)
     if not game_root.is_dir():
         raise ValueError("Game installation directory is unavailable")
 
     targets = [_target_path(game_root, path) for path in mod.files]
+    modified_ini_path = None
+    if mod.ini_file is not None:
+        ini_path = _target_path(game_root, mod.ini_file)
+        if ini_path.is_file():
+            source_content = _read_source_file(mod, mod.ini_file)
+            modified = (
+                ini_path.stat().st_size != len(source_content)
+                or ini_path.read_bytes() != source_content
+            )
+            if modified and preserve_modified_ini is None:
+                return [mod.ini_file]
+            if modified and preserve_modified_ini:
+                modified_ini_path = ini_path
+
     for target in targets:
+        if target == modified_ini_path:
+            continue
         target.unlink(missing_ok=True)
 
     for target in targets:
+        if target == modified_ini_path:
+            continue
         parent = target.parent
         while parent != game_root:
             try:
@@ -378,3 +466,4 @@ def remove_mod_files(mod: ModDefinition, game_path: str) -> None:
             except OSError:
                 break
             parent = parent.parent
+    return []

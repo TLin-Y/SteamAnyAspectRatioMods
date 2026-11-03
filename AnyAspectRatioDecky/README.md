@@ -2,7 +2,7 @@
 
 A Decky plugin for discovering and managing supported AnyAspectRatio game fixes on SteamOS.
 
-> **Development status:** the plugin scans Steam libraries, matches installed games against `catalog.json`, and can apply or remove the catalogued mod files. It does not edit launch options.
+> **Development status:** the plugin scans Steam libraries, matches installed games against `catalog.json`, and can apply/remove catalogued files and manage required `WINEDLLOVERRIDES` in Steam launch options when the Steam client APIs are available. Launch-option behavior still needs SteamOS end-to-end validation.
 
 ## Requirements
 
@@ -42,9 +42,9 @@ python -m unittest discover -s test -v
 
 In Decky, open the plugin menu and select **Scan for supported games**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. The catalog covers all 18 game mods in the repository. Only entries with a matching Steam App ID and install directory are listed. A fix is shown as applied only when every file listed for it in the catalog exists in that game's install directory; missing or partial files leave the toggle off.
 
-Turning **Apply** on downloads the selected catalog entry from its configured GitHub repository/ref and checks each catalogued target against the source. HTTPS downloads use the SteamOS system CA certificates. Mod archives and individual files are capped at 256 MiB each, and a mod's total installed source files are capped at 512 MiB. If any existing file differs from the source—including an INI or a DLL installed by another mod—the plugin asks whether to replace the conflicting files. Choosing to keep existing files preserves them while applying other missing or matching mod files. Turning Apply off removes catalogued files even if the detected installation is partial; unrelated game files are left untouched. If an operation or status refresh fails, the UI displays an error dialog and refreshes the toggle from the files on disk.
+Turning **Apply** on reads the game's current Steam launch options through Steam's `RegisterForAppDetails` API. If an update is needed, the plugin asks before changing them and shows the current and proposed command. This is separate from applying mod files: files are still applied if the Steam launch-options API is unavailable or the user declines the launch-options change. In those cases, the UI reports the required manual Steam Properties setting and provides a copy button. When confirmed, the plugin adds only missing override groups, preserves other launch options, records the original command and injected groups in plugin-local browser storage, writes through `SetAppLaunchOptions`, and verifies the updated command through app details; failed writes attempt to restore the previous command. Applying downloads the selected catalog entry from its configured GitHub repository/ref and checks each catalogued target against the source. HTTPS downloads use the SteamOS system CA certificates. Mod archives and individual files are capped at 256 MiB each, and a mod's total installed source files are capped at 512 MiB. If any existing file differs from the source—including an INI or a DLL installed by another mod—the plugin asks whether to replace the conflicting files. Choosing to keep existing files preserves them while applying other missing or matching mod files. A successful Apply is silent unless Steam launch options need attention. Turning Apply off removes catalogued files even if the detected installation is partial. If its INI differs from the catalogued source, the plugin asks whether to keep that configuration while removing the other mod files. It rereads the live Steam launch options and removes only the exact override groups this plugin recorded, preserving other current launch-option edits. The unApply result displays the live command before and after cleanup, with copy buttons. If an operation or status refresh fails, the UI displays an error dialog and refreshes the toggle from the files on disk.
 
-Each supported game is listed by number and game name, with **Edit** and **ReadMe** actions side by side. **Edit** shows each catalogued file and lets you edit that mod's catalogued INI. The INI editor uses one Decky `TextField` per line for Steam on-screen keyboard input, with controls to add/remove lines. INI edits are saved as UTF-8 text with a 256 KiB size limit; mods without an INI show the file list only. **ReadMe** fetches the mod's `README.md` from the catalogued repository and renders its Markdown in a scrollable view; network or decoding errors are reported in a dialog.
+Each supported game is listed by number and game name, with **Edit** and **ReadMe** actions side by side. **Edit** shows the catalogued filenames and lets you edit that mod's catalogued INI. The INI editor uses one Decky `TextField` per setting line for Steam on-screen keyboard input; section headers, blank lines, and comment-only lines remain visible but disabled. Modified settings are saved automatically when the field loses focus. INI edits are saved as UTF-8 text with a 256 KiB size limit; mods without an INI show the file list only. **ReadMe** fetches the mod's `README.md` from the catalogued repository and renders its Markdown in a scrollable view; network or decoding errors are reported in a dialog.
 
 `catalog.json` covers all 18 game mods and points to their assets already stored in this repository: 15 ZIP archives, one complete mod folder, and two sets of individual files. It does not depend on creating or publishing GitHub Releases. Each source path is relative to the configured repository and ref; archive entries include their destination inside the game install, while directory and file entries describe repository-relative source paths and game-relative targets. The WIP Trials of Mana fix is represented by its checked-in files rather than excluded for lacking a ZIP.
 
@@ -80,13 +80,14 @@ AnyAspectRatioDecky/
   rollup.config.js    Decky Rollup build configuration
   scripts/            Local smoke-test packaging helper
   src/index.tsx       Supported-game scan and catalog match UI
+  src/launch_options/ Steam launch-option read, merge, ownership, and removal
   test/               Local backend and Steam discovery tests
   tsconfig.json       TypeScript build configuration
 ```
 
 ## Current validation boundary
 
-`pnpm typecheck` and `pnpm build` validate the frontend bundle. Python syntax checks and backend unit tests cover logger formatting, Steam VDF/library discovery, and apply/remove file operations using temporary fixtures and mocked downloads. A successful local build does not replace installation and runtime testing on the target SteamOS/Decky version.
+`pnpm typecheck` and `pnpm build` validate the frontend bundle. Python syntax checks and backend unit tests cover logger formatting, Steam VDF/library discovery, and apply/remove file operations using temporary fixtures and mocked downloads. A successful local build does not replace SteamOS validation of the Steam launch-options APIs, user confirmation flow, or readback behavior.
 
 ## Credits and licensing
 

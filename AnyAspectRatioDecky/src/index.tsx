@@ -12,6 +12,12 @@ import {
 import { callable, definePlugin } from "@decky/api";
 import ReactMarkdown from "react-markdown";
 import { useRef, useState } from "react";
+import {
+  applyLaunchOptions,
+  prepareLaunchOptions,
+  readCurrentLaunchOptions,
+  removeLaunchOptions,
+} from "./launch_options/steamLaunchOptions";
 
 type SupportedGameReport = {
   steam_scan: {
@@ -34,16 +40,17 @@ type SupportedGameReport = {
     ini_file: string | null;
     mod_files: string[];
     source_kind: string;
+    wine_dll_overrides: string[];
   }[];
   warnings: string[];
 };
 
 const scanSupportedGames = callable<[], SupportedGameReport>("scan_supported_games");
 const setModApplied = callable<
-  [string, string, boolean, boolean | null],
+  [string, string, boolean, boolean | null, boolean | null],
   {
     applied: boolean;
-    file_count: number;
+    copied_file_count: number;
     conflicting_files: string[];
   }
 >("set_mod_applied");
@@ -90,6 +97,185 @@ function confirmFileReplacement(
   });
 }
 
+function confirmModifiedIniRemoval(
+  gameName: string,
+  iniFile: string,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let closeModal: (() => void) | undefined;
+    const finish = (keepIni: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(keepIni);
+      closeModal?.();
+    };
+
+    const modal = showModal(
+      <ConfirmModal
+        strTitle="Keep modified configuration?"
+        strDescription={`${gameName}'s ${iniFile} differs from the mod's original configuration. Keep it when removing the mod files?`}
+        strOKButtonText="Keep configuration"
+        strCancelButtonText="Delete configuration"
+        onOK={() => finish(true)}
+        onCancel={() => finish(false)}
+        onEscKeypress={() => finish(true)}
+      />,
+      undefined,
+      { fnOnClose: () => finish(true) },
+    );
+    closeModal = modal.Close;
+  });
+}
+
+function confirmLaunchOptionsChange(
+  gameName: string,
+  requiredGroups: string[],
+  currentOptions: string,
+  proposedOptions: string,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let closeModal: (() => void) | undefined;
+    const finish = (confirmed: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(confirmed);
+      closeModal?.();
+    };
+    const modal = showModal(
+      <ConfirmModal
+        strTitle="Update Steam launch options"
+        strDescription={`${gameName} requires WINEDLLOVERRIDES="${requiredGroups.join(";")}".\n\nCurrent launch options:\n${currentOptions || "(empty)"}\n\nUpdated launch options:\n${proposedOptions || "(empty)"}\n\nContinue and apply this mod?`}
+        strOKButtonText="Update options"
+        strCancelButtonText="Skip launch options"
+        onOK={() => finish(true)}
+        onCancel={() => finish(false)}
+        onEscKeypress={() => finish(false)}
+      />,
+      undefined,
+      { fnOnClose: () => finish(false) },
+    );
+    closeModal = modal.Close;
+  });
+}
+
+type LaunchOptionsDisplay = {
+  label: string;
+  value: string;
+};
+
+async function copyToClipboard(value: string): Promise<void> {
+  try {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("Clipboard API is unavailable.");
+    }
+    await navigator.clipboard.writeText(value);
+    return;
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    let copied = false;
+    try {
+      textarea.select();
+      copied = document.execCommand("copy");
+    } finally {
+      textarea.remove();
+    }
+    if (!copied) throw new Error("Could not copy to the clipboard.");
+  }
+}
+
+function LaunchOptionsInfoModal({
+  title,
+  message,
+  values,
+  closeModal,
+}: {
+  title: string;
+  message: string;
+  values: LaunchOptionsDisplay[];
+  closeModal: () => void;
+}) {
+  const [copyStatus, setCopyStatus] = useState("");
+
+  return (
+    <ConfirmModal
+      bAlertDialog
+      bAllowFullSize
+      strTitle={title}
+      strDescription={message}
+      strOKButtonText="Close"
+      onOK={closeModal}
+      onCancel={closeModal}
+    >
+      {values.map(({ label, value }) => (
+        <div key={label} style={{ marginTop: "12px" }}>
+          <strong>{label}</strong>
+          <div
+            style={{
+              maxHeight: "18vh",
+              overflowY: "auto",
+              overflowWrap: "anywhere",
+              whiteSpace: "pre-wrap",
+              margin: "6px 0",
+            }}
+          >
+            {value || "(empty)"}
+          </div>
+          <DialogButton
+            onClick={async () => {
+              try {
+                await copyToClipboard(value);
+                setCopyStatus(`${label} copied.`);
+              } catch (error) {
+                setCopyStatus(`Copy failed: ${String(error)}`);
+              }
+            }}
+          >
+            Copy
+          </DialogButton>
+        </div>
+      ))}
+      {copyStatus && (
+        <div role="status" style={{ marginTop: "8px" }}>
+          {copyStatus}
+        </div>
+      )}
+    </ConfirmModal>
+  );
+}
+
+function showLaunchOptionsInfo(
+  title: string,
+  message: string,
+  values: LaunchOptionsDisplay[],
+): void {
+  let closeModal = () => {};
+  const modal = showModal(
+    <LaunchOptionsInfoModal
+      title={title}
+      message={message}
+      values={values}
+      closeModal={() => closeModal()}
+    />,
+  );
+  closeModal = modal.Close;
+}
+
+function isEditableIniLine(line: string): boolean {
+  const trimmed = line.trim();
+  return (
+    trimmed.length > 0 &&
+    !/^\[[^\]]*\]\s*(?:[;#].*)?$/.test(trimmed) &&
+    !/^[;#]/.test(trimmed)
+  );
+}
+
 function Content() {
   const [report, setReport] = useState<SupportedGameReport | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -109,6 +295,9 @@ function Content() {
   const [iniSaving, setIniSaving] = useState(false);
   const [iniStatus, setIniStatus] = useState("");
   const detailRequestId = useRef(0);
+  const iniSavingRef = useRef(false);
+  const pendingIniSave = useRef(false);
+  const saveIniRef = useRef<() => Promise<void>>(async () => {});
 
   const notifyError = (title: string, message: string) => {
     setErrorMessage(message);
@@ -152,27 +341,112 @@ function Content() {
     };
 
     try {
+      let launchPlan: Awaited<ReturnType<typeof prepareLaunchOptions>> | null =
+        null;
+      let launchOptionsNotice = "";
+      let manualLaunchOptions = "";
+      if (applied && game.wine_dll_overrides.length > 0) {
+        try {
+          launchPlan = await prepareLaunchOptions(
+            Number(game.steam_app_id),
+            game.mod_id,
+            game.wine_dll_overrides,
+          );
+        } catch (error) {
+          manualLaunchOptions =
+            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
+          launchOptionsNotice =
+            `${String(error)}\n\nRequired setting: ${manualLaunchOptions}`;
+        }
+        if (
+          launchPlan &&
+          !launchPlan.canWrite &&
+          launchPlan.proposedOptions !== launchPlan.currentOptions
+        ) {
+          launchOptionsNotice =
+            "Steam's launch-options write API is unavailable. Mod files will still be applied.";
+          manualLaunchOptions =
+            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
+          launchPlan = null;
+        } else if (
+          launchPlan &&
+          launchPlan.proposedOptions !== launchPlan.currentOptions &&
+          !(await confirmLaunchOptionsChange(
+            game.app_name,
+            game.wine_dll_overrides,
+            launchPlan.currentOptions,
+            launchPlan.proposedOptions,
+          ))
+        ) {
+          launchPlan = null;
+          manualLaunchOptions =
+            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
+          launchOptionsNotice =
+            `Steam launch options were left unchanged. To enable the mod's Wine DLL overrides, add ${manualLaunchOptions} to ${game.app_name}'s Steam launch options.`;
+        }
+      }
+
       try {
         const result = await setModApplied(
           game.mod_id,
           game.game_path,
           applied,
           null,
+          null,
         );
         if (result.conflicting_files.length > 0) {
-          const replaceFiles = await confirmFileReplacement(
-            game.app_name,
-            result.conflicting_files,
-          );
-          await setModApplied(
-            game.mod_id,
-            game.game_path,
-            true,
-            replaceFiles,
-          );
+          if (applied) {
+            const replaceFiles = await confirmFileReplacement(
+              game.app_name,
+              result.conflicting_files,
+            );
+            await setModApplied(
+              game.mod_id,
+              game.game_path,
+              true,
+              replaceFiles,
+              null,
+            );
+          } else {
+            const keepIni = await confirmModifiedIniRemoval(
+              game.app_name,
+              result.conflicting_files[0],
+            );
+            await setModApplied(
+              game.mod_id,
+              game.game_path,
+              false,
+              null,
+              keepIni,
+            );
+          }
         }
       } catch (error) {
         const refreshError = await refreshReport();
+        if (!applied && game.wine_dll_overrides.length > 0) {
+          let currentOptions = "";
+          let currentOptionsMessage = "";
+          try {
+            currentOptions = await readCurrentLaunchOptions(
+              Number(game.steam_app_id),
+            );
+          } catch (readError) {
+            currentOptionsMessage = `Steam's current launch options could not be read: ${String(readError)}`;
+          }
+          showLaunchOptionsInfo(
+            "Mod removal failed",
+            `Could not remove ${game.mod_name}: ${String(error)}` +
+              (currentOptionsMessage ? `\n\n${currentOptionsMessage}` : "") +
+              (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
+            [
+              {
+                label: "Current Steam launch options",
+                value: currentOptions,
+              },
+            ],
+          );
+          return;
+        }
         notifyError(
           `${applied ? "Apply" : "Remove"} failed`,
           `Could not ${applied ? "apply" : "remove"} ${game.mod_name}: ${String(error)}` +
@@ -181,7 +455,104 @@ function Content() {
         return;
       }
 
+      if (applied && launchPlan) {
+        try {
+          await applyLaunchOptions(
+            launchPlan,
+            game.wine_dll_overrides,
+          );
+        } catch (error) {
+          launchOptionsNotice =
+            `Steam launch options could not be updated: ${String(error)}. Mod files were still applied.`;
+          manualLaunchOptions =
+            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
+        }
+      } else if (!applied && game.wine_dll_overrides.length > 0) {
+        try {
+          const removal = await removeLaunchOptions(
+            Number(game.steam_app_id),
+            game.mod_id,
+          );
+          if (!removal.hadRecord) {
+            const refreshError = await refreshReport();
+            showLaunchOptionsInfo(
+              "Mod files deleted successfully",
+              "",
+              [
+                {
+                  label: "Current Steam options",
+                  value: removal.currentOptions,
+                },
+              ],
+            );
+            if (refreshError) {
+              setErrorMessage(`Status refresh failed: ${refreshError}`);
+            }
+            return;
+          }
+          const refreshError = await refreshReport();
+          showLaunchOptionsInfo(
+            "Mod files removed",
+            removal.changed
+              ? `Removed ${game.mod_name} files and the plugin-owned override group(s). Other current launch-option arguments were preserved.`
+              : `Removed ${game.mod_name} files. None of the recorded plugin-owned override groups were present, so Steam launch options were left unchanged.`,
+            [
+              {
+                label: "Current launch options before unApply",
+                value: removal.currentOptions,
+              },
+              {
+                label: "Launch options after unApply",
+                value: removal.updatedOptions,
+              },
+            ],
+          );
+          if (refreshError) {
+            setErrorMessage(`Status refresh failed: ${refreshError}`);
+          }
+          return;
+        } catch (error) {
+          const refreshError = await refreshReport();
+          let currentOptions = "";
+          let currentOptionsMessage = "";
+          try {
+            currentOptions = await readCurrentLaunchOptions(
+              Number(game.steam_app_id),
+            );
+          } catch (readError) {
+            currentOptionsMessage = `Steam's current launch options could not be read: ${String(readError)}`;
+          }
+          showLaunchOptionsInfo(
+            "Launch options removal failed",
+            `${game.mod_name} files were removed, but Steam's launch options could not be updated: ${String(error)}` +
+              (currentOptionsMessage ? `\n\n${currentOptionsMessage}` : "") +
+              (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
+            [
+              {
+                label: "Current Steam launch options",
+                value: currentOptions,
+              },
+            ],
+          );
+          return;
+        }
+      }
+
       const refreshError = await refreshReport();
+      if (applied && launchOptionsNotice) {
+        showLaunchOptionsInfo(
+          "Launch options not updated",
+          launchOptionsNotice +
+            (manualLaunchOptions
+              ? `\n\nRequired setting: ${manualLaunchOptions}`
+              : "") +
+            (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
+          manualLaunchOptions
+            ? [{ label: "Required Steam launch option", value: manualLaunchOptions }]
+            : [],
+        );
+        return;
+      }
       if (refreshError) {
         notifyError(
           "Status refresh failed",
@@ -205,6 +576,8 @@ function Content() {
   ) => {
     const requestId = ++detailRequestId.current;
     const selectedKey = gameKey(game);
+    iniSavingRef.current = false;
+    pendingIniSave.current = false;
     setSelectedGameKey(selectedKey);
     setDetailView("manage");
     setIniGameKey(null);
@@ -263,11 +636,17 @@ function Content() {
       !gameBeingSaved.ini_file ||
       iniGameKey !== gameKey(gameBeingSaved)
     ) return;
+    if (iniSavingRef.current) {
+      pendingIniSave.current = true;
+      return;
+    }
+    if (iniLines.join("\n") === savedIniContent) return;
     const requestId = detailRequestId.current;
     const gamePath = gameBeingSaved.game_path;
+    const iniContent = iniLines.join("\n");
+    iniSavingRef.current = true;
     setIniSaving(true);
     setIniStatus("");
-    const iniContent = iniLines.join("\n");
     try {
       await saveModIni(
         gameBeingSaved.mod_id,
@@ -285,7 +664,12 @@ function Content() {
       return;
     } finally {
       if (requestId === detailRequestId.current) {
+        iniSavingRef.current = false;
         setIniSaving(false);
+        if (pendingIniSave.current) {
+          pendingIniSave.current = false;
+          window.setTimeout(() => void saveIniRef.current(), 0);
+        }
       }
     }
 
@@ -300,6 +684,7 @@ function Content() {
       }
     }
   };
+  saveIniRef.current = saveIni;
 
   return (
     <PanelSection>
@@ -336,6 +721,8 @@ function Content() {
               layout="below"
               onClick={() => {
                 detailRequestId.current += 1;
+                iniSavingRef.current = false;
+                pendingIniSave.current = false;
                 setSelectedGameKey(null);
                 setDetailView("manage");
                 setIniGameKey(null);
@@ -370,19 +757,11 @@ function Content() {
             </PanelSectionRow>
           ) : (
             <>
-              <PanelSectionRow>
-                <div>Installed files ({selectedGame.files_present.length}/{selectedGame.mod_files.length})</div>
-              </PanelSectionRow>
-              {selectedGame.mod_files.map((file) => {
-                const present = selectedGame.files_present.includes(file);
-                return (
-                  <PanelSectionRow key={file}>
-                    <div style={{ overflowWrap: "anywhere" }}>
-                      {present ? "Present" : "Missing"} · {file}
-                    </div>
-                  </PanelSectionRow>
-                );
-              })}
+              {selectedGame.mod_files.map((file) => (
+                <PanelSectionRow key={file}>
+                  <div style={{ overflowWrap: "anywhere" }}>{file}</div>
+                </PanelSectionRow>
+              ))}
               {selectedGame.ini_file ? (
                 <>
                   <PanelSectionRow>
@@ -392,65 +771,47 @@ function Content() {
                     <div>
                       {iniLoaded
                         ? iniExists
-                          ? "Select a line to edit it with the Steam on-screen keyboard."
-                          : "INI file is not installed yet. Add lines below to create it."
+                          ? iniSaving
+                            ? "Saving configuration..."
+                            : "Changes save automatically when a setting field loses focus. Section headers, blank lines, and comments are shown but cannot be edited."
+                          : "INI file is not installed yet."
                         : "Loading INI configuration..."}
                     </div>
                   </PanelSectionRow>
                   {iniLines.map((line, index) => (
                     <PanelSectionRow key={`${selectedGame.mod_id}-ini-line-${index}`}>
-                      <TextField
-                        label={`Line ${index + 1}`}
-                        value={line}
-                        disabled={!iniLoaded || iniSaving}
-                        onChange={(event) => {
-                          const updatedLines = [...iniLines];
-                          updatedLines[index] = event.target.value;
-                          setIniLines(updatedLines);
-                          setIniStatus("");
-                        }}
-                      />
+                      {isEditableIniLine(line) ? (
+                        <TextField
+                          value={line}
+                          disabled={!iniLoaded}
+                          onBlur={() => {
+                            if (!iniLoaded) return;
+                            if (iniSavingRef.current) {
+                              pendingIniSave.current = true;
+                            } else if (iniLines.join("\n") !== savedIniContent) {
+                              void saveIni();
+                            }
+                          }}
+                          onChange={(event) => {
+                            const updatedLines = [...iniLines];
+                            updatedLines[index] = event.target.value;
+                            setIniLines(updatedLines);
+                            setIniStatus("");
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            minHeight: "1em",
+                            overflowWrap: "anywhere",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {line}
+                        </div>
+                      )}
                     </PanelSectionRow>
                   ))}
-                  <PanelSectionRow>
-                    <ButtonItem
-                      layout="below"
-                      disabled={!iniLoaded || iniSaving}
-                      onClick={() => {
-                        setIniLines([...iniLines, ""]);
-                        setIniStatus("");
-                      }}
-                    >
-                      Add line
-                    </ButtonItem>
-                  </PanelSectionRow>
-                  {iniLines.length > 1 && (
-                    <PanelSectionRow>
-                      <ButtonItem
-                        layout="below"
-                        disabled={!iniLoaded || iniSaving}
-                        onClick={() => {
-                          setIniLines(iniLines.slice(0, -1));
-                          setIniStatus("");
-                        }}
-                      >
-                        Remove last line
-                      </ButtonItem>
-                    </PanelSectionRow>
-                  )}
-                  <PanelSectionRow>
-                    <ButtonItem
-                      layout="below"
-                      disabled={
-                        !iniLoaded ||
-                        iniSaving ||
-                        iniLines.join("\n") === savedIniContent
-                      }
-                      onClick={saveIni}
-                    >
-                      {iniSaving ? "Saving configuration..." : "Save configuration"}
-                    </ButtonItem>
-                  </PanelSectionRow>
                   {iniStatus && (
                     <PanelSectionRow>
                       <div role="status">{iniStatus}</div>
@@ -530,11 +891,13 @@ function Content() {
           </PanelSectionRow>
         </PanelSection>
       ))}
-      {!selectedGame && report?.warnings.map((warning, index) => (
-        <PanelSectionRow key={`${index}-${warning}`}>
-          <div role="status">{warning}</div>
-        </PanelSectionRow>
-      ))}
+      {!selectedGame && report?.warnings
+        .filter((warning) => !warning.startsWith("Steam library is unavailable:"))
+        .map((warning, index) => (
+          <PanelSectionRow key={`${index}-${warning}`}>
+            <div role="status">{warning}</div>
+          </PanelSectionRow>
+        ))}
     </PanelSection>
   );
 }

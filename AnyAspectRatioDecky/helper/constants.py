@@ -73,6 +73,9 @@ LOG_EVENT_BACKEND_STATUS_REQUESTED = "backend.status_requested"
 LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED = "supported_game.scan_started"
 LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED = "supported_game.scan_completed"
 LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED = "supported_game.scan_failed"
+LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE = (
+    "supported_game.library_unavailable"
+)
 LOG_EVENT_MOD_FILE_OPERATION_STARTED = "mod_files.operation_started"
 LOG_EVENT_MOD_FILE_OPERATION_COMPLETED = "mod_files.operation_completed"
 LOG_EVENT_MOD_FILE_OPERATION_FAILED = "mod_files.operation_failed"

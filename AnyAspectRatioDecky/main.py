@@ -14,15 +14,17 @@ from helper.constants import (
     BACKEND_STATUS_FIELD,
     BACKEND_STATUS_READY,
     LOG_EVENT_BACKEND_STATUS_REQUESTED,
-    LOG_EVENT_PLUGIN_STARTED,
-    LOG_EVENT_PLUGIN_STOPPED,
     LOG_EVENT_MOD_FILE_OPERATION_COMPLETED,
     LOG_EVENT_MOD_FILE_OPERATION_FAILED,
     LOG_EVENT_MOD_FILE_OPERATION_STARTED,
+    LOG_EVENT_PLUGIN_STARTED,
+    LOG_EVENT_PLUGIN_STOPPED,
     LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED,
     LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED,
+    LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE,
     LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED,
     LOG_SCAN_PHASE_FORMAT,
+    STEAM_LIBRARY_UNAVAILABLE_WARNING,
 )
 from logger.plugin_logger import PluginLogger
 from scanner import scan_supported_games as scan_supported_games_report
@@ -84,6 +86,12 @@ class Plugin:
         except (OSError, ValueError):
             log.exception(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED)
             raise
+        unavailable_warning = STEAM_LIBRARY_UNAVAILABLE_WARNING.split(
+            "{path}", maxsplit=1
+        )[0]
+        for warning in report.warnings:
+            if warning.startswith(unavailable_warning):
+                log.warning(LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE)
         log.info(
             LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED,
             phase=LOG_SCAN_PHASE_FORMAT.format(
@@ -100,6 +108,7 @@ class Plugin:
         game_path: str,
         applied: bool,
         replace_existing_files: bool | None = None,
+        preserve_modified_ini: bool | None = None,
     ) -> dict[str, object]:
         mod = self._get_mod_definition(mod_id)
 
@@ -129,9 +138,19 @@ class Plugin:
                     game.game_path,
                     replace_existing_files=replace_existing_files,
                 )
+                if conflicting_files and replace_existing_files is None:
+                    copied_file_count = 0
+                elif replace_existing_files is False:
+                    copied_file_count = len(mod.files) - len(conflicting_files)
+                else:
+                    copied_file_count = len(mod.files)
             else:
-                remove_mod_files(mod, game.game_path)
-                conflicting_files = []
+                conflicting_files = remove_mod_files(
+                    mod,
+                    game.game_path,
+                    preserve_modified_ini=preserve_modified_ini,
+                )
+                copied_file_count = 0
         except (OSError, URLError, ValueError):
             log.exception(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,
@@ -147,7 +166,7 @@ class Plugin:
         )
         return {
             "applied": applied,
-            "file_count": len(mod.files),
+            "copied_file_count": copied_file_count,
             "conflicting_files": conflicting_files,
         }
 
