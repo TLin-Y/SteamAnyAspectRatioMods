@@ -11,6 +11,8 @@ from helper.constants import (
     MOD_CATALOG_FILE_STATUS_NONE,
     MOD_CATALOG_FILE_STATUS_PARTIAL,
     MOD_CATALOG_INI_PATH_FIELD,
+    MOD_CATALOG_INI_FILE_FIELD,
+    MOD_CATALOG_MOD_FILES_FIELD,
     MOD_CATALOG_GAME_PATH_FIELD,
     MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING,
     MOD_CATALOG_MOD_ID_FIELD,
@@ -42,6 +44,8 @@ class SupportedGame:
     files_present: list[str]
     files_missing: list[str]
     ini_path: str | None
+    ini_file: str | None
+    mod_files: list[str]
     source_kind: str
 
     def to_dict(self) -> dict[str, object]:
@@ -57,6 +61,8 @@ class SupportedGame:
             MOD_CATALOG_FILES_PRESENT_FIELD: self.files_present,
             MOD_CATALOG_FILES_MISSING_FIELD: self.files_missing,
             MOD_CATALOG_INI_PATH_FIELD: self.ini_path,
+            MOD_CATALOG_INI_FILE_FIELD: self.ini_file,
+            MOD_CATALOG_MOD_FILES_FIELD: self.mod_files,
             MOD_CATALOG_SOURCE_KIND_FIELD: self.source_kind,
         }
 
@@ -142,6 +148,8 @@ def match_supported_games(
                 files_present=present_files,
                 files_missing=missing_files,
                 ini_path=ini_path,
+                ini_file=mod.ini_file,
+                mod_files=list(mod.files),
                 source_kind=mod.source.kind,
             )
         )

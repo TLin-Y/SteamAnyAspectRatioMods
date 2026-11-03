@@ -23,6 +23,7 @@ from scanner import (
     load_mod_catalog,
     match_supported_games,
 )
+from scanner.mod_installer import mod_readme_path
 
 
 class ModCatalogTests(unittest.TestCase):
@@ -47,6 +48,10 @@ class ModCatalogTests(unittest.TestCase):
             sum(candidate.source.kind == MOD_SOURCE_FILES for candidate in catalog),
         )
         for candidate in catalog:
+            self.assertTrue(
+                (repository_root / mod_readme_path(candidate)).is_file(),
+                candidate.mod_id,
+            )
             if candidate.source.kind == MOD_SOURCE_ARCHIVE:
                 self.assertIsNotNone(candidate.source.path)
                 archive_path = repository_root / candidate.source.path
@@ -160,6 +165,8 @@ class SupportedGameScannerTests(unittest.TestCase):
         self.assertTrue(game.executable_found)
         self.assertEqual(MOD_CATALOG_FILE_STATUS_NONE, game.file_status)
         self.assertEqual(list(self.mod.files), game.files_missing)
+        self.assertEqual(list(self.mod.files), game.to_dict()["mod_files"])
+        self.assertEqual(self.mod.ini_file, game.to_dict()["ini_file"])
         self.assertEqual(1, len(report.to_dict()["supported_games"]))
 
     def test_reports_partial_and_complete_mod_file_presence(self) -> None:
