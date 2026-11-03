@@ -2,6 +2,7 @@ import {
   ButtonItem,
   ConfirmModal,
   DialogButton,
+  Navigation,
   PanelSection,
   PanelSectionRow,
   staticClasses,
@@ -87,6 +88,24 @@ const updateDependencies = callable<
     warnings: string[];
   }
 >("update_dependencies");
+type CreditsInfo = {
+  mod_count: number;
+  authors: { name: string; url: string; mod_count: number; mods: string[] }[];
+  pack: { file_count: number; size_bytes: number };
+};
+const getCredits = callable<[], CreditsInfo>("get_credits");
+const downloadOfflinePack = callable<[], { error?: string }>("download_offline_pack");
+const importOfflinePack = callable<[string], { error?: string }>("import_offline_pack");
+const exportOfflinePack = callable<[string], { error?: string; path?: string }>(
+  "export_offline_pack",
+);
+
+const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+}
 const setModApplied = callable<
   [string, string, boolean, boolean | null, boolean | null],
   {
@@ -1175,15 +1194,173 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
   );
 }
 
+function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
+  const [credits, setCredits] = useState<CreditsInfo | null>(null);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const refresh = () =>
+    getCredits().then(setCredits, (reason) => setError(String(reason)));
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const runPackAction = async (
+    title: string,
+    action: () => Promise<{ error?: string; path?: string }>,
+    doneMessage: (result: { path?: string }) => string,
+    changesData: boolean,
+  ) => {
+    setBusy(true);
+    setStatus("Working...");
+    try {
+      const result = await action();
+      if (result.error) throw new Error(result.error);
+      setStatus(doneMessage(result));
+      await refresh();
+      if (changesData) onDataChanged();
+    } catch (reason) {
+      setStatus("");
+      showErrorModal(title, reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pickAndRun = async (
+    title: string,
+    select: number,
+    includeFiles: boolean,
+    includeFolders: boolean,
+    extensions: string[] | undefined,
+    run: (path: string) => Promise<{ error?: string; path?: string }>,
+    doneMessage: (result: { path?: string }) => string,
+    changesData: boolean,
+  ) => {
+    let picked;
+    try {
+      picked = await openFilePicker(
+        select as FileSelectionType,
+        DEFAULT_PICKER_DIRECTORY,
+        includeFiles,
+        includeFolders,
+        undefined,
+        extensions,
+      );
+    } catch {
+      return;
+    }
+    await runPackAction(title, () => run(picked.realpath || picked.path), doneMessage, changesData);
+  };
+
+  const pack = credits?.pack;
+  return (
+    <PanelSection title="Mods">
+      {error && <PanelSectionRow>{error}</PanelSectionRow>}
+      {credits && (
+        <PanelSectionRow>
+          <div style={{ fontSize: "12px", opacity: 0.7 }}>
+            {credits.mod_count} mod(s) by {credits.authors.length} author(s) -{" "}
+            {pack?.file_count
+              ? `offline pack: ${pack.file_count} files, ${formatBytes(pack.size_bytes)}`
+              : "offline pack: not downloaded"}
+          </div>
+        </PanelSectionRow>
+      )}
+      {status && (
+        <PanelSectionRow>
+          <div style={{ fontSize: "12px" }}>{status}</div>
+        </PanelSectionRow>
+      )}
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          disabled={busy}
+          onClick={() =>
+            runPackAction(
+              "Download failed",
+              downloadOfflinePack,
+              () => "Offline pack downloaded.",
+              true,
+            )
+          }
+        >
+          Download all for offline
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          disabled={busy || !pack?.file_count}
+          onClick={() =>
+            pickAndRun(
+              "Export failed",
+              1,
+              false,
+              true,
+              undefined,
+              exportOfflinePack,
+              (result) => `Exported to ${result.path}`,
+              false,
+            )
+          }
+        >
+          Export pack...
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          disabled={busy}
+          onClick={() =>
+            pickAndRun(
+              "Import failed",
+              0,
+              true,
+              false,
+              ["zip"],
+              importOfflinePack,
+              () => "Offline pack imported.",
+              true,
+            )
+          }
+        >
+          Import pack...
+        </ButtonItem>
+      </PanelSectionRow>
+      {credits?.authors.map((author) => (
+        <PanelSectionRow key={`${author.name}|${author.url}`}>
+          <ButtonItem
+            layout="below"
+            label={`${author.name} - ${author.mod_count} mod(s)`}
+            description={author.mods.join(", ")}
+            onClick={() => Navigation.NavigateToExternalWeb(author.url)}
+          >
+            {author.url.replace("https://", "")}
+          </ButtonItem>
+        </PanelSectionRow>
+      ))}
+    </PanelSection>
+  );
+}
+
+type TabId = "games" | "settings" | "mods";
+
 function Content() {
-  const [tab, setTab] = useState<"games" | "settings">("games");
+  const [tab, setTab] = useState<TabId>("games");
   const [dataRevision, setDataRevision] = useState(0);
-  const tabButton = (id: "games" | "settings", label: string) => (
+  const tabButton = (id: TabId, label: string) => (
     <DialogButton
       style={{
         flex: 1,
         minWidth: 0,
-        borderBottom: tab === id ? "3px solid #1a9fff" : "3px solid transparent",
+        minHeight: 0,
+        height: "28px",
+        padding: "0 4px",
+        fontSize: "12px",
+        borderBottom: tab === id ? "2px solid #1a9fff" : "2px solid transparent",
         opacity: tab === id ? 1 : 0.6,
       }}
       onClick={() => setTab(id)}
@@ -1196,8 +1373,9 @@ function Content() {
     <>
       <PanelSection>
         <PanelSectionRow>
-          <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+          <div style={{ display: "flex", gap: "4px", width: "100%" }}>
             {tabButton("games", "Games")}
+            {tabButton("mods", "Mods")}
             {tabButton("settings", "Settings")}
           </div>
         </PanelSectionRow>
@@ -1207,6 +1385,9 @@ function Content() {
       </div>
       {tab === "settings" && (
         <SettingsTab onDataChanged={() => setDataRevision((revision) => revision + 1)} />
+      )}
+      {tab === "mods" && (
+        <ModsTab onDataChanged={() => setDataRevision((revision) => revision + 1)} />
       )}
     </>
   );

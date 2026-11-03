@@ -4,6 +4,12 @@
     "url": "https://github.com/TLin-Y/SteamAnyAspectRatioMods",
     "ref": "main"
   },
+  "default_credits": [
+    {
+      "name": "TLin-Y",
+      "url": "https://github.com/TLin-Y"
+    }
+  ],
   "mods": [
     {
       "id": "dark-souls-iii",
