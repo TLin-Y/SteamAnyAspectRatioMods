@@ -90,7 +90,7 @@ const updateDependencies = callable<
 >("update_dependencies");
 type CreditsInfo = {
   mod_count: number;
-  authors: { name: string; url: string; mod_count: number; mods: string[] }[];
+  authors: { name: string; url: string; mod_count: number }[];
   pack: { file_count: number; size_bytes: number };
 };
 const getCredits = callable<[], CreditsInfo>("get_credits");
@@ -1332,14 +1332,17 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
       </PanelSectionRow>
       {credits?.authors.map((author) => (
         <PanelSectionRow key={`${author.name}|${author.url}`}>
-          <ButtonItem
-            layout="below"
-            label={`${author.name} - ${author.mod_count} mod(s)`}
-            description={author.mods.join(", ")}
-            onClick={() => Navigation.NavigateToExternalWeb(author.url)}
-          >
-            {author.url.replace("https://", "")}
-          </ButtonItem>
+          {author.url ? (
+            <ButtonItem
+              layout="below"
+              label={`${author.name} - ${author.mod_count} mod(s)`}
+              onClick={() => Navigation.NavigateToExternalWeb(author.url)}
+            >
+              {author.url.replace("https://", "")}
+            </ButtonItem>
+          ) : (
+            <div>{`${author.name} - ${author.mod_count} mod(s)`}</div>
+          )}
         </PanelSectionRow>
       ))}
     </PanelSection>

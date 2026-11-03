@@ -46,7 +46,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = summarize_credits(load_mod_catalog())
-        self.assertEqual([("TLin-Y", 18)], [(a["name"], a["mod_count"]) for a in everyone])
+        self.assertEqual([("TLin-Y", 18, "")], [(a["name"], a["mod_count"], a["url"]) for a in everyone])
 
     def test_loads_audited_repository_catalog(self) -> None:
         catalog = load_mod_catalog()

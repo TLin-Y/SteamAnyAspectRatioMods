@@ -105,24 +105,24 @@ def _parse_credits(raw: object) -> tuple[ModCredit, ...]:
         if (
             not isinstance(name, str)
             or not name.strip()
-            or not isinstance(url, str)
-            or urlparse(url).scheme != "https"
+            or (url is not None and (not isinstance(url, str) or urlparse(url).scheme != "https"))
         ):
             raise ValueError(MOD_CATALOG_INVALID_CREDITS_MESSAGE)
-        credits.append(ModCredit(name.strip(), url))
+        credits.append(ModCredit(name.strip(), url or ""))
     return tuple(credits)
 
 
 def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]]:
     """Group mods by author, most mods first."""
-    authors: dict[tuple[str, str], list[str]] = {}
+    authors: dict[tuple[str, str], int] = {}
     for mod in mods:
         for credit in mod.credits:
-            authors.setdefault((credit.name, credit.url), []).append(mod.name)
+            key = (credit.name, credit.url)
+            authors[key] = authors.get(key, 0) + 1
     return [
-        {"name": name, "url": url, "mod_count": len(names), "mods": sorted(names)}
-        for (name, url), names in sorted(
-            authors.items(), key=lambda item: (-len(item[1]), item[0][0].lower())
+        {"name": name, "url": url, "mod_count": count}
+        for (name, url), count in sorted(
+            authors.items(), key=lambda item: (-item[1], item[0][0].lower())
         )
     ]
 
