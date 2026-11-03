@@ -15,7 +15,7 @@ from helper.constants import (
     MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING,
     MOD_CATALOG_MOD_ID_FIELD,
     MOD_CATALOG_MOD_NAME_FIELD,
-    MOD_CATALOG_RELEASE_VERSION_FIELD,
+    MOD_CATALOG_SOURCE_KIND_FIELD,
     MOD_CATALOG_COUNT_FIELD,
     MOD_CATALOG_SCAN_REPORT_FIELD,
     MOD_CATALOG_GAMES_FIELD,
@@ -42,7 +42,7 @@ class SupportedGame:
     files_present: list[str]
     files_missing: list[str]
     ini_path: str | None
-    release_version: str
+    source_kind: str
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -57,7 +57,7 @@ class SupportedGame:
             MOD_CATALOG_FILES_PRESENT_FIELD: self.files_present,
             MOD_CATALOG_FILES_MISSING_FIELD: self.files_missing,
             MOD_CATALOG_INI_PATH_FIELD: self.ini_path,
-            MOD_CATALOG_RELEASE_VERSION_FIELD: self.release_version,
+            MOD_CATALOG_SOURCE_KIND_FIELD: self.source_kind,
         }
 
 
@@ -124,7 +124,9 @@ def match_supported_games(
 
         ini_path = (
             str(game_path / mod.ini_file)
-            if game_path is not None and (game_path / mod.ini_file).is_file()
+            if game_path is not None
+            and mod.ini_file is not None
+            and (game_path / mod.ini_file).is_file()
             else None
         )
         games.append(
@@ -140,7 +142,7 @@ def match_supported_games(
                 files_present=present_files,
                 files_missing=missing_files,
                 ini_path=ini_path,
-                release_version=mod.release_version,
+                source_kind=mod.source.kind,
             )
         )
 

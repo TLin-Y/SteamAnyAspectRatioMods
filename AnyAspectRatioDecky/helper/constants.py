@@ -83,33 +83,50 @@ BACKEND_STATUS_READY = "ready"
 BACKEND_READY_MESSAGE = "AnyAspectRatio Decky backend is responding."
 
 MOD_CATALOG_FILENAME = "catalog.json"
-MOD_CATALOG_SCHEMA_VERSION = 1
+MOD_CATALOG_SCHEMA_VERSION = 3
 MOD_CATALOG_SCHEMA_VERSION_KEY = "schema_version"
+MOD_CATALOG_SOURCE_REPOSITORY_KEY = "source_repository"
+MOD_CATALOG_SOURCE_REPOSITORY_URL_KEY = "url"
+MOD_CATALOG_SOURCE_REPOSITORY_REF_KEY = "ref"
 MOD_CATALOG_MODS_KEY = "mods"
 MOD_ID_KEY = "id"
 MOD_NAME_KEY = "name"
 MOD_STEAM_APP_ID_KEY = "steam_app_id"
 MOD_INSTALL_DIRECTORY_KEY = "install_dir"
 MOD_EXECUTABLE_KEY = "executable"
-MOD_RELEASE_KEY = "release"
-MOD_RELEASE_VERSION_KEY = "version"
-MOD_RELEASE_URL_KEY = "url"
-MOD_RELEASE_SHA256_KEY = "sha256"
-MOD_RELEASE_SIZE_KEY = "size_bytes"
-MOD_RELEASE_MAX_SIZE_KEY = "max_size_bytes"
+MOD_SOURCE_KEY = "source"
+MOD_SOURCE_KIND_KEY = "kind"
+MOD_SOURCE_PATH_KEY = "path"
+MOD_SOURCE_DESTINATION_KEY = "destination"
+MOD_SOURCE_FILES_KEY = "files"
+MOD_SOURCE_ARCHIVE = "archive"
+MOD_SOURCE_DIRECTORY = "directory"
+MOD_SOURCE_FILES = "files"
+MOD_SOURCE_KINDS = (
+    MOD_SOURCE_ARCHIVE,
+    MOD_SOURCE_DIRECTORY,
+    MOD_SOURCE_FILES,
+)
 MOD_FILES_KEY = "files"
 MOD_INI_FILE_KEY = "ini_file"
 MOD_WINE_OVERRIDES_KEY = "wine_dll_overrides"
 
 MOD_CATALOG_INVALID_JSON_MESSAGE = "Mod catalog is not valid JSON: {error}"
-MOD_CATALOG_INVALID_SCHEMA_MESSAGE = "Mod catalog must contain schema_version and mods"
+MOD_CATALOG_INVALID_SCHEMA_MESSAGE = (
+    "Mod catalog must contain schema_version, source_repository, and mods"
+)
 MOD_CATALOG_UNSUPPORTED_SCHEMA_MESSAGE = "Unsupported mod catalog schema version: {version}"
 MOD_CATALOG_INVALID_ENTRY_MESSAGE = "Mod catalog entry {index} must be an object"
 MOD_CATALOG_MISSING_FIELD_MESSAGE = "Mod catalog entry {mod_id} is missing {field}"
 MOD_CATALOG_INVALID_APP_ID_MESSAGE = "Mod catalog entry {mod_id} has an invalid Steam app ID"
 MOD_CATALOG_DUPLICATE_ID_MESSAGE = "Duplicate mod ID in catalog: {mod_id}"
 MOD_CATALOG_DUPLICATE_APP_ID_MESSAGE = "Duplicate Steam app ID in catalog: {app_id}"
-MOD_CATALOG_INVALID_RELEASE_MESSAGE = "Mod catalog entry {mod_id} has invalid release metadata"
+MOD_CATALOG_INVALID_SOURCE_MESSAGE = "Mod catalog entry {mod_id} has invalid source metadata"
+MOD_CATALOG_INVALID_SOURCE_KIND_MESSAGE = "Mod catalog entry {mod_id} has an unsupported source kind"
+MOD_CATALOG_INVALID_SOURCE_FILES_MESSAGE = (
+    "Mod catalog entry {mod_id} source files do not match its installed file list"
+)
+MOD_CATALOG_INVALID_REPOSITORY_MESSAGE = "Mod catalog has invalid source repository metadata"
 MOD_CATALOG_INVALID_FILE_LIST_MESSAGE = "Mod catalog entry {mod_id} has an invalid files list"
 MOD_CATALOG_INVALID_OVERRIDE_LIST_MESSAGE = (
     "Mod catalog entry {mod_id} has an invalid Wine DLL overrides list"
@@ -118,9 +135,6 @@ MOD_CATALOG_DUPLICATE_FILE_MESSAGE = "Mod catalog entry {mod_id} has duplicate f
 MOD_CATALOG_INVALID_RELATIVE_PATH_MESSAGE = (
     "Mod catalog entry {mod_id} has an unsafe relative path: {path}"
 )
-MOD_CATALOG_INVALID_URL_MESSAGE = "Mod catalog entry {mod_id} release URL must use HTTPS on github.com"
-MOD_CATALOG_INVALID_HASH_MESSAGE = "Mod catalog entry {mod_id} release SHA-256 must be 64 hex characters"
-MOD_CATALOG_INVALID_SIZE_MESSAGE = "Mod catalog entry {mod_id} release size limit is invalid"
 MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE = (
     "Mod catalog entry {mod_id} INI file must be included in files"
 )
@@ -133,7 +147,6 @@ MOD_CATALOG_FILE_STATUS_COMPLETE = "complete"
 MOD_CATALOG_PATH_SEPARATOR = "/"
 MOD_CATALOG_UNSAFE_PATH_CHARACTERS = ("\\", ":", "\0")
 MOD_CATALOG_OVERRIDE_PATTERN = re.compile(r"[a-z0-9_,-]+=[a-z,]+\Z")
-MOD_CATALOG_SHA256_PATTERN = re.compile(r"[a-fA-F0-9]{64}\Z")
 MOD_CATALOG_ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
 MOD_CATALOG_APP_ID_PATTERN = re.compile(r"\d+\Z")
 MOD_CATALOG_REQUIRED_STRING_FIELDS = (
@@ -142,12 +155,6 @@ MOD_CATALOG_REQUIRED_STRING_FIELDS = (
     MOD_STEAM_APP_ID_KEY,
     MOD_INSTALL_DIRECTORY_KEY,
     MOD_EXECUTABLE_KEY,
-    MOD_INI_FILE_KEY,
-)
-MOD_CATALOG_REQUIRED_RELEASE_FIELDS = (
-    MOD_RELEASE_VERSION_KEY,
-    MOD_RELEASE_URL_KEY,
-    MOD_RELEASE_SHA256_KEY,
 )
 MOD_CATALOG_EXECUTABLE_FOUND_FIELD = "executable_found"
 MOD_CATALOG_FILES_PRESENT_FIELD = "files_present"
@@ -156,7 +163,7 @@ MOD_CATALOG_MOD_ID_FIELD = "mod_id"
 MOD_CATALOG_MOD_NAME_FIELD = "mod_name"
 MOD_CATALOG_EXECUTABLE_PATH_FIELD = "executable_path"
 MOD_CATALOG_INI_PATH_FIELD = "ini_path"
-MOD_CATALOG_RELEASE_VERSION_FIELD = "release_version"
+MOD_CATALOG_SOURCE_KIND_FIELD = MOD_SOURCE_KIND_KEY
 MOD_CATALOG_GAMES_FIELD = "supported_games"
 MOD_CATALOG_COUNT_FIELD = "catalogued_mods"
 MOD_CATALOG_SCAN_REPORT_FIELD = "steam_scan"

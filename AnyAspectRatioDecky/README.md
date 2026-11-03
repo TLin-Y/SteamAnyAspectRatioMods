@@ -40,9 +40,9 @@ python -m py_compile main.py
 python -m unittest discover -s test -v
 ```
 
-In Decky, open the plugin menu and select **Scan for supported games**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. Only catalog entries with a matching Steam App ID and install directory are listed. For each match, the UI shows whether the expected executable and catalogued mod files are present.
+In Decky, open the plugin menu and select **Scan for supported games**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. The catalog covers all 18 game mods in the repository. Only entries with a matching Steam App ID and install directory are listed. For each match, the UI shows whether the expected executable and catalogued mod files are present. The checkbox currently opens a dialog containing `test`; it does not install a fix, change game files, or edit launch options.
 
-`catalog.json` is the maintained metadata source for supported fixes. Entries must be audited for Steam App ID, install directory, executable, package contents, release URL, SHA-256, size, INI file, and Wine DLL overrides before inclusion. The backend validates the catalog at scan time.
+`catalog.json` covers all 18 game mods and points to their assets already stored in this repository: 15 ZIP archives, one complete mod folder, and two sets of individual files. It does not depend on creating or publishing GitHub Releases. Each source path is relative to the configured repository and ref; archive entries include their destination inside the game install, while directory and file entries describe repository-relative source paths and game-relative targets. The WIP Trials of Mana fix is represented by its checked-in files rather than excluded for lacking a ZIP. The checkbox remains a test-only dialog; downloading and installation are not enabled yet.
 
 ## Local smoke-test package
 

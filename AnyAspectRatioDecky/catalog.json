@@ -1,28 +1,318 @@
 {
-  "schema_version": 1,
+  "schema_version": 3,
+  "source_repository": {
+    "url": "https://github.com/TLin-Y/SteamAnyAspectRatioMods",
+    "ref": "main"
+  },
   "mods": [
+    {
+      "id": "dark-souls-iii",
+      "name": "Dark Souls III - Custom Aspect Ratio",
+      "steam_app_id": "374320",
+      "install_dir": "DARK SOULS III",
+      "executable": "Game/DarkSoulsIII.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Dark Souls III/Dark-Souls-III-v1.0.0.zip",
+        "destination": "Game"
+      },
+      "files": ["Game/d3d11.dll", "Game/dinput8.dll", "Game/DS3_ARFix.asi", "Game/DS3_ARFix.ini"],
+      "ini_file": "Game/DS3_ARFix.ini",
+      "wine_dll_overrides": ["dinput8,d3d11=n,b"]
+    },
     {
       "id": "dw3re",
       "name": "Dynasty Warriors 3: Complete Edition Remastered - Custom Resolution",
       "steam_app_id": "3841510",
       "install_dir": "DW3CE_RE",
       "executable": "DW3CE_RE.exe",
-      "release": {
-        "version": "1.0.0",
-        "url": "https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/download/DW3RE-v1.0.0/DW3RE-v1.0.0.zip",
-        "sha256": "75a14ee61566f902bd98f4b1e0130f0556122904fbbddb9269674736201aaeb5",
-        "size_bytes": 4003712,
-        "max_size_bytes": 5000000
+      "source": {
+        "kind": "archive",
+        "path": "Dynasty Warriors 3 Remastered/DW3RE-v1.0.0.zip"
+      },
+      "files": ["dxgi.dll", "DW3RE_ARFix.asi", "DW3RE_ARFix.ini"],
+      "ini_file": "DW3RE_ARFix.ini",
+      "wine_dll_overrides": ["dxgi=n,b"]
+    },
+    {
+      "id": "dynasty-warriors-origins",
+      "name": "Dynasty Warriors: Origins - Custom Resolution",
+      "steam_app_id": "2384580",
+      "install_dir": "DWORIGINS",
+      "executable": "DWORIGINS.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Dynasty Warriors Origins/Dynasty-Warriors-Origins-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "DWOriginsFix.asi", "DWOriginsFix.ini"],
+      "ini_file": "DWOriginsFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "final-fantasy-xiii",
+      "name": "Final Fantasy XIII - Custom Aspect Ratio",
+      "steam_app_id": "292120",
+      "install_dir": "FINAL FANTASY XIII",
+      "executable": "white_data/prog/win/bin/ffxiii2img.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Final Fantasy XIII/Final-Fantasy-XIII-v1.0.0.zip",
+        "destination": "white_data/prog/win/bin"
       },
       "files": [
-        "dxgi.dll",
-        "DW3RE_ARFix.asi",
-        "DW3RE_ARFix.ini"
+        "white_data/prog/win/bin/FF13_ARFix.asi",
+        "white_data/prog/win/bin/FF13_ARFix.ini",
+        "white_data/prog/win/bin/dinput8.dll"
       ],
-      "ini_file": "DW3RE_ARFix.ini",
-      "wine_dll_overrides": [
-        "dxgi=n,b"
-      ]
+      "ini_file": "white_data/prog/win/bin/FF13_ARFix.ini",
+      "wine_dll_overrides": ["d3d9,dinput8=n,b"]
+    },
+    {
+      "id": "monster-hunter-rise",
+      "name": "Monster Hunter Rise - Custom Aspect Ratio",
+      "steam_app_id": "1446780",
+      "install_dir": "MonsterHunterRise",
+      "executable": "MonsterHunterRise.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Monster Hunter Rise/Monster-Hunter-Rise-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "MHRiseFix.asi", "MHRiseFix.ini"],
+      "ini_file": "MHRiseFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "ninja-gaiden-sigma-2",
+      "name": "Ninja Gaiden Sigma 2 - Black V18 (includes Gore Effects)",
+      "steam_app_id": "1580790",
+      "install_dir": "[NINJA GAIDEN Master Collection] NINJA GAIDEN \u03A3\uFF12",
+      "executable": "NINJA GAIDEN SIGMA2.exe",
+      "source": {
+        "kind": "directory",
+        "path": "Ninja Gaiden Sigma 2/Ninja Gaiden Sigma 2 Black V18 for RP nova"
+      },
+      "files": [
+        "dinput8.dll",
+        "NinjaGaidenMCFix.asi",
+        "NinjaGaidenMCFix.ini",
+        "mods/00004.dat",
+        "mods/04413.dat",
+        "plugin/NGS2B.dll"
+      ],
+      "ini_file": "NinjaGaidenMCFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "ori-and-the-blind-forest-definitive-edition",
+      "name": "Ori and the Blind Forest: Definitive Edition - V2 Fix",
+      "steam_app_id": "387290",
+      "install_dir": "Ori DE",
+      "executable": "OriDE.exe",
+      "source": {
+        "kind": "files",
+        "files": [
+          {
+            "path": "Ori and the Blind Forest Definitive Edition/Assembly-CSharp.dll",
+            "destination": "oriDE_Data/Managed/Assembly-CSharp.dll"
+          }
+        ]
+      },
+      "files": ["oriDE_Data/Managed/Assembly-CSharp.dll"],
+      "ini_file": null,
+      "wine_dll_overrides": []
+    },
+    {
+      "id": "ori-and-the-will-of-the-wisps",
+      "name": "Ori and the Will of the Wisps - Custom Aspect Ratio",
+      "steam_app_id": "1057090",
+      "install_dir": "Ori and the Will of the Wisps",
+      "executable": "oriwotw.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Ori and the Will of the Wisps/Ori-and-the-Will-of-the-Wisps-v1.0.0.zip"
+      },
+      "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
+      "ini_file": "OriARFix.ini",
+      "wine_dll_overrides": ["version=n,b"]
+    },
+    {
+      "id": "resident-evil-2",
+      "name": "Resident Evil 2 Remake DX11 - Custom Aspect Ratio",
+      "steam_app_id": "883710",
+      "install_dir": "RESIDENT EVIL 2  BIOHAZARD RE2",
+      "executable": "re2.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Resident Evil 2 Remake DX11/Resident-Evil-2-Remake-DX11-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "RE2_ARFix.asi", "RE2_ARFix.ini"],
+      "ini_file": "RE2_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "resident-evil-3",
+      "name": "Resident Evil 3 Remake DX11 - Custom Aspect Ratio",
+      "steam_app_id": "952060",
+      "install_dir": "RE3",
+      "executable": "re3.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Resident Evil 3 Remake DX11/Resident-Evil-3-Remake-DX11-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
+      "ini_file": "RE3_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "resident-evil-4",
+      "name": "Resident Evil 4 Remake - Custom Aspect Ratio",
+      "steam_app_id": "2050650",
+      "install_dir": "RESIDENT EVIL 4  BIOHAZARD RE4",
+      "executable": "re4.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Resident Evil 4 Remake/Resident-Evil-4-Remake-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "RE4_ARFix.asi", "RE4_ARFix.ini"],
+      "ini_file": "RE4_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "resident-evil-7",
+      "name": "Resident Evil 7 - Custom Aspect Ratio",
+      "steam_app_id": "418370",
+      "install_dir": "RESIDENT EVIL 7 biohazard",
+      "executable": "re7.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Resident Evil 7/Resident-Evil-7-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "RE7_ARFix.asi", "RE7_ARFix.ini"],
+      "ini_file": "RE7_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "resident-evil-village",
+      "name": "Resident Evil Village - Custom Aspect Ratio",
+      "steam_app_id": "1196590",
+      "install_dir": "Resident Evil Village BIOHAZARD VILLAGE",
+      "executable": "re8.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Resident Evil Village/Resident-Evil-Village-v1.0.1.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "RE8_AR_FOV_Fix_DX12.asi",
+        "RE8_AR_FOV_Fix.ini"
+      ],
+      "ini_file": "RE8_AR_FOV_Fix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "tales-of-arise",
+      "name": "Tales of Arise - Custom Aspect Ratio",
+      "steam_app_id": "740130",
+      "install_dir": "Tales of Arise",
+      "executable": "Arise/Binaries/Win64/Tales of Arise.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Tales of Arise/Tales-of-Arise-v1.0.0.zip",
+        "destination": "Arise/Binaries/Win64"
+      },
+      "files": [
+        "Arise/Binaries/Win64/ToA_ARFix_TLin.asi",
+        "Arise/Binaries/Win64/ToA_ARFix.ini",
+        "Arise/Binaries/Win64/winmm.dll"
+      ],
+      "ini_file": "Arise/Binaries/Win64/ToA_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
+      "id": "trials-of-mana",
+      "name": "Trials of Mana - WIP Aspect Ratio Fix",
+      "steam_app_id": "924980",
+      "install_dir": "Trials of Mana",
+      "executable": "Trials of Mana/Binaries/Win64/Trials of Mana-Win64-Shipping.exe",
+      "source": {
+        "kind": "files",
+        "files": [
+          {
+            "path": "Trials of Mana (WIP)/dxgi.dll",
+            "destination": "Trials of Mana/Binaries/Win64/dxgi.dll"
+          },
+          {
+            "path": "Trials of Mana (WIP)/TrailsOfMana_ARFix.asi",
+            "destination": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.asi"
+          },
+          {
+            "path": "Trials of Mana (WIP)/TrailsOfMana_ARFix.ini",
+            "destination": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini"
+          }
+        ]
+      },
+      "files": [
+        "Trials of Mana/Binaries/Win64/dxgi.dll",
+        "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.asi",
+        "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini"
+      ],
+      "ini_file": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini",
+      "wine_dll_overrides": ["dxgi=n,b"]
+    },
+    {
+      "id": "visions-of-mana",
+      "name": "Visions of Mana - Custom Aspect Ratio",
+      "steam_app_id": "2490990",
+      "install_dir": "VisionsofMana",
+      "executable": "VisionsofMana.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Visions of Mana/Visions-of-Mana-v1.0.0.zip",
+        "destination": "Visions.of.Mana/VisionsofMana/Binaries/Win64"
+      },
+      "files": [
+        "Visions.of.Mana/VisionsofMana/Binaries/Win64/dxgi.dll",
+        "Visions.of.Mana/VisionsofMana/Binaries/Win64/VoM_ARFix.asi",
+        "Visions.of.Mana/VisionsofMana/Binaries/Win64/VoM_ARFix.ini"
+      ],
+      "ini_file": "Visions.of.Mana/VisionsofMana/Binaries/Win64/VoM_ARFix.ini",
+      "wine_dll_overrides": ["dxgi=n,b"]
+    },
+    {
+      "id": "warriors-orochi-3-ultimate",
+      "name": "Warriors Orochi 3 Ultimate - Custom Aspect Ratio",
+      "steam_app_id": "1879330",
+      "install_dir": "WARRIORS OROCHI 3 Ultimate",
+      "executable": "WO3U.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.0.0.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "WO3U_ARFix.asi",
+        "WO3U_ARFix.ini",
+        "dxgi.asi",
+        "mod_loader_config.ini",
+        "mods/fix/enable.txt",
+        "mods/fix.dll"
+      ],
+      "ini_file": "WO3U_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "warriors-orochi-4-ultimate",
+      "name": "Warriors Orochi 4 Ultimate - Custom Aspect Ratio",
+      "steam_app_id": "831560",
+      "install_dir": "WARRIORS OROCHI 4",
+      "executable": "WO4.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "WO4U_ARFix.asi", "WO4U_ARFix.ini"],
+      "ini_file": "WO4U_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
     }
   ]
 }

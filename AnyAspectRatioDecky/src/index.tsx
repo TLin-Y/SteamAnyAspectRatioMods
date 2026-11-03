@@ -1,8 +1,11 @@
 import {
   ButtonItem,
+  ConfirmModal,
   PanelSection,
   PanelSectionRow,
   staticClasses,
+  ToggleField,
+  showModal,
 } from "@decky/ui";
 import { callable, definePlugin } from "@decky/api";
 import { useState } from "react";
@@ -25,12 +28,35 @@ type SupportedGameReport = {
     files_present: string[];
     files_missing: string[];
     ini_path: string | null;
-    release_version: string;
+    source_kind: string;
   }[];
   warnings: string[];
 };
 
 const scanSupportedGames = callable<[], SupportedGameReport>("scan_supported_games");
+
+function showTestDialog() {
+  showModal(
+    <ConfirmModal
+      bAlertDialog
+      strTitle="test"
+      strDescription="test"
+    />,
+  );
+}
+
+function getSourceLabel(sourceKind: string) {
+  switch (sourceKind) {
+    case "archive":
+      return "Repository ZIP";
+    case "directory":
+      return "Repository folder";
+    case "files":
+      return "Repository files";
+    default:
+      return sourceKind;
+  }
+}
 
 function Content() {
   const [report, setReport] = useState<SupportedGameReport | null>(null);
@@ -77,11 +103,24 @@ function Content() {
       {report?.supported_games.map((game) => (
         <PanelSection key={`${game.steam_app_id}-${game.game_path}`}>
           <PanelSectionRow>
-            <div>
-              <strong>{game.app_name}</strong>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
               <div>
-                {game.mod_name} ({game.release_version})
+                <strong>{game.app_name}</strong>
+                <div>{game.mod_name}</div>
+                <div>{getSourceLabel(game.source_kind)}</div>
               </div>
+              <ToggleField
+                label="Apply"
+                checked={false}
+                onChange={showTestDialog}
+              />
             </div>
           </PanelSectionRow>
           <PanelSectionRow>

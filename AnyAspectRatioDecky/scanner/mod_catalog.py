@@ -4,50 +4,70 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 from helper.constants import (
+    MOD_CATALOG_APP_ID_PATTERN,
     MOD_CATALOG_DUPLICATE_APP_ID_MESSAGE,
     MOD_CATALOG_DUPLICATE_FILE_MESSAGE,
     MOD_CATALOG_DUPLICATE_ID_MESSAGE,
-    MOD_CATALOG_APP_ID_PATTERN,
     MOD_CATALOG_FILENAME,
     MOD_CATALOG_ID_PATTERN,
     MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE,
     MOD_CATALOG_INVALID_APP_ID_MESSAGE,
     MOD_CATALOG_INVALID_ENTRY_MESSAGE,
     MOD_CATALOG_INVALID_FILE_LIST_MESSAGE,
-    MOD_CATALOG_INVALID_HASH_MESSAGE,
     MOD_CATALOG_INVALID_JSON_MESSAGE,
     MOD_CATALOG_INVALID_OVERRIDE_LIST_MESSAGE,
     MOD_CATALOG_INVALID_RELATIVE_PATH_MESSAGE,
-    MOD_CATALOG_INVALID_RELEASE_MESSAGE,
     MOD_CATALOG_INVALID_SCHEMA_MESSAGE,
-    MOD_CATALOG_INVALID_SIZE_MESSAGE,
-    MOD_CATALOG_INVALID_URL_MESSAGE,
+    MOD_CATALOG_INVALID_SOURCE_KIND_MESSAGE,
+    MOD_CATALOG_INVALID_SOURCE_FILES_MESSAGE,
+    MOD_CATALOG_INVALID_SOURCE_MESSAGE,
+    MOD_CATALOG_INVALID_REPOSITORY_MESSAGE,
     MOD_CATALOG_MISSING_FIELD_MESSAGE,
     MOD_CATALOG_MODS_KEY,
-    MOD_CATALOG_REQUIRED_RELEASE_FIELDS,
-    MOD_CATALOG_REQUIRED_STRING_FIELDS,
     MOD_CATALOG_PATH_SEPARATOR,
+    MOD_CATALOG_REQUIRED_STRING_FIELDS,
     MOD_CATALOG_SCHEMA_VERSION,
     MOD_CATALOG_SCHEMA_VERSION_KEY,
+    MOD_CATALOG_SOURCE_REPOSITORY_KEY,
+    MOD_CATALOG_SOURCE_REPOSITORY_REF_KEY,
+    MOD_CATALOG_SOURCE_REPOSITORY_URL_KEY,
     MOD_CATALOG_UNSUPPORTED_SCHEMA_MESSAGE,
     MOD_CATALOG_UNSAFE_PATH_CHARACTERS,
     MOD_EXECUTABLE_KEY,
     MOD_FILES_KEY,
     MOD_ID_KEY,
     MOD_INI_FILE_KEY,
-    MOD_NAME_KEY,
-    MOD_RELEASE_KEY,
-    MOD_RELEASE_SHA256_KEY,
-    MOD_RELEASE_MAX_SIZE_KEY,
-    MOD_RELEASE_SIZE_KEY,
-    MOD_RELEASE_URL_KEY,
-    MOD_RELEASE_VERSION_KEY,
     MOD_INSTALL_DIRECTORY_KEY,
+    MOD_NAME_KEY,
+    MOD_SOURCE_ARCHIVE,
+    MOD_SOURCE_DESTINATION_KEY,
+    MOD_SOURCE_DIRECTORY,
+    MOD_SOURCE_FILES,
+    MOD_SOURCE_FILES_KEY,
+    MOD_SOURCE_KINDS,
+    MOD_SOURCE_KEY,
+    MOD_SOURCE_KIND_KEY,
+    MOD_SOURCE_PATH_KEY,
     MOD_STEAM_APP_ID_KEY,
     MOD_WINE_OVERRIDES_KEY,
-    MOD_CATALOG_SHA256_PATTERN,
     MOD_CATALOG_OVERRIDE_PATTERN,
 )
+
+
+@dataclass(frozen=True)
+class ModSourceFile:
+    path: str
+    destination: str
+
+
+@dataclass(frozen=True)
+class ModSource:
+    kind: str
+    path: str | None
+    destination: str
+    files: tuple[ModSourceFile, ...]
+    repository_url: str
+    repository_ref: str
 
 
 @dataclass(frozen=True)
@@ -57,13 +77,9 @@ class ModDefinition:
     steam_app_id: str
     install_dir: str
     executable: str
-    release_version: str
-    release_url: str
-    release_sha256: str
-    release_size_bytes: int
-    max_size_bytes: int
+    source: ModSource
     files: tuple[str, ...]
-    ini_file: str
+    ini_file: str | None
     wine_dll_overrides: tuple[str, ...]
 
 
@@ -85,17 +101,73 @@ def _validate_relative_path(path: str, mod_id: str) -> None:
         not path
         or parsed.is_absolute()
         or any(character in path for character in MOD_CATALOG_UNSAFE_PATH_CHARACTERS)
-        or any(
-            part in ("", ".", "..")
-            for part in path.split(MOD_CATALOG_PATH_SEPARATOR)
-        )
+        or any(part in ("", ".", "..") for part in path.split(MOD_CATALOG_PATH_SEPARATOR))
     ):
         raise ValueError(
             MOD_CATALOG_INVALID_RELATIVE_PATH_MESSAGE.format(mod_id=mod_id, path=path)
         )
 
 
-def _parse_mod(entry: object, index: int) -> ModDefinition:
+def _parse_source(
+    entry: dict[str, object],
+    mod_id: str,
+    repository_url: str,
+    repository_ref: str,
+) -> ModSource:
+    raw_source = entry.get(MOD_SOURCE_KEY)
+    if not isinstance(raw_source, dict):
+        raise ValueError(MOD_CATALOG_INVALID_SOURCE_MESSAGE.format(mod_id=mod_id))
+
+    kind = raw_source.get(MOD_SOURCE_KIND_KEY)
+    if not isinstance(kind, str) or kind not in MOD_SOURCE_KINDS:
+        raise ValueError(MOD_CATALOG_INVALID_SOURCE_KIND_MESSAGE.format(mod_id=mod_id))
+
+    path = None
+    destination = raw_source.get(MOD_SOURCE_DESTINATION_KEY, "")
+    if not isinstance(destination, str):
+        raise ValueError(MOD_CATALOG_INVALID_SOURCE_MESSAGE.format(mod_id=mod_id))
+    if destination:
+        _validate_relative_path(destination, mod_id)
+
+    source_files: tuple[ModSourceFile, ...] = ()
+    if kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_DIRECTORY):
+        path = _require_string(raw_source, MOD_SOURCE_PATH_KEY, mod_id)
+        _validate_relative_path(path, mod_id)
+    else:
+        raw_files = raw_source.get(MOD_SOURCE_FILES_KEY)
+        if not isinstance(raw_files, list) or not raw_files:
+            raise ValueError(MOD_CATALOG_INVALID_SOURCE_MESSAGE.format(mod_id=mod_id))
+        parsed_files = []
+        for source_file in raw_files:
+            if not isinstance(source_file, dict):
+                raise ValueError(MOD_CATALOG_INVALID_SOURCE_MESSAGE.format(mod_id=mod_id))
+            source_path = _require_string(source_file, MOD_SOURCE_PATH_KEY, mod_id)
+            target_path = _require_string(
+                source_file,
+                MOD_SOURCE_DESTINATION_KEY,
+                mod_id,
+            )
+            _validate_relative_path(source_path, mod_id)
+            _validate_relative_path(target_path, mod_id)
+            parsed_files.append(ModSourceFile(source_path, target_path))
+        source_files = tuple(parsed_files)
+
+    return ModSource(
+        kind=kind,
+        path=path,
+        destination=destination,
+        files=source_files,
+        repository_url=repository_url,
+        repository_ref=repository_ref,
+    )
+
+
+def _parse_mod(
+    entry: object,
+    index: int,
+    repository_url: str,
+    repository_ref: str,
+) -> ModDefinition:
     if not isinstance(entry, dict):
         raise ValueError(MOD_CATALOG_INVALID_ENTRY_MESSAGE.format(index=index))
 
@@ -112,9 +184,20 @@ def _parse_mod(entry: object, index: int) -> ModDefinition:
 
     install_dir = entry[MOD_INSTALL_DIRECTORY_KEY]
     executable = entry[MOD_EXECUTABLE_KEY]
-    ini_file = entry[MOD_INI_FILE_KEY]
-    for path in (install_dir, executable, ini_file):
-        _validate_relative_path(path, mod_id)
+    _validate_relative_path(install_dir, mod_id)
+    _validate_relative_path(executable, mod_id)
+    source = _parse_source(entry, mod_id, repository_url, repository_ref)
+
+    ini_file = entry.get(MOD_INI_FILE_KEY)
+    if ini_file is not None and (not isinstance(ini_file, str) or not ini_file):
+        raise ValueError(
+            MOD_CATALOG_MISSING_FIELD_MESSAGE.format(
+                mod_id=mod_id,
+                field=MOD_INI_FILE_KEY,
+            )
+        )
+    if ini_file is not None:
+        _validate_relative_path(ini_file, mod_id)
 
     raw_files = entry.get(MOD_FILES_KEY)
     raw_overrides = entry.get(MOD_WINE_OVERRIDES_KEY)
@@ -130,14 +213,15 @@ def _parse_mod(entry: object, index: int) -> ModDefinition:
         _validate_relative_path(path, mod_id)
         if path in seen_files:
             raise ValueError(
-                MOD_CATALOG_DUPLICATE_FILE_MESSAGE.format(
-                    mod_id=mod_id,
-                    path=path,
-                )
+                MOD_CATALOG_DUPLICATE_FILE_MESSAGE.format(mod_id=mod_id, path=path)
             )
         seen_files.add(path)
-    if ini_file not in seen_files:
+    if ini_file is not None and ini_file not in seen_files:
         raise ValueError(MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE.format(mod_id=mod_id))
+    if source.kind == MOD_SOURCE_FILES and {
+        source_file.destination for source_file in source.files
+    } != seen_files:
+        raise ValueError(MOD_CATALOG_INVALID_SOURCE_FILES_MESSAGE.format(mod_id=mod_id))
     if (
         not isinstance(raw_overrides, list)
         or not all(
@@ -147,42 +231,13 @@ def _parse_mod(entry: object, index: int) -> ModDefinition:
     ):
         raise ValueError(MOD_CATALOG_INVALID_OVERRIDE_LIST_MESSAGE.format(mod_id=mod_id))
 
-    release = entry.get(MOD_RELEASE_KEY)
-    if not isinstance(release, dict):
-        raise ValueError(MOD_CATALOG_INVALID_RELEASE_MESSAGE.format(mod_id=mod_id))
-    for key in MOD_CATALOG_REQUIRED_RELEASE_FIELDS:
-        _require_string(release, key, mod_id)
-    version = release[MOD_RELEASE_VERSION_KEY]
-    url = release[MOD_RELEASE_URL_KEY]
-    digest = release[MOD_RELEASE_SHA256_KEY]
-    parsed_url = urlparse(url)
-    if parsed_url.scheme != "https" or parsed_url.hostname != "github.com":
-        raise ValueError(MOD_CATALOG_INVALID_URL_MESSAGE.format(mod_id=mod_id))
-    if not MOD_CATALOG_SHA256_PATTERN.fullmatch(digest):
-        raise ValueError(MOD_CATALOG_INVALID_HASH_MESSAGE.format(mod_id=mod_id))
-    size = release.get(MOD_RELEASE_SIZE_KEY)
-    max_size = release.get(MOD_RELEASE_MAX_SIZE_KEY)
-    if (
-        not isinstance(size, int)
-        or isinstance(size, bool)
-        or not isinstance(max_size, int)
-        or isinstance(max_size, bool)
-        or size <= 0
-        or max_size < size
-    ):
-        raise ValueError(MOD_CATALOG_INVALID_SIZE_MESSAGE.format(mod_id=mod_id))
-
     return ModDefinition(
         mod_id=mod_id,
         name=entry[MOD_NAME_KEY],
         steam_app_id=app_id,
         install_dir=install_dir,
         executable=executable,
-        release_version=version,
-        release_url=url,
-        release_sha256=digest.lower(),
-        release_size_bytes=size,
-        max_size_bytes=max_size,
+        source=source,
         files=files,
         ini_file=ini_file,
         wine_dll_overrides=tuple(raw_overrides),
@@ -215,17 +270,28 @@ def load_mod_catalog(path: Path | None = None) -> tuple[ModDefinition, ...]:
             MOD_CATALOG_UNSUPPORTED_SCHEMA_MESSAGE.format(version=schema_version)
         )
 
+    repository = document.get(MOD_CATALOG_SOURCE_REPOSITORY_KEY)
+    if not isinstance(repository, dict):
+        raise ValueError(MOD_CATALOG_INVALID_REPOSITORY_MESSAGE)
+    repository_url = repository.get(MOD_CATALOG_SOURCE_REPOSITORY_URL_KEY)
+    repository_ref = repository.get(MOD_CATALOG_SOURCE_REPOSITORY_REF_KEY)
+    if (
+        not isinstance(repository_url, str)
+        or urlparse(repository_url).scheme != "https"
+        or not isinstance(repository_ref, str)
+        or not repository_ref
+    ):
+        raise ValueError(MOD_CATALOG_INVALID_REPOSITORY_MESSAGE)
+
     mods = tuple(
-        _parse_mod(entry, index)
+        _parse_mod(entry, index, repository_url, repository_ref)
         for index, entry in enumerate(document[MOD_CATALOG_MODS_KEY])
     )
     ids: set[str] = set()
     app_ids: set[str] = set()
     for mod in mods:
         if mod.mod_id in ids:
-            raise ValueError(
-                MOD_CATALOG_DUPLICATE_ID_MESSAGE.format(mod_id=mod.mod_id)
-            )
+            raise ValueError(MOD_CATALOG_DUPLICATE_ID_MESSAGE.format(mod_id=mod.mod_id))
         if mod.steam_app_id in app_ids:
             raise ValueError(
                 MOD_CATALOG_DUPLICATE_APP_ID_MESSAGE.format(app_id=mod.steam_app_id)
