@@ -520,15 +520,19 @@ def remove_mod_files(
     modified_ini_path = None
     if mod.ini_file is not None:
         ini_path = _target_path(game_root, mod.ini_file)
-        if ini_path.is_file():
-            source_content = _read_source_file(mod, mod.ini_file)
-            modified = (
-                ini_path.stat().st_size != len(source_content)
-                or ini_path.read_bytes() != source_content
-            )
+        if ini_path.is_file() and preserve_modified_ini is not False:
+            try:
+                source_content = _read_source_file(mod, mod.ini_file)
+                modified = (
+                    ini_path.stat().st_size != len(source_content)
+                    or ini_path.read_bytes() != source_content
+                )
+            except (OSError, ValueError, KeyError, BadZipFile):
+                # Original unavailable (offline, bad cache): keep the user's INI safe by asking.
+                modified = True
             if modified and preserve_modified_ini is None:
                 return [mod.ini_file]
-            if modified and preserve_modified_ini:
+            if modified:
                 modified_ini_path = ini_path
 
     for target in targets:

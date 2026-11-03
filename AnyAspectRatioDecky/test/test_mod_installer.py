@@ -581,6 +581,31 @@ class ModInstallerTests(unittest.TestCase):
         self.assertEqual([], conflicts)
         self.assertFalse((self.game_path / "fix.ini").exists())
 
+    def test_removal_works_when_source_is_unavailable(self) -> None:
+        mod = self._mod(
+            "files",
+            ("fix.dll", "fix.ini"),
+            source_files=(
+                ModSourceFile("source/fix.dll", "fix.dll"),
+                ModSourceFile("source/fix.ini", "fix.ini"),
+            ),
+            ini_file="fix.ini",
+        )
+        (self.game_path / "fix.dll").write_bytes(b"mod")
+        (self.game_path / "fix.ini").write_bytes(b"user configuration")
+
+        with patch("scanner.mod_installer.urlopen", side_effect=OSError("offline")) as source:
+            self.assertEqual(["fix.ini"], remove_mod_files(mod, str(self.game_path)))
+            self.assertEqual(
+                [], remove_mod_files(mod, str(self.game_path), preserve_modified_ini=True)
+            )
+            self.assertEqual(b"user configuration", (self.game_path / "fix.ini").read_bytes())
+            self.assertEqual(
+                [], remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
+            )
+            self.assertEqual(2, source.call_count)
+        self.assertFalse((self.game_path / "fix.ini").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
