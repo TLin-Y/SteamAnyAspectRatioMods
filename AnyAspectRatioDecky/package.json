@@ -7,6 +7,7 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "rollup -c",
+    "test:backend": "python -m unittest discover -s tests -v",
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",

@@ -9,6 +9,7 @@ if (-not (Test-Path (Join-Path $distPath "index.js"))) {
 
 $requiredFiles = @(
     "main.py",
+    "plugin_logger.py",
     "package.json",
     "plugin.json",
     "README.md",
@@ -36,7 +37,35 @@ try {
     }
     Copy-Item -Path (Join-Path $repositoryRoot "LICENSE") -Destination $packageRoot
 
-    Compress-Archive -Path $packageRoot -DestinationPath $archivePath -CompressionLevel Optimal
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive = [System.IO.Compression.ZipFile]::Open(
+        $archivePath,
+        [System.IO.Compression.ZipArchiveMode]::Create
+    )
+    try {
+        $rootPrefix = $packageRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) +
+            [System.IO.Path]::DirectorySeparatorChar
+        foreach ($fileInfo in Get-ChildItem -LiteralPath $packageRoot -Recurse -File) {
+            $relativePath = $fileInfo.FullName.Substring($rootPrefix.Length).Replace("\", "/")
+            $entry = $archive.CreateEntry(
+                "AnyAspectRatio/$relativePath",
+                [System.IO.Compression.CompressionLevel]::Optimal
+            )
+            $source = [System.IO.File]::OpenRead($fileInfo.FullName)
+            $destination = $entry.Open()
+            try {
+                $source.CopyTo($destination)
+            }
+            finally {
+                $destination.Dispose()
+                $source.Dispose()
+            }
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
     Write-Output "Smoke package created: $archivePath"
 }
 finally {

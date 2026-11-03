@@ -31,10 +31,13 @@ On Windows PowerShell, run the same commands from `AnyAspectRatioDecky`. If Core
 
 ## Backend check
 
-The plugin backend entry point is `main.py`. Decky supplies the `decky` module when it loads the plugin, so it is not a standalone Python application. A local syntax check does not require Decky:
+The plugin backend entry point is `main.py`. `plugin_logger.py` wraps Decky's logger and uses its persistent per-plugin log location (on the tested Deck: `/home/deck/homebrew/logs/AnyAspectRatio/`); the plugin does not create a second log file or manage rotation. Log events use a small structured format with operation/game/mod IDs; do not pass launch-option strings, credentials, or arbitrary user data as context.
+
+Decky supplies the `decky` module when it loads the plugin, so `main.py` is not a standalone Python application. The logger itself has no Decky dependency and can be tested locally:
 
 ```sh
 python -m py_compile main.py
+python -m unittest discover -s tests -v
 ```
 
 In Decky, open the plugin menu and select **Check backend** to verify the frontend-to-backend call.
@@ -58,6 +61,7 @@ After installation, select **Check backend** in the plugin UI, then inspect Deck
 ```text
 AnyAspectRatioDecky/
   main.py             Decky Python backend
+  plugin_logger.py    Structured wrapper around Decky's persistent logger
   plugin.json         Decky plugin metadata
   LICENSE-*           Upstream template and bundled Decky API license texts
   THIRD_PARTY_NOTICES.md
@@ -66,12 +70,13 @@ AnyAspectRatioDecky/
   rollup.config.js    Decky Rollup build configuration
   scripts/            Local smoke-test packaging helper
   src/index.tsx       Minimal plugin UI and backend health check
+  tests/              Local backend logger tests
   tsconfig.json       TypeScript build configuration
 ```
 
 ## Current validation boundary
 
-`pnpm typecheck` and `pnpm build` validate the frontend bundle. `python -m py_compile main.py` validates backend syntax only. A successful local build does not replace installation and runtime testing on the target SteamOS/Decky version.
+`pnpm typecheck` and `pnpm build` validate the frontend bundle. Python syntax checks and the backend logger unit tests run locally without Decky. A successful local build does not replace installation and runtime testing on the target SteamOS/Decky version.
 
 ## Credits and licensing
 
