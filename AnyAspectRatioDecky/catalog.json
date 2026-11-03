@@ -6,7 +6,13 @@
   },
   "default_credits": [
     {
-      "name": "TLin-Y"
+      "name": "TLin-Y",
+      "support": [
+        {
+          "label": "Ko-fi",
+          "url": "https://ko-fi.com/lin66961"
+        }
+      ]
     }
   ],
   "mods": [

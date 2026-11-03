@@ -74,6 +74,7 @@ class ModCatalogTests(unittest.TestCase):
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
         self.assertEqual(("", 18), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
         )
