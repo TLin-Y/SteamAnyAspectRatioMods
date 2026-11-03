@@ -183,14 +183,16 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
 
 
 def mod_readme_path(mod: ModDefinition) -> str:
+    """README location: beside an archive mod's zip, else in the mod's top-level folder."""
     if mod.source.kind == MOD_SOURCE_FILES:
         source_path = mod.source.files[0].path
     elif mod.source.path is not None:
         source_path = mod.source.path
     else:
         raise ValueError(f"Mod {mod.mod_id} has no source path for its README")
-    root = PurePosixPath(source_path).parts[0]
-    return f"{root}/README.md"
+    parts = PurePosixPath(source_path).parts
+    folder = parts[:-1] if mod.source.kind == MOD_SOURCE_ARCHIVE else parts[:1]
+    return "/".join((*folder, "README.md"))
 
 
 def _read_local_archive_readme(mod: ModDefinition) -> str:
