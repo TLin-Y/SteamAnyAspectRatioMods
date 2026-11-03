@@ -1,8 +1,21 @@
 import io
 import logging
+import tempfile
 import unittest
+from pathlib import Path
 
-from logger.plugin_logger import PluginLogger
+from logger.plugin_logger import PluginLogger, attach_file_handler
+
+
+class PluginLoggerFileTests(unittest.TestCase):
+    def test_file_handler_writes_events_to_plugin_log(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "logs" / "plugin.log"
+            base_logger = logging.Logger("test.file", level=logging.INFO)
+            handler = attach_file_handler(base_logger, path)
+            PluginLogger(base_logger).info("settings.saved", phase="ok")
+            handler.close()
+            self.assertIn("event=settings.saved phase=ok", path.read_text(encoding="utf-8"))
 
 
 class PluginLoggerTests(unittest.TestCase):

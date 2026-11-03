@@ -1,4 +1,6 @@
 import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from helper.constants import (
     LOG_CONTEXT_FIELDS,
@@ -9,6 +11,23 @@ from helper.constants import (
     LOG_INVALID_EVENT_MESSAGE,
     LOG_EVENT_PATTERN,
 )
+
+LOG_FILE_MAX_BYTES = 512 * 1024
+LOG_FILE_BACKUPS = 2
+LOG_FILE_FORMAT = "%(asctime)s %(levelname)s %(message)s"
+
+
+def attach_file_handler(logger: logging.Logger, path: Path) -> logging.Handler:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(
+        path,
+        maxBytes=LOG_FILE_MAX_BYTES,
+        backupCount=LOG_FILE_BACKUPS,
+        encoding="utf-8",
+    )
+    handler.setFormatter(logging.Formatter(LOG_FILE_FORMAT))
+    logger.addHandler(handler)
+    return handler
 
 
 class PluginLogger:

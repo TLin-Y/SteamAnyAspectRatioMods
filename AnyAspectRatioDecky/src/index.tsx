@@ -9,9 +9,10 @@ import {
   ToggleField,
   showModal,
 } from "@decky/ui";
-import { callable, definePlugin } from "@decky/api";
+import { callable, definePlugin, openFilePicker } from "@decky/api";
+import type { FileSelectionType } from "@decky/api";
 import ReactMarkdown from "react-markdown";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   applyLaunchOptions,
   prepareLaunchOptions,
@@ -25,6 +26,7 @@ type SupportedGameReport = {
     apps_scanned: number;
   };
   catalogued_mods: number;
+  local_archive_count?: number;
   supported_games: {
     mod_id: string;
     mod_name: string;
@@ -46,6 +48,45 @@ type SupportedGameReport = {
 };
 
 const scanSupportedGames = callable<[], SupportedGameReport>("scan_supported_games");
+const getCachedScan = callable<
+  [],
+  { scanned_at: string; report: SupportedGameReport } | null
+>("get_cached_scan");
+
+type PluginSettingsValues = {
+  catalog_repository_url: string;
+  catalog_ref: string;
+  catalog_path: string;
+  local_archive_dir: string;
+};
+type PluginSettingsInfo = {
+  settings: PluginSettingsValues;
+  defaults: Omit<PluginSettingsValues, "local_archive_dir">;
+  catalog: {
+    origin: "cache" | "bundled";
+    mod_count: number;
+    fetched_at: string | null;
+    warning: string | null;
+  };
+  local_archives: { count: number; warnings: string[] };
+  paths: { data_dir: string; log_file: string };
+};
+const getPluginSettings = callable<[], PluginSettingsInfo>("get_settings");
+const savePluginSettings = callable<
+  [string, string, string, string],
+  { saved: boolean; source_changed: boolean }
+>("save_settings");
+const updateDependencies = callable<
+  [],
+  {
+    error?: string;
+    catalog_changed: boolean;
+    mod_count: number;
+    fetched_at: string;
+    local_archive_count: number;
+    warnings: string[];
+  }
+>("update_dependencies");
 const setModApplied = callable<
   [string, string, boolean, boolean | null, boolean | null],
   {
@@ -267,6 +308,17 @@ function showLaunchOptionsInfo(
   closeModal = modal.Close;
 }
 
+function showErrorModal(title: string, message: string) {
+  showModal(
+    <ConfirmModal
+      bAlertDialog
+      strTitle={title}
+      strDescription={message}
+      strOKButtonText="OK"
+    />,
+  );
+}
+
 function isEditableIniLine(line: string): boolean {
   const trimmed = line.trim();
   return (
@@ -276,8 +328,9 @@ function isEditableIniLine(line: string): boolean {
   );
 }
 
-function Content() {
+function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [report, setReport] = useState<SupportedGameReport | null>(null);
+  const [cachedScanTime, setCachedScanTime] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [scanning, setScanning] = useState(false);
   const [updatingMod, setUpdatingMod] = useState(false);
@@ -298,22 +351,39 @@ function Content() {
   const iniSavingRef = useRef(false);
   const pendingIniSave = useRef(false);
   const saveIniRef = useRef<() => Promise<void>>(async () => {});
+  const initialRevision = useRef(dataRevision);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCachedScan()
+      .then((cached) => {
+        if (cancelled || !cached) return;
+        setReport((current) => current ?? cached.report);
+        setCachedScanTime(new Date(cached.scanned_at).toLocaleString());
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (dataRevision === initialRevision.current) return;
+    initialRevision.current = dataRevision;
+    detailRequestId.current += 1;
+    setSelectedGameKey(null);
+    void scanForSupportedGames();
+  }, [dataRevision]);
 
   const notifyError = (title: string, message: string) => {
     setErrorMessage(message);
-    showModal(
-      <ConfirmModal
-        bAlertDialog
-        strTitle={title}
-        strDescription={message}
-        strOKButtonText="OK"
-      />,
-    );
+    showErrorModal(title, message);
   };
 
   const scanForSupportedGames = async () => {
     setScanning(true);
     setReport(null);
+    setCachedScanTime("");
     setErrorMessage("");
     try {
       setReport(await scanSupportedGames());
@@ -704,7 +774,7 @@ function Content() {
           <div role="status">
             {errorMessage ||
               (report
-                ? `Scanned ${report.steam_scan.apps_scanned} installed Steam apps across ${report.steam_scan.libraries_scanned} libraries. Found ${report.supported_games.length} supported installation(s); ${report.catalogued_mods} fix(es) are in the catalog.`
+                ? `Scanned ${report.steam_scan.apps_scanned} installed Steam apps across ${report.steam_scan.libraries_scanned} libraries. Found ${report.supported_games.length} supported installation(s); ${report.catalogued_mods} fix(es) in the catalog, ${report.local_archive_count ?? 0} local archive(s).${cachedScanTime ? ` Showing saved results from ${cachedScanTime}.` : ""}`
                 : "Steam libraries have not been scanned.")}
           </div>
         </PanelSectionRow>
@@ -831,6 +901,7 @@ function Content() {
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
+              {game.source_kind === "local_archive" ? " (local archive)" : ""}
             </strong>
           </PanelSectionRow>
           <PanelSectionRow>
@@ -899,6 +970,245 @@ function Content() {
           </PanelSectionRow>
         ))}
     </PanelSection>
+  );
+}
+
+function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
+  const [info, setInfo] = useState<PluginSettingsInfo | null>(null);
+  const [values, setValues] = useState<PluginSettingsValues>({
+    catalog_repository_url: "",
+    catalog_ref: "",
+    catalog_path: "",
+    local_archive_dir: "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const showError = (title: string, error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus(`${title}: ${message}`);
+    showErrorModal(title, message);
+  };
+
+  const load = async () => {
+    const loaded = await getPluginSettings();
+    setInfo(loaded);
+    setValues({
+      catalog_repository_url:
+        loaded.settings.catalog_repository_url || loaded.defaults.catalog_repository_url,
+      catalog_ref: loaded.settings.catalog_ref || loaded.defaults.catalog_ref,
+      catalog_path: loaded.settings.catalog_path || loaded.defaults.catalog_path,
+      local_archive_dir: loaded.settings.local_archive_dir,
+    });
+  };
+
+  useEffect(() => {
+    load().catch((error) => showError("Could not load settings", error));
+  }, []);
+
+  const setValue = (key: keyof PluginSettingsValues, value: string) =>
+    setValues((current) => ({ ...current, [key]: value }));
+
+  const runUpdate = async () => {
+    const result = await updateDependencies();
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    setStatus(
+      `${result.catalog_changed ? "Catalog updated" : "Catalog already up to date"}: ` +
+        `${result.mod_count} mod(s), ${result.local_archive_count} local archive(s). ` +
+        "Cached mod downloads were refreshed.",
+    );
+    await load();
+    onDataChanged();
+  };
+
+  const save = async () => {
+    setBusy(true);
+    setStatus("");
+    try {
+      const result = await savePluginSettings(
+        values.catalog_repository_url,
+        values.catalog_ref,
+        values.catalog_path,
+        values.local_archive_dir,
+      );
+      if (result.source_changed) {
+        setStatus("Settings saved. Fetching the catalog from the new source...");
+        await runUpdate();
+      } else {
+        setStatus("Settings saved.");
+        await load();
+        onDataChanged();
+      }
+    } catch (error) {
+      showError("Could not save settings", error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const update = async () => {
+    setBusy(true);
+    setStatus("Checking the repository for updates...");
+    try {
+      await runUpdate();
+    } catch (error) {
+      showError("Update failed", error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const chooseFolder = async () => {
+    try {
+      const picked = await openFilePicker(
+        1 as FileSelectionType,
+        values.local_archive_dir || "/home",
+        false,
+        true,
+      );
+      setValue("local_archive_dir", picked.realpath || picked.path);
+    } catch {
+      // Picker was dismissed.
+    }
+  };
+
+  const resetToDefaults = () => {
+    if (!info) return;
+    setValues({ ...info.defaults, local_archive_dir: "" });
+    setStatus("Defaults restored. Press Save settings to apply them.");
+  };
+
+  const field = (label: string, key: keyof PluginSettingsValues) => (
+    <PanelSectionRow>
+      <div style={{ width: "100%" }}>
+        <div style={{ fontSize: "0.85em", opacity: 0.8 }}>{label}</div>
+        <TextField
+          value={values[key]}
+          disabled={busy || !info}
+          onChange={(event) => setValue(key, event.target.value)}
+        />
+      </div>
+    </PanelSectionRow>
+  );
+
+  return (
+    <>
+      <PanelSection title="Mod source (GitHub)">
+        {field("Repository", "catalog_repository_url")}
+        {field("Branch, tag, or commit", "catalog_ref")}
+        {field("Catalog file path", "catalog_path")}
+        <PanelSectionRow>
+          <div role="status" style={{ overflowWrap: "anywhere" }}>
+            {info
+              ? info.catalog.origin === "cache"
+                ? `Using downloaded catalog (${info.catalog.mod_count} mods, fetched ${
+                    info.catalog.fetched_at
+                      ? new Date(info.catalog.fetched_at).toLocaleString()
+                      : "earlier"
+                  }).`
+                : `Using the catalog bundled with the plugin (${info.catalog.mod_count} mods). Press Update to fetch the latest.`
+              : "Loading settings..."}
+          </div>
+        </PanelSectionRow>
+        {info?.catalog.warning && (
+          <PanelSectionRow>
+            <div role="status">{info.catalog.warning}</div>
+          </PanelSectionRow>
+        )}
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={update} disabled={busy || !info}>
+            Update catalog &amp; mods
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
+      <PanelSection title="Local mod archives">
+        {field("Folder containing *.zip mods", "local_archive_dir")}
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={chooseFolder} disabled={busy || !info}>
+            Choose folder...
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div role="status" style={{ overflowWrap: "anywhere" }}>
+            Name each zip after its game (for example "Game Name-v1.0.zip") or include its
+            Steam app ID in brackets. Contents are extracted next to the game's executable.
+            {info && info.settings.local_archive_dir
+              ? ` ${info.local_archives.count} valid archive(s) found.`
+              : ""}
+          </div>
+        </PanelSectionRow>
+        {info?.local_archives.warnings.map((warning, index) => (
+          <PanelSectionRow key={`${index}-${warning}`}>
+            <div role="status" style={{ overflowWrap: "anywhere" }}>{warning}</div>
+          </PanelSectionRow>
+        ))}
+      </PanelSection>
+      <PanelSection title="Settings">
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={save} disabled={busy || !info}>
+            Save settings
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={resetToDefaults} disabled={busy || !info}>
+            Reset to defaults
+          </ButtonItem>
+        </PanelSectionRow>
+        {status && (
+          <PanelSectionRow>
+            <div role="status" style={{ overflowWrap: "anywhere" }}>{status}</div>
+          </PanelSectionRow>
+        )}
+        {info && (
+          <PanelSectionRow>
+            <div style={{ overflowWrap: "anywhere", fontSize: "0.8em", opacity: 0.7 }}>
+              Data and cache: {info.paths.data_dir}
+              <br />
+              Log file: {info.paths.log_file}
+            </div>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
+    </>
+  );
+}
+
+function Content() {
+  const [tab, setTab] = useState<"games" | "settings">("games");
+  const [dataRevision, setDataRevision] = useState(0);
+  const tabButton = (id: "games" | "settings", label: string) => (
+    <DialogButton
+      style={{
+        flex: 1,
+        minWidth: 0,
+        borderBottom: tab === id ? "3px solid #1a9fff" : "3px solid transparent",
+        opacity: tab === id ? 1 : 0.6,
+      }}
+      onClick={() => setTab(id)}
+    >
+      {label}
+    </DialogButton>
+  );
+
+  return (
+    <>
+      <PanelSection>
+        <PanelSectionRow>
+          <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+            {tabButton("games", "Games")}
+            {tabButton("settings", "Settings")}
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
+      <div style={{ display: tab === "games" ? "block" : "none" }}>
+        <GamesTab dataRevision={dataRevision} />
+      </div>
+      {tab === "settings" && (
+        <SettingsTab onDataChanged={() => setDataRevision((revision) => revision + 1)} />
+      )}
+    </>
   );
 }
 

@@ -1,14 +1,22 @@
+import hashlib
 import os
 import ssl
 import stat
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlparse
 from urllib.request import urlopen
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipFile, ZipFile, is_zipfile
 
-from helper.constants import MOD_SOURCE_ARCHIVE, MOD_SOURCE_DIRECTORY, MOD_SOURCE_FILES
-from scanner.mod_catalog import ModDefinition, ModSourceFile
+from helper.constants import (
+    MOD_SOURCE_ARCHIVE,
+    MOD_SOURCE_DIRECTORY,
+    MOD_SOURCE_FILES,
+    MOD_SOURCE_LOCAL_ARCHIVE,
+)
+from scanner.mod_catalog import ModDefinition, ModSource, ModSourceFile
 
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
@@ -23,14 +31,14 @@ SYSTEM_CA_BUNDLE_PATHS = (
 )
 
 
-def _create_ssl_context() -> ssl.SSLContext:
+def create_ssl_context() -> ssl.SSLContext:
     for ca_bundle in SYSTEM_CA_BUNDLE_PATHS:
         if ca_bundle.is_file():
             return ssl.create_default_context(cafile=str(ca_bundle))
     return ssl.create_default_context()
 
 
-def _repository_file_url(repository_url: str, repository_ref: str, path: str) -> str:
+def repository_file_url(repository_url: str, repository_ref: str, path: str) -> str:
     repository = urlparse(repository_url)
     if repository.hostname != "github.com":
         raise ValueError("Mod source repository must be hosted on github.com")
@@ -46,6 +54,93 @@ def _repository_file_url(repository_url: str, repository_ref: str, path: str) ->
     )
 
 
+def open_url(url: str):
+    return urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=create_ssl_context())
+
+
+def read_url_limited(url: str, max_bytes: int, description: str) -> bytes:
+    with open_url(url) as response:
+        content = response.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise ValueError(f"{description} exceeds the size limit")
+    return content
+
+
+def _mib(size: int) -> int:
+    return size // (1024 * 1024)
+
+
+def _check_total_size(total: int) -> None:
+    if total > MAX_MOD_TOTAL_SIZE_BYTES:
+        raise ValueError(
+            f"Mod files exceed the {_mib(MAX_MOD_TOTAL_SIZE_BYTES)} MiB total limit"
+        )
+
+
+_archive_cache_dir: Path | None = None
+
+
+def set_archive_cache_dir(path: Path | None) -> None:
+    global _archive_cache_dir
+    _archive_cache_dir = path
+
+
+def _cached_archive_path(url: str) -> Path | None:
+    if _archive_cache_dir is None:
+        return None
+    return _archive_cache_dir / f"{hashlib.sha256(url.encode()).hexdigest()}.zip"
+
+
+@contextmanager
+def _open_archive(source: ModSource) -> Iterator[Path]:
+    """Yield a local path to the mod archive, downloading it into the cache if needed."""
+    if source.path is None:
+        raise ValueError("Archive source path is missing")
+    if source.kind == MOD_SOURCE_LOCAL_ARCHIVE:
+        local_path = Path(source.path)
+        if not local_path.is_file():
+            raise ValueError("Local mod archive is unavailable")
+        yield local_path
+        return
+
+    archive_url = repository_file_url(
+        source.repository_url,
+        source.repository_ref,
+        source.path,
+    )
+    cached_path = _cached_archive_path(archive_url)
+    if cached_path is not None and cached_path.is_file():
+        try:
+            yield cached_path
+        except BaseException:
+            cached_path.unlink(missing_ok=True)
+            raise
+        return
+
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix="anyaspectratio-",
+        suffix=".zip",
+    )
+    archive_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as archive_file:
+            with open_url(archive_url) as response:
+                _copy_limited(
+                    response,
+                    archive_file,
+                    MAX_MOD_DOWNLOAD_SIZE_BYTES,
+                    "Mod archive download",
+                )
+        if cached_path is not None and is_zipfile(archive_path):
+            cached_path.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(archive_path, cached_path)
+            archive_path = cached_path
+        yield archive_path
+    finally:
+        if cached_path is None or archive_path != cached_path:
+            archive_path.unlink(missing_ok=True)
+
+
 def mod_readme_path(mod: ModDefinition) -> str:
     if mod.source.kind == MOD_SOURCE_FILES:
         source_path = mod.source.files[0].path
@@ -57,20 +152,36 @@ def mod_readme_path(mod: ModDefinition) -> str:
     return f"{root}/README.md"
 
 
+def _read_local_archive_readme(mod: ModDefinition) -> str:
+    local_path = Path(mod.source.path or "")
+    try:
+        with ZipFile(local_path) as archive:
+            for info in archive.infolist():
+                name = info.filename.lower()
+                if (
+                    "/" not in name
+                    and name.startswith("readme")
+                    and info.file_size <= MAX_README_SIZE_BYTES
+                ):
+                    return archive.read(info).decode("utf-8-sig", errors="replace")
+    except (BadZipFile, OSError) as error:
+        raise ValueError("Local mod archive is unavailable") from error
+    return (
+        f"Local archive: `{local_path}`\n\n"
+        "No README was found in the archive. Its files are extracted next to the "
+        f"game executable (`{mod.source.destination or '.'}`)."
+    )
+
+
 def fetch_mod_readme(mod: ModDefinition) -> str:
-    readme_url = _repository_file_url(
+    if mod.source.kind == MOD_SOURCE_LOCAL_ARCHIVE:
+        return _read_local_archive_readme(mod)
+    readme_url = repository_file_url(
         mod.source.repository_url,
         mod.source.repository_ref,
         mod_readme_path(mod),
     )
-    with urlopen(
-        readme_url,
-        timeout=DOWNLOAD_TIMEOUT_SECONDS,
-        context=_create_ssl_context(),
-    ) as response:
-        content = response.read(MAX_README_SIZE_BYTES + 1)
-    if len(content) > MAX_README_SIZE_BYTES:
-        raise ValueError("Mod README exceeds the 1 MiB display limit")
+    content = read_url_limited(readme_url, MAX_README_SIZE_BYTES, "Mod README")
     try:
         return content.decode("utf-8-sig")
     except UnicodeDecodeError as error:
@@ -109,7 +220,7 @@ def _source_file_map(mod: ModDefinition) -> dict[str, str]:
         return {source_file.destination: source_file.path for source_file in source.files}
     if source.kind == MOD_SOURCE_DIRECTORY:
         return {path: f"{source.path}/{path}" for path in mod.files}
-    if source.kind == MOD_SOURCE_ARCHIVE:
+    if source.kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_LOCAL_ARCHIVE):
         prefix = f"{source.destination}/" if source.destination else ""
         result = {}
         for path in mod.files:
@@ -125,62 +236,31 @@ def _source_file_map(mod: ModDefinition) -> dict[str, str]:
 def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
     source_path = _source_file_map(mod)[relative_path]
     source = mod.source
-    if source.kind == MOD_SOURCE_ARCHIVE:
-        if source.path is None:
-            raise ValueError("Archive source path is missing")
-        archive_url = _repository_file_url(
-            source.repository_url,
-            source.repository_ref,
-            source.path,
-        )
-        with urlopen(
-            archive_url,
-            timeout=DOWNLOAD_TIMEOUT_SECONDS,
-            context=_create_ssl_context(),
-        ) as response:
-            descriptor, temporary_name = tempfile.mkstemp(
-                prefix="anyaspectratio-",
-                suffix=".zip",
-            )
-            archive_path = Path(temporary_name)
-            try:
-                with os.fdopen(descriptor, "wb") as archive_file:
-                    _copy_limited(
-                        response,
-                        archive_file,
-                        MAX_MOD_DOWNLOAD_SIZE_BYTES,
-                        "Mod archive download",
-                    )
-                try:
-                    with ZipFile(archive_path) as archive:
-                        try:
-                            info = archive.getinfo(source_path)
-                        except KeyError as error:
-                            raise ValueError(
-                                f"Mod archive is missing {relative_path}"
-                            ) from error
-                        if info.file_size > MAX_INI_SIZE_BYTES:
-                            raise ValueError(
-                                "Mod INI source exceeds the 256 KiB comparison limit"
-                            )
-                        with archive.open(info) as source_file:
-                            content = source_file.read(MAX_INI_SIZE_BYTES + 1)
-                except BadZipFile as error:
-                    raise ValueError("Mod archive is invalid") from error
-            finally:
-                archive_path.unlink(missing_ok=True)
+    if source.kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_LOCAL_ARCHIVE):
+        try:
+            with _open_archive(source) as archive_path:
+                with ZipFile(archive_path) as archive:
+                    try:
+                        info = archive.getinfo(source_path)
+                    except KeyError as error:
+                        raise ValueError(
+                            f"Mod archive is missing {relative_path}"
+                        ) from error
+                    if info.file_size > MAX_INI_SIZE_BYTES:
+                        raise ValueError(
+                            "Mod INI source exceeds the 256 KiB comparison limit"
+                        )
+                    with archive.open(info) as source_file:
+                        content = source_file.read(MAX_INI_SIZE_BYTES + 1)
+        except BadZipFile as error:
+            raise ValueError("Mod archive is invalid") from error
     else:
-        source_url = _repository_file_url(
+        source_url = repository_file_url(
             source.repository_url,
             source.repository_ref,
             source_path,
         )
-        with urlopen(
-            source_url,
-            timeout=DOWNLOAD_TIMEOUT_SECONDS,
-            context=_create_ssl_context(),
-        ) as response:
-            content = response.read(MAX_INI_SIZE_BYTES + 1)
+        content = read_url_limited(source_url, MAX_INI_SIZE_BYTES, "Mod INI source")
 
     if len(content) > MAX_INI_SIZE_BYTES:
         raise ValueError("Mod INI source exceeds the 256 KiB comparison limit")
@@ -228,6 +308,51 @@ def _files_equal(first: Path, second: Path) -> bool:
                 return True
 
 
+def _stage_archive_files(
+    mod: ModDefinition,
+    source_files: dict[str, str],
+    targets: dict[str, Path],
+    staged_files: list[tuple[Path, Path]],
+) -> None:
+    try:
+        with _open_archive(mod.source) as archive_path:
+            with ZipFile(archive_path) as archive:
+                members = {}
+                total_uncompressed_size = 0
+                for relative_path, member_name in source_files.items():
+                    try:
+                        info = archive.getinfo(member_name)
+                    except KeyError as error:
+                        raise ValueError(
+                            f"Mod archive is missing {member_name}"
+                        ) from error
+                    if info.is_dir():
+                        raise ValueError(
+                            f"Mod archive entry is not a file: {member_name}"
+                        )
+                    if info.file_size > MAX_MOD_FILE_SIZE_BYTES:
+                        raise ValueError(
+                            f"Mod file exceeds the "
+                            f"{MAX_MOD_FILE_SIZE_BYTES // (1024 * 1024)} MiB limit"
+                        )
+                    total_uncompressed_size += info.file_size
+                    _check_total_size(total_uncompressed_size)
+                    members[relative_path] = info
+                for relative_path, info in members.items():
+                    target = targets[relative_path]
+                    with archive.open(info) as source_stream:
+                        staged, actual_size = _stage_stream(
+                            source_stream,
+                            target,
+                            MAX_MOD_FILE_SIZE_BYTES,
+                        )
+                    staged_files.append((staged, target))
+                    total_uncompressed_size += actual_size - info.file_size
+                    _check_total_size(total_uncompressed_size)
+    except BadZipFile as error:
+        raise ValueError("Mod archive is invalid") from error
+
+
 def apply_mod_files(
     mod: ModDefinition,
     game_path: str,
@@ -245,90 +370,17 @@ def apply_mod_files(
     }
     staged_files: list[tuple[Path, Path]] = []
     try:
-        if mod.source.kind == MOD_SOURCE_ARCHIVE:
-            if mod.source.path is None:
-                raise ValueError("Archive source path is missing")
-            archive_url = _repository_file_url(
-                mod.source.repository_url,
-                mod.source.repository_ref,
-                mod.source.path,
-            )
-            with urlopen(
-                archive_url,
-                timeout=DOWNLOAD_TIMEOUT_SECONDS,
-                context=_create_ssl_context(),
-            ) as response:
-                archive_descriptor, archive_name = tempfile.mkstemp(
-                    prefix="anyaspectratio-",
-                    suffix=".zip",
-                )
-                archive_path = Path(archive_name)
-                try:
-                    with os.fdopen(archive_descriptor, "wb") as archive_file:
-                        _copy_limited(
-                            response,
-                            archive_file,
-                            MAX_MOD_DOWNLOAD_SIZE_BYTES,
-                            "Mod archive download",
-                        )
-                    with ZipFile(archive_path) as archive:
-                        members = {}
-                        total_uncompressed_size = 0
-                        for relative_path, member_name in source_files.items():
-                            try:
-                                info = archive.getinfo(member_name)
-                            except KeyError as error:
-                                raise ValueError(
-                                    f"Mod archive is missing {member_name}"
-                                ) from error
-                            if info.is_dir():
-                                raise ValueError(
-                                    f"Mod archive entry is not a file: {member_name}"
-                                )
-                            if info.file_size > MAX_MOD_FILE_SIZE_BYTES:
-                                raise ValueError(
-                                    f"Mod file exceeds the "
-                                    f"{MAX_MOD_FILE_SIZE_BYTES // (1024 * 1024)} MiB limit"
-                                )
-                            total_uncompressed_size += info.file_size
-                            if total_uncompressed_size > MAX_MOD_TOTAL_SIZE_BYTES:
-                                raise ValueError(
-                                    f"Mod files exceed the "
-                                    f"{MAX_MOD_TOTAL_SIZE_BYTES // (1024 * 1024)} MiB total limit"
-                                )
-                            members[relative_path] = info
-                        for relative_path, info in members.items():
-                            target = targets[relative_path]
-                            with archive.open(info) as source_stream:
-                                staged, actual_size = _stage_stream(
-                                    source_stream,
-                                    target,
-                                    MAX_MOD_FILE_SIZE_BYTES,
-                                )
-                            staged_files.append((staged, target))
-                            total_uncompressed_size += actual_size - info.file_size
-                            if total_uncompressed_size > MAX_MOD_TOTAL_SIZE_BYTES:
-                                raise ValueError(
-                                    f"Mod files exceed the "
-                                    f"{MAX_MOD_TOTAL_SIZE_BYTES // (1024 * 1024)} MiB total limit"
-                                )
-                except BadZipFile as error:
-                    raise ValueError("Mod archive is invalid") from error
-                finally:
-                    archive_path.unlink(missing_ok=True)
+        if mod.source.kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_LOCAL_ARCHIVE):
+            _stage_archive_files(mod, source_files, targets, staged_files)
         else:
             total_download_size = 0
             for relative_path, source_path in source_files.items():
-                source_url = _repository_file_url(
+                source_url = repository_file_url(
                     mod.source.repository_url,
                     mod.source.repository_ref,
                     source_path,
                 )
-                with urlopen(
-                    source_url,
-                    timeout=DOWNLOAD_TIMEOUT_SECONDS,
-                    context=_create_ssl_context(),
-                ) as response:
+                with open_url(source_url) as response:
                     staged, file_size = _stage_stream(
                         response,
                         targets[relative_path],
@@ -336,11 +388,7 @@ def apply_mod_files(
                     )
                 staged_files.append((staged, targets[relative_path]))
                 total_download_size += file_size
-                if total_download_size > MAX_MOD_TOTAL_SIZE_BYTES:
-                    raise ValueError(
-                        f"Mod files exceed the "
-                        f"{MAX_MOD_TOTAL_SIZE_BYTES // (1024 * 1024)} MiB total limit"
-                    )
+                _check_total_size(total_download_size)
 
         staged_by_target = {target: staged for staged, target in staged_files}
         conflicting_files = []

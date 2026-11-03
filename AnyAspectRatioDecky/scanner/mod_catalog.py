@@ -244,14 +244,9 @@ def _parse_mod(
     )
 
 
-def load_mod_catalog(path: Path | None = None) -> tuple[ModDefinition, ...]:
-    catalog_path = (
-        Path(__file__).resolve().parents[1] / MOD_CATALOG_FILENAME
-        if path is None
-        else path
-    )
+def _read_catalog_document(path: Path) -> tuple[dict[str, object], str, str]:
     try:
-        document = json.loads(catalog_path.read_text(encoding="utf-8"))
+        document = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         raise ValueError(MOD_CATALOG_INVALID_JSON_MESSAGE.format(error=error)) from error
 
@@ -282,6 +277,32 @@ def load_mod_catalog(path: Path | None = None) -> tuple[ModDefinition, ...]:
         or not repository_ref
     ):
         raise ValueError(MOD_CATALOG_INVALID_REPOSITORY_MESSAGE)
+    return document, repository_url, repository_ref
+
+
+def bundled_catalog_path() -> Path:
+    return Path(__file__).resolve().parents[1] / MOD_CATALOG_FILENAME
+
+
+def read_catalog_repository(path: Path | None = None) -> tuple[str, str]:
+    _, repository_url, repository_ref = _read_catalog_document(
+        bundled_catalog_path() if path is None else path
+    )
+    return repository_url, repository_ref
+
+
+def load_mod_catalog(
+    path: Path | None = None,
+    *,
+    repository_url: str | None = None,
+    repository_ref: str | None = None,
+) -> tuple[ModDefinition, ...]:
+    """Load a catalog; the optional repository values override its source_repository."""
+    document, catalog_url, catalog_ref = _read_catalog_document(
+        bundled_catalog_path() if path is None else path
+    )
+    repository_url = repository_url or catalog_url
+    repository_ref = repository_ref or catalog_ref
 
     mods = tuple(
         _parse_mod(entry, index, repository_url, repository_ref)

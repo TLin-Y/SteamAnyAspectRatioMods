@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from helper.constants import (
@@ -28,6 +28,7 @@ from helper.constants import (
     SCAN_REPORT_LIBRARIES_KEY,
     SCAN_REPORT_WARNINGS_KEY,
 )
+from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
 from scanner.steam_library_scanner import SteamScanReport, discover_steam_apps
 
@@ -76,6 +77,8 @@ class SupportedGameScanReport:
     catalogued_mods: int
     supported_games: list[SupportedGame]
     warnings: list[str]
+    local_mods: int = 0
+    mods: dict[str, ModDefinition] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -84,6 +87,7 @@ class SupportedGameScanReport:
                 SCAN_REPORT_APPS_KEY: self.steam_scan.apps_scanned,
             },
             MOD_CATALOG_COUNT_FIELD: self.catalogued_mods,
+            "local_archive_count": self.local_mods,
             MOD_CATALOG_GAMES_FIELD: [
                 game.to_dict() for game in self.supported_games
             ],
@@ -94,8 +98,9 @@ class SupportedGameScanReport:
 def match_supported_games(
     steam_scan: SteamScanReport,
     catalog: tuple[ModDefinition, ...],
+    local_mods: tuple[ModDefinition, ...] = (),
 ) -> SupportedGameScanReport:
-    mods_by_app_id = {mod.steam_app_id: mod for mod in catalog}
+    mods_by_app_id = {mod.steam_app_id: mod for mod in (*local_mods, *catalog)}
     games: list[SupportedGame] = []
     warnings = list(steam_scan.warnings)
 
@@ -163,8 +168,25 @@ def match_supported_games(
         catalogued_mods=len(catalog),
         supported_games=games,
         warnings=warnings,
+        local_mods=len(local_mods),
+        mods={mod.mod_id: mod for mod in mods_by_app_id.values()},
     )
 
 
-def scan_supported_games() -> SupportedGameScanReport:
-    return match_supported_games(discover_steam_apps(), load_mod_catalog())
+def scan_supported_games(
+    catalog: tuple[ModDefinition, ...] | None = None,
+    *,
+    local_archive_dir: str | None = None,
+    local_index_path: Path | None = None,
+) -> SupportedGameScanReport:
+    steam_scan = discover_steam_apps()
+    catalog = load_mod_catalog() if catalog is None else catalog
+    archives, archive_warnings = scan_local_archives(local_archive_dir, local_index_path)
+    local_mods, match_warnings = build_local_mods(
+        archives,
+        steam_scan.apps,
+        {mod.steam_app_id for mod in catalog},
+    )
+    report = match_supported_games(steam_scan, catalog, local_mods)
+    report.warnings.extend([*archive_warnings, *match_warnings])
+    return report

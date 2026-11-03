@@ -62,6 +62,26 @@ For a real Decky integration test, install the reviewed ZIP through Decky's supp
 
 After installation, select **Scan Steam libraries** in the plugin UI, then inspect Decky Loader logs if it fails. Remove only the test plugin directory when rolling back; do not remove or synchronize the entire plugins directory.
 
+## Settings, cache, and updates
+
+The plugin has **Games** and **Settings** tabs. Settings lets you change the GitHub repository, branch/tag/commit, and catalog file path that supply the catalog and mod archives, and choose a local folder of `*.zip` mods.
+
+Everything persistent lives in Decky's plugin data directory (`DECKY_PLUGIN_RUNTIME_DIR`, shown in Settings):
+
+```text
+settings.json              user overrides (empty value = default)
+cache/catalog.json         catalog downloaded by Update (bundled catalog.json is the fallback)
+cache/catalog.meta.json    fetch time, SHA-256, and the source it was fetched for
+cache/archives/            downloaded mod archives, reused by later Apply operations
+cache/local_archives.json  zip member index for the local folder, keyed by size and mtime
+cache/last_scan.json       last scan result, shown immediately on open
+logs/plugin.log            rotating copy of the plugin's structured log events
+```
+
+**Update catalog & mods** downloads the catalog from the configured repository, validates it, replaces the cached copy atomically, and clears cached mod archives so the next Apply fetches current files. A catalog that fails validation never replaces the working one. Changing the repository, ref, or catalog path automatically triggers an update.
+
+**Local archives**: a zip is matched to an installed game when its name (ignoring version suffixes and bracketed text) equals the Steam app name or install folder, or when it contains the Steam app ID. Its files are extracted relative to the directory containing the game's main executable (the game root if that is ambiguous), and proxy DLLs such as `dinput8.dll` produce the matching `WINEDLLOVERRIDES` launch option. Games that already have a catalog mod ignore local archives. Archives with unsafe paths are rejected.
+
 ## Project layout
 
 ```text
@@ -69,8 +89,9 @@ AnyAspectRatioDecky/
   main.py             Decky Python backend and API entry point
   helper/             Shared Python constants
   logger/             Structured wrapper around Decky's persistent logger
-  scanner/            Read-only Steam scan, catalog validation, and game matching
-  catalog.json        Audited supported-fix metadata
+  scanner/            Read-only Steam scan, catalog validation, game matching, and local zip loader
+  store/              Persistent settings, cached catalog/archives/scan results, and catalog updates
+  catalog.json        Audited supported-fix metadata (bundled fallback)
   utils/              Reusable parsing and API helpers
   plugin.json         Decky plugin metadata
   LICENSE-*           Upstream template and bundled Decky API license texts

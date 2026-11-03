@@ -79,6 +79,12 @@ LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE = (
 LOG_EVENT_MOD_FILE_OPERATION_STARTED = "mod_files.operation_started"
 LOG_EVENT_MOD_FILE_OPERATION_COMPLETED = "mod_files.operation_completed"
 LOG_EVENT_MOD_FILE_OPERATION_FAILED = "mod_files.operation_failed"
+LOG_EVENT_SETTINGS_SAVED = "settings.saved"
+LOG_EVENT_SETTINGS_REJECTED = "settings.rejected"
+LOG_EVENT_DEPENDENCY_UPDATE_STARTED = "dependencies.update_started"
+LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED = "dependencies.update_completed"
+LOG_EVENT_DEPENDENCY_UPDATE_FAILED = "dependencies.update_failed"
+LOG_EVENT_CATALOG_FALLBACK = "catalog.cache_unusable"
 LOG_EVENT_PLUGIN_STARTED = "plugin.started"
 LOG_EVENT_PLUGIN_STOPPED = "plugin.stopped"
 LOG_SCAN_PHASE_FORMAT = "libraries-{libraries}-apps-{apps}-supported-{supported}"
@@ -108,6 +114,8 @@ MOD_SOURCE_FILES_KEY = "files"
 MOD_SOURCE_ARCHIVE = "archive"
 MOD_SOURCE_DIRECTORY = "directory"
 MOD_SOURCE_FILES = "files"
+# Never accepted from a catalog file: only the local archive scanner creates it.
+MOD_SOURCE_LOCAL_ARCHIVE = "local_archive"
 MOD_SOURCE_KINDS = (
     MOD_SOURCE_ARCHIVE,
     MOD_SOURCE_DIRECTORY,

@@ -23,10 +23,14 @@ $runtimeFiles = @(
     "logger\__init__.py",
     "logger\plugin_logger.py",
     "scanner\__init__.py",
+    "scanner\local_archives.py",
     "scanner\mod_installer.py",
     "scanner\mod_catalog.py",
     "scanner\steam_library_scanner.py",
     "scanner\supported_game_scanner.py",
+    "store\__init__.py",
+    "store\dependencies.py",
+    "store\plugin_store.py",
     "utils\__init__.py",
     "utils\steam_vdf.py"
 )

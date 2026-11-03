@@ -8,7 +8,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from scanner.mod_catalog import ModDefinition, ModSource, ModSourceFile
 from scanner.mod_installer import (
-    _create_ssl_context,
+    create_ssl_context,
     apply_mod_files,
     fetch_mod_readme,
     mod_readme_path,
@@ -444,7 +444,7 @@ class ModInstallerTests(unittest.TestCase):
                 return_value=expected,
             ) as create_context,
         ):
-            context = _create_ssl_context()
+            context = create_ssl_context()
 
         self.assertIs(expected, context)
         create_context.assert_called_once_with(cafile=str(Path(__file__)))
