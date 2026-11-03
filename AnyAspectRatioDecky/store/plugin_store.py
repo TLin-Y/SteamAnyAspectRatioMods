@@ -139,6 +139,12 @@ class PluginStore:
     def clear_pack(self) -> None:
         shutil.rmtree(self.pack_dir, ignore_errors=True)
 
+    def clear_local_data(self) -> None:
+        """Delete the pack and every cache; settings and logs are kept."""
+        self.clear_pack()
+        shutil.rmtree(self.cache_dir, ignore_errors=True)
+        self.ensure_directories()
+
     def pack_stats(self) -> dict[str, int]:
         files = [path for path in self.pack_dir.rglob("*") if path.is_file()]
         return {"file_count": len(files), "size_bytes": sum(p.stat().st_size for p in files)}

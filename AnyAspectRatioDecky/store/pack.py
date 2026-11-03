@@ -2,30 +2,19 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from zipfile import ZIP_STORED, BadZipFile, ZipFile, is_zipfile
+from zipfile import BadZipFile, ZipFile, is_zipfile
 
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
-from scanner.mod_installer import (
-    MAX_MOD_FILE_SIZE_BYTES,
-    copy_limited,
-    mod_readme_path,
-    open_url,
-    repository_archive_url,
-)
+from scanner.mod_installer import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from helper.constants import MOD_SOURCE_DIRECTORY, MOD_SOURCE_FILES
 from store.dependencies import (
     MAX_CATALOG_SIZE_BYTES,
-    repository_for,
     repository_overrides,
     save_catalog,
 )
 from store.plugin_store import DEFAULT_CATALOG_PATH, PluginStore, Settings
 
-PACK_ROOT = "AnyAspectRatioPack"
-PACK_FILENAME = "AnyAspectRatio-offline-pack.zip"
-MAX_PACK_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
-MAX_PACK_TOTAL_BYTES = MAX_PACK_ARCHIVE_BYTES
+MAX_PACK_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
 
 
 def _wanted_paths(mods: tuple[ModDefinition, ...]) -> tuple[set[str], set[str]]:
@@ -102,42 +91,3 @@ def install_pack(store: PluginStore, settings: Settings, archive_path: Path) -> 
     save_catalog(store, settings, catalog_bytes, "offline pack")
     store.clear_archive_cache()
     return {"mod_count": len(mods), **store.pack_stats()}
-
-
-def download_pack(store: PluginStore, settings: Settings) -> dict[str, object]:
-    repository_url, repository_ref = repository_for(settings)
-    url = repository_archive_url(repository_url, repository_ref)
-    store.ensure_directories()
-    descriptor, temporary_name = tempfile.mkstemp(dir=store.data_dir, suffix=".zip.tmp")
-    temporary_path = Path(temporary_name)
-    try:
-        try:
-            with os.fdopen(descriptor, "wb") as target, open_url(url) as response:
-                copy_limited(response, target, MAX_PACK_ARCHIVE_BYTES, "Repository download")
-        except HTTPError as error:
-            raise ValueError(f"Download failed: HTTP {error.code} for {url}") from error
-        except URLError as error:
-            raise ValueError(f"Download failed: {error.reason}") from error
-        return install_pack(store, settings, temporary_path)
-    finally:
-        temporary_path.unlink(missing_ok=True)
-
-
-def export_pack(store: PluginStore, directory: str) -> str:
-    target_dir = Path(directory)
-    if not target_dir.is_absolute() or not target_dir.is_dir():
-        raise ValueError("Choose an existing folder to save the pack in")
-    if not store.pack_dir.is_dir() or store.pack_stats()["file_count"] == 0:
-        raise ValueError("There is no offline pack yet. Download it first.")
-    destination = target_dir / PACK_FILENAME
-    temporary = destination.with_name(PACK_FILENAME + ".tmp")
-    try:
-        with ZipFile(temporary, "w", ZIP_STORED) as archive:
-            for path in sorted(store.pack_dir.rglob("*")):
-                if path.is_file():
-                    relative = path.relative_to(store.pack_dir).as_posix()
-                    archive.write(path, f"{PACK_ROOT}/{relative}")
-        os.replace(temporary, destination)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return str(destination)

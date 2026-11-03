@@ -50,8 +50,6 @@ from store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
     Settings,
-    download_pack,
-    export_pack,
     install_pack,
     load_active_catalog,
     update_dependencies,
@@ -148,32 +146,17 @@ class Plugin:
             "pack": store.pack_stats(),
         }
 
-    @staticmethod
-    def _run_pack_action(phase: str, action) -> dict[str, object]:
-        store = get_store()
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase=phase)
-        try:
-            result = action(store, store.load_settings())
-        except (OSError, URLError, ValueError) as error:
-            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase=phase)
-            return {"error": str(error) or type(error).__name__}
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED, phase=phase)
-        return result
-
-    async def download_offline_pack(self) -> dict[str, object]:
-        return self._run_pack_action("pack-download", download_pack)
-
     async def import_offline_pack(self, archive_path: str) -> dict[str, object]:
-        return self._run_pack_action(
-            "pack-import",
-            lambda store, settings: install_pack(store, settings, Path(archive_path)),
-        )
+        store = get_store()
+        try:
+            return install_pack(store, store.load_settings(), Path(archive_path))
+        except (OSError, ValueError) as error:
+            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-import")
+            return {"error": str(error) or type(error).__name__}
 
-    async def export_offline_pack(self, directory: str) -> dict[str, object]:
-        return self._run_pack_action(
-            "pack-export",
-            lambda store, settings: {"path": export_pack(store, directory)},
-        )
+    async def clear_local_data(self) -> dict[str, object]:
+        get_store().clear_local_data()
+        return {}
 
     async def get_settings(self) -> dict[str, object]:
         store = get_store()

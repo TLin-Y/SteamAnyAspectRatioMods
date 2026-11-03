@@ -7,7 +7,7 @@ from zipfile import ZipFile
 
 from scanner.mod_catalog import load_mod_catalog
 from scanner.mod_installer import apply_mod_files, fetch_mod_readme, set_pack_dir
-from store import PluginStore, Settings, export_pack, install_pack
+from store import PluginStore, Settings, install_pack
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,16 +53,16 @@ class OfflinePackTests(unittest.TestCase):
             self.assertEqual("# DS3", fetch_mod_readme(mod))
         self.assertTrue((game / "Game" / "dinput8.dll").is_file())
 
-    def test_export_then_import_round_trips(self) -> None:
+    def test_clear_local_data_removes_pack_and_caches_but_keeps_settings(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)
-        exported = Path(export_pack(self.store, str(self.root)))
+        self.store.save_settings(Settings(local_archive_dir=""))
 
-        other = PluginStore(self.root / "other")
-        other.ensure_directories()
-        result = install_pack(other, Settings(), exported)
+        self.store.clear_local_data()
 
-        self.assertEqual(3, result["file_count"])
-        self.assertEqual(result["size_bytes"], self.store.pack_stats()["size_bytes"])
+        self.assertEqual(0, self.store.pack_stats()["file_count"])
+        self.assertFalse(self.store.catalog_path.exists())
+        self.assertTrue(self.store.archive_cache_dir.is_dir())
+        self.assertTrue(self.store.settings_path.is_file())
 
     def test_missing_mod_archive_is_rejected_and_keeps_existing_pack(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)
@@ -75,7 +75,3 @@ class OfflinePackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             install_pack(self.store, Settings(), broken)
         self.assertEqual(3, self.store.pack_stats()["file_count"])
-
-    def test_export_requires_a_pack(self) -> None:
-        with self.assertRaises(ValueError):
-            export_pack(self.store, str(self.root))

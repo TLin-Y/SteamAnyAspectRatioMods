@@ -16,14 +16,11 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 ## Tabs
 
-**Games**: scans your Steam libraries and lists games that have a matching mod. Apply or remove a mod per game; the launch option is set for you when needed. Files are copied independently of launch options.
-
-**Mods**: credits for every mod, grouped by author and sorted by mod count (tap an author to open their page). Also manages the offline pack:
-- **Download all for offline**: fetches every mod and the catalog into local storage, so nothing is downloaded again.
-- **Export pack...**: saves the pack as one zip you can share.
-- **Import pack...**: loads an offline pack zip, fully offline. The picker opens in the Deck's `Downloads` folder. To use this repository's mods offline, download the whole repository as a zip (GitHub **Code → Download ZIP**, or the `main.zip` archive link) into the Deck's `Downloads` folder, then pick it here. Only the catalog, mods and READMEs are kept; source code is ignored.
-
-**Settings**: choose where the catalog and mods come from (default: this repository), an optional local folder of `*.zip` mods, and **Update** to re-fetch the catalog and mods after the repository changes. Cache, config and logs live in the plugin's local data folder.
+- **Games**: lists your games that have a mod. Apply or remove a mod per game.
+- **Mods**: shows who made the mods. Two buttons:
+  - **Import repository zip...**: use all of this repository's mods offline. On a PC or the Deck's browser, open this repository on GitHub, choose **Code → Download ZIP**, and save it in the Deck's `Downloads` folder. Then pick it here.
+  - **Delete all local files and caches**: frees the space used by imported or downloaded files. Your settings and already-applied mods are kept.
+- **Settings**: where mods come from, an optional folder of your own mod zips, and **Update** to fetch the newest mod list.
 
 ## License
 
