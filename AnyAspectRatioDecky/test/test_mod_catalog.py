@@ -28,10 +28,30 @@ from scanner.mod_catalog import summarize_credits
 
 
 class ModCatalogTests(unittest.TestCase):
+    def test_readme_sits_beside_archive_zips(self) -> None:
+        from scanner.mod_installer import mod_readme_path
+
+        mods = {mod.mod_id: mod for mod in load_mod_catalog()}
+        self.assertEqual("Dark Souls III/README.md", mod_readme_path(mods["dark-souls-iii"]))
+
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        document["mods"] = [document["mods"][0]]
+        document["mods"][0]["source"]["path"] = "external/Lyall/SekiroFix/SekiroFix_0.0.1.zip"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            self.assertEqual(
+                "external/Lyall/SekiroFix/README.md",
+                mod_readme_path(load_mod_catalog(path)[0]),
+            )
+
     def test_credits_default_override_and_ranking(self) -> None:
         document = json.loads(
             (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
         )
+        document["mods"] = [mod for mod in document["mods"] if "credits" not in mod]
         document["mods"][0]["credits"] = [{"name": "Other", "url": "https://example.com/o"}]
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "catalog.json"
@@ -45,11 +65,21 @@ class ModCatalogTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_mod_catalog(path)
 
-        everyone = summarize_credits(load_mod_catalog())
-        self.assertEqual([("TLin-Y", 18, "")], [(a["name"], a["mod_count"], a["url"]) for a in everyone])
+            document["mods"][0]["credits"] = [
+                {"name": "Bad", "support": [{"label": "Pay", "url": "http://x"}]}
+            ]
+            path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_mod_catalog(path)
+
+        everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
+        self.assertEqual(("", 18), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(
+            ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
+        )
 
     def test_loads_audited_repository_catalog(self) -> None:
-        catalog = load_mod_catalog()
+        catalog = [mod for mod in load_mod_catalog() if not mod.credits or mod.credits[0].name == "TLin-Y"]
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 

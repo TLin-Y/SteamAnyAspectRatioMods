@@ -11,6 +11,7 @@ from helper.constants import (
     MOD_CATALOG_FILENAME,
     MOD_CATALOG_ID_PATTERN,
     MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE,
+    MOD_CATALOG_CREDIT_SUPPORT_KEY,
     MOD_CATALOG_CREDITS_KEY,
     MOD_CATALOG_DEFAULT_CREDITS_KEY,
     MOD_CATALOG_INVALID_CREDITS_MESSAGE,
@@ -77,6 +78,7 @@ class ModSource:
 class ModCredit:
     name: str
     url: str
+    support: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,10 @@ class ModDefinition:
     credits: tuple[ModCredit, ...] = ()
 
 
+def _https_url(value: object) -> bool:
+    return isinstance(value, str) and urlparse(value).scheme == "https"
+
+
 def _parse_credits(raw: object) -> tuple[ModCredit, ...]:
     if raw is None:
         return ()
@@ -100,29 +106,49 @@ def _parse_credits(raw: object) -> tuple[ModCredit, ...]:
         raise ValueError(MOD_CATALOG_INVALID_CREDITS_MESSAGE)
     credits = []
     for item in raw:
-        name = item.get("name") if isinstance(item, dict) else None
-        url = item.get("url") if isinstance(item, dict) else None
+        item = item if isinstance(item, dict) else {}
+        name = item.get("name")
+        url = item.get("url")
+        support = item.get(MOD_CATALOG_CREDIT_SUPPORT_KEY, [])
         if (
             not isinstance(name, str)
             or not name.strip()
-            or (url is not None and (not isinstance(url, str) or urlparse(url).scheme != "https"))
+            or (url is not None and not _https_url(url))
+            or not isinstance(support, list)
+            or not all(
+                isinstance(link, dict)
+                and isinstance(link.get("label"), str)
+                and link["label"].strip()
+                and _https_url(link.get("url"))
+                for link in support
+            )
         ):
             raise ValueError(MOD_CATALOG_INVALID_CREDITS_MESSAGE)
-        credits.append(ModCredit(name.strip(), url or ""))
+        credits.append(
+            ModCredit(
+                name.strip(),
+                url or "",
+                tuple((link["label"].strip(), link["url"]) for link in support),
+            )
+        )
     return tuple(credits)
 
 
 def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]]:
     """Group mods by author, most mods first."""
-    authors: dict[tuple[str, str], int] = {}
+    authors: dict[ModCredit, int] = {}
     for mod in mods:
         for credit in mod.credits:
-            key = (credit.name, credit.url)
-            authors[key] = authors.get(key, 0) + 1
+            authors[credit] = authors.get(credit, 0) + 1
     return [
-        {"name": name, "url": url, "mod_count": count}
-        for (name, url), count in sorted(
-            authors.items(), key=lambda item: (-item[1], item[0][0].lower())
+        {
+            "name": credit.name,
+            "url": credit.url,
+            "support": [{"label": label, "url": url} for label, url in credit.support],
+            "mod_count": count,
+        }
+        for credit, count in sorted(
+            authors.items(), key=lambda item: (-item[1], item[0].name.lower())
         )
     ]
 

@@ -90,7 +90,12 @@ const updateDependencies = callable<
 >("update_dependencies");
 type CreditsInfo = {
   mod_count: number;
-  authors: { name: string; url: string; mod_count: number }[];
+  authors: {
+    name: string;
+    url: string;
+    support: { label: string; url: string }[];
+    mod_count: number;
+  }[];
   pack: { file_count: number; size_bytes: number };
 };
 const getCredits = callable<[], CreditsInfo>("get_credits");
@@ -1275,21 +1280,30 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           <div style={{ fontSize: "12px" }}>{status}</div>
         </PanelSectionRow>
       )}
-      {credits?.authors.map((author) => (
-        <PanelSectionRow key={`${author.name}|${author.url}`}>
-          {author.url ? (
-            <ButtonItem
-              layout="below"
-              label={`${author.name} - ${author.mod_count} mod(s)`}
-              onClick={() => Navigation.NavigateToExternalWeb(author.url)}
-            >
-              {author.url.replace("https://", "")}
-            </ButtonItem>
-          ) : (
-            <div>{`${author.name} - ${author.mod_count} mod(s)`}</div>
-          )}
-        </PanelSectionRow>
-      ))}
+      {credits?.authors.map((author) => {
+        const links = [
+          ...(author.url ? [{ label: author.url.replace("https://", ""), url: author.url }] : []),
+          ...author.support,
+        ];
+        return (
+          <PanelSectionRow key={`${author.name}|${author.url}`}>
+            <div style={{ width: "100%" }}>
+              <div>{`${author.name} - ${author.mod_count} mod(s)`}</div>
+              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                {links.map((link) => (
+                  <DialogButton
+                    key={link.url}
+                    style={{ flex: 1, minWidth: 0, minHeight: 0, height: "28px", padding: "0 4px", fontSize: "12px" }}
+                    onClick={() => Navigation.NavigateToExternalWeb(link.url)}
+                  >
+                    {link.label}
+                  </DialogButton>
+                ))}
+              </div>
+            </div>
+          </PanelSectionRow>
+        );
+      })}
       <PanelSectionRow>
         <ButtonItem layout="below" disabled={busy} onClick={importRepositoryZip}>
           Import repository zip...
