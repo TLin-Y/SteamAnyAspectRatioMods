@@ -55,13 +55,6 @@ def repository_file_url(repository_url: str, repository_ref: str, path: str) -> 
     )
 
 
-def repository_archive_url(repository_url: str, repository_ref: str) -> str:
-    return (
-        f"https://github.com/{_repository_parts(repository_url)}/archive/"
-        f"{quote(repository_ref, safe='')}.zip"
-    )
-
-
 def open_url(url: str):
     return urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=create_ssl_context())
 

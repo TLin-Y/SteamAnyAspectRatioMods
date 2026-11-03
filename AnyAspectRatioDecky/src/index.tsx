@@ -94,11 +94,8 @@ type CreditsInfo = {
   pack: { file_count: number; size_bytes: number };
 };
 const getCredits = callable<[], CreditsInfo>("get_credits");
-const downloadOfflinePack = callable<[], { error?: string }>("download_offline_pack");
 const importOfflinePack = callable<[string], { error?: string }>("import_offline_pack");
-const exportOfflinePack = callable<[string], { error?: string; path?: string }>(
-  "export_offline_pack",
-);
+const clearLocalData = callable<[], { error?: string }>("clear_local_data");
 
 const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
 
@@ -1207,20 +1204,19 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
     refresh();
   }, []);
 
-  const runPackAction = async (
+  const runAction = async (
     title: string,
-    action: () => Promise<{ error?: string; path?: string }>,
-    doneMessage: (result: { path?: string }) => string,
-    changesData: boolean,
+    action: () => Promise<{ error?: string }>,
+    doneMessage: string,
   ) => {
     setBusy(true);
     setStatus("Working...");
     try {
       const result = await action();
       if (result.error) throw new Error(result.error);
-      setStatus(doneMessage(result));
+      setStatus(doneMessage);
       await refresh();
-      if (changesData) onDataChanged();
+      onDataChanged();
     } catch (reason) {
       setStatus("");
       showErrorModal(title, reason instanceof Error ? reason.message : String(reason));
@@ -1229,31 +1225,36 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
     }
   };
 
-  const pickAndRun = async (
-    title: string,
-    select: number,
-    includeFiles: boolean,
-    includeFolders: boolean,
-    extensions: string[] | undefined,
-    run: (path: string) => Promise<{ error?: string; path?: string }>,
-    doneMessage: (result: { path?: string }) => string,
-    changesData: boolean,
-  ) => {
+  const importRepositoryZip = async () => {
     let picked;
     try {
       picked = await openFilePicker(
-        select as FileSelectionType,
+        0 as FileSelectionType,
         DEFAULT_PICKER_DIRECTORY,
-        includeFiles,
-        includeFolders,
+        true,
+        false,
         undefined,
-        extensions,
+        ["zip"],
       );
     } catch {
       return;
     }
-    await runPackAction(title, () => run(picked.realpath || picked.path), doneMessage, changesData);
+    await runAction(
+      "Import failed",
+      () => importOfflinePack(picked.realpath || picked.path),
+      "Repository zip imported.",
+    );
   };
+
+  const confirmDeleteLocalData = () =>
+    showModal(
+      <ConfirmModal
+        strTitle="Delete local files and caches?"
+        strDescription="Removes the imported repository zip, the downloaded catalog, and all caches. Settings, logs, and mods already applied to games are kept."
+        strOKButtonText="Delete"
+        onOK={() => runAction("Delete failed", clearLocalData, "Local files and caches deleted.")}
+      />,
+    );
 
   const pack = credits?.pack;
   return (
@@ -1264,8 +1265,8 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           <div style={{ fontSize: "12px", opacity: 0.7 }}>
             {credits.mod_count} mod(s) by {credits.authors.length} author(s) -{" "}
             {pack?.file_count
-              ? `offline pack: ${pack.file_count} files, ${formatBytes(pack.size_bytes)}`
-              : "offline pack: not downloaded"}
+              ? `local files: ${pack.file_count}, ${formatBytes(pack.size_bytes)}`
+              : "no local repository zip imported"}
           </div>
         </PanelSectionRow>
       )}
@@ -1274,62 +1275,6 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           <div style={{ fontSize: "12px" }}>{status}</div>
         </PanelSectionRow>
       )}
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={busy}
-          onClick={() =>
-            runPackAction(
-              "Download failed",
-              downloadOfflinePack,
-              () => "Offline pack downloaded.",
-              true,
-            )
-          }
-        >
-          Download all for offline
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={busy || !pack?.file_count}
-          onClick={() =>
-            pickAndRun(
-              "Export failed",
-              1,
-              false,
-              true,
-              undefined,
-              exportOfflinePack,
-              (result) => `Exported to ${result.path}`,
-              false,
-            )
-          }
-        >
-          Export pack...
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={busy}
-          onClick={() =>
-            pickAndRun(
-              "Import failed",
-              0,
-              true,
-              false,
-              ["zip"],
-              importOfflinePack,
-              () => "Offline pack imported.",
-              true,
-            )
-          }
-        >
-          Import pack...
-        </ButtonItem>
-      </PanelSectionRow>
       {credits?.authors.map((author) => (
         <PanelSectionRow key={`${author.name}|${author.url}`}>
           {author.url ? (
@@ -1345,6 +1290,16 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           )}
         </PanelSectionRow>
       ))}
+      <PanelSectionRow>
+        <ButtonItem layout="below" disabled={busy} onClick={importRepositoryZip}>
+          Import repository zip...
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem layout="below" disabled={busy} onClick={confirmDeleteLocalData}>
+          Delete all local files and caches
+        </ButtonItem>
+      </PanelSectionRow>
     </PanelSection>
   );
 }
