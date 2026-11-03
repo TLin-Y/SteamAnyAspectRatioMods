@@ -2,7 +2,7 @@
 
 A Decky plugin for discovering and managing supported AnyAspectRatio game fixes on SteamOS.
 
-> **Scaffold status:** this subproject currently contains only the reproducible Decky frontend/backend build skeleton and a backend health check. It does not scan Steam libraries, download or install mods, edit launch options, or change game files yet.
+> **Development status:** this subproject has a reproducible Decky scaffold and a read-only Steam library inventory scan. It does not yet match games to audited fixes, download or install mods, edit launch options, or change game files.
 
 ## Requirements
 
@@ -31,16 +31,16 @@ On Windows PowerShell, run the same commands from `AnyAspectRatioDecky`. If Core
 
 ## Backend check
 
-The plugin backend entry point is `main.py`. `plugin_logger.py` wraps Decky's logger and uses its persistent per-plugin log location (on the tested Deck: `/home/deck/homebrew/logs/AnyAspectRatio/`); the plugin does not create a second log file or manage rotation. Log events use a small structured format with operation/game/mod IDs; do not pass launch-option strings, credentials, or arbitrary user data as context.
+The plugin backend entry point is `main.py`. `logger/plugin_logger.py` wraps Decky's logger and uses its persistent per-plugin log location (on the tested Deck: `/home/deck/homebrew/logs/AnyAspectRatio/`); the plugin does not create a second log file or manage rotation. Log events use a small structured format with operation/game/mod IDs; do not pass launch-option strings, credentials, or arbitrary user data as context.
 
-Decky supplies the `decky` module when it loads the plugin, so `main.py` is not a standalone Python application. The logger itself has no Decky dependency and can be tested locally:
+Decky supplies the `decky` module when it loads the plugin, so `main.py` is not a standalone Python application. The logger and Steam VDF parser have no Decky dependency and can be tested locally:
 
 ```sh
 python -m py_compile main.py
-python -m unittest discover -s tests -v
+python -m unittest discover -s test -v
 ```
 
-In Decky, open the plugin menu and select **Check backend** to verify the frontend-to-backend call.
+In Decky, open the plugin menu and select **Scan Steam libraries**. The scan reads configured Steam libraries and their app manifests only; it does not search entire drives or modify files. Per-game fix matching will be added after the supported game catalog is audited.
 
 ## Local smoke-test package
 
@@ -54,14 +54,17 @@ This is not a release package. Use the official [Decky CLI](https://github.com/S
 
 For a real Decky integration test, install the reviewed ZIP through Decky's supported developer workflow or an explicitly approved SSH session. The plugin directory is root-owned on the tested Deck, so deployment may require an interactive local sudo prompt. Do not put a Deck password in scripts, command arguments, or repository files. A loader restart affects all installed plugins.
 
-After installation, select **Check backend** in the plugin UI, then inspect Decky Loader logs if it fails. Remove only the test plugin directory when rolling back; do not remove or synchronize the entire plugins directory.
+After installation, select **Scan Steam libraries** in the plugin UI, then inspect Decky Loader logs if it fails. Remove only the test plugin directory when rolling back; do not remove or synchronize the entire plugins directory.
 
 ## Project layout
 
 ```text
 AnyAspectRatioDecky/
-  main.py             Decky Python backend
-  plugin_logger.py    Structured wrapper around Decky's persistent logger
+  main.py             Decky Python backend and API entry point
+  helper/             Shared Python constants
+  logger/             Structured wrapper around Decky's persistent logger
+  scanner/            Read-only Steam library and appmanifest scanner
+  utils/              Reusable parsing and API helpers
   plugin.json         Decky plugin metadata
   LICENSE-*           Upstream template and bundled Decky API license texts
   THIRD_PARTY_NOTICES.md
@@ -70,13 +73,13 @@ AnyAspectRatioDecky/
   rollup.config.js    Decky Rollup build configuration
   scripts/            Local smoke-test packaging helper
   src/index.tsx       Minimal plugin UI and backend health check
-  tests/              Local backend logger tests
+  test/               Local backend and Steam discovery tests
   tsconfig.json       TypeScript build configuration
 ```
 
 ## Current validation boundary
 
-`pnpm typecheck` and `pnpm build` validate the frontend bundle. Python syntax checks and the backend logger unit tests run locally without Decky. A successful local build does not replace installation and runtime testing on the target SteamOS/Decky version.
+`pnpm typecheck` and `pnpm build` validate the frontend bundle. Python syntax checks and backend unit tests cover logger formatting and Steam VDF/library discovery with temporary fixtures. A successful local build does not replace installation and runtime testing on the target SteamOS/Decky version.
 
 ## Credits and licensing
 

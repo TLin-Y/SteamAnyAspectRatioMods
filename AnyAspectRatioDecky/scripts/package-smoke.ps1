@@ -9,7 +9,6 @@ if (-not (Test-Path (Join-Path $distPath "index.js"))) {
 
 $requiredFiles = @(
     "main.py",
-    "plugin_logger.py",
     "package.json",
     "plugin.json",
     "README.md",
@@ -17,9 +16,24 @@ $requiredFiles = @(
     "LICENSE-Decky-Plugin-Template.txt",
     "LICENSE-LGPL-2.1.txt"
 )
+$runtimeFiles = @(
+    "helper\__init__.py",
+    "helper\constants.py",
+    "logger\__init__.py",
+    "logger\plugin_logger.py",
+    "scanner\__init__.py",
+    "scanner\steam_library_scanner.py",
+    "utils\__init__.py",
+    "utils\steam_vdf.py"
+)
 foreach ($file in $requiredFiles) {
     if (-not (Test-Path (Join-Path $pluginRoot $file))) {
         throw "Required plugin file is missing: $file"
+    }
+}
+foreach ($file in $runtimeFiles) {
+    if (-not (Test-Path (Join-Path $pluginRoot $file) -PathType Leaf)) {
+        throw "Required runtime module is missing: $file"
     }
 }
 
@@ -34,6 +48,13 @@ try {
     Copy-Item -Path $distPath -Destination $packageRoot -Recurse
     foreach ($file in $requiredFiles) {
         Copy-Item -Path (Join-Path $pluginRoot $file) -Destination $packageRoot
+    }
+    foreach ($file in $runtimeFiles) {
+        $sourcePath = Join-Path $pluginRoot $file
+        $destinationPath = Join-Path $packageRoot $file
+        $destinationDirectory = Split-Path -Parent $destinationPath
+        New-Item -ItemType Directory -Force -Path $destinationDirectory | Out-Null
+        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
     }
     Copy-Item -Path (Join-Path $repositoryRoot "LICENSE") -Destination $packageRoot
 

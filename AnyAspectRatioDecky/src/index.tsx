@@ -7,39 +7,59 @@ import {
 import { callable, definePlugin } from "@decky/api";
 import { useState } from "react";
 
-type PluginStatus = {
-  status: string;
-  message: string;
+type SteamScanReport = {
+  libraries_scanned: number;
+  apps_scanned: number;
+  apps: {
+    app_id: string;
+    name: string;
+    install_dir: string;
+    library_path: string;
+    game_path: string | null;
+  }[];
+  warnings: string[];
 };
 
-const getPluginStatus = callable<[], PluginStatus>("get_plugin_status");
+const scanSteamLibraries = callable<[], SteamScanReport>("scan_steam_libraries");
 
 function Content() {
-  const [message, setMessage] = useState("Backend status has not been checked.");
-  const [checking, setChecking] = useState(false);
+  const [report, setReport] = useState<SteamScanReport | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [scanning, setScanning] = useState(false);
 
-  const checkBackend = async () => {
-    setChecking(true);
+  const scanLibraries = async () => {
+    setScanning(true);
+    setReport(null);
+    setErrorMessage("");
     try {
-      const result = await getPluginStatus();
-      setMessage(`${result.status}: ${result.message}`);
+      setReport(await scanSteamLibraries());
     } catch (error) {
-      setMessage(`Backend check failed: ${String(error)}`);
+      setErrorMessage(`Steam library scan failed: ${String(error)}`);
     } finally {
-      setChecking(false);
+      setScanning(false);
     }
   };
 
   return (
     <PanelSection>
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={checkBackend} disabled={checking}>
-          {checking ? "Checking backend..." : "Check backend"}
+        <ButtonItem layout="below" onClick={scanLibraries} disabled={scanning}>
+          {scanning ? "Scanning Steam libraries..." : "Scan Steam libraries"}
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
-        <div role="status">{message}</div>
+        <div role="status">
+          {errorMessage ||
+            (report
+              ? `Scanned ${report.apps_scanned} installed Steam apps across ${report.libraries_scanned} libraries.`
+              : "Steam libraries have not been scanned.")}
+        </div>
       </PanelSectionRow>
+      {report?.warnings.map((warning, index) => (
+        <PanelSectionRow key={`${index}-${warning}`}>
+          <div role="status">{warning}</div>
+        </PanelSectionRow>
+      ))}
     </PanelSection>
   );
 }

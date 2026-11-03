@@ -2,7 +2,7 @@ import io
 import logging
 import unittest
 
-from plugin_logger import PluginLogger
+from logger.plugin_logger import PluginLogger
 
 
 class PluginLoggerTests(unittest.TestCase):
