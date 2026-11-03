@@ -12,8 +12,6 @@ Resident Evil 3 running on a handheld:
 
 ![Resident Evil 3 running on a handheld](resources/demo.jpg)
 
-For custom narrow resolutions in [Dynasty Warriors 3: Remastered](./Dynasty%20Warriors%203%20Remastered/README.md), see the game-specific guide.
-
 ## Building another ASI fix
 
 The reusable Windows/x64 ASI compiler is in [compiler](./compiler/README.md). Its build files and dependencies are isolated from the game mods in this repository. The sample implementation is based on the clean source layout of Lyall's [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix); replace `compiler/dllmain.cpp` and set `compiler/build_config.json` for each game. Lyall's license and attribution remain with the derived source, while the generated plugin's version metadata identifies AnyAspectRatio as its publisher.
