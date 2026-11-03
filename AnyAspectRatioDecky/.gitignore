@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.pnpm-store/
+__pycache__/
+*.py[cod]
+out/
