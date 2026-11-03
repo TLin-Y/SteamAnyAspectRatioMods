@@ -2,7 +2,7 @@
 
 ## 1. Install
 
-Extract the ZIP into the game's root folder, next to the game executable.
+Extract the ZIP into the game's `Visions.of.Mana\VisionsofMana\Binaries\Win64` folder.
 
 ## 2. Set resolution and FOV
 
