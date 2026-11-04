@@ -62,7 +62,7 @@ type PluginSettingsValues = {
   local_archive_dir: string;
 };
 type PluginSettingsInfo = {
-  settings: PluginSettingsValues;
+  settings: PluginSettingsValues & { offline_mode: boolean };
   defaults: Omit<PluginSettingsValues, "local_archive_dir">;
   catalog: {
     origin: "cache" | "bundled";
@@ -78,6 +78,7 @@ const savePluginSettings = callable<
   [string, string, string, string],
   { saved: boolean; source_changed: boolean }
 >("save_settings");
+const setOfflineMode = callable<[boolean], { offline_mode: boolean }>("set_offline_mode");
 const updateDependencies = callable<
   [],
   {
@@ -91,6 +92,7 @@ const updateDependencies = callable<
 >("update_dependencies");
 type CreditsInfo = {
   mod_count: number;
+  offline_mode: boolean;
   authors: {
     name: string;
     url: string;
@@ -115,8 +117,13 @@ const setModApplied = callable<
     applied: boolean;
     copied_file_count: number;
     conflicting_files: string[];
+    error?: string;
   }
 >("set_mod_applied");
+const getOfflineMode = callable<[], boolean>("get_offline_mode");
+const getLog = callable<[number], { content?: string; path?: string; error?: string }>(
+  "get_log",
+);
 const getModIni = callable<
   [string, string],
   { ini_file: string; content: string; exists: boolean }
@@ -439,31 +446,34 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           null,
           null,
         );
+        if (result.error) throw new Error(result.error);
         if (result.conflicting_files.length > 0) {
           if (applied) {
             const replaceFiles = await confirmFileReplacement(
               game.app_name,
               result.conflicting_files,
             );
-            await setModApplied(
+            const retry = await setModApplied(
               game.mod_id,
               game.game_path,
               true,
               replaceFiles,
               null,
             );
+            if (retry.error) throw new Error(retry.error);
           } else {
             const keepIni = await confirmModifiedIniRemoval(
               game.app_name,
               result.conflicting_files[0],
             );
-            await setModApplied(
+            const retry = await setModApplied(
               game.mod_id,
               game.game_path,
               false,
               null,
               keepIni,
             );
+            if (retry.error) throw new Error(retry.error);
           }
         }
       } catch (error) {
@@ -1038,7 +1048,7 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         values.catalog_path,
         values.local_archive_dir,
       );
-      if (result.source_changed) {
+      if (result.source_changed && !info?.settings.offline_mode) {
         setStatus("Settings saved. Fetching the catalog from the new source...");
         await runUpdate();
       } else {
@@ -1085,6 +1095,58 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     setStatus("Defaults restored. Press Save settings to apply them.");
   };
 
+  const viewLog = async () => {
+    try {
+      const log = await getLog(300);
+      if (log.error) throw new Error(log.error);
+      showModal(
+        <ConfirmModal
+          bAlertDialog
+          strTitle="Plugin log (latest lines)"
+          strOKButtonText="Close"
+          strDescription={
+            <div>
+              <div style={{ fontSize: "0.8em", opacity: 0.7, overflowWrap: "anywhere" }}>
+                {log.path}
+              </div>
+              <pre
+                style={{
+                  maxHeight: "50vh",
+                  overflow: "auto",
+                  fontSize: "0.7em",
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {log.content || "The log is empty."}
+              </pre>
+            </div>
+          }
+        />,
+      );
+    } catch (error) {
+      showError("Could not read the log", error);
+    }
+  };
+
+  const changeOfflineMode = async (enabled: boolean) => {
+    setBusy(true);
+    try {
+      await setOfflineMode(enabled);
+      setStatus(
+        enabled
+          ? "Offline mode is on. The plugin makes no internet connections."
+          : "Offline mode is off.",
+      );
+      await load();
+      onDataChanged();
+    } catch (error) {
+      showError("Could not change offline mode", error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const field = (label: string, key: keyof PluginSettingsValues) => (
     <PanelSectionRow>
       <div style={{ width: "100%" }}>
@@ -1100,6 +1162,24 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
 
   return (
     <>
+      <PanelSection title="Privacy">
+        <PanelSectionRow>
+          <ToggleField
+            label="Offline mode"
+            description="Locks the plugin so it never connects to the internet. Mods then install only from an imported offline pack or your local mod folder."
+            checked={info?.settings.offline_mode ?? false}
+            disabled={busy || !info}
+            onChange={changeOfflineMode}
+          />
+        </PanelSectionRow>
+      </PanelSection>
+      <PanelSection title="Troubleshooting">
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={busy} onClick={viewLog}>
+            View log
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
       <PanelSection title="Mod source (GitHub)">
         {field("Repository", "catalog_repository_url")}
         {field("Branch, tag, or commit", "catalog_ref")}
@@ -1123,7 +1203,11 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </PanelSectionRow>
         )}
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={update} disabled={busy || !info}>
+          <ButtonItem
+            layout="below"
+            onClick={update}
+            disabled={busy || !info || info.settings.offline_mode}
+          >
             Update catalog &amp; mods
           </ButtonItem>
         </PanelSectionRow>
@@ -1278,6 +1362,7 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
                   <DialogButton
                     key={link.url}
                     style={{ flex: 1, minWidth: 0, minHeight: 0, height: "28px", padding: "0 4px", fontSize: "12px" }}
+                    disabled={credits.offline_mode}
                     onClick={() => Navigation.NavigateToExternalWeb(link.url)}
                   >
                     {link.label}
@@ -1307,6 +1392,12 @@ type TabId = "games" | "settings" | "mods";
 function Content() {
   const [tab, setTab] = useState<TabId>("games");
   const [dataRevision, setDataRevision] = useState(0);
+  const [offline, setOffline] = useState(false);
+  useEffect(() => {
+    getOfflineMode()
+      .then(setOffline)
+      .catch(() => setOffline(false));
+  }, [dataRevision]);
   const tabButton = (id: TabId, label: string) => (
     <DialogButton
       style={{
@@ -1335,6 +1426,13 @@ function Content() {
             {tabButton("settings", "Settings")}
           </div>
         </PanelSectionRow>
+        {offline && (
+          <PanelSectionRow>
+            <div role="status" style={{ fontSize: "0.85em", opacity: 0.85 }}>
+              ✈️ Offline mode: no internet connections
+            </div>
+          </PanelSectionRow>
+        )}
       </PanelSection>
       <div style={{ display: tab === "games" ? "block" : "none" }}>
         <GamesTab dataRevision={dataRevision} />

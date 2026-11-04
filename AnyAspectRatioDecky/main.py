@@ -1,8 +1,7 @@
 import asyncio
 import sys
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
-from urllib.error import URLError
 
 import decky
 
@@ -34,11 +33,13 @@ from scanner import scan_supported_games as scan_supported_games_report
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import ModDefinition, read_catalog_repository, summarize_credits
 from scanner.mod_installer import (
+    NetworkError,
     apply_mod_files,
     fetch_mod_readme,
     read_mod_ini,
     remove_mod_files,
     set_archive_cache_dir,
+    set_offline_mode as block_network,
     set_pack_dir,
     write_mod_ini,
 )
@@ -71,6 +72,7 @@ def get_store() -> PluginStore:
         store.ensure_directories()
         set_archive_cache_dir(store.archive_cache_dir)
         set_pack_dir(store.pack_dir)
+        block_network(store.load_settings().offline_mode)
         attach_file_handler(decky.logger, store.log_path)
         _store = store
     return _store
@@ -132,6 +134,7 @@ class Plugin:
         source = load_active_catalog(store, store.load_settings())
         return {
             "mod_count": len(source.mods),
+            "offline_mode": store.load_settings().offline_mode,
             "authors": summarize_credits(source.mods),
             "pack": store.pack_stats(),
         }
@@ -198,13 +201,14 @@ class Plugin:
 
         # Values equal to the shipped defaults are stored as "use default".
         default_url, default_ref = read_catalog_repository()
+        previous = store.load_settings()
         settings = Settings(
             "" if requested.catalog_repository_url == default_url else requested.catalog_repository_url,
             "" if requested.catalog_ref == default_ref else requested.catalog_ref,
             "" if requested.catalog_path == DEFAULT_CATALOG_PATH else requested.catalog_path,
             requested.local_archive_dir,
+            previous.offline_mode,
         )
-        previous = store.load_settings()
         store.save_settings(settings)
         source_changed = previous.source_key() != settings.source_key()
         if source_changed:
@@ -216,13 +220,36 @@ class Plugin:
         log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"source-changed-{source_changed}")
         return {"saved": True, "source_changed": source_changed}
 
+    async def get_offline_mode(self) -> bool:
+        return get_store().load_settings().offline_mode
+
+    async def get_log(self, max_lines: int = 300) -> dict[str, object]:
+        path = get_store().log_path
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except FileNotFoundError:
+            return {"content": "", "path": str(path)}
+        except OSError as error:
+            return {"error": str(error)}
+        return {"content": "\n".join(lines[-max(1, min(max_lines, 2000)):]), "path": str(path)}
+
+    async def set_offline_mode(self, enabled: bool) -> dict[str, object]:
+        store = get_store()
+        store.save_settings(replace(store.load_settings(), offline_mode=bool(enabled)))
+        block_network(bool(enabled))
+        log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"offline-mode-{bool(enabled)}")
+        return {"offline_mode": bool(enabled)}
+
     async def update_dependencies(self) -> dict[str, object]:
         store = get_store()
         settings = store.load_settings()
         log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED)
         try:
             result = update_dependencies(store, settings)
-        except (OSError, URLError, ValueError) as error:
+        except NetworkError as error:
+            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="network")
+            return {"error": str(error)}
+        except (OSError, ValueError) as error:
             log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED)
             return {"error": str(error) or type(error).__name__}
         store.local_index_path.unlink(missing_ok=True)
@@ -296,7 +323,14 @@ class Plugin:
                     preserve_modified_ini=preserve_modified_ini,
                 )
                 copied_file_count = 0
-        except (OSError, URLError, ValueError):
+        except NetworkError as error:
+            log.warning(
+                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
+                mod_id=mod_id,
+                phase=f"{phase}-network",
+            )
+            return {"error": str(error)}
+        except (OSError, ValueError):
             log.exception(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,
                 mod_id=mod_id,
@@ -336,7 +370,14 @@ class Plugin:
         mod = self._get_mod_definition(mod_id)
         try:
             content = fetch_mod_readme(mod)
-        except (OSError, URLError, ValueError):
+        except NetworkError as error:
+            log.warning(
+                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
+                mod_id=mod_id,
+                phase="read-readme-network",
+            )
+            return {"title": mod.name, "content": f"**Could not load the ReadMe.**\n\n{error}"}
+        except (OSError, ValueError):
             log.exception(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,
                 mod_id=mod_id,

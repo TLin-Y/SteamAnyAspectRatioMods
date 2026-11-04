@@ -9,7 +9,13 @@ from zipfile import ZipFile
 from scanner import InstalledApp, SteamScanReport, match_supported_games
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModSource, load_mod_catalog
-from scanner.mod_installer import apply_mod_files, set_archive_cache_dir
+from scanner.mod_installer import (
+    OfflineModeError,
+    apply_mod_files,
+    open_url,
+    set_archive_cache_dir,
+    set_offline_mode,
+)
 from store import (
     PluginStore,
     Settings,
@@ -146,6 +152,72 @@ class DependencyUpdateTests(unittest.TestCase):
         source = load_active_catalog(self.store, Settings())
         self.assertEqual("bundled", source.origin)
         self.assertIsNotNone(source.warning)
+
+
+class BackendEntryPointTests(unittest.TestCase):
+    def test_every_runtime_module_compiles(self) -> None:
+        import py_compile
+
+        root = Path(__file__).resolve().parent.parent
+        modules = [root / "main.py", *root.glob("scanner/*.py"), *root.glob("store/*.py")]
+        for module in modules:
+            with self.subTest(module=module.name):
+                py_compile.compile(str(module), doraise=True)
+
+
+class NetworkErrorTests(unittest.TestCase):
+    def test_url_failures_become_plain_network_errors(self) -> None:
+        import socket
+        from urllib.error import HTTPError, URLError
+
+        from scanner.mod_installer import NetworkError, open_url
+
+        cases = {
+            HTTPError("https://x/y", 404, "Not Found", {}, None): "HTTP 404",
+            URLError(socket.gaierror(-2, "Name or service not known")): "No internet",
+            URLError(TimeoutError("timed out")): "Timed out",
+        }
+        for error, expected in cases.items():
+            with self.subTest(expected=expected):
+                with patch("scanner.mod_installer.urlopen", side_effect=error):
+                    with self.assertRaises(NetworkError) as raised:
+                        open_url("https://raw.githubusercontent.com/a/b")
+                self.assertIn(expected, str(raised.exception))
+                self.assertIn("raw.githubusercontent.com", str(raised.exception))
+
+
+class OfflineModeTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.store = PluginStore(Path(self.directory.name))
+        self.store.ensure_directories()
+        self.addCleanup(set_offline_mode, False)
+
+    def test_flag_is_saved_and_survives_validation(self) -> None:
+        self.store.save_settings(Settings(offline_mode=True))
+        self.assertTrue(self.store.load_settings().offline_mode)
+        self.assertTrue(validate_settings(Settings(offline_mode=True)).offline_mode)
+
+    def test_non_boolean_flag_in_the_file_is_ignored(self) -> None:
+        self.store.settings_path.write_text('{"offline_mode": "yes"}', encoding="utf-8")
+        self.assertFalse(self.store.load_settings().offline_mode)
+
+    def test_no_network_connection_is_attempted(self) -> None:
+        set_offline_mode(True)
+        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
+            with self.assertRaises(OfflineModeError):
+                open_url("https://raw.githubusercontent.com/o/r/main/a.zip")
+            with self.assertRaises(OSError):
+                update_dependencies(self.store, Settings(offline_mode=True))
+            self.assertIsNone(refresh_catalog_on_start(self.store, Settings(offline_mode=True)))
+
+    def test_turning_it_off_restores_network_access(self) -> None:
+        set_offline_mode(True)
+        set_offline_mode(False)
+        with patch("scanner.mod_installer.urlopen", return_value=response(b"x")) as opener:
+            open_url("https://raw.githubusercontent.com/o/r/main/a.zip")
+        opener.assert_called_once()
 
 
 class LocalArchiveTests(unittest.TestCase):
