@@ -20,7 +20,7 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
   - When removing, it can keep your edited settings file.
 - **Manual fixes section.** A few fixes can't be installed automatically. They are listed with a ReadMe button, so you can still see which of your games have one.
 - **Always fresh.** The mod list refreshes when the plugin starts.
-- **Offline friendly.** Import the repository zip once, or point it at a folder of your own mod zips.
+- **Offline friendly.** Grab the **Offline Pack** zip from the Assets (all mods, no source code), and import it once under **Mods → Import repository zip**. After that, nothing needs the internet. You can also point the plugin at a folder of your own mod zips.
 
 ## Install (about 2 minutes)
 
@@ -29,7 +29,8 @@ You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 1. Download **AnyAspectRatio-1.2.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu and press **Scan Steam libraries**.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import repository zip...** and pick **AnyAspectRatio-Offline-1.2.0.zip** (also in the Assets, about 400 MB). This installs every mod without internet. Skip this step if your Deck is online: the plugin downloads the mod list itself.
+5. Press **Scan Steam libraries**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
 

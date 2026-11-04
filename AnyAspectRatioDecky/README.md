@@ -25,7 +25,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 - **Games**: lists your games that have a mod, including non-Steam shortcuts. Apply or remove a mod per game, edit its settings, or read its ReadMe. Fixes that need manual steps are grouped under **Manual fixes** with a ReadMe button only.
 - **Mods**: shows who made the mods. Two buttons:
-  - **Import repository zip...**: use all of this repository's mods offline. On a PC or the Deck's browser, open this repository on GitHub, choose **Code → Download ZIP**, and save it in the Deck's `Downloads` folder. Then pick it here.
+  - **Import repository zip...**: install every mod without internet. Download `AnyAspectRatio-Offline-1.2.0.zip` from the release page, put it in the Deck's `Downloads` folder, then pick it here. It holds only the mod files, no source code.
   - **Delete all local files and caches**: frees the space used by imported or downloaded files. Your settings and already-applied mods are kept.
 - **Settings**: where mods come from, an optional folder of your own mod zips, and **Update** to fetch the newest mod list.
 
