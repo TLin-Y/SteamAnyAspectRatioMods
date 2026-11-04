@@ -41,6 +41,7 @@ from helper.constants import (
     MOD_ID_KEY,
     MOD_INI_FILE_KEY,
     MOD_INSTALL_DIRECTORY_KEY,
+    MOD_MANUAL_KEY,
     MOD_NAME_KEY,
     MOD_SOURCE_ARCHIVE,
     MOD_SOURCE_DESTINATION_KEY,
@@ -92,6 +93,7 @@ class ModDefinition:
     ini_file: str | None
     wine_dll_overrides: tuple[str, ...]
     credits: tuple[ModCredit, ...] = ()
+    manual: bool = False
 
 
 def _https_url(value: object) -> bool:
@@ -253,9 +255,23 @@ def _parse_mod(
         raise ValueError(MOD_CATALOG_INVALID_APP_ID_MESSAGE.format(mod_id=mod_id))
 
     install_dir = entry[MOD_INSTALL_DIRECTORY_KEY]
-    executable = entry[MOD_EXECUTABLE_KEY]
+    manual = entry.get(MOD_MANUAL_KEY, False)
+    if not isinstance(manual, bool):
+        raise ValueError(
+            MOD_CATALOG_MISSING_FIELD_MESSAGE.format(mod_id=mod_id, field=MOD_MANUAL_KEY)
+        )
+    # A manual mod is only listed and explained, so its executable may be unknown.
+    executable = (
+        entry.get(MOD_EXECUTABLE_KEY, "") if manual
+        else _require_string(entry, MOD_EXECUTABLE_KEY, mod_id)
+    )
+    if not isinstance(executable, str):
+        raise ValueError(
+            MOD_CATALOG_MISSING_FIELD_MESSAGE.format(mod_id=mod_id, field=MOD_EXECUTABLE_KEY)
+        )
     _validate_relative_path(install_dir, mod_id)
-    _validate_relative_path(executable, mod_id)
+    if executable:
+        _validate_relative_path(executable, mod_id)
     source = _parse_source(entry, mod_id, repository_url, repository_ref)
 
     ini_file = entry.get(MOD_INI_FILE_KEY)
@@ -312,6 +328,7 @@ def _parse_mod(
         ini_file=ini_file,
         wine_dll_overrides=tuple(raw_overrides),
         credits=_parse_credits(entry.get(MOD_CATALOG_CREDITS_KEY)) or default_credits,
+        manual=manual,
     )
 
 
