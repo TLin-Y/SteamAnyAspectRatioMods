@@ -2,6 +2,10 @@
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
+On Steam Deck, the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
+
+![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg)
+
 ## Support
 
 If these fixes make your games better, you can support the author:
