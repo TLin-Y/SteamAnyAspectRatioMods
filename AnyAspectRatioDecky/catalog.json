@@ -1154,6 +1154,42 @@
       "ini_file": "CrossWorldsFix.ini"
     },
     {
+      "id": "wo3ufix",
+      "name": "WARRIORS OROCHI 3 Ultimate Definitive Edition - WO3UFix",
+      "steam_app_id": "1879330",
+      "install_dir": "WARRIORS OROCHI 3 Ultimate",
+      "executable": "WO3U.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/WO3UFix/WO3UFix_0.0.1.zip"
+      },
+      "files": [
+        "WO3UFix.asi",
+        "WO3UFix.ini",
+        "dinput8.dll"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "WO3UFix.ini"
+    },
+    {
       "id": "sky1stchapterfix",
       "name": "Trails in the Sky 1st Chapter - Sky1stChapterFix",
       "steam_app_id": "3375780",

@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 
 from helper.constants import (
     MOD_CATALOG_APP_ID_PATTERN,
-    MOD_CATALOG_DUPLICATE_APP_ID_MESSAGE,
     MOD_CATALOG_DUPLICATE_FILE_MESSAGE,
     MOD_CATALOG_DUPLICATE_ID_MESSAGE,
     MOD_CATALOG_FILENAME,
@@ -383,14 +382,8 @@ def load_mod_catalog(
         for index, entry in enumerate(document[MOD_CATALOG_MODS_KEY])
     )
     ids: set[str] = set()
-    app_ids: set[str] = set()
     for mod in mods:
         if mod.mod_id in ids:
             raise ValueError(MOD_CATALOG_DUPLICATE_ID_MESSAGE.format(mod_id=mod.mod_id))
-        if mod.steam_app_id in app_ids:
-            raise ValueError(
-                MOD_CATALOG_DUPLICATE_APP_ID_MESSAGE.format(app_id=mod.steam_app_id)
-            )
         ids.add(mod.mod_id)
-        app_ids.add(mod.steam_app_id)
     return mods

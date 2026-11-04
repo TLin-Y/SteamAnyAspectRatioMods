@@ -100,14 +100,17 @@ def match_supported_games(
     catalog: tuple[ModDefinition, ...],
     local_mods: tuple[ModDefinition, ...] = (),
 ) -> SupportedGameScanReport:
-    mods_by_app_id = {mod.steam_app_id: mod for mod in (*local_mods, *catalog)}
+    mods_by_app_id: dict[str, list[ModDefinition]] = {}
+    for mod in (*local_mods, *catalog):
+        mods_by_app_id.setdefault(mod.steam_app_id, []).append(mod)
     games: list[SupportedGame] = []
     warnings = list(steam_scan.warnings)
 
-    for app in steam_scan.apps:
-        mod = mods_by_app_id.get(app.app_id)
-        if mod is None:
-            continue
+    for app, mod in (
+        (app, mod)
+        for app in steam_scan.apps
+        for mod in mods_by_app_id.get(app.app_id, [])
+    ):
         if app.install_dir != mod.install_dir:
             warnings.append(
                 MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING.format(
@@ -169,7 +172,7 @@ def match_supported_games(
         supported_games=games,
         warnings=warnings,
         local_mods=len(local_mods),
-        mods={mod.mod_id: mod for mod in mods_by_app_id.values()},
+        mods={mod.mod_id: mod for mod in (*local_mods, *catalog)},
     )
 
 

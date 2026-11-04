@@ -4,7 +4,7 @@ Everything in this folder is the work of Lyall, redistributed unchanged from [co
 
 [Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)
 
-## Mods (39)
+## Mods (40)
 
 | Mod | Steam ID | Released | Source |
 |---|---|---|---|
@@ -44,6 +44,7 @@ Everything in this folder is the work of Lyall, redistributed unchanged from [co
 | The Hundred Line -Last Defense Academy- - HundredLineFix | [3014080](https://store.steampowered.com/app/3014080) | 2025-05-29 | [HundredLineFix](https://codeberg.org/Lyall/HundredLineFix) |
 | Tom Clancy's Ghost Recon: Future Soldier - FutureSoldierFix | [212630](https://store.steampowered.com/app/212630) | 2026-02-14 | [FutureSoldierFix](https://codeberg.org/Lyall/FutureSoldierFix) |
 | Trails in the Sky 1st Chapter - Sky1stChapterFix | [3375780](https://store.steampowered.com/app/3375780) | 2025-10-20 | [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix) |
+| WARRIORS OROCHI 3 Ultimate Definitive Edition - WO3UFix | [1879330](https://store.steampowered.com/app/1879330) | 2025-10-16 | [WO3UFix](https://codeberg.org/Lyall/WO3UFix) |
 | Watch_Dogs - WatchDogsFix | [243470](https://store.steampowered.com/app/243470) | 2025-05-29 | [WatchDogsFix](https://codeberg.org/Lyall/WatchDogsFix) |
 | Wo Long: Fallen Dynasty - WoLongFix | [1448440](https://store.steampowered.com/app/1448440) | 2025-07-18 | [WoLongFix](https://codeberg.org/Lyall/WoLongFix) |
 | WORLD OF FINAL FANTASY - WOFFFix | [552700](https://store.steampowered.com/app/552700) | 2025-06-08 | [WOFFFix](https://codeberg.org/Lyall/WOFFFix) |

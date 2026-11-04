@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -224,6 +225,19 @@ class SupportedGameScannerTests(unittest.TestCase):
             game.to_dict()["wine_dll_overrides"],
         )
         self.assertEqual(1, len(report.to_dict()["supported_games"]))
+
+    def test_reports_every_mod_for_the_same_game(self) -> None:
+        other = replace(self.mod, mod_id="second-mod", name="Second mod")
+        report = match_supported_games(
+            SteamScanReport(1, 1, [self.app], []),
+            (self.mod, other),
+        )
+
+        self.assertEqual(
+            [self.mod.mod_id, "second-mod"],
+            [game.mod_id for game in report.supported_games],
+        )
+        self.assertEqual({self.mod.mod_id, "second-mod"}, set(report.mods))
 
     def test_reports_partial_and_complete_mod_file_presence(self) -> None:
         self._touch(self.mod.executable)

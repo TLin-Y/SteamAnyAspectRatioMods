@@ -2,6 +2,7 @@ import {
   ButtonItem,
   ConfirmModal,
   DialogButton,
+  DropdownItem,
   Navigation,
   PanelSection,
   PanelSectionRow,
@@ -190,38 +191,6 @@ function confirmModifiedIniRemoval(
   });
 }
 
-function confirmLaunchOptionsChange(
-  gameName: string,
-  requiredGroups: string[],
-  currentOptions: string,
-  proposedOptions: string,
-): Promise<boolean> {
-  return new Promise((resolve) => {
-    let settled = false;
-    let closeModal: (() => void) | undefined;
-    const finish = (confirmed: boolean) => {
-      if (settled) return;
-      settled = true;
-      resolve(confirmed);
-      closeModal?.();
-    };
-    const modal = showModal(
-      <ConfirmModal
-        strTitle="Update Steam launch options"
-        strDescription={`${gameName} requires WINEDLLOVERRIDES="${requiredGroups.join(";")}".\n\nCurrent launch options:\n${currentOptions || "(empty)"}\n\nUpdated launch options:\n${proposedOptions || "(empty)"}\n\nContinue and apply this mod?`}
-        strOKButtonText="Update options"
-        strCancelButtonText="Skip launch options"
-        onOK={() => finish(true)}
-        onCancel={() => finish(false)}
-        onEscKeypress={() => finish(false)}
-      />,
-      undefined,
-      { fnOnClose: () => finish(false) },
-    );
-    closeModal = modal.Close;
-  });
-}
-
 type LaunchOptionsDisplay = {
   label: string;
   value: string;
@@ -357,6 +326,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [updatingMod, setUpdatingMod] = useState(false);
   const [toggleRevision, setToggleRevision] = useState(0);
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
+  const [chosenMods, setChosenMods] = useState<Record<string, string>>({});
   const [iniGameKey, setIniGameKey] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<"manage" | "readme">("manage");
   const [readmeTitle, setReadmeTitle] = useState("");
@@ -459,21 +429,6 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           manualLaunchOptions =
             `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
           launchPlan = null;
-        } else if (
-          launchPlan &&
-          launchPlan.proposedOptions !== launchPlan.currentOptions &&
-          !(await confirmLaunchOptionsChange(
-            game.app_name,
-            game.wine_dll_overrides,
-            launchPlan.currentOptions,
-            launchPlan.proposedOptions,
-          ))
-        ) {
-          launchPlan = null;
-          manualLaunchOptions =
-            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
-          launchOptionsNotice =
-            `Steam launch options were left unchanged. To enable the mod's Wine DLL overrides, add ${manualLaunchOptions} to ${game.app_name}'s Steam launch options.`;
         }
       }
 
@@ -657,7 +612,18 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   };
 
   const gameKey = (game: SupportedGameReport["supported_games"][number]) =>
+    `${variantGroupKey(game)}-${game.mod_id}`;
+  const variantGroupKey = (game: SupportedGameReport["supported_games"][number]) =>
     `${game.steam_app_id}-${game.game_path}`;
+  const gameGroups = Object.values(
+    (report?.supported_games ?? []).reduce<
+      Record<string, SupportedGameReport["supported_games"]>
+    >((groups, game) => {
+      const key = variantGroupKey(game);
+      groups[key] = [...(groups[key] ?? []), game];
+      return groups;
+    }, {}),
+  );
   const selectedGame = report?.supported_games.find(
     (game) => gameKey(game) === selectedGameKey,
   );
@@ -917,14 +883,38 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </>
           )}
         </>
-      ) : report?.supported_games.map((game, index) => (
-        <PanelSection key={`${game.steam_app_id}-${game.game_path}`}>
+      ) : gameGroups.map((variants, index) => {
+        const groupKey = variantGroupKey(variants[0]);
+        const game =
+          variants.find((variant) => variant.mod_id === chosenMods[groupKey]) ??
+          variants.find((variant) => variant.file_status !== "none") ??
+          variants[0];
+        const blocker = variants.find(
+          (variant) => variant !== game && variant.file_status !== "none",
+        );
+        return (
+        <PanelSection key={groupKey}>
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
               {game.source_kind === "local_archive" ? " (local archive)" : ""}
             </strong>
           </PanelSectionRow>
+          {variants.length > 1 && (
+            <PanelSectionRow>
+              <DropdownItem
+                label="Mod"
+                rgOptions={variants.map((variant) => ({
+                  data: variant.mod_id,
+                  label: variant.mod_name,
+                }))}
+                selectedOption={game.mod_id}
+                onChange={(option) =>
+                  setChosenMods((current) => ({ ...current, [groupKey]: option.data }))
+                }
+              />
+            </PanelSectionRow>
+          )}
           <PanelSectionRow>
             <div
               style={{
@@ -955,10 +945,15 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               key={`${game.steam_app_id}-${toggleRevision}`}
               label="Apply"
               checked={game.file_status === "complete"}
-              disabled={updatingMod || !game.game_path}
+              disabled={updatingMod || !game.game_path || (!!blocker && game.file_status === "none")}
               onChange={(checked) => changeModApplied(game, checked)}
             />
           </PanelSectionRow>
+          {blocker && game.file_status === "none" && (
+            <PanelSectionRow>
+              <div role="status">{`Remove "${blocker.mod_name}" first to apply this mod.`}</div>
+            </PanelSectionRow>
+          )}
           {game.file_status === "partial" && (
             <PanelSectionRow>
               <ButtonItem
@@ -982,7 +977,8 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </div>
           </PanelSectionRow>
         </PanelSection>
-      ))}
+        );
+      })}
       {!selectedGame && report?.warnings
         .filter((warning) => !warning.startsWith("Steam library is unavailable:"))
         .map((warning, index) => (

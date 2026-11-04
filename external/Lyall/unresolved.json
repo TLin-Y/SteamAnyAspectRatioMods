@@ -1437,15 +1437,6 @@
     }
   },
   {
-    "repo": "WO3UFix",
-    "guess": "WARRIORS OROCHI 3 Ultimate Definitive Edition",
-    "reason": "Steam app already has a mod in the catalog",
-    "candidates": [
-      "1879330 WARRIORS OROCHI 3 Ultimate Definitive Edition (1.00)"
-    ],
-    "proposal": null
-  },
-  {
     "repo": "AbsolumFix",
     "guess": "Absolum",
     "reason": "mod directory '.' differs from every launch executable",
@@ -1509,7 +1500,7 @@
     "candidates": [
       "2246670 Tales of Xillia Remastered (1.00)",
       "3106450 Tales of Xillia Remastered - Deluxe Upgrade Pack (0.90)",
-      "3106400 Tales of Xillia Remastered - Lv. Up+10 (1) (0.90)"
+      "3106410 Tales of Xillia Remastered - Lv. Up+10 (2) (0.90)"
     ],
     "proposal": {
       "id": "talesofxilliafix",
@@ -2166,7 +2157,7 @@
   {
     "repo": "DOA6LRFix",
     "guess": "Dead or Alive 6 Last Round",
-    "reason": "Steam app already has a mod in the catalog",
+    "reason": "Another repo from this author already covers this Steam app",
     "candidates": [
       "4144680 DEAD OR ALIVE 6 Last Round (1.00)"
     ],

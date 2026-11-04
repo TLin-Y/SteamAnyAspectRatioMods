@@ -141,7 +141,6 @@ MOD_CATALOG_INVALID_ENTRY_MESSAGE = "Mod catalog entry {index} must be an object
 MOD_CATALOG_MISSING_FIELD_MESSAGE = "Mod catalog entry {mod_id} is missing {field}"
 MOD_CATALOG_INVALID_APP_ID_MESSAGE = "Mod catalog entry {mod_id} has an invalid Steam app ID"
 MOD_CATALOG_DUPLICATE_ID_MESSAGE = "Duplicate mod ID in catalog: {mod_id}"
-MOD_CATALOG_DUPLICATE_APP_ID_MESSAGE = "Duplicate Steam app ID in catalog: {app_id}"
 MOD_CATALOG_INVALID_SOURCE_MESSAGE = "Mod catalog entry {mod_id} has invalid source metadata"
 MOD_CATALOG_INVALID_SOURCE_KIND_MESSAGE = "Mod catalog entry {mod_id} has an unsupported source kind"
 MOD_CATALOG_INVALID_SOURCE_FILES_MESSAGE = (
