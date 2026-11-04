@@ -10,7 +10,7 @@ Special thanks to the mod writers:
 
 ---
 
-## Mods 4:3 Aspect Ratio (Optimized for RP Nova)
+## Mods 16:10 Aspect Ratio (default 1280x800)
 - Editing the .ini file can force lock it to any resolution and aspect ratio, ignoring Winlator's limits
 - If Winlator crashes or shows a black screen during in-game movies (open the chest/logo), try renaming the './databin/movie' folder.
 ### 1. Black Mod

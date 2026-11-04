@@ -100,7 +100,7 @@
       "executable": "NINJA GAIDEN SIGMA2.exe",
       "source": {
         "kind": "directory",
-        "path": "Ninja Gaiden Sigma 2/Ninja Gaiden Sigma 2 Black V18 for RP nova"
+        "path": "Ninja Gaiden Sigma 2/NG2 Black V18"
       },
       "files": [
         "dinput8.dll",
