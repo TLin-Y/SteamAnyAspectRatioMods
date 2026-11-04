@@ -1,6 +1,6 @@
 # WARRIORS-OROCHI-3-Ultimate-Any-Aspect-Ratio-Fov-With-Slow-Motion-Fix
 
-# set container to 1280x720 then stretch to full screen for any handheld (larger text)
+# Set the in-game resolution to 1280x720 and display scaling to "Stretch" so the picture fills the screen (larger text on handhelds)
 
 # Install
 Extract the mod files directly into your Steam game.exe folder.
