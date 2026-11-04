@@ -28,6 +28,7 @@ $runtimeFiles = @(
     "scanner\local_archives.py",
     "scanner\mod_installer.py",
     "scanner\mod_catalog.py",
+    "scanner\non_steam_shortcuts.py",
     "scanner\steam_library_scanner.py",
     "scanner\supported_game_scanner.py",
     "store\__init__.py",

@@ -2,7 +2,6 @@ import {
   ButtonItem,
   ConfirmModal,
   DialogButton,
-  DropdownItem,
   Navigation,
   PanelSection,
   PanelSectionRow,
@@ -326,7 +325,6 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [updatingMod, setUpdatingMod] = useState(false);
   const [toggleRevision, setToggleRevision] = useState(0);
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
-  const [chosenMods, setChosenMods] = useState<Record<string, string>>({});
   const [iniGameKey, setIniGameKey] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<"manage" | "readme">("manage");
   const [readmeTitle, setReadmeTitle] = useState("");
@@ -612,18 +610,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   };
 
   const gameKey = (game: SupportedGameReport["supported_games"][number]) =>
-    `${variantGroupKey(game)}-${game.mod_id}`;
-  const variantGroupKey = (game: SupportedGameReport["supported_games"][number]) =>
-    `${game.steam_app_id}-${game.game_path}`;
-  const gameGroups = Object.values(
-    (report?.supported_games ?? []).reduce<
-      Record<string, SupportedGameReport["supported_games"]>
-    >((groups, game) => {
-      const key = variantGroupKey(game);
-      groups[key] = [...(groups[key] ?? []), game];
-      return groups;
-    }, {}),
-  );
+    `${game.steam_app_id}-${game.game_path}-${game.mod_id}`;
   const selectedGame = report?.supported_games.find(
     (game) => gameKey(game) === selectedGameKey,
   );
@@ -806,6 +793,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
                   "Loading ReadMe..."
                 ) : (
                   <>
+                    <div style={{ opacity: 0.7, fontSize: "0.85em" }}>
+                      Game folder: {selectedGame.game_path ?? "unknown"}
+                    </div>
                     <strong>{readmeTitle}</strong>
                     <ReactMarkdown>{readmeContent}</ReactMarkdown>
                   </>
@@ -883,38 +873,15 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </>
           )}
         </>
-      ) : gameGroups.map((variants, index) => {
-        const groupKey = variantGroupKey(variants[0]);
-        const game =
-          variants.find((variant) => variant.mod_id === chosenMods[groupKey]) ??
-          variants.find((variant) => variant.file_status !== "none") ??
-          variants[0];
-        const blocker = variants.find(
-          (variant) => variant !== game && variant.file_status !== "none",
-        );
+      ) : (report?.supported_games ?? []).map((game, index) => {
         return (
-        <PanelSection key={groupKey}>
+        <PanelSection key={gameKey(game)}>
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
               {game.source_kind === "local_archive" ? " (local archive)" : ""}
             </strong>
           </PanelSectionRow>
-          {variants.length > 1 && (
-            <PanelSectionRow>
-              <DropdownItem
-                label="Mod"
-                rgOptions={variants.map((variant) => ({
-                  data: variant.mod_id,
-                  label: variant.mod_name,
-                }))}
-                selectedOption={game.mod_id}
-                onChange={(option) =>
-                  setChosenMods((current) => ({ ...current, [groupKey]: option.data }))
-                }
-              />
-            </PanelSectionRow>
-          )}
           <PanelSectionRow>
             <div
               style={{
@@ -945,15 +912,11 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               key={`${game.steam_app_id}-${toggleRevision}`}
               label="Apply"
               checked={game.file_status === "complete"}
-              disabled={updatingMod || !game.game_path || (!!blocker && game.file_status === "none")}
+              disabled={updatingMod || !game.game_path}
               onChange={(checked) => changeModApplied(game, checked)}
             />
           </PanelSectionRow>
-          {blocker && game.file_status === "none" && (
-            <PanelSectionRow>
-              <div role="status">{`Remove "${blocker.mod_name}" first to apply this mod.`}</div>
-            </PanelSectionRow>
-          )}
+
           {game.file_status === "partial" && (
             <PanelSectionRow>
               <ButtonItem

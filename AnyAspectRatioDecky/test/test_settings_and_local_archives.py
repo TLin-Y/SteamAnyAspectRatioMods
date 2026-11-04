@@ -14,6 +14,7 @@ from store import (
     PluginStore,
     Settings,
     load_active_catalog,
+    refresh_catalog_on_start,
     update_dependencies,
     validate_settings,
 )
@@ -109,6 +110,34 @@ class DependencyUpdateTests(unittest.TestCase):
                 update_dependencies(self.store, Settings())
         self.assertEqual("cache", load_active_catalog(self.store, Settings()).origin)
         self.assertEqual([], list(self.store.cache_dir.glob("*.tmp")))
+
+    def test_startup_refresh_fetches_and_clears_archives_only_on_change(self) -> None:
+        stale = self.store.archive_cache_dir / "old.zip"
+        stale.write_bytes(b"x")
+        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+            self.assertTrue(refresh_catalog_on_start(self.store, Settings()))
+        self.assertFalse(stale.exists())
+        self.assertEqual("cache", load_active_catalog(self.store, Settings()).origin)
+
+        stale.write_bytes(b"x")
+        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+            self.assertFalse(refresh_catalog_on_start(self.store, Settings()))
+        self.assertTrue(stale.exists())
+
+    def test_startup_refresh_failure_keeps_working_catalog(self) -> None:
+        with patch("scanner.mod_installer.urlopen", side_effect=OSError("offline")):
+            with self.assertRaises(OSError):
+                refresh_catalog_on_start(self.store, Settings())
+        self.assertEqual("bundled", load_active_catalog(self.store, Settings()).origin)
+
+    def test_startup_refresh_skips_an_imported_offline_pack(self) -> None:
+        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+            update_dependencies(self.store, Settings())
+        meta = json.loads(self.store.catalog_meta_path.read_text(encoding="utf-8"))
+        meta["source_url"] = "offline pack"
+        self.store.catalog_meta_path.write_text(json.dumps(meta), encoding="utf-8")
+        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
+            self.assertIsNone(refresh_catalog_on_start(self.store, Settings()))
 
     def test_corrupt_cached_catalog_falls_back_with_warning(self) -> None:
         with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):

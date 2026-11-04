@@ -21,6 +21,7 @@ from store.plugin_store import (
 )
 
 MAX_CATALOG_SIZE_BYTES = 2 * 1024 * 1024
+OFFLINE_PACK_SOURCE = "offline pack"
 
 
 @dataclass(frozen=True)
@@ -120,6 +121,23 @@ def catalog_url(settings: Settings) -> str:
         repository_ref,
         settings.catalog_path or DEFAULT_CATALOG_PATH,
     )
+
+
+def refresh_catalog_on_start(store: PluginStore, settings: Settings) -> bool | None:
+    """Best-effort catalog refresh at plugin load; returns whether it changed, None when skipped.
+
+    A user-imported offline pack is left alone, and cached mod archives are only dropped when
+    the catalog actually changed.
+    """
+    meta = store.catalog_meta()
+    if meta is not None and meta.get("source_url") == OFFLINE_PACK_SOURCE:
+        return None
+    url = catalog_url(settings)
+    _, changed, _ = save_catalog(store, settings, _download_catalog(url), url)
+    if changed:
+        store.clear_archive_cache()
+        store.local_index_path.unlink(missing_ok=True)
+    return changed
 
 
 def update_dependencies(store: PluginStore, settings: Settings) -> dict[str, object]:
