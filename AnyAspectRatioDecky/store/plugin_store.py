@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 import tempfile
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
@@ -21,6 +21,7 @@ class Settings:
     catalog_ref: str = ""
     catalog_path: str = ""
     local_archive_dir: str = ""
+    offline_mode: bool = False
 
     def source_key(self) -> tuple[str, str, str]:
         return (self.catalog_repository_url, self.catalog_ref, self.catalog_path)
@@ -63,7 +64,13 @@ def validate_settings(settings: Settings) -> Settings:
         if not Path(local_dir).is_dir():
             raise ValueError("Local mod folder does not exist")
         local_dir = str(Path(local_dir))
-    return Settings(url, ref, catalog_path, local_dir)
+    return replace(
+        settings,
+        catalog_repository_url=url,
+        catalog_ref=ref,
+        catalog_path=catalog_path,
+        local_archive_dir=local_dir,
+    )
 
 
 def write_json_atomic(path: Path, document: object) -> None:
@@ -113,11 +120,11 @@ class PluginStore:
         document = read_json(self.settings_path)
         if not isinstance(document, dict):
             return Settings()
-        known = {item.name for item in fields(Settings)}
+        field_types = {item.name: item.default for item in fields(Settings)}
         values = {
             key: value
             for key, value in document.items()
-            if key in known and isinstance(value, str)
+            if key in field_types and isinstance(value, type(field_types[key]))
         }
         return Settings(**values)
 

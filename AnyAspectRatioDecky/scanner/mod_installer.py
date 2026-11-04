@@ -1,11 +1,13 @@
 import hashlib
 import os
+import socket
 import ssl
 import stat
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
 from urllib.request import urlopen
 from zipfile import BadZipFile, ZipFile, is_zipfile
@@ -56,8 +58,73 @@ def repository_file_url(repository_url: str, repository_ref: str, path: str) -> 
     )
 
 
+class NetworkError(OSError):
+    """Any failed internet access; the message is written for the user, not for developers."""
+
+
+class OfflineModeError(NetworkError):
+    """Raised instead of any network access while offline mode is on."""
+
+
+_offline_mode = False
+
+
+def set_offline_mode(enabled: bool) -> None:
+    global _offline_mode
+    _offline_mode = enabled
+
+
+def describe_network_error(error: BaseException, url: str) -> str:
+    host = urlparse(url).hostname or "the server"
+    if isinstance(error, HTTPError):
+        message = f"{host} answered HTTP {error.code}."
+        if error.code == 404:
+            message += " The file was not found: check the repository, branch and file path."
+        return message
+    reason = error.reason if isinstance(error, URLError) else error
+    if isinstance(reason, (TimeoutError, socket.timeout)):
+        return f"Timed out while contacting {host}. Check your internet connection."
+    if isinstance(reason, socket.gaierror):
+        return f"No internet connection: could not find {host}."
+    if isinstance(reason, ssl.SSLError):
+        return f"A secure connection to {host} could not be made."
+    detail = str(reason).strip()
+    return f"Could not reach {host}" + (f": {detail}." if detail else ".")
+
+
+class _GuardedResponse:
+    """Turns connection failures while reading a download into NetworkError."""
+
+    def __init__(self, response, url: str) -> None:
+        self._response = response
+        self._url = url
+        self._stream = None
+
+    def __enter__(self):
+        self._stream = self._response.__enter__()
+        return self
+
+    def __exit__(self, *exc_info) -> bool | None:
+        return self._response.__exit__(*exc_info)
+
+    def read(self, size: int = -1) -> bytes:
+        try:
+            return self._stream.read(size)
+        except OSError as error:
+            raise NetworkError(describe_network_error(error, self._url)) from error
+
+
 def open_url(url: str):
-    return urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=create_ssl_context())
+    if _offline_mode:
+        raise OfflineModeError(
+            "Offline mode is on, so nothing is downloaded. "
+            "Import the offline pack on the Mods tab to install mods."
+        )
+    try:
+        response = urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=create_ssl_context())
+    except OSError as error:
+        raise NetworkError(describe_network_error(error, url)) from error
+    return _GuardedResponse(response, url)
 
 
 def _read_limited(stream, max_bytes: int, description: str) -> bytes:

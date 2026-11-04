@@ -3,7 +3,6 @@ import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 
 from scanner.mod_catalog import (
     ModDefinition,
@@ -60,15 +59,7 @@ def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource
 
 
 def _download_catalog(url: str) -> bytes:
-    try:
-        return read_url_limited(url, MAX_CATALOG_SIZE_BYTES, "Catalog")
-    except HTTPError as error:
-        raise ValueError(
-            f"Catalog download failed: HTTP {error.code} for {url}. "
-            "Check the repository, ref, and catalog path, and that the file is pushed."
-        ) from error
-    except URLError as error:
-        raise ValueError(f"Catalog download failed: {error.reason}") from error
+    return read_url_limited(url, MAX_CATALOG_SIZE_BYTES, "Catalog")
 
 
 def save_catalog(
@@ -129,6 +120,8 @@ def refresh_catalog_on_start(store: PluginStore, settings: Settings) -> bool | N
     A user-imported offline pack is left alone, and cached mod archives are only dropped when
     the catalog actually changed.
     """
+    if settings.offline_mode:
+        return None
     meta = store.catalog_meta()
     if meta is not None and meta.get("source_url") == OFFLINE_PACK_SOURCE:
         return None
