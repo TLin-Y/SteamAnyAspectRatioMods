@@ -7,6 +7,7 @@ from store.plugin_store import (
 from store.dependencies import (
     CatalogSource,
     load_active_catalog,
+    refresh_catalog_on_start,
     update_dependencies,
 )
 from store.pack import install_pack

@@ -30,7 +30,13 @@ from helper.constants import (
 )
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
-from scanner.steam_library_scanner import SteamScanReport, discover_steam_apps
+from scanner.non_steam_shortcuts import scan_non_steam_shortcuts
+from scanner.steam_library_scanner import (
+    InstalledApp,
+    SteamScanReport,
+    discover_steam_apps,
+    find_steam_roots,
+)
 
 
 @dataclass(frozen=True)
@@ -95,6 +101,51 @@ class SupportedGameScanReport:
         }
 
 
+def _build_game(mod: ModDefinition, app: InstalledApp) -> SupportedGame:
+    game_path = Path(app.game_path) if app.game_path is not None else None
+    executable_path = (
+        game_path / mod.executable if game_path is not None else None
+    )
+    executable_found = executable_path is not None and executable_path.is_file()
+    present_files = [
+        path
+        for path in mod.files
+        if game_path is not None and (game_path / path).is_file()
+    ]
+    missing_files = [path for path in mod.files if path not in present_files]
+    if not present_files:
+        file_status = MOD_CATALOG_FILE_STATUS_NONE
+    elif missing_files:
+        file_status = MOD_CATALOG_FILE_STATUS_PARTIAL
+    else:
+        file_status = MOD_CATALOG_FILE_STATUS_COMPLETE
+
+    ini_path = (
+        str(game_path / mod.ini_file)
+        if game_path is not None
+        and mod.ini_file is not None
+        and (game_path / mod.ini_file).is_file()
+        else None
+    )
+    return SupportedGame(
+        mod_id=mod.mod_id,
+        mod_name=mod.name,
+        steam_app_id=app.app_id,
+        app_name=app.name,
+        game_path=app.game_path,
+        executable_path=str(executable_path) if executable_path is not None else "",
+        executable_found=executable_found,
+        file_status=file_status,
+        files_present=present_files,
+        files_missing=missing_files,
+        ini_path=ini_path,
+        ini_file=mod.ini_file,
+        mod_files=list(mod.files),
+        source_kind=mod.source.kind,
+        wine_dll_overrides=list(mod.wine_dll_overrides),
+)
+
+
 def match_supported_games(
     steam_scan: SteamScanReport,
     catalog: tuple[ModDefinition, ...],
@@ -121,50 +172,18 @@ def match_supported_games(
             )
             continue
 
-        game_path = Path(app.game_path) if app.game_path is not None else None
-        executable_path = (
-            game_path / mod.executable if game_path is not None else None
-        )
-        executable_found = executable_path is not None and executable_path.is_file()
-        present_files = [
-            path
-            for path in mod.files
-            if game_path is not None and (game_path / path).is_file()
-        ]
-        missing_files = [path for path in mod.files if path not in present_files]
-        if not present_files:
-            file_status = MOD_CATALOG_FILE_STATUS_NONE
-        elif missing_files:
-            file_status = MOD_CATALOG_FILE_STATUS_PARTIAL
-        else:
-            file_status = MOD_CATALOG_FILE_STATUS_COMPLETE
+        games.append(_build_game(mod, app))
 
-        ini_path = (
-            str(game_path / mod.ini_file)
-            if game_path is not None
-            and mod.ini_file is not None
-            and (game_path / mod.ini_file).is_file()
-            else None
-        )
-        games.append(
-            SupportedGame(
-                mod_id=mod.mod_id,
-                mod_name=mod.name,
-                steam_app_id=app.app_id,
-                app_name=app.name,
-                game_path=app.game_path,
-                executable_path=str(executable_path) if executable_path is not None else "",
-                executable_found=executable_found,
-                file_status=file_status,
-                files_present=present_files,
-                files_missing=missing_files,
-                ini_path=ini_path,
-                ini_file=mod.ini_file,
-                mod_files=list(mod.files),
-                source_kind=mod.source.kind,
-                wine_dll_overrides=list(mod.wine_dll_overrides),
-            )
-        )
+    known = {(game.game_path, game.mod_id) for game in games}
+    for shortcut in steam_scan.shortcuts:
+        if shortcut.game_path is None:
+            continue
+        for mod in catalog:
+            if (shortcut.game_path, mod.mod_id) in known or not mod.executable:
+                continue
+            if (Path(shortcut.game_path) / mod.executable).is_file():
+                games.append(_build_game(mod, shortcut))
+                known.add((shortcut.game_path, mod.mod_id))
 
     return SupportedGameScanReport(
         steam_scan=steam_scan,
@@ -183,6 +202,7 @@ def scan_supported_games(
     local_index_path: Path | None = None,
 ) -> SupportedGameScanReport:
     steam_scan = discover_steam_apps()
+    steam_scan.shortcuts = scan_non_steam_shortcuts(find_steam_roots())
     catalog = load_mod_catalog() if catalog is None else catalog
     archives, archive_warnings = scan_local_archives(local_archive_dir, local_index_path)
     local_mods, match_warnings = build_local_mods(

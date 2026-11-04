@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -52,6 +53,7 @@ from store import (
     Settings,
     install_pack,
     load_active_catalog,
+    refresh_catalog_on_start,
     update_dependencies,
     validate_settings,
 )
@@ -374,8 +376,22 @@ class Plugin:
         return {"saved": True, "ini_file": mod.ini_file}
 
     async def _main(self) -> None:
-        get_store()
+        store = get_store()
         log.info(LOG_EVENT_PLUGIN_STARTED)
+        self._startup_refresh = asyncio.create_task(self._refresh_catalog(store))
+
+    @staticmethod
+    async def _refresh_catalog(store: PluginStore) -> None:
+        """Fetch the newest catalog in the background; the bundled or cached one stays in use on failure."""
+        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase="startup")
+        try:
+            changed = await asyncio.to_thread(
+                refresh_catalog_on_start, store, store.load_settings()
+            )
+        except Exception:
+            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="startup")
+            return
+        log.info(LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED, phase=f"startup-changed-{changed}")
 
     async def _unload(self) -> None:
         log.info(LOG_EVENT_PLUGIN_STOPPED)

@@ -434,6 +434,42 @@
       "ini_file": "ACShadowsFix.ini"
     },
     {
+      "id": "mandragorafix",
+      "name": "Mandragora: Whispers of the Witch Tree - MandragoraFix",
+      "steam_app_id": "1721060",
+      "install_dir": "Mandragora",
+      "executable": "man.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/MandragoraFix/MandragoraFix_0.0.2.zip"
+      },
+      "files": [
+        "man/Binaries/Win64/MandragoraFix.asi",
+        "man/Binaries/Win64/MandragoraFix.ini",
+        "man/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "man/Binaries/Win64/MandragoraFix.ini"
+    },
+    {
       "id": "hundredlinefix",
       "name": "The Hundred Line -Last Defense Academy- - HundredLineFix",
       "steam_app_id": "3014080",
@@ -576,6 +612,42 @@
         }
       ],
       "ini_file": "AtelierYumiaFix.ini"
+    },
+    {
+      "id": "ff7remakefix",
+      "name": "FINAL FANTASY VII REMAKE INTERGRADE - FF7RemakeFix",
+      "steam_app_id": "1462040",
+      "install_dir": "FINAL FANTASY VII REMAKE",
+      "executable": "ff7remake.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/FF7RemakeFix/FF7RemakeFix_0.0.2.zip"
+      },
+      "files": [
+        "End/Binaries/Win64/FF7RemakeFix.asi",
+        "End/Binaries/Win64/FF7RemakeFix.ini",
+        "End/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "End/Binaries/Win64/FF7RemakeFix.ini"
     },
     {
       "id": "metaphorfix",
@@ -722,6 +794,42 @@
       "ini_file": "SotDFix.ini"
     },
     {
+      "id": "dq3fix",
+      "name": "DRAGON QUEST III HD-2D Remake - DQ3Fix",
+      "steam_app_id": "2701660",
+      "install_dir": "DRAGON QUEST III HD-2D Remake",
+      "executable": "DQIIIHD2DRemake.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DQ3Fix/DQ3Fix_0.0.4.zip"
+      },
+      "files": [
+        "Game/Binaries/Win64/DQ3Fix.asi",
+        "Game/Binaries/Win64/DQ3Fix.ini",
+        "Game/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "Game/Binaries/Win64/DQ3Fix.ini"
+    },
+    {
       "id": "dqtreasuresfix",
       "name": "DRAGON QUEST TREASURES - DQTreasuresFix",
       "steam_app_id": "2021210",
@@ -830,6 +938,42 @@
       "ini_file": "FFXVIFix.ini"
     },
     {
+      "id": "wukongtweak",
+      "name": "Black Myth: Wukong - WukongTweak",
+      "steam_app_id": "2358720",
+      "install_dir": "BlackMythWukong",
+      "executable": "b1.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/WukongTweak/WukongTweak_0.8.5.zip"
+      },
+      "files": [
+        "b1/Binaries/Win64/WukongTweak.asi",
+        "b1/Binaries/Win64/WukongTweak.ini",
+        "b1/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "b1/Binaries/Win64/WukongTweak.ini"
+    },
+    {
       "id": "smtvfix",
       "name": "Shin Megami Tensei V: Vengeance - SMTVFix",
       "steam_app_id": "1875830",
@@ -936,6 +1080,42 @@
         }
       ],
       "ini_file": "WOFFFix.ini"
+    },
+    {
+      "id": "bravelydefault2fix",
+      "name": "BRAVELY DEFAULT II - BravelyDefault2Fix",
+      "steam_app_id": "1446650",
+      "install_dir": "BRAVELY DEFAULT II",
+      "executable": "Bravely_Default_II.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/BravelyDefault2Fix/BravelyDefault2Fix_0.0.4.zip"
+      },
+      "files": [
+        "Bravely_Default_II/Binaries/Win64/BravelyDefault2Fix.asi",
+        "Bravely_Default_II/Binaries/Win64/BravelyDefault2Fix.ini",
+        "Bravely_Default_II/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "Bravely_Default_II/Binaries/Win64/BravelyDefault2Fix.ini"
     },
     {
       "id": "dddafix",
@@ -1154,42 +1334,6 @@
       "ini_file": "CrossWorldsFix.ini"
     },
     {
-      "id": "wo3ufix",
-      "name": "WARRIORS OROCHI 3 Ultimate Definitive Edition - WO3UFix",
-      "steam_app_id": "1879330",
-      "install_dir": "WARRIORS OROCHI 3 Ultimate",
-      "executable": "WO3U.exe",
-      "source": {
-        "kind": "archive",
-        "path": "external/Lyall/WO3UFix/WO3UFix_0.0.1.zip"
-      },
-      "files": [
-        "WO3UFix.asi",
-        "WO3UFix.ini",
-        "dinput8.dll"
-      ],
-      "wine_dll_overrides": [
-        "dinput8=n,b"
-      ],
-      "credits": [
-        {
-          "name": "Lyall",
-          "url": "https://codeberg.org/Lyall",
-          "support": [
-            {
-              "label": "Patreon",
-              "url": "https://www.patreon.com/Wintermance"
-            },
-            {
-              "label": "Ko-fi",
-              "url": "https://ko-fi.com/W7W01UAI9"
-            }
-          ]
-        }
-      ],
-      "ini_file": "WO3UFix.ini"
-    },
-    {
       "id": "sky1stchapterfix",
       "name": "Trails in the Sky 1st Chapter - Sky1stChapterFix",
       "steam_app_id": "3375780",
@@ -1224,6 +1368,43 @@
         }
       ],
       "ini_file": "Sky1stChapterFix.ini"
+    },
+    {
+      "id": "absolumfix",
+      "name": "Absolum - AbsolumFix",
+      "steam_app_id": "1904480",
+      "install_dir": "Absolum",
+      "executable": "x64.steam/Absolum.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/AbsolumFix/AbsolumFix_0.0.2.zip",
+        "destination": "x64.steam"
+      },
+      "files": [
+        "x64.steam/AbsolumFix.asi",
+        "x64.steam/AbsolumFix.ini",
+        "x64.steam/winhttp.dll"
+      ],
+      "wine_dll_overrides": [
+        "winhttp=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "x64.steam/AbsolumFix.ini"
     },
     {
       "id": "doa5lrfix",
@@ -1296,6 +1477,78 @@
         }
       ],
       "ini_file": "DOA6Fix.ini"
+    },
+    {
+      "id": "tormentedsouls2fix",
+      "name": "Tormented Souls 2 - TormentedSouls2Fix",
+      "steam_app_id": "2464280",
+      "install_dir": "Tormented Souls 2",
+      "executable": "TormentedSouls2.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/TormentedSouls2Fix/TormentedSouls2Fix_0.0.1.zip"
+      },
+      "files": [
+        "TormentedSouls2/Binaries/Win64/TormentedSouls2Fix.asi",
+        "TormentedSouls2/Binaries/Win64/TormentedSouls2Fix.ini",
+        "TormentedSouls2/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "TormentedSouls2/Binaries/Win64/TormentedSouls2Fix.ini"
+    },
+    {
+      "id": "octopath0fix",
+      "name": "OCTOPATH TRAVELER 0 - Octopath0Fix",
+      "steam_app_id": "3014320",
+      "install_dir": "Octopath_Traveler0",
+      "executable": "Octopath_Traveler0.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/Octopath0Fix/Octopath0Fix_0.0.4.zip"
+      },
+      "files": [
+        "Octopath_Traveler0/Binaries/Win64/Octopath0Fix.asi",
+        "Octopath_Traveler0/Binaries/Win64/Octopath0Fix.ini",
+        "Octopath_Traveler0/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "Octopath_Traveler0/Binaries/Win64/Octopath0Fix.ini"
     },
     {
       "id": "dq7rfix",
@@ -1766,6 +2019,369 @@
         }
       ],
       "ini_file": "BeastOfReincarnationFix.ini"
+    },
+    {
+      "id": "mgsvfix",
+      "name": "METAL GEAR SOLID V: THE PHANTOM PAIN - MGSVFix",
+      "steam_app_id": "287700",
+      "install_dir": "MGS_TPP",
+      "executable": "mgsvtpp.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/MGSVFix/MGSVFix_0.0.3.zip"
+      },
+      "files": [
+        "MGSVFix.asi",
+        "MGSVFix.ini",
+        "winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "MGSVFix.ini"
+    },
+    {
+      "id": "mgsvfix-gz",
+      "name": "METAL GEAR SOLID V: GROUND ZEROES - MGSVFix",
+      "steam_app_id": "311340",
+      "install_dir": "Metal Gear Solid Ground Zeroes",
+      "executable": "MgsGroundZeroes.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/MGSVFix/MGSVFix_0.0.3.zip"
+      },
+      "files": [
+        "MGSVFix.asi",
+        "MGSVFix.ini",
+        "winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "MGSVFix.ini"
+    },
+    {
+      "id": "ff7rebirthfix",
+      "name": "FINAL FANTASY VII REBIRTH - FF7RebirthFix",
+      "steam_app_id": "2909400",
+      "install_dir": "FINAL FANTASY VII REBIRTH",
+      "executable": "ff7rebirth.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/FF7RebirthFix/FF7RebirthFix_0.0.13.zip"
+      },
+      "files": [
+        "End/Binaries/Win64/FF7RebirthFix.asi",
+        "End/Binaries/Win64/FF7RebirthFix.ini",
+        "End/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "End/Binaries/Win64/FF7RebirthFix.ini"
+    },
+    {
+      "id": "p3rfix",
+      "name": "Persona 3 Reload - P3RFix",
+      "steam_app_id": "2161700",
+      "install_dir": "P3R",
+      "executable": "P3R/Binaries/Win64/P3R.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/P3RFix/P3RFix_1.2.4.zip"
+      },
+      "files": [
+        "P3RFix.asi",
+        "P3RFix.ini",
+        "dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "P3RFix.ini"
+    },
+    {
+      "id": "gbfrelinkfix",
+      "name": "Granblue Fantasy: Relink - GBFRelinkFix",
+      "steam_app_id": "881020",
+      "install_dir": "Granblue Fantasy Relink",
+      "executable": "granblue_fantasy_relink.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/GBFRelinkFix/GBFRelinkFix_1.1.5.zip"
+      },
+      "files": [
+        "scripts/GBFRelinkFix.asi",
+        "scripts/GBFRelinkFix.ini",
+        "winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "scripts/GBFRelinkFix.ini"
+    },
+    {
+      "id": "so4fix",
+      "name": "STAR OCEAN THE DIVINE FORCE - SO4Fix",
+      "steam_app_id": "1776380",
+      "install_dir": "STAR OCEAN THE DIVINE FORCE",
+      "executable": "SO6.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/SO4Fix/SO4Fix_0.9.1.zip"
+      },
+      "files": [
+        "SO4Fix.asi",
+        "SO4Fix.ini",
+        "winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "SO4Fix.ini"
+    },
+    {
+      "id": "octopath2fix",
+      "name": "OCTOPATH TRAVELER II - Octopath2Fix",
+      "steam_app_id": "1971650",
+      "install_dir": "Octopath_Traveler2",
+      "executable": "Octopath_Traveler2/Binaries/Win64/Octopath_Traveler2-Win64-Shipping.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/Octopath2Fix/Octopath2Fix_0.9.0.zip",
+        "destination": "Octopath_Traveler2/Binaries/Win64"
+      },
+      "files": [
+        "Octopath_Traveler2/Binaries/Win64/Octopath2Fix.asi",
+        "Octopath_Traveler2/Binaries/Win64/Octopath2Fix.ini",
+        "Octopath_Traveler2/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "Octopath_Traveler2/Binaries/Win64/Octopath2Fix.ini"
+    },
+    {
+      "id": "dqxisfix",
+      "name": "DRAGON QUEST XI S: Echoes of an Elusive Age - Definitive Edition - DQXISFix",
+      "steam_app_id": "1295510",
+      "install_dir": "DRAGON QUEST XI S",
+      "executable": "Game/Binaries/Win64/DRAGON QUEST XI S.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DQXISFix/DQXISFix_0.9.3.zip",
+        "destination": "Game/Binaries/Win64"
+      },
+      "files": [
+        "Game/Binaries/Win64/DQXISFix.asi",
+        "Game/Binaries/Win64/DQXISFix.ini",
+        "Game/Binaries/Win64/dsound.dll"
+      ],
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "Game/Binaries/Win64/DQXISFix.ini"
+    },
+    {
+      "id": "p5strikersfix",
+      "name": "Persona 5 Strikers - P5StrikersFix",
+      "steam_app_id": "1382330",
+      "install_dir": "P5S",
+      "executable": "game.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip"
+      },
+      "files": [
+        "LICENSES.txt",
+        "dinput8.dll",
+        "scripts/P5StrikersFix.asi",
+        "scripts/P5StrikersFix.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "scripts/P5StrikersFix.ini"
+    },
+    {
+      "id": "doaxvvprismfix",
+      "name": "Venus Vacation PRISM - DEAD OR ALIVE Xtreme - DOAXVVPrismFix",
+      "steam_app_id": "3155730",
+      "install_dir": "Venus Vacation PRISM - DEAD OR ALIVE Xtreme -",
+      "executable": "Venus Vacation PRISM - DEAD OR ALIVE Xtreme -.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DOAXVVPrismFix/DOAXVVPrismFix_0.0.1.zip"
+      },
+      "files": [
+        "DOAXVVPrismFix.asi",
+        "DOAXVVPrismFix.ini",
+        "winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "DOAXVVPrismFix.ini"
     }
   ]
 }

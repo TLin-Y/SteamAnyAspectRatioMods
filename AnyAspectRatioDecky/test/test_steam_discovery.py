@@ -134,16 +134,23 @@ class SteamDiscoveryTests(unittest.TestCase):
         self.assertEqual(1, report.apps_scanned)
         self.assertTrue(any("configuration not found" in warning for warning in report.warnings))
 
-    def test_duplicate_installs_are_reported_separately(self) -> None:
+    def test_duplicate_installs_keep_the_largest_folder(self) -> None:
         first = self.root / "Steam"
         second = self.root / "sd" / "SteamLibrary"
         self._create_library(first, "100", "Game", "Game")
         self._create_library(second, "100", "Game", "Game")
+        stale = first / STEAMAPPS_DIRECTORY / "common" / "Game"
+        moved = second / STEAMAPPS_DIRECTORY / "common" / "Game"
+        self._write(stale / "leftover.txt", "x")
+        self._write(moved / "game.bin", "x" * 1000)
 
         report = scan_steam_libraries([first, second])
 
-        self.assertEqual(2, report.apps_scanned)
-        self.assertEqual(["100", "100"], [app.app_id for app in report.apps])
+        self.assertEqual(1, report.apps_scanned)
+        self.assertEqual(str(moved.resolve()), report.apps[0].game_path)
+
+        report = scan_steam_libraries([second, first])
+        self.assertEqual(str(moved.resolve()), report.apps[0].game_path)
 
     def test_unavailable_library_is_reported_without_hiding_valid_library(self) -> None:
         valid = self.root / "Steam"

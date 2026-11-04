@@ -1,5 +1,5 @@
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -63,6 +63,7 @@ class SteamScanReport:
     apps_scanned: int
     apps: list[InstalledApp]
     warnings: list[str]
+    shortcuts: list[InstalledApp] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -141,6 +142,34 @@ def _safe_install_directory(value: str) -> bool:
     return bool(value) and not relative.is_absolute() and all(
         part not in ("", ".", "..") for part in value.replace("\\", "/").split("/")
     )
+
+
+def _directory_size(path: str | None) -> int:
+    if path is None:
+        return -1
+    total = 0
+    for current, _, filenames in os.walk(path):
+        for filename in filenames:
+            try:
+                total += os.lstat(os.path.join(current, filename)).st_size
+            except OSError:
+                continue
+    return total
+
+
+def _keep_largest_installs(apps: list[InstalledApp]) -> list[InstalledApp]:
+    """A game moved between libraries can leave a stale copy behind; keep the largest folder per app."""
+    by_app_id: dict[str, list[InstalledApp]] = {}
+    for app in apps:
+        by_app_id.setdefault(app.app_id, []).append(app)
+    winners: dict[str, InstalledApp] = {}
+    for app_id, group in by_app_id.items():
+        winners[app_id] = (
+            group[0]
+            if len(group) == 1
+            else max(group, key=lambda app: _directory_size(app.game_path))
+        )
+    return [app for app in apps if winners[app.app_id] is app]
 
 
 def scan_steam_libraries(steam_roots: Sequence[Path]) -> SteamScanReport:
@@ -225,6 +254,7 @@ def scan_steam_libraries(steam_roots: Sequence[Path]) -> SteamScanReport:
                 )
             )
 
+    apps = _keep_largest_installs(apps)
     return SteamScanReport(
         libraries_scanned=len(libraries),
         apps_scanned=len(apps),
