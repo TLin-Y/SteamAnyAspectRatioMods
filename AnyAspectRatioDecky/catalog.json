@@ -24,7 +24,7 @@
       "executable": "Game/DarkSoulsIII.exe",
       "source": {
         "kind": "archive",
-        "path": "Dark Souls III/Dark-Souls-III-v1.0.0.zip",
+        "path": "Dark Souls III/Dark-Souls-III-v1.1.0.zip",
         "destination": "Game"
       },
       "files": ["Game/d3d11.dll", "Game/dinput8.dll", "Game/DS3_ARFix.asi", "Game/DS3_ARFix.ini"],
@@ -39,7 +39,7 @@
       "executable": "DW3CE_RE.exe",
       "source": {
         "kind": "archive",
-        "path": "Dynasty Warriors 3 Remastered/DW3RE-v1.0.0.zip"
+        "path": "Dynasty Warriors 3 Remastered/DW3RE-v1.1.0.zip"
       },
       "files": ["dxgi.dll", "DW3RE_ARFix.asi", "DW3RE_ARFix.ini"],
       "ini_file": "DW3RE_ARFix.ini",
@@ -86,7 +86,7 @@
       "executable": "MonsterHunterRise.exe",
       "source": {
         "kind": "archive",
-        "path": "Monster Hunter Rise/Monster-Hunter-Rise-v1.0.0.zip"
+        "path": "Monster Hunter Rise/Monster-Hunter-Rise-v1.1.0.zip"
       },
       "files": ["dinput8.dll", "MHRiseFix.asi", "MHRiseFix.ini"],
       "ini_file": "MHRiseFix.ini",
@@ -140,7 +140,7 @@
       "executable": "oriwotw.exe",
       "source": {
         "kind": "archive",
-        "path": "Ori and the Will of the Wisps/Ori-and-the-Will-of-the-Wisps-v1.0.0.zip"
+        "path": "Ori and the Will of the Wisps/Ori-and-the-Will-of-the-Wisps-v1.1.0.zip"
       },
       "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
       "ini_file": "OriARFix.ini",
@@ -154,7 +154,7 @@
       "executable": "re2.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 2 Remake DX11/Resident-Evil-2-Remake-DX11-v1.0.0.zip"
+        "path": "Resident Evil 2 Remake DX11/Resident-Evil-2-Remake-DX11-v1.1.0.zip"
       },
       "files": ["dinput8.dll", "RE2_ARFix.asi", "RE2_ARFix.ini"],
       "ini_file": "RE2_ARFix.ini",
@@ -168,7 +168,7 @@
       "executable": "re3.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 3 Remake DX11/Resident-Evil-3-Remake-DX11-v1.0.0.zip"
+        "path": "Resident Evil 3 Remake DX11/Resident-Evil-3-Remake-DX11-v1.1.0.zip"
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",
@@ -182,7 +182,7 @@
       "executable": "re4.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 4 Remake/Resident-Evil-4-Remake-v1.0.0.zip"
+        "path": "Resident Evil 4 Remake/Resident-Evil-4-Remake-v1.1.0.zip"
       },
       "files": ["dinput8.dll", "RE4_ARFix.asi", "RE4_ARFix.ini"],
       "ini_file": "RE4_ARFix.ini",
@@ -196,7 +196,7 @@
       "executable": "re7.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 7/Resident-Evil-7-v1.0.0.zip"
+        "path": "Resident Evil 7/Resident-Evil-7-v1.1.0.zip"
       },
       "files": ["dinput8.dll", "RE7_ARFix.asi", "RE7_ARFix.ini"],
       "ini_file": "RE7_ARFix.ini",
@@ -210,7 +210,7 @@
       "executable": "re8.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil Village/Resident-Evil-Village-v1.0.1.zip"
+        "path": "Resident Evil Village/Resident-Evil-Village-v1.1.0.zip"
       },
       "files": [
         "dinput8.dll",
@@ -228,7 +228,7 @@
       "executable": "Arise/Binaries/Win64/Tales of Arise.exe",
       "source": {
         "kind": "archive",
-        "path": "Tales of Arise/Tales-of-Arise-v1.0.0.zip",
+        "path": "Tales of Arise/Tales-of-Arise-v1.1.0.zip",
         "destination": "Arise/Binaries/Win64"
       },
       "files": [
@@ -297,7 +297,7 @@
       "executable": "WO3U.exe",
       "source": {
         "kind": "archive",
-        "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.0.0.zip"
+        "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.1.0.zip"
       },
       "files": [
         "dinput8.dll",
@@ -319,7 +319,7 @@
       "executable": "WO4.exe",
       "source": {
         "kind": "archive",
-        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.0.0.zip"
+        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.1.0.zip"
       },
       "files": ["dinput8.dll", "WO4U_ARFix.asi", "WO4U_ARFix.ini"],
       "ini_file": "WO4U_ARFix.ini",
