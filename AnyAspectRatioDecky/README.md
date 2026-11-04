@@ -2,6 +2,10 @@
 
 Play your games at any aspect ratio on Steam Deck and SteamOS. This Decky Loader plugin finds your supported games and applies ultrawide, super-ultrawide and other aspect-ratio fixes in one tap, with the Steam launch options set for you. Tweak each fix's settings right from Game Mode, and remove it just as easily.
 
+| Apply a fix per game | Edit its settings |
+|---|---|
+| ![Games tab](../resources/games-tab.jpg) | ![Editing a fix's INI](../resources/edit-ini.jpg) |
+
 ## Install
 
 Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
