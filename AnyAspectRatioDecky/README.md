@@ -1,9 +1,12 @@
 # AnyAspectRatio for Decky
 
-Play your games at any aspect ratio on Steam Deck and SteamOS. This Decky Loader plugin finds your supported games and applies ultrawide, super-ultrawide and other aspect-ratio fixes in one tap, with the Steam launch options set for you. Tweak each fix's settings right from Game Mode, and remove it just as easily.
+Play your games at fullsceen 16:10 on Steam Deck and SteamOS.
 
-| Apply a fix per game | Edit its settings |
-|---|---|
+This Decky Loader plugin finds your supported games and applies aspect-ratio fixes in one tap, with the Steam launch options set for you
+
+
+| Apply a fix per game                     | Edit its settings                                 |
+| ---------------------------------------- | ------------------------------------------------- |
 | ![Games tab](../resources/games-tab.jpg) | ![Editing a fix's INI](../resources/edit-ini.jpg) |
 
 ## Install
