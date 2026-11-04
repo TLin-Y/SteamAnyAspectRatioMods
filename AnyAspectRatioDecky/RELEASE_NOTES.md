@@ -36,6 +36,8 @@ To update, install the newer zip the same way. To remove, uninstall it from the 
 
 ## Good to know
 
+- **Full-stretch fixes** (Monster Hunter Rise, Resident Evil 2/3/4/7/Village, Warriors Orochi 3): set the game's in-game resolution to **1280x720** and display scaling to **Stretch**, otherwise the picture will not stretch to fill the screen.
+
 - This is the first public release. Fixes by Lyall are shipped as-is and haven't all been tested by us. If one misbehaves, press Remove and tell us which game.
 - Some fixes are for specific game versions. If a game updates, a fix may need a new release.
 - Anti-cheat or online games: use fixes at your own risk.
