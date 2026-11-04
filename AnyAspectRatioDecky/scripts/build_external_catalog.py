@@ -185,7 +185,6 @@ def main() -> None:
     main_document = json.loads(MAIN_CATALOG.read_text(encoding="utf-8"))
     prefix = f"external/{author_name}/"
     others = [m for m in main_document["mods"] if not m["source"].get("path", "").startswith(prefix)]
-    taken_apps = {mod["steam_app_id"] for mod in others}
     taken_ids = {mod["id"] for mod in others}
 
     credit = author
@@ -198,8 +197,8 @@ def main() -> None:
         app, candidates = find_app(game)
         if app is None:
             reason = "no confident Steam store match"
-        elif str(app["id"]) in taken_apps or any(m["steam_app_id"] == str(app["id"]) for m in mods):
-            reason = "Steam app already has a mod in the catalog"
+        elif any(m["steam_app_id"] == str(app["id"]) and m["credits"][0]["name"] == author_name for m in mods):
+            reason = "Another repo from this author already covers this Steam app"
         else:
             install_dir, executables = find_launches(app["id"])
             directory = mod_directory(entry["files"])
