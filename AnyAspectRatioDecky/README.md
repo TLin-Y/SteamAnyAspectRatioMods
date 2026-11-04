@@ -13,7 +13,7 @@ This Decky Loader plugin finds your supported games and applies aspect-ratio fix
 
 Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download `AnyAspectRatio-1.1.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
+1. Download `AnyAspectRatio-1.2.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
 2. Put the zip on the Deck (for example in `Downloads`).
 3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
 4. Open **Settings → Developer → Install Plugin from ZIP**, pick the zip, and confirm.
@@ -23,7 +23,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 ## Tabs
 
-- **Games**: lists your games that have a mod. Apply or remove a mod per game.
+- **Games**: lists your games that have a mod, including non-Steam shortcuts. Apply or remove a mod per game, edit its settings, or read its ReadMe. Fixes that need manual steps are grouped under **Manual fixes** with a ReadMe button only.
 - **Mods**: shows who made the mods. Two buttons:
   - **Import repository zip...**: use all of this repository's mods offline. On a PC or the Deck's browser, open this repository on GitHub, choose **Code → Download ZIP**, and save it in the Deck's `Downloads` folder. Then pick it here.
   - **Delete all local files and caches**: frees the space used by imported or downloaded files. Your settings and already-applied mods are kept.
