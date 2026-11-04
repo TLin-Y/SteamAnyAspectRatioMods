@@ -4849,6 +4849,618 @@
           ]
         }
       ]
+    },
+    {
+      "id": "dbxv2fix",
+      "name": "DRAGON BALL XENOVERSE 2 - DBXV2Fix",
+      "steam_app_id": "454650",
+      "install_dir": "DB Xenoverse 2",
+      "executable": "START.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DBXV2Fix/DBXV2Fix_0.0.2.zip"
+      },
+      "files": [
+        "bin/DBXV2Fix.asi",
+        "bin/DBXV2Fix.ini",
+        "bin/winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wildheartsfix",
+      "name": "WILD HEARTS - WildHeartsFix",
+      "steam_app_id": "1938010",
+      "install_dir": "WILD HEARTS",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/WildHeartsFix/WildHeartsFix_0.0.1.zip"
+      },
+      "files": [
+        "00_game/target_origin/ex/dinput8.dll",
+        "00_game/target_origin/ex/dinput8.ini",
+        "00_game/target_origin/ex/WildHeartsFix.asi",
+        "00_game/target_origin/ex/WildHeartsFix.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-kiwami-3-dark-ties",
+      "name": "Yakuza Kiwami 3 & Dark Ties - DragonTweak",
+      "steam_app_id": "3937550",
+      "install_dir": "YakuzaKiwami3",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-like-a-dragon-pirate-yakuza-in-hawaii",
+      "name": "Like a Dragon: Pirate Yakuza in Hawaii - DragonTweak",
+      "steam_app_id": "3061810",
+      "install_dir": "LikeADragonPirates",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-like-a-dragon-infinite-wealth",
+      "name": "Like a Dragon: Infinite Wealth - DragonTweak",
+      "steam_app_id": "2072450",
+      "install_dir": "LikeADragon8",
+      "executable": "runtime/media/LikeADragon8.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-like-a-dragon-gaiden-the-man-who-erased-his-name",
+      "name": "Like a Dragon Gaiden: The Man Who Erased His Name - DragonTweak",
+      "steam_app_id": "2375550",
+      "install_dir": "LikeADragonGaiden",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-lost-judgment",
+      "name": "Lost Judgment - DragonTweak",
+      "steam_app_id": "2058190",
+      "install_dir": "Lost Judgment",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-like-a-dragon",
+      "name": "Yakuza: Like a Dragon - DragonTweak",
+      "steam_app_id": "1235140",
+      "install_dir": "Yakuza Like a Dragon",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-judgment",
+      "name": "Judgment - DragonTweak",
+      "steam_app_id": "2058180",
+      "install_dir": "Judgment",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-kiwami-2",
+      "name": "Yakuza Kiwami 2 - DragonTweak",
+      "steam_app_id": "3717340",
+      "install_dir": "Yakuza Kiwami 2 R",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-kiwami-2-legacy",
+      "name": "Yakuza Kiwami 2 (Legacy) - DragonTweak",
+      "steam_app_id": "927380",
+      "install_dir": "Yakuza Kiwami 2",
+      "executable": "YakuzaKiwami2.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-6-the-song-of-life",
+      "name": "Yakuza 6: The Song of Life - DragonTweak",
+      "steam_app_id": "1388590",
+      "install_dir": "Yakuza 6 - The Song of Life",
+      "executable": "Yakuza6.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-0-director-s-cut",
+      "name": "Yakuza 0 Director's Cut - DragonTweak",
+      "steam_app_id": "2988580",
+      "install_dir": "Yakuza 0 Directors Cut",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-kiwami",
+      "name": "Yakuza Kiwami - DragonTweak",
+      "steam_app_id": "3717330",
+      "install_dir": "Yakuza Kiwami R",
+      "executable": "runtime/media/startup.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-5-remastered",
+      "name": "Yakuza 5 Remastered - DragonTweak",
+      "steam_app_id": "1105510",
+      "install_dir": "Yakuza 5",
+      "executable": "main/Yakuza5.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-4-remastered",
+      "name": "Yakuza 4 Remastered - DragonTweak",
+      "steam_app_id": "1105500",
+      "install_dir": "Yakuza 4",
+      "executable": "Yakuza4.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-3-remastered",
+      "name": "Yakuza 3 Remastered - DragonTweak",
+      "steam_app_id": "1088710",
+      "install_dir": "Yakuza 3",
+      "executable": "Yakuza3.exe",
+      "manual": true,
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "DragonTweak.asi",
+        "DragonTweak.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

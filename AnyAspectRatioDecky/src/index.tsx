@@ -13,7 +13,7 @@ import {
 import { callable, definePlugin, openFilePicker } from "@decky/api";
 import type { FileSelectionType } from "@decky/api";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   applyLaunchOptions,
   prepareLaunchOptions,
@@ -44,6 +44,7 @@ type SupportedGameReport = {
     mod_files: string[];
     source_kind: string;
     wine_dll_overrides: string[];
+    manual?: boolean;
   }[];
   warnings: string[];
 };
@@ -873,9 +874,22 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </>
           )}
         </>
-      ) : (report?.supported_games ?? []).map((game, index) => {
+      ) : [...(report?.supported_games ?? [])]
+          .sort((a, b) => Number(!!a.manual) - Number(!!b.manual))
+          .map((game, index, ordered) => {
         return (
-        <PanelSection key={gameKey(game)}>
+        <Fragment key={gameKey(game)}>
+        {game.manual && !ordered[index - 1]?.manual && (
+          <PanelSection title="Manual fixes">
+            <PanelSectionRow>
+              <div>
+                These fixes cannot be installed automatically. Open the ReadMe for
+                the steps.
+              </div>
+            </PanelSectionRow>
+          </PanelSection>
+        )}
+        <PanelSection>
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
@@ -891,15 +905,17 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
                 width: "100%",
               }}
             >
+              {!game.manual && (
+                <DialogButton
+                  style={{ flex: "0 0 30%" }}
+                  onClick={() => openGameDetails(game)}
+                  disabled={updatingMod || !game.game_path}
+                >
+                  Edit
+                </DialogButton>
+              )}
               <DialogButton
-                style={{ flex: "0 0 30%" }}
-                onClick={() => openGameDetails(game)}
-                disabled={updatingMod || !game.game_path}
-              >
-                Edit
-              </DialogButton>
-              <DialogButton
-                style={{ flex: "0 0 30%" }}
+                style={{ flex: game.manual ? "0 0 60%" : "0 0 30%" }}
                 onClick={() => openGameReadme(game)}
                 disabled={readmeLoading}
               >
@@ -907,6 +923,12 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               </DialogButton>
             </div>
           </PanelSectionRow>
+          {game.manual ? (
+            <PanelSectionRow>
+              <div>Manual install — see the ReadMe</div>
+            </PanelSectionRow>
+          ) : (
+            <>
           <PanelSectionRow>
             <ToggleField
               key={`${game.steam_app_id}-${toggleRevision}`}
@@ -939,7 +961,10 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
                   : "Not applied — no mod files present"}
             </div>
           </PanelSectionRow>
+            </>
+          )}
         </PanelSection>
+        </Fragment>
         );
       })}
       {!selectedGame && report?.warnings

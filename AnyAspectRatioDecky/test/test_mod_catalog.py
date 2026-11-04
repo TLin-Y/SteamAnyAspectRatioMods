@@ -178,6 +178,48 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
 
+class ManualModTests(unittest.TestCase):
+    def test_manual_mods_are_listed_but_never_installed(self) -> None:
+        from scanner.mod_installer import apply_mod_files, remove_mod_files
+
+        mods = {mod.mod_id: mod for mod in load_mod_catalog()}
+        wild_hearts, dbxv2 = mods["wildheartsfix"], mods["dbxv2fix"]
+        self.assertTrue(wild_hearts.manual and dbxv2.manual)
+        self.assertEqual("", wild_hearts.executable)
+        self.assertFalse(mods["dark-souls-iii"].manual)
+
+        with tempfile.TemporaryDirectory() as directory:
+            game = Path(directory) / "WILD HEARTS"
+            game.mkdir()
+            app = InstalledApp("1938010", "WILD HEARTS", "WILD HEARTS", directory, str(game))
+            report = match_supported_games(SteamScanReport(1, 1, [app], []), (wild_hearts,))
+            self.assertEqual(1, len(report.supported_games))
+            self.assertTrue(report.supported_games[0].to_dict()["manual"])
+
+            with self.assertRaisesRegex(ValueError, "manually"):
+                apply_mod_files(wild_hearts, str(game))
+            with self.assertRaisesRegex(ValueError, "manually"):
+                remove_mod_files(wild_hearts, str(game))
+            self.assertEqual([], list(game.iterdir()))
+
+    def test_executable_is_required_unless_manual(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        entry = next(mod for mod in document["mods"] if mod["id"] == "wildheartsfix")
+        document["mods"] = [entry]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            entry["manual"] = False
+            path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_mod_catalog(path)
+            entry["manual"] = "yes"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_mod_catalog(path)
+
+
 class SupportedGameScannerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()

@@ -18,6 +18,7 @@ from helper.constants import (
     MOD_CATALOG_MOD_ID_FIELD,
     MOD_CATALOG_MOD_NAME_FIELD,
     MOD_CATALOG_SOURCE_KIND_FIELD,
+    MOD_MANUAL_KEY,
     MOD_WINE_OVERRIDES_KEY,
     MOD_CATALOG_COUNT_FIELD,
     MOD_CATALOG_SCAN_REPORT_FIELD,
@@ -56,9 +57,11 @@ class SupportedGame:
     mod_files: list[str]
     source_kind: str
     wine_dll_overrides: list[str]
+    manual: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
+            MOD_MANUAL_KEY: self.manual,
             MOD_CATALOG_MOD_ID_FIELD: self.mod_id,
             MOD_CATALOG_MOD_NAME_FIELD: self.mod_name,
             MOD_STEAM_APP_ID_KEY: self.steam_app_id,
@@ -143,6 +146,7 @@ def _build_game(mod: ModDefinition, app: InstalledApp) -> SupportedGame:
         mod_files=list(mod.files),
         source_kind=mod.source.kind,
         wine_dll_overrides=list(mod.wine_dll_overrides),
+        manual=mod.manual,
 )
 
 

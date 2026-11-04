@@ -4,7 +4,7 @@ Everything in this folder is the work of Lyall, redistributed unchanged from [co
 
 [Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)
 
-## Mods (71)
+## Mods (74)
 
 | Mod | Steam ID | Released | Source |
 |---|---|---|---|
@@ -24,6 +24,7 @@ Everything in this folder is the work of Lyall, redistributed unchanged from [co
 | DEATH STRANDING DIRECTOR'S CUT - DeathStrandingDCFix | [1850570](https://store.steampowered.com/app/1850570) | 2025-07-04 | [DeathStrandingDCFix](https://codeberg.org/Lyall/DeathStrandingDCFix) |
 | Deus Ex: Mankind Divided - DeusExMDFix | [337000](https://store.steampowered.com/app/337000) | 2025-06-02 | [DeusExMDFix](https://codeberg.org/Lyall/DeusExMDFix) |
 | Dragon Age: Origins - DAFix | [47810](https://store.steampowered.com/app/47810) | 2025-06-04 | [DAFix](https://codeberg.org/Lyall/DAFix) |
+| DRAGON BALL XENOVERSE 2 - DBXV2Fix | [454650](https://store.steampowered.com/app/454650) | 2026-01-23 | [DBXV2Fix](https://codeberg.org/Lyall/DBXV2Fix) |
 | DRAGON QUEST III HD-2D Remake - DQ3Fix | [2701660](https://store.steampowered.com/app/2701660) | 2025-06-04 | [DQ3Fix](https://codeberg.org/Lyall/DQ3Fix) |
 | DRAGON QUEST TREASURES - DQTreasuresFix | [2021210](https://store.steampowered.com/app/2021210) | 2025-06-04 | [DQTreasuresFix](https://codeberg.org/Lyall/DQTreasuresFix) |
 | DRAGON QUEST VII Reimagined - DQ7RFix | [2499860](https://store.steampowered.com/app/2499860) | 2026-03-10 | [DQ7RFix](https://codeberg.org/Lyall/DQ7RFix) |
@@ -77,5 +78,7 @@ Everything in this folder is the work of Lyall, redistributed unchanged from [co
 | Trails in the Sky 1st Chapter - Sky1stChapterFix | [3375780](https://store.steampowered.com/app/3375780) | 2025-10-20 | [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix) |
 | Venus Vacation PRISM - DEAD OR ALIVE Xtreme - DOAXVVPrismFix | [3155730](https://store.steampowered.com/app/3155730) | 2026-01-22 | [DOAXVVPrismFix](https://codeberg.org/Lyall/DOAXVVPrismFix) |
 | Watch_Dogs - WatchDogsFix | [243470](https://store.steampowered.com/app/243470) | 2025-05-29 | [WatchDogsFix](https://codeberg.org/Lyall/WatchDogsFix) |
+| WILD HEARTS - WildHeartsFix | [1938010](https://store.steampowered.com/app/1938010) | 2026-02-28 | [WildHeartsFix](https://codeberg.org/Lyall/WildHeartsFix) |
 | Wo Long: Fallen Dynasty - WoLongFix | [1448440](https://store.steampowered.com/app/1448440) | 2025-07-18 | [WoLongFix](https://codeberg.org/Lyall/WoLongFix) |
 | WORLD OF FINAL FANTASY - WOFFFix | [552700](https://store.steampowered.com/app/552700) | 2025-06-08 | [WOFFFix](https://codeberg.org/Lyall/WOFFFix) |
+| Yakuza / Like a Dragon series (15 games) - DragonTweak | multiple | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |

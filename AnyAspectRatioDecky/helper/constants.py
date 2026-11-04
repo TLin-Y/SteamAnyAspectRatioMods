@@ -131,6 +131,8 @@ MOD_SOURCE_KINDS = (
 MOD_FILES_KEY = "files"
 MOD_INI_FILE_KEY = "ini_file"
 MOD_WINE_OVERRIDES_KEY = "wine_dll_overrides"
+MOD_MANUAL_KEY = "manual"
+MOD_MANUAL_INSTALL_MESSAGE = "Mod {mod_id} must be installed manually; follow its ReadMe"
 
 MOD_CATALOG_INVALID_JSON_MESSAGE = "Mod catalog is not valid JSON: {error}"
 MOD_CATALOG_INVALID_SCHEMA_MESSAGE = (
@@ -174,7 +176,6 @@ MOD_CATALOG_REQUIRED_STRING_FIELDS = (
     MOD_NAME_KEY,
     MOD_STEAM_APP_ID_KEY,
     MOD_INSTALL_DIRECTORY_KEY,
-    MOD_EXECUTABLE_KEY,
 )
 MOD_CATALOG_EXECUTABLE_FOUND_FIELD = "executable_found"
 MOD_CATALOG_FILES_PRESENT_FIELD = "files_present"

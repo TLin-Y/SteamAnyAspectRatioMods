@@ -11,6 +11,7 @@ from urllib.request import urlopen
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
 from helper.constants import (
+    MOD_MANUAL_INSTALL_MESSAGE,
     MOD_SOURCE_ARCHIVE,
     MOD_SOURCE_DIRECTORY,
     MOD_SOURCE_FILES,
@@ -396,6 +397,8 @@ def apply_mod_files(
     *,
     replace_existing_files: bool | None = None,
 ) -> list[str]:
+    if mod.manual:
+        raise ValueError(MOD_MANUAL_INSTALL_MESSAGE.format(mod_id=mod.mod_id))
     game_root = Path(game_path).resolve(strict=True)
     if not game_root.is_dir():
         raise ValueError("Game installation directory is unavailable")
@@ -512,6 +515,8 @@ def remove_mod_files(
     *,
     preserve_modified_ini: bool | None = None,
 ) -> list[str]:
+    if mod.manual:
+        raise ValueError(MOD_MANUAL_INSTALL_MESSAGE.format(mod_id=mod.mod_id))
     game_root = Path(game_path).resolve(strict=True)
     if not game_root.is_dir():
         raise ValueError("Game installation directory is unavailable")
