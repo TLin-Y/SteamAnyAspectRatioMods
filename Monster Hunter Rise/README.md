@@ -20,4 +20,4 @@ Open MHRiseFix.ini with any text editor. You can easily change TargetWidth and T
 
 4. Full-Screen Stretching
    
-Set your display scaling to "Stretch" in your GameNative settings. For RP Nova, If your container resolution is set to 1280x720, this will perfectly stretch the 4:3 rendered image to fill your entire screen.
+Set your display scaling to "Stretch" in your GameNative settings. The mod defaults to 16:10 (1280x800, Steam Deck). If your container resolution is set to 1280x800, no stretching is needed; for other ratios, stretch the rendered image to fill your screen.

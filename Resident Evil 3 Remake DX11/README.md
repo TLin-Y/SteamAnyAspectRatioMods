@@ -26,4 +26,4 @@ Open RE3_ARFix.ini with any text editor. Change AspectWidth and AspectHeight to 
 
 Set your display scaling to "Stretch" in your game settings. For a handheld, setting your container resolution to 1280x720 and stretching to full screen can fill the display.
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-3-Remake-DX11-v1.0.0.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-3-Remake-DX11-v1.1.0.zip and in the repository root.
