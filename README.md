@@ -2,6 +2,14 @@
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
+## Support
+
+If these fixes make your games better, you can support the author:
+
+[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
+Fixes by [Lyall](./external/Lyall/README.md) are mirrored here unchanged for the Decky plugin; please support him too: [Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)
+
 ## About this collection
 
 Before looking for a fix here, check [Lyall's repository](https://codeberg.org/Lyall): it contains many ready-made fixes for a wide range of games. This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
