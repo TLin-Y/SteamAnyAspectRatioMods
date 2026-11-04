@@ -17,7 +17,7 @@ from helper.constants import (
     MOD_SOURCE_FILES,
     MOD_SOURCE_LOCAL_ARCHIVE,
 )
-from scanner.mod_catalog import ModDefinition, ModSource, ModSourceFile
+from scanner.mod_catalog import ModDefinition, ModSource
 
 
 DOWNLOAD_TIMEOUT_SECONDS = 30

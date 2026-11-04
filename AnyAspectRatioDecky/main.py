@@ -11,11 +11,6 @@ if plugin_dir not in sys.path:
     sys.path.insert(0, plugin_dir)
 
 from helper.constants import (
-    BACKEND_MESSAGE_FIELD,
-    BACKEND_READY_MESSAGE,
-    BACKEND_STATUS_FIELD,
-    BACKEND_STATUS_READY,
-    LOG_EVENT_BACKEND_STATUS_REQUESTED,
     LOG_EVENT_CATALOG_FALLBACK,
     LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED,
     LOG_EVENT_DEPENDENCY_UPDATE_FAILED,
@@ -128,13 +123,6 @@ class Plugin:
             settings.local_archive_dir or None,
             store.local_index_path,
         )
-
-    async def get_plugin_status(self) -> dict[str, str]:
-        log.info(LOG_EVENT_BACKEND_STATUS_REQUESTED)
-        return {
-            BACKEND_STATUS_FIELD: BACKEND_STATUS_READY,
-            BACKEND_MESSAGE_FIELD: BACKEND_READY_MESSAGE,
-        }
 
     async def get_cached_scan(self) -> dict[str, object] | None:
         return get_store().load_last_scan()

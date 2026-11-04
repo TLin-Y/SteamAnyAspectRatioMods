@@ -12,7 +12,6 @@ STEAM_COMMON_DIRECTORY = "common"
 STEAM_LIBRARY_CONFIG_FILE = "libraryfolders.vdf"
 STEAM_LIBRARY_FOLDERS_KEY = "libraryfolders"
 STEAM_APP_MANIFEST_GLOB = "appmanifest_*.acf"
-STEAM_APP_MANIFEST_FILENAME_FORMAT = "appmanifest_{app_id}.acf"
 STEAM_APP_MANIFEST_PATTERN = re.compile(r"appmanifest_(\d+)\.acf\Z")
 
 VDF_TOKEN_PATTERN = re.compile(r'"((?:\\.|[^"\\])*)"|(\{|\})|//[^\r\n]*|([^\s{}"]+)')
@@ -69,7 +68,6 @@ LOG_INVALID_CONTEXT_MESSAGE = "Invalid log context value for {key}"
 LOG_CONTEXT_FIELDS = ("operation_id", "game_id", "mod_id", "phase")
 LOG_EVENT_FIELD_FORMAT = "event={event}"
 LOG_CONTEXT_FIELD_FORMAT = "{key}={value}"
-LOG_EVENT_BACKEND_STATUS_REQUESTED = "backend.status_requested"
 LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED = "supported_game.scan_started"
 LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED = "supported_game.scan_completed"
 LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED = "supported_game.scan_failed"
@@ -88,11 +86,6 @@ LOG_EVENT_CATALOG_FALLBACK = "catalog.cache_unusable"
 LOG_EVENT_PLUGIN_STARTED = "plugin.started"
 LOG_EVENT_PLUGIN_STOPPED = "plugin.stopped"
 LOG_SCAN_PHASE_FORMAT = "libraries-{libraries}-apps-{apps}-supported-{supported}"
-
-BACKEND_STATUS_FIELD = "status"
-BACKEND_MESSAGE_FIELD = "message"
-BACKEND_STATUS_READY = "ready"
-BACKEND_READY_MESSAGE = "AnyAspectRatio Decky backend is responding."
 
 MOD_CATALOG_FILENAME = "catalog.json"
 MOD_CATALOG_SCHEMA_VERSION = 3

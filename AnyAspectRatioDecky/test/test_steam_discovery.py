@@ -5,7 +5,6 @@ from pathlib import Path
 from helper.constants import (
     STEAM_APP_ID_KEY,
     STEAM_APP_INSTALL_DIRECTORY_KEY,
-    STEAM_APP_MANIFEST_FILENAME_FORMAT,
     STEAM_APP_NAME_KEY,
     STEAM_APP_STATE_KEY,
     STEAM_COMMON_DIRECTORY,
@@ -39,7 +38,7 @@ class SteamDiscoveryTests(unittest.TestCase):
 
     @staticmethod
     def _manifest_path(steamapps: Path, app_id: str) -> Path:
-        return steamapps / STEAM_APP_MANIFEST_FILENAME_FORMAT.format(app_id=app_id)
+        return steamapps / f"appmanifest_{app_id}.acf"
 
     @staticmethod
     def _app_manifest(app_id: str, name: str, install_dir: str) -> str:
