@@ -31,6 +31,12 @@ from helper.constants import (
 from logger.plugin_logger import PluginLogger, attach_file_handler
 from scanner import scan_supported_games as scan_supported_games_report
 from scanner.local_archives import scan_local_archives
+from scanner.plugin_updater import (
+    PLUGIN_NAME,
+    check_for_update,
+    install_update,
+    read_installed_version,
+)
 from scanner.mod_catalog import ModDefinition, read_catalog_repository, summarize_credits
 from scanner.mod_installer import (
     NetworkError,
@@ -403,6 +409,47 @@ class Plugin:
             )
             raise
         return {"saved": True, "ini_file": mod.ini_file}
+
+    @staticmethod
+    def _update_repository() -> str:
+        configured = get_store().load_settings().catalog_repository_url
+        return configured or read_catalog_repository()[0]
+
+    async def check_plugin_update(self) -> dict[str, object]:
+        installed = read_installed_version(Path(plugin_dir))
+        try:
+            return await asyncio.to_thread(
+                check_for_update, self._update_repository(), installed
+            )
+        except (OSError, ValueError) as error:
+            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="plugin-check")
+            return {"error": str(error) or type(error).__name__}
+
+    async def install_plugin_update(self) -> dict[str, object]:
+        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase="plugin-install")
+        repository = self._update_repository()
+        try:
+            info = await asyncio.to_thread(
+                check_for_update, repository, read_installed_version(Path(plugin_dir))
+            )
+            if not info["update_available"]:
+                return {"error": "The plugin is already up to date."}
+            if not info["download_url"]:
+                raise ValueError(
+                    f"Release {info['latest_version']} has no {PLUGIN_NAME}-<version>.zip file attached"
+                )
+            result = await asyncio.to_thread(
+                install_update,
+                repository,
+                str(info["download_url"]),
+                Path(plugin_dir),
+                Path.home() / "Downloads",
+            )
+        except (OSError, ValueError) as error:
+            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="plugin-install")
+            return {"error": str(error) or type(error).__name__}
+        log.info(LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED, phase="plugin-install")
+        return result
 
     async def _main(self) -> None:
         store = get_store()
