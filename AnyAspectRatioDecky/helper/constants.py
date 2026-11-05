@@ -96,6 +96,7 @@ MOD_CATALOG_SOURCE_REPOSITORY_REF_KEY = "ref"
 MOD_CATALOG_MODS_KEY = "mods"
 MOD_CATALOG_CREDITS_KEY = "credits"
 MOD_CATALOG_DEFAULT_CREDITS_KEY = "default_credits"
+MOD_CATALOG_PINNED_AUTHOR = "TLin-Y"
 MOD_CATALOG_CREDIT_SUPPORT_KEY = "support"
 MOD_CATALOG_INVALID_CREDITS_MESSAGE = (
     "Catalog credits must be a list of objects with a name, an optional https url, "

@@ -20,4 +20,4 @@ Open MHRiseFix.ini with any text editor. You can easily change TargetWidth and T
 
 4. Full-Screen Stretching
    
-Set your display scaling to "Stretch" (GameNative, or your game settings) and set the in-game resolution to 1280x720. The stretch mods render at the ratio in the ini, then scale that picture to fill the screen; if the in-game resolution is not 1280x720, it will not stretch. The mod defaults to 16:10; set the target width and height in the ini to the ratio you want.
+Set your SteamOS display scaling to "Stretch" and set the in-game resolution to 1280x720. The stretch mods render at the ratio in the ini, then scale that picture to fill the screen; if the in-game resolution is not 1280x720, it will not stretch. The mod defaults to 16:10; set the target width and height in the ini to the ratio you want.

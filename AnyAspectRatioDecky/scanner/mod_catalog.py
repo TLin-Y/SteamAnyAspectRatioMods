@@ -14,6 +14,7 @@ from helper.constants import (
     MOD_CATALOG_CREDITS_KEY,
     MOD_CATALOG_DEFAULT_CREDITS_KEY,
     MOD_CATALOG_INVALID_CREDITS_MESSAGE,
+    MOD_CATALOG_PINNED_AUTHOR,
     MOD_CATALOG_INVALID_APP_ID_MESSAGE,
     MOD_CATALOG_INVALID_ENTRY_MESSAGE,
     MOD_CATALOG_INVALID_FILE_LIST_MESSAGE,
@@ -136,7 +137,7 @@ def _parse_credits(raw: object) -> tuple[ModCredit, ...]:
 
 
 def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]]:
-    """Group mods by author, most mods first."""
+    """Group mods by author, the repository owner first, then most mods first."""
     authors: dict[ModCredit, int] = {}
     for mod in mods:
         for credit in mod.credits:
@@ -149,7 +150,11 @@ def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]
             "mod_count": count,
         }
         for credit, count in sorted(
-            authors.items(), key=lambda item: (-item[1], item[0].name.lower())
+            authors.items(), key=lambda item: (
+                item[0].name != MOD_CATALOG_PINNED_AUTHOR,
+                -item[1],
+                item[0].name.lower(),
+            )
         )
     ]
 
