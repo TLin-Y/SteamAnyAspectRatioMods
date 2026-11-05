@@ -64,7 +64,7 @@
       "name": "Final Fantasy XIII - Custom Aspect Ratio",
       "steam_app_id": "292120",
       "install_dir": "FINAL FANTASY XIII",
-      "executable": "white_data/prog/win/bin/ffxiii2img.exe",
+      "executable": "white_data/prog/win/bin/ffxiiiimg.exe",
       "source": {
         "kind": "archive",
         "path": "Final Fantasy XIII/Final-Fantasy-XIII-v1.0.0.zip",
@@ -145,6 +145,20 @@
       "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
       "ini_file": "OriARFix.ini",
       "wine_dll_overrides": ["version=n,b"]
+    },
+    {
+      "id": "persona-5-royal",
+      "name": "Persona 5 Royal - Custom Aspect Ratio",
+      "steam_app_id": "1687950",
+      "install_dir": "P5R",
+      "executable": "P5R.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Persona 5 Royal/Persona-5-Royal-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
+      "ini_file": "P5R_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
       "id": "resident-evil-2",
@@ -288,6 +302,20 @@
       ],
       "ini_file": "Visions.of.Mana/VisionsofMana/Binaries/Win64/VoM_ARFix.ini",
       "wine_dll_overrides": ["dxgi=n,b"]
+    },
+    {
+      "id": "samurai-warriors-spirit-of-sanada",
+      "name": "SAMURAI WARRIORS: Spirit of Sanada - Custom Aspect Ratio",
+      "steam_app_id": "595740",
+      "install_dir": "SAMURAI WARRIORS Spirit of Sanada",
+      "executable": "SWSanada.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Samurai Warriors Spirit of Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.0.0.zip"
+      },
+      "files": ["dinput8.dll", "SWSanada_ARFix.asi", "SWSanada_ARFix.ini"],
+      "ini_file": "SWSanada_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
       "id": "warriors-orochi-3-ultimate",
@@ -2136,12 +2164,13 @@
       "executable": "P3R/Binaries/Win64/P3R.exe",
       "source": {
         "kind": "archive",
-        "path": "external/Lyall/P3RFix/P3RFix_1.2.4.zip"
+        "path": "external/Lyall/P3RFix/P3RFix_1.2.4.zip",
+        "destination": "P3R/Binaries/Win64"
       },
       "files": [
-        "P3RFix.asi",
-        "P3RFix.ini",
-        "dsound.dll"
+        "P3R/Binaries/Win64/P3RFix.asi",
+        "P3R/Binaries/Win64/P3RFix.ini",
+        "P3R/Binaries/Win64/dsound.dll"
       ],
       "wine_dll_overrides": [
         "dsound=n,b"
@@ -2162,7 +2191,7 @@
           ]
         }
       ],
-      "ini_file": "P3RFix.ini"
+      "ini_file": "P3R/Binaries/Win64/P3RFix.ini"
     },
     {
       "id": "gbfrelinkfix",
@@ -5461,6 +5490,83 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ffxiii2uw",
+      "name": "Final Fantasy XIII-2 - FFXIII2UW",
+      "steam_app_id": "292140",
+      "install_dir": "FINAL FANTASY XIII-2",
+      "executable": "alba_data/prog/win/bin/ffxiii2img.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/TEODORMAX/FFXIII2UW/FFXIII2UW_1.4.0.zip",
+        "destination": "alba_data/prog/win/bin"
+      },
+      "files": [
+        "alba_data/prog/win/bin/dinput8.dll",
+        "alba_data/prog/win/bin/FFXIII2UW.asi",
+        "alba_data/prog/win/bin/FFXIII2FOV.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "TEODORMAX",
+          "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
+        }
+      ],
+      "ini_file": "alba_data/prog/win/bin/FFXIII2FOV.ini"
+    },
+    {
+      "id": "ultrawidefix-lrff13",
+      "name": "Lightning Returns: Final Fantasy XIII - UltrawideFix",
+      "steam_app_id": "345350",
+      "install_dir": "LIGHTNING RETURNS FINAL FANTASY XIII",
+      "executable": "LRFF13.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/TEODORMAX/UltrawideFix-LRFF13/UltrawideFix-LRFF13_1.0.0.zip"
+      },
+      "files": [
+        "version.dll",
+        "UltrawideFix.ini"
+      ],
+      "wine_dll_overrides": [
+        "version=n,b"
+      ],
+      "credits": [
+        {
+          "name": "TEODORMAX",
+          "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
+        }
+      ],
+      "ini_file": "UltrawideFix.ini"
+    },
+    {
+      "id": "mhw16x10fix",
+      "name": "Monster Hunter: World - MHW16x10Fix",
+      "steam_app_id": "582010",
+      "install_dir": "Monster Hunter World",
+      "executable": "MonsterHunterWorld.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/MinuteReversal/MHW16x10Fix/MHW16x10Fix_0.11.13.zip"
+      },
+      "files": [
+        "dinput8.dll",
+        "mhw_16x10.ini"
+      ],
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "MinuteReversal",
+          "url": "https://github.com/MinuteReversal"
+        }
+      ],
+      "ini_file": "mhw_16x10.ini"
     }
   ]
 }
