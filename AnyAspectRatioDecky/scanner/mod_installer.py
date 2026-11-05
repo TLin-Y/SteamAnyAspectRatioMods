@@ -190,10 +190,27 @@ def set_archive_cache_dir(path: Path | None) -> None:
     _archive_cache_dir = path
 
 
-def _cached_archive_path(url: str) -> Path | None:
+def _cached_archive_path(url: str, sha256: str = "") -> Path | None:
+    """Cache file for an archive; the catalog checksum is part of the name, so a replaced zip is re-downloaded."""
     if _archive_cache_dir is None:
         return None
-    return _archive_cache_dir / f"{hashlib.sha256(url.encode()).hexdigest()}.zip"
+    name = hashlib.sha256(url.encode()).hexdigest()
+    return _archive_cache_dir / (f"{name}-{sha256[:16]}.zip" if sha256 else f"{name}.zip")
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _drop_stale_cache(cached_path: Path) -> None:
+    prefix = cached_path.name.split("-")[0].removesuffix(".zip")
+    for other in cached_path.parent.glob(f"{prefix}*.zip"):
+        if other != cached_path:
+            other.unlink(missing_ok=True)
 
 
 @contextmanager
@@ -217,7 +234,7 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
         source.repository_ref,
         source.path,
     )
-    cached_path = _cached_archive_path(archive_url)
+    cached_path = _cached_archive_path(archive_url, source.sha256)
     if cached_path is not None and cached_path.is_file():
         try:
             yield cached_path
@@ -243,9 +260,15 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
                     MAX_MOD_DOWNLOAD_SIZE_BYTES,
                     "Mod archive download",
                 )
+        if source.sha256 and _file_sha256(archive_path) != source.sha256:
+            raise ValueError(
+                "The downloaded mod archive does not match the catalog checksum. "
+                "Update the catalog and try again."
+            )
         if cached_path is not None and is_zipfile(archive_path):
             os.replace(archive_path, cached_path)
             archive_path = cached_path
+            _drop_stale_cache(cached_path)
         yield archive_path
     finally:
         if cached_path is None or archive_path != cached_path:

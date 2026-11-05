@@ -1,4 +1,5 @@
 import json
+import sys
 import tempfile
 import unittest
 from dataclasses import replace
@@ -176,6 +177,19 @@ class ModCatalogTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "unsafe relative path"):
                 load_mod_catalog(path)
+    def test_archive_checksums_match_the_zips_in_the_repository(self) -> None:
+        # Fails after a zip changes until scripts/update_catalog_hashes.py is run.
+        scripts = str(Path(__file__).resolve().parents[1] / "scripts")
+        sys.path.insert(0, scripts)
+        try:
+            from update_catalog_hashes import update
+        finally:
+            sys.path.remove(scripts)
+        self.assertFalse(update(check=True), "run scripts/update_catalog_hashes.py")
+        for mod in load_mod_catalog():
+            if mod.source.kind == MOD_SOURCE_ARCHIVE:
+                self.assertEqual(64, len(mod.source.sha256), mod.mod_id)
+
 
 
 class ManualModTests(unittest.TestCase):

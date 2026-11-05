@@ -17,10 +17,12 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 from scanner.mod_catalog import load_mod_catalog  # noqa: E402
 from store.pack import _wanted_paths  # noqa: E402
 from store.plugin_store import DEFAULT_CATALOG_PATH  # noqa: E402
+from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
 
 
 def main() -> None:
     version = sys.argv[1] if len(sys.argv) > 1 else "dev"
+    update_catalog_hashes()
     mods = load_mod_catalog(PLUGIN_ROOT / "catalog.json")
     required, optional = _wanted_paths(mods)
 

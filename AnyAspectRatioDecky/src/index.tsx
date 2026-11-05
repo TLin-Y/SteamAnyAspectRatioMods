@@ -1447,10 +1447,15 @@ function Content() {
   );
 }
 
+// Keep in sync with package.json (major.minor).
+const PLUGIN_VERSION = "1.4";
+
 export default definePlugin(() => ({
   name: "AnyAspectRatio",
   titleView: (
-    <div className={staticClasses.Title}>AnyAspectRatio</div>
+    <div className={staticClasses.Title}>
+      AnyAspectRatio <span style={{ fontSize: "0.7em", opacity: 0.7 }}>{PLUGIN_VERSION}</span>
+    </div>
   ),
   content: <Content />,
   icon: <span aria-hidden="true">AR</span>,

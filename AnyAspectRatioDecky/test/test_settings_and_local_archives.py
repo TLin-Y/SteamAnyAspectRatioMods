@@ -1,3 +1,4 @@
+import hashlib
 import io
 import json
 import tempfile
@@ -324,6 +325,47 @@ class LocalArchiveTests(unittest.TestCase):
             apply_mod_files(mod, str(self.game))
         self.assertEqual(1, opener.call_count)
         self.assertEqual(1, len(list(cache.glob("*.zip"))))
+    def test_replaced_archive_is_downloaded_again_when_checksum_changes(self) -> None:
+        cache = self.root / "cache"
+        set_archive_cache_dir(cache)
+        versions = {}
+        for label in ("old", "new"):
+            path = self.root / f"{label}.zip"
+            write_zip(path, {"mod.dll": label.encode()})
+            versions[label] = (path.read_bytes(), hashlib.sha256(path.read_bytes()).hexdigest())
+
+        def make_mod(sha256: str):
+            return load_mod_catalog()[0].__class__(
+                mod_id="m",
+                name="m",
+                steam_app_id="1",
+                install_dir="x",
+                executable="x.exe",
+                source=ModSource(
+                    "archive", "pkg/m.zip", "", (), "https://github.com/o/r", "main", sha256
+                ),
+                files=("mod.dll",),
+                ini_file=None,
+                wine_dll_overrides=(),
+            )
+
+        served = {"data": versions["old"][0]}
+        with patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda *a, **k: response(served["data"]),
+        ) as opener:
+            apply_mod_files(make_mod(versions["old"][1]), str(self.game))
+            self.assertEqual(b"old", (self.game / "mod.dll").read_bytes())
+            (self.game / "mod.dll").unlink()
+            served["data"] = versions["new"][0]
+            apply_mod_files(make_mod(versions["new"][1]), str(self.game))
+            self.assertEqual(b"new", (self.game / "mod.dll").read_bytes())
+            self.assertEqual(2, opener.call_count)
+            self.assertEqual(1, len(list(cache.glob("*.zip"))))
+
+            served["data"] = versions["old"][0]
+            with self.assertRaises(ValueError):
+                apply_mod_files(make_mod("0" * 64), str(self.game))
 
 
 if __name__ == "__main__":
