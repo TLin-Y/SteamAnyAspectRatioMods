@@ -49,6 +49,7 @@ from helper.constants import (
     MOD_SOURCE_DIRECTORY,
     MOD_SOURCE_FILES,
     MOD_SOURCE_FILES_KEY,
+    MOD_SOURCE_SHA256_KEY,
     MOD_SOURCE_KINDS,
     MOD_SOURCE_KEY,
     MOD_SOURCE_KIND_KEY,
@@ -73,6 +74,7 @@ class ModSource:
     files: tuple[ModSourceFile, ...]
     repository_url: str
     repository_ref: str
+    sha256: str = ""
 
 
 @dataclass(frozen=True)
@@ -205,6 +207,10 @@ def _parse_source(
     if destination:
         _validate_relative_path(destination, mod_id)
 
+    sha256 = raw_source.get(MOD_SOURCE_SHA256_KEY, "")
+    if not isinstance(sha256, str) or (sha256 and not _is_sha256(sha256)):
+        raise ValueError(MOD_CATALOG_INVALID_SOURCE_MESSAGE.format(mod_id=mod_id))
+
     source_files: tuple[ModSourceFile, ...] = ()
     if kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_DIRECTORY):
         path = _require_string(raw_source, MOD_SOURCE_PATH_KEY, mod_id)
@@ -235,7 +241,12 @@ def _parse_source(
         files=source_files,
         repository_url=repository_url,
         repository_ref=repository_ref,
+        sha256=sha256,
     )
+
+
+def _is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def _parse_mod(
