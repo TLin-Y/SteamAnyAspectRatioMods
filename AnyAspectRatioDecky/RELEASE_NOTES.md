@@ -1,6 +1,15 @@
-# AnyAspectRatio for Steam Deck v1.3.0: play at full-screen 16:10, one tap per game
+# AnyAspectRatio for Steam Deck v1.4.0: play at full-screen 16:10, one tap per game
 
 Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 screen? **AnyAspectRatio** is a Decky Loader plugin that finds the games you own, installs the right aspect-ratio fix, and sets the Steam launch options for you. No file copying, no terminal.
+
+## New in 1.4.0
+
+- **New games:** Persona 5 Royal, Final Fantasy XIII-2, Lightning Returns: Final Fantasy XIII, Monster Hunter: World and Samurai Warriors: Spirit of Sanada.
+- **Updated fixes:** Persona 3 Reload and Final Fantasy XIII.
+- **Plugin update check.** Settings has a new **Check for plugin update** button. If a newer release exists it downloads the zip to your Deck's `Downloads` folder and shows a popup with the file name, size, location and the steps to install it.
+- **Settings save automatically.** No more Save settings button: fields save when you leave them. **Reset to defaults** is still there.
+- **Updated mods refresh by themselves.** When a mod zip is updated, the plugin replaces its cached copy instead of reusing the old one.
+- **Version in the title.** The plugin version is shown next to the name in the panel.
 
 ![Games tab](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/resources/games-tab.jpg)
 
@@ -27,10 +36,10 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-1.3.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-1.4.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import repository zip...** and pick **AnyAspectRatio-Offline-1.3.0.zip** (also in the Assets, about 400 MB). This installs every mod without internet. Skip this step if your Deck is online: the plugin downloads the mod list itself.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import repository zip...** and pick **AnyAspectRatio-Offline-Mods-1.4.0.zip** (also in the Assets, about 400 MB). This installs every mod without internet. Skip this step if your Deck is online: the plugin downloads the mod list itself.
 5. Press **Scan Steam libraries**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.

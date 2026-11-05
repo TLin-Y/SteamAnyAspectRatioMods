@@ -79,6 +79,28 @@ const savePluginSettings = callable<
   { saved: boolean; source_changed: boolean }
 >("save_settings");
 const setOfflineMode = callable<[boolean], { offline_mode: boolean }>("set_offline_mode");
+type PluginUpdateInfo = {
+  error?: string;
+  installed_version: string;
+  latest_version: string;
+  update_available: boolean;
+  download_url: string;
+};
+const checkForPluginUpdate = callable<[], PluginUpdateInfo>("check_plugin_update");
+const installPluginUpdateRequest = callable<
+  [],
+  {
+    error?: string;
+    installed?: boolean;
+    version?: string;
+    restarted?: boolean;
+    saved_zip?: string;
+    file_name?: string;
+    size_bytes?: number;
+  }
+>("install_plugin_update");
+// Keep in sync with package.json and plugin.json (major.minor).
+const PLUGIN_VERSION = "1.4";
 const updateDependencies = callable<
   [],
   {
@@ -997,7 +1019,96 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     local_archive_dir: "",
   });
   const [busy, setBusy] = useState(false);
+  const savedValues = useRef("");
   const [status, setStatus] = useState("");
+  const [pluginUpdate, setPluginUpdate] = useState<PluginUpdateInfo | null>(null);
+  const [pluginStatus, setPluginStatus] = useState("");
+
+  const repositoryLabel = (
+    values.catalog_repository_url || "the configured repository"
+  ).replace("https://github.com/", "");
+
+  const checkPluginUpdate = async () => {
+    setBusy(true);
+    setPluginUpdate(null);
+    setPluginStatus("Checking for a newer plugin release...");
+    try {
+      const result = await checkForPluginUpdate();
+      if (result.error) throw new Error(result.error);
+      setPluginUpdate(result);
+      if (!result.update_available) {
+        setPluginStatus(`AnyAspectRatio ${PLUGIN_VERSION} is up to date.`);
+      } else if (!result.download_url) {
+        setPluginStatus(
+          `Version ${result.latest_version} exists but has no plugin zip attached yet.`,
+        );
+      } else {
+        setPluginStatus(`Version ${result.latest_version} is available.`);
+      }
+    } catch (error) {
+      setPluginStatus("");
+      showErrorModal(
+        "Plugin update check failed",
+        error instanceof Error ? error.message : String(error),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const installPluginUpdate = async () => {
+    setBusy(true);
+    setPluginStatus("Downloading and installing the update...");
+    try {
+      const result = await installPluginUpdateRequest();
+      if (result.error) throw new Error(result.error);
+      if (result.installed) {
+        setPluginUpdate(null);
+        setPluginStatus(
+          result.restarted
+            ? `Updated to ${result.version}. Decky is reloading the plugin.`
+            : `Updated to ${result.version}. Restart Decky Loader or reboot to finish.`,
+        );
+      } else {
+        const sizeMb = ((result.size_bytes ?? 0) / (1024 * 1024)).toFixed(2);
+        setPluginStatus(`Downloaded ${result.file_name}. Install it manually (see the popup).`);
+        showModal(
+          <ConfirmModal
+            bAlertDialog
+            strTitle="Update downloaded - install it manually"
+            strDescription={
+              `File: ${result.file_name}\n` +
+              `Size: ${result.size_bytes} bytes (${sizeMb} MB)\n` +
+              `Saved to: ${result.saved_zip}\n\n` +
+              "Decky plugins cannot replace themselves, so finish the update yourself:\n" +
+              "1. Open Decky Settings > Developer.\n" +
+              "2. Choose Install Plugin from ZIP.\n" +
+              `3. Select ${result.file_name} from the Downloads folder and confirm.`
+            }
+            strOKButtonText="OK"
+          />,
+        );
+      }
+    } catch (error) {
+      setPluginStatus("");
+      showErrorModal(
+        "Plugin update failed",
+        error instanceof Error ? error.message : String(error),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmPluginUpdate = () =>
+    showModal(
+      <ConfirmModal
+        strTitle={`Update to ${pluginUpdate?.latest_version}?`}
+        strDescription={`Downloads AnyAspectRatio ${pluginUpdate?.latest_version} from ${repositoryLabel} and replaces the installed plugin files. Your settings and applied mods are kept.`}
+        strOKButtonText="Update"
+        onOK={installPluginUpdate}
+      />,
+    );
 
   const showError = (title: string, error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
@@ -1008,13 +1119,15 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const load = async () => {
     const loaded = await getPluginSettings();
     setInfo(loaded);
-    setValues({
+    const loadedValues = {
       catalog_repository_url:
         loaded.settings.catalog_repository_url || loaded.defaults.catalog_repository_url,
       catalog_ref: loaded.settings.catalog_ref || loaded.defaults.catalog_ref,
       catalog_path: loaded.settings.catalog_path || loaded.defaults.catalog_path,
       local_archive_dir: loaded.settings.local_archive_dir,
-    });
+    };
+    savedValues.current = JSON.stringify(loadedValues);
+    setValues(loadedValues);
   };
 
   useEffect(() => {
@@ -1038,15 +1151,15 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     onDataChanged();
   };
 
-  const save = async () => {
+  const save = async (next: PluginSettingsValues = values) => {
     setBusy(true);
     setStatus("");
     try {
       const result = await savePluginSettings(
-        values.catalog_repository_url,
-        values.catalog_ref,
-        values.catalog_path,
-        values.local_archive_dir,
+        next.catalog_repository_url,
+        next.catalog_ref,
+        next.catalog_path,
+        next.local_archive_dir,
       );
       if (result.source_changed && !info?.settings.offline_mode) {
         setStatus("Settings saved. Fetching the catalog from the new source...");
@@ -1083,16 +1196,19 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         false,
         true,
       );
-      setValue("local_archive_dir", picked.realpath || picked.path);
+      const next = { ...values, local_archive_dir: picked.realpath || picked.path };
+      setValues(next);
+      await save(next);
     } catch {
       // Picker was dismissed.
     }
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
     if (!info) return;
-    setValues({ ...info.defaults, local_archive_dir: "" });
-    setStatus("Defaults restored. Press Save settings to apply them.");
+    const next = { ...info.defaults, local_archive_dir: "" };
+    setValues(next);
+    await save(next);
   };
 
   const viewLog = async () => {
@@ -1154,6 +1270,9 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         <TextField
           value={values[key]}
           disabled={busy || !info}
+          onBlur={() => {
+            if (info && savedValues.current !== JSON.stringify(values)) void save();
+          }}
           onChange={(event) => setValue(key, event.target.value)}
         />
       </div>
@@ -1234,12 +1353,35 @@ function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </PanelSectionRow>
         ))}
       </PanelSection>
-      <PanelSection title="Settings">
+      <PanelSection title="Plugin update">
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={save} disabled={busy || !info}>
-            Save settings
+          <ButtonItem
+            layout="below"
+            onClick={checkPluginUpdate}
+            disabled={busy || !info || info.settings.offline_mode}
+            description={
+              info?.settings.offline_mode
+                ? "Unavailable in offline mode."
+                : `Installed: ${PLUGIN_VERSION}. Checks the releases of ${repositoryLabel}.`
+            }
+          >
+            Check for plugin update
           </ButtonItem>
         </PanelSectionRow>
+        {pluginUpdate?.update_available && (
+          <PanelSectionRow>
+            <ButtonItem layout="below" onClick={confirmPluginUpdate} disabled={busy}>
+              Update to {pluginUpdate.latest_version}
+            </ButtonItem>
+          </PanelSectionRow>
+        )}
+        {pluginStatus && (
+          <PanelSectionRow>
+            <div role="status" style={{ overflowWrap: "anywhere" }}>{pluginStatus}</div>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
+      <PanelSection title="Settings">
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={resetToDefaults} disabled={busy || !info}>
             Reset to defaults
@@ -1446,9 +1588,6 @@ function Content() {
     </>
   );
 }
-
-// Keep in sync with package.json (major.minor).
-const PLUGIN_VERSION = "1.4";
 
 export default definePlugin(() => ({
   name: "AnyAspectRatio",

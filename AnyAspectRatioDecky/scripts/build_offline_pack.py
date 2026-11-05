@@ -26,7 +26,7 @@ def main() -> None:
     mods = load_mod_catalog(PLUGIN_ROOT / "catalog.json")
     required, optional = _wanted_paths(mods)
 
-    root = f"AnyAspectRatio-Offline-{version}"
+    root = f"AnyAspectRatio-Offline-Mods-{version}"
     output = PLUGIN_ROOT / "out" / f"{root}.zip"
     output.parent.mkdir(exist_ok=True)
 
