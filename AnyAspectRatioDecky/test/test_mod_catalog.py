@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 from zipfile import ZipFile
 
 from helper.constants import (
@@ -223,6 +224,28 @@ class ModCatalogTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "unsafe relative path"):
                 load_mod_catalog(path)
+
+    def test_executable_alternatives_are_validated(self) -> None:
+        catalog_path = Path(__file__).resolve().parents[1] / "catalog.json"
+        document = json.loads(catalog_path.read_text(encoding="utf-8"))
+        entry = document["mods"][0]
+        document["mods"] = [entry]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            for value in ("other.exe", [""], [123], ["../outside.exe"], [entry["executable"]]):
+                with self.subTest(value=value):
+                    entry["executable_alternatives"] = value
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load_mod_catalog(path)
+
+    def test_expedition_33_catalog_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "clairobscurfix")
+        self.assertEqual("Expedition 33", mod.install_dir)
+        self.assertEqual("Sandfall/Binaries/Win64/SandFall-Win64-Shipping.exe", mod.executable)
+        self.assertEqual(("Expedition33_Steam.exe",), mod.executable_alternatives)
+        self.assertEqual("Sandfall/Binaries/Win64", mod.source.destination)
+
     def test_archive_checksums_match_the_zips_in_the_repository(self) -> None:
         # Fails after a zip changes until scripts/update_catalog_hashes.py is run.
         scripts = str(Path(__file__).resolve().parents[1] / "scripts")
@@ -370,6 +393,138 @@ class SupportedGameScannerTests(unittest.TestCase):
         self.assertEqual([], report.supported_games)
         self.assertEqual(1, len(report.warnings))
         self.assertIn("does not match catalog directory", report.warnings[0])
+
+    def test_mismatched_steam_directory_uses_unique_executable(self) -> None:
+        self._touch(self.mod.executable)
+        app = replace(self.app, install_dir="different-directory")
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (self.mod,))
+        self.assertEqual([self.mod.mod_id], [game.mod_id for game in report.supported_games])
+        self.assertTrue(report.supported_games[0].executable_found)
+        self.assertTrue(report.supported_games[0].matched_by_executable)
+        self.assertTrue(report.supported_games[0].to_dict()["matched_by_executable"])
+        self.assertEqual(1, len(report.warnings))
+
+    def test_unknown_steam_app_uses_unique_executable(self) -> None:
+        self._touch(self.mod.executable)
+        app = replace(self.app, app_id="999999", install_dir="different-directory")
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (self.mod,))
+        self.assertEqual([self.mod.mod_id], [game.mod_id for game in report.supported_games])
+        self.assertEqual("999999", report.supported_games[0].steam_app_id)
+
+    def test_known_steam_id_does_not_fallback_to_another_game(self) -> None:
+        other = replace(self.mod, mod_id="other", steam_app_id="123456", executable="other.exe")
+        self._touch(other.executable)
+        app = replace(self.app, install_dir="different-directory")
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (self.mod, other))
+        self.assertEqual([], report.supported_games)
+
+    def test_executable_alternatives_match_both_steam_and_shortcuts(self) -> None:
+        mod = replace(self.mod, executable="game-primary.exe", executable_alternatives=("other.exe",))
+        self._touch("other.exe")
+        for is_shortcut in (False, True):
+            with self.subTest(is_shortcut=is_shortcut):
+                app = replace(self.app, app_id="999999", install_dir="different")
+                scan = SteamScanReport(1, 1, [] if is_shortcut else [app], [], [app] if is_shortcut else [])
+                (game,) = match_supported_games(scan, (mod,)).supported_games
+                self.assertTrue(game.executable_found)
+                self.assertEqual(str(self.game_path / "other.exe"), game.executable_path)
+
+    def test_ambiguous_executable_names_are_not_fallback_matches(self) -> None:
+        mod = replace(self.mod, executable="dir/game.exe")
+        other = replace(mod, mod_id="other", steam_app_id="123456", executable="other/game.exe")
+        self._touch(mod.executable)
+        for is_shortcut in (False, True):
+            with self.subTest(is_shortcut=is_shortcut):
+                app = replace(self.app, app_id="999999", install_dir="different")
+                scan = SteamScanReport(1, 1, [] if is_shortcut else [app], [], [app] if is_shortcut else [])
+                report = match_supported_games(scan, (mod, other))
+                self.assertEqual([], report.supported_games)
+                self.assertIn("ambiguous executable", report.warnings[0])
+                self.assertIn("other", report.warnings[0])
+
+    def test_ambiguous_executable_is_not_used_for_mismatched_known_steam_id(self) -> None:
+        mod = replace(self.mod, executable="game.exe")
+        other = replace(mod, mod_id="other", steam_app_id="123456")
+        self._touch(mod.executable)
+        app = replace(self.app, install_dir="different-directory")
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod, other))
+        self.assertEqual([], report.supported_games)
+        self.assertTrue(any("ambiguous executable" in warning for warning in report.warnings))
+
+    def test_known_steam_id_keeps_all_mods_when_executable_is_shared(self) -> None:
+        mod = replace(self.mod, executable="game.exe")
+        other = replace(mod, mod_id="other")
+        self._touch(mod.executable)
+        report = match_supported_games(SteamScanReport(1, 1, [self.app], []), (mod, other))
+        self.assertEqual([mod.mod_id, "other"], [game.mod_id for game in report.supported_games])
+        self.assertTrue(all(not game.matched_by_executable for game in report.supported_games))
+
+    def test_file_probes_are_cached_for_one_scan_without_missing_alternatives(self) -> None:
+        mod = replace(self.mod, executable="missing.exe", executable_alternatives=("found.exe",))
+        other = replace(mod, mod_id="other", steam_app_id="123456", executable="missing.exe",
+                        executable_alternatives=("other.exe",))
+        self._touch("found.exe")
+        shortcut = replace(self.app, app_id="999999", install_dir="different")
+        original_is_file = Path.is_file
+        probes: dict[Path, int] = {}
+
+        def count_probe(path: Path) -> bool:
+            probes[path] = probes.get(path, 0) + 1
+            return original_is_file(path)
+
+        with patch.object(Path, "is_file", count_probe):
+            report = match_supported_games(
+                SteamScanReport(0, 0, [], [], [shortcut]), (mod, other)
+            )
+        self.assertEqual([mod.mod_id], [game.mod_id for game in report.supported_games])
+        self.assertEqual(str(self.game_path / "found.exe"), report.supported_games[0].executable_path)
+        self.assertTrue(all(count == 1 for count in probes.values()), probes)
+
+    def test_warns_when_known_game_executable_or_destination_is_missing(self) -> None:
+        mod = replace(
+            self.mod, executable="new/game.exe",
+            source=replace(self.mod.source, destination="old/Binaries"),
+        )
+        report = match_supported_games(SteamScanReport(1, 1, [self.app], []), (mod,))
+        self.assertEqual(1, len(report.supported_games))
+        self.assertFalse(report.supported_games[0].executable_found)
+        self.assertTrue(any("no catalogued executable found" in warning for warning in report.warnings))
+        self.assertTrue(any("catalog destination" in warning for warning in report.warnings))
+        self.assertTrue(any("old" in warning and "Binaries" in warning for warning in report.warnings))
+
+    def test_launcher_match_warns_when_nested_destination_is_missing(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "clairobscurfix")
+        self._touch("Expedition33_Steam.exe")
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        self.assertTrue(report.supported_games[0].executable_found)
+        self.assertTrue(any("catalog destination" in warning for warning in report.warnings))
+        destination = self.game_path / mod.source.destination
+        destination.mkdir(parents=True)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        self.assertFalse(any("catalog destination" in warning for warning in report.warnings))
+
+    def test_multiple_unique_executables_in_one_directory_are_ambiguous(self) -> None:
+        mod = replace(self.mod, executable="first.exe")
+        other = replace(mod, mod_id="other", steam_app_id="123456", executable="second.exe")
+        self._touch(mod.executable)
+        self._touch(other.executable)
+        app = replace(self.app, app_id="999999")
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod, other))
+        self.assertEqual([], report.supported_games)
+        self.assertIn("ambiguous executable", report.warnings[0])
+
+    def test_expedition_33_alternatives_at_game_root(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "clairobscurfix")
+        for executable in (mod.executable, *mod.executable_alternatives):
+            with self.subTest(executable=executable):
+                self._touch(executable)
+                shortcut = replace(self.app, app_id="999999", install_dir="different")
+                report = match_supported_games(SteamScanReport(0, 0, [], [], [shortcut]), (mod,))
+                (game,) = report.supported_games
+                self.assertEqual(str(self.game_path / executable), game.executable_path)
+                self.assertEqual(str(self.game_path), game.game_path)
+                (self.game_path / executable).unlink()
 
 
 if __name__ == "__main__":

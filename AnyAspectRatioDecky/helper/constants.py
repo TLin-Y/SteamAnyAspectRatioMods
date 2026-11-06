@@ -107,6 +107,7 @@ MOD_NAME_KEY = "name"
 MOD_STEAM_APP_ID_KEY = "steam_app_id"
 MOD_INSTALL_DIRECTORY_KEY = "install_dir"
 MOD_EXECUTABLE_KEY = "executable"
+MOD_EXECUTABLE_ALTERNATIVES_KEY = "executable_alternatives"
 MOD_SOURCE_KEY = "source"
 MOD_SOURCE_KIND_KEY = "kind"
 MOD_SOURCE_PATH_KEY = "path"
@@ -157,6 +158,17 @@ MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE = (
 )
 MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING = (
     "Installed app {app_id} directory {actual} does not match catalog directory {expected}"
+)
+MOD_CATALOG_AMBIGUOUS_EXECUTABLE_WARNING = (
+    "Installed app {app_id} at {path} has ambiguous executable matches: {matches}"
+)
+MOD_CATALOG_EXECUTABLE_MISSING_WARNING = (
+    "Mod {mod_id} for app {app_id}: no catalogued executable found in {path}; "
+    "expected {executables}. The game layout or catalog may have changed."
+)
+MOD_CATALOG_DESTINATION_MISSING_WARNING = (
+    "Mod {mod_id} for app {app_id}: catalog destination {path} does not exist. "
+    "Applying the mod may create this directory; verify the game layout first."
 )
 MOD_CATALOG_FILE_STATUS_NONE = "not_detected"
 MOD_CATALOG_FILE_STATUS_PARTIAL = "partial"

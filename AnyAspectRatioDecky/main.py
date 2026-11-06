@@ -26,6 +26,7 @@ from helper.constants import (
     LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE,
     LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED,
     LOG_SCAN_PHASE_FORMAT,
+    MOD_SOURCE_ARCHIVE,
     STEAM_LIBRARY_UNAVAILABLE_WARNING,
 )
 from logger.plugin_logger import PluginLogger, attach_file_handler
@@ -95,6 +96,26 @@ class Plugin:
             local_archive_dir=settings.local_archive_dir or None,
             local_index_path=store.local_index_path,
         )
+        try:
+            hashes = store.load_applied_hashes()
+        except ValueError as error:
+            log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="applied-hashes")
+            report.warnings.append(str(error))
+            hashes = {}
+        report.supported_games = [
+            replace(
+                game,
+                update_available=bool(
+                    game.game_path
+                    and game.files_present
+                    and report.mods[game.mod_id].source.kind == MOD_SOURCE_ARCHIVE
+                    and report.mods[game.mod_id].source.sha256
+                    and (applied_hash := hashes.get(game.game_path, {}).get(game.mod_id))
+                    and applied_hash != report.mods[game.mod_id].source.sha256
+                ),
+            )
+            for game in report.supported_games
+        ]
         if source.warning:
             log.warning(LOG_EVENT_CATALOG_FALLBACK)
             report.warnings.append(source.warning)
@@ -329,6 +350,20 @@ class Plugin:
                     preserve_modified_ini=preserve_modified_ini,
                 )
                 copied_file_count = 0
+            if mod.source.kind == MOD_SOURCE_ARCHIVE:
+                complete_apply = applied and not conflicting_files
+                complete_remove = not applied and not conflicting_files
+                if complete_apply or complete_remove:
+                    try:
+                        get_store().set_applied_hash(
+                            installed_game_path, mod.mod_id,
+                            mod.source.sha256 if complete_apply and mod.source.sha256 else None,
+                        )
+                    except (OSError, ValueError) as error:
+                        raise ValueError(
+                            f"Mod files were {'applied' if applied else 'removed'}, "
+                            f"but the applied version could not be saved: {error}"
+                        ) from error
         except NetworkError as error:
             log.warning(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,

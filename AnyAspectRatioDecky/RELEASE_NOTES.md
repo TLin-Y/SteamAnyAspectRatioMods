@@ -1,15 +1,13 @@
-# AnyAspectRatio for Steam Deck v1.4.0: play at full-screen 16:10, one tap per game
+# AnyAspectRatio for Steam Deck v1.5.0: play at full-screen 16:10, one tap per game
 
 Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 screen? **AnyAspectRatio** is a Decky Loader plugin that finds the games you own, installs the right aspect-ratio fix, and sets the Steam launch options for you. No file copying, no terminal.
 
-## New in 1.4.0
+## New in 1.5.0
 
-- **New games:** Persona 5 Royal, Final Fantasy XIII-2, Lightning Returns: Final Fantasy XIII, Monster Hunter: World and Samurai Warriors: Spirit of Sanada.
-- **Updated fixes:** Persona 3 Reload and Final Fantasy XIII.
-- **Plugin update check.** Settings has a new **Check for plugin update** button. If a newer release exists it downloads the zip to your Deck's `Downloads` folder and shows a popup with the file name, size, location and the steps to install it.
-- **Settings save automatically.** No more Save settings button: fields save when you leave them. **Reset to defaults** is still there.
-- **Updated mods refresh by themselves.** When a mod zip is updated, the plugin replaces its cached copy instead of reusing the old one.
-- **Version in the title.** The plugin version is shown next to the name in the panel.
+- **Better game matching.** A unique catalogued executable can identify a game when its Steam folder name changes, or when it is a non-Steam shortcut. Ambiguous executable names are skipped with a warning.
+- **Clearer labels.** **By Exe** marks executable matches, **Custom** marks local archives, and **New** marks a catalog archive whose checksum differs from the version last fully applied by the plugin. Use **Apply update** to install it.
+- **Game layout warnings.** Missing expected executables or catalogued destination folders are reported so you can check the game's files.
+- **Expedition 33 and Ninja Gaiden Sigma 2.** Corrected Expedition 33's catalog paths and included all Black V18 files for Ninja Gaiden Sigma 2.
 
 ![Games tab](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/resources/games-tab.jpg)
 
@@ -20,7 +18,7 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 - **100+ games supported.** Our own fixes (Dark Souls III, Resident Evil 2/3/4/7/Village, Monster Hunter Rise, Ori, Tales of Arise, Dynasty Warriors, Warriors Orochi, Final Fantasy XIII, Visions of Mana, Ninja Gaiden Sigma 2 and more) plus fixes by [Lyall](https://codeberg.org/Lyall), redistributed unchanged. Full list with versions and dates: [main README](https://github.com/TLin-Y/SteamAnyAspectRatioMods#game-mods).
 - **Made for the Deck.** Our own fixes default to **16:10 (1280x800)**, matching the Deck screen.
 - **Finds your games everywhere.** Scans every Steam library, including the microSD card. If a game was moved and exists in two places, the bigger install wins.
-- **Non-Steam games work too.** Added a GOG or DRM-free copy as a non-Steam shortcut? It is matched by its exe name.
+- **Non-Steam games work too.** Added a GOG or DRM-free copy as a non-Steam shortcut? Unique catalogued executable paths can identify it relative to its game folder.
 - **Edit settings in the plugin.** Change resolution, aspect ratio or FOV right from Game Mode. Changes save automatically.
 - **Read the ReadMe in-game.** Each fix's instructions are one button away, and the screen shows which game folder it resolved.
 - **Safe by design.**
@@ -36,10 +34,10 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-1.4.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-1.5.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import repository zip...** and pick **AnyAspectRatio-Offline-Mods-1.4.0.zip** (also in the Assets, about 400 MB). This installs every mod without internet. Skip this step if your Deck is online: the plugin downloads the mod list itself.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import repository zip...** and pick **AnyAspectRatio-Offline-Mods-1.5.0.zip** (also in the Assets, about 500 MB). This installs every mod without internet. Skip this step if your Deck is online: the plugin downloads the mod list itself.
 5. Press **Scan Steam libraries**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
@@ -48,12 +46,13 @@ To update, install the newer zip the same way. To remove, uninstall it from the 
 
 - **Full-stretch fixes** (Monster Hunter Rise, Resident Evil 2/3/4/7/Village, Warriors Orochi 3): set the game's in-game resolution to **1280x720** and display scaling to **Stretch**, otherwise the picture will not stretch to fill the screen.
 
-- This is the first public release. Fixes by Lyall are shipped as-is and haven't all been tested by us. If one misbehaves, press Remove and tell us which game.
+- Third-party fixes haven't all been tested by us. If one misbehaves, press Remove and tell us which game.
+- Existing installs without a recorded applied archive hash are not labeled **New** until a full Apply records their version.
 - Some fixes are for specific game versions. If a game updates, a fix may need a new release.
 - Anti-cheat or online games: use fixes at your own risk.
 
 ## Credits and support
 
-Huge thanks to [Lyall](https://codeberg.org/Lyall) ([Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)), ThirteenAG (Ultimate ASI Loader) and every mod author credited in each game's ReadMe.
+Huge thanks to [Lyall](https://codeberg.org/Lyall) ([Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)), ThirteenAG (Ultimate ASI Loader), and all the mod authors who make this possible. See our [thanks to external mod authors](../external/THANKS.md).
 
 If this helps you, you can support me on [Ko-fi](https://ko-fi.com/lin66961). Bug reports and game requests: open an issue on [GitHub](https://github.com/TLin-Y/SteamAnyAspectRatioMods/issues).
