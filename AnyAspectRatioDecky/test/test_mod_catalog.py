@@ -134,6 +134,52 @@ class ModCatalogTests(unittest.TestCase):
                         candidate.mod_id,
                     )
 
+    def test_visions_of_mana_install_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "visions-of-mana")
+        destination = "VisionsofMana/Binaries/Win64"
+        self.assertEqual("VisionsofMana", mod.install_dir)
+        self.assertEqual(f"{destination}/VisionsofMana-Win64-Shipping.exe", mod.executable)
+        self.assertEqual(destination, mod.source.destination)
+        self.assertEqual(
+            {f"{destination}/{name}" for name in ("dxgi.dll", "VoM_ARFix.asi", "VoM_ARFix.ini")},
+            set(mod.files),
+        )
+        self.assertEqual(f"{destination}/VoM_ARFix.ini", mod.ini_file)
+
+    def test_beast_of_reincarnation_install_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "beastofreincarnationfix")
+        destination = "BeastOfReincarnation/Binaries/Win64"
+        self.assertEqual("BeastOfReincarnation", mod.install_dir)
+        self.assertEqual(destination, mod.source.destination)
+        self.assertEqual(
+            {f"{destination}/{name}" for name in (
+                "BeastOfReincarnationFix.asi", "BeastOfReincarnationFix.ini", "dsound.dll"
+            )},
+            set(mod.files),
+        )
+        self.assertEqual(f"{destination}/BeastOfReincarnationFix.ini", mod.ini_file)
+
+    def test_verified_external_mod_install_paths(self) -> None:
+        catalog = {mod.mod_id: mod for mod in load_mod_catalog()}
+        for mod_id, app_id, install_dir, executable, asi_path in (
+            ("wofffix", "552700", "WOFF", "WOFF.exe", "WOFFFix.asi"),
+            ("doa6fix", "838380", "Dead or Alive 6", "doa6.exe", "DOA6Fix.asi"),
+            (
+                "so4fix", "609150", "STAR OCEAN - THE LAST HOPE - 4K & Full HD Remaster",
+                "StarOceanTheLastHope.exe", "SO4Fix.asi",
+            ),
+            (
+                "mdaraincodeplusfix", "2903950", "MDA - RAIN CODE Plus",
+                "RainCodePlus.exe", "RainCodePlus/Binaries/Win64/MDARainCodePlusFix.asi",
+            ),
+        ):
+            with self.subTest(mod_id=mod_id):
+                mod = catalog[mod_id]
+                self.assertEqual(app_id, mod.steam_app_id)
+                self.assertEqual(install_dir, mod.install_dir)
+                self.assertEqual(executable, mod.executable)
+                self.assertIn(asi_path, mod.files)
+
     def test_supports_folder_and_direct_file_sources(self) -> None:
         catalog = {mod.mod_id: mod for mod in load_mod_catalog()}
 
