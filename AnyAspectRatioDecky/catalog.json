@@ -5663,7 +5663,7 @@
       "source": {
         "kind": "archive",
         "path": "external/MinuteReversal/MHW16x10Fix/MHW16x10Fix_0.11.13.zip",
-        "sha256": "f73b1412d1648128eda9e43d2de909837960d53f101ebbe2cd01d331c076571f"
+        "sha256": "384af688974d178db4f27ad7df7eb02810c124f3dc3e728ddfbf5545207d867d"
       },
       "files": [
         "dinput8.dll",
