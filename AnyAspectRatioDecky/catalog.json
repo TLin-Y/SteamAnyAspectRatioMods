@@ -220,14 +220,14 @@
     },
     {
       "id": "resident-evil-2",
-      "name": "Resident Evil 2 Remake DX11 - Custom Aspect Ratio",
+      "name": "Resident Evil 2 Remake - Custom Aspect Ratio",
       "steam_app_id": "883710",
       "install_dir": "RESIDENT EVIL 2  BIOHAZARD RE2",
       "executable": "re2.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 2 Remake DX11/Resident-Evil-2-Remake-DX11-v1.1.0.zip",
-        "sha256": "9d51f0c1fe53c4adcddc9ef1c5fbaadc0ef4b73f5283d51e6c3f332cfb67045b"
+        "path": "Resident Evil 2 Remake/Resident-Evil-2-Remake-v1.2.0.zip",
+        "sha256": "f7cb3e6f34247e3f53c2d88e5c0f288cec41ffeed0b4a75ff1b3ae4c16539bf0"
       },
       "files": ["dinput8.dll", "RE2_ARFix.asi", "RE2_ARFix.ini"],
       "ini_file": "RE2_ARFix.ini",
@@ -235,14 +235,14 @@
     },
     {
       "id": "resident-evil-3",
-      "name": "Resident Evil 3 Remake DX11 - Custom Aspect Ratio",
+      "name": "Resident Evil 3 Remake - Custom Aspect Ratio",
       "steam_app_id": "952060",
       "install_dir": "RE3",
       "executable": "re3.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 3 Remake DX11/Resident-Evil-3-Remake-DX11-v1.1.0.zip",
-        "sha256": "3de05604d2d45a3125382eba72eb99e0b4b4b4faae5c134379464c1bfdc00669"
+        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.2.0.zip",
+        "sha256": "31506b97369b86d7629998b01e127326735587eb466d5456f8bd50e1bc4db461"
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",

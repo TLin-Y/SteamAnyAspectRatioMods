@@ -11,6 +11,7 @@ Special thanks to:
   [Patreon](https://www.patreon.com/Wintermance) or [Ko-fi](https://ko-fi.com/W7W01UAI9).
 - [MinuteReversal](https://github.com/MinuteReversal/MHW16x10Fix), for MHW16x10Fix.
 - [TEODORMAX](https://www.nexusmods.com/finalfantasyxiii2/mods/42), for Final Fantasy XIII-2 and Lightning Returns fixes.
+- **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
 
 Thank you as well to every contributor and author credited in the individual
 mod READMEs and licenses. Please visit the original projects for their work,
