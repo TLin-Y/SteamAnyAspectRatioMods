@@ -42,8 +42,7 @@ def parse_version(value: str) -> tuple[int, ...] | None:
     return tuple(parts)
 
 
-def check_for_update(repository_url: str, installed_version: str) -> dict[str, object]:
-    """Look up the latest release of the repository and report whether it is newer."""
+def latest_release(repository_url: str) -> tuple[str, dict[str, object], str]:
     repository = _repository_parts(repository_url)
     api_url = f"https://api.github.com/repos/{repository}/releases/latest"
     try:
@@ -56,6 +55,15 @@ def check_for_update(repository_url: str, installed_version: str) -> dict[str, o
         raise ValueError("The repository returned unreadable release information")
 
     latest_text = str(release.get("tag_name") or "")
+    latest = parse_version(latest_text)
+    if latest is None:
+        raise ValueError(f"Latest release tag '{latest_text}' is not a version number")
+    return repository, release, latest_text
+
+
+def check_for_update(repository_url: str, installed_version: str) -> dict[str, object]:
+    """Look up the latest release of the repository and report whether it is newer."""
+    repository, release, latest_text = latest_release(repository_url)
     latest = parse_version(latest_text)
     if latest is None:
         raise ValueError(f"Latest release tag '{latest_text}' is not a version number")

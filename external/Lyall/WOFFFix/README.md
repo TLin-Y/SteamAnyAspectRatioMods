@@ -17,6 +17,8 @@ This is a fix for World of Final Fantasy that adds support for custom resolution
 - Grab the latest release of WOFFFix from [here.](../../../releases)
 - Extract the contents of the release zip in to the the game folder.<br />(e.g. "**steamapps\common\World of Final Fantasy**" for Steam).
 
+On Steam, the game folder can also be `steamapps\common\WOFF`.
+
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
 - If using the Steam Deck, I recommend disabling the "Fix HUD" option in **WOFFFix.ini** as the HUD will only be slightly stretched vertically.

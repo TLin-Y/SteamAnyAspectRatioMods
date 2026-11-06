@@ -16,6 +16,7 @@ from scanner.mod_installer import (
     open_url,
     set_archive_cache_dir,
     set_offline_mode,
+    set_pack_dir,
 )
 from store import (
     PluginStore,
@@ -366,6 +367,45 @@ class LocalArchiveTests(unittest.TestCase):
             served["data"] = versions["old"][0]
             with self.assertRaises(ValueError):
                 apply_mod_files(make_mod("0" * 64), str(self.game))
+
+    def test_outdated_pack_and_corrupt_cache_do_not_replace_current_archive(self) -> None:
+        cache = self.root / "cache"
+        pack = self.root / "pack"
+        packed_zip = pack / "pkg" / "m.zip"
+        packed_zip.parent.mkdir(parents=True)
+        write_zip(packed_zip, {"mod.dll": b"old"})
+        current_zip = self.root / "current.zip"
+        write_zip(current_zip, {"mod.dll": b"new"})
+        content = current_zip.read_bytes()
+        mod = load_mod_catalog()[0].__class__(
+            mod_id="m", name="m", steam_app_id="1", install_dir="x", executable="x.exe",
+            source=ModSource(
+                "archive", "pkg/m.zip", "", (), "https://github.com/o/r", "main",
+                hashlib.sha256(content).hexdigest(),
+            ),
+            files=("mod.dll",), ini_file=None, wine_dll_overrides=(),
+        )
+        set_pack_dir(pack)
+        set_archive_cache_dir(cache)
+        self.addCleanup(set_pack_dir, None)
+        self.addCleanup(set_offline_mode, False)
+        set_offline_mode(True)
+        with self.assertRaisesRegex(OfflineModeError, "outdated mod archive"):
+            apply_mod_files(mod, str(self.game))
+        self.assertFalse((self.game / "mod.dll").exists())
+
+        set_offline_mode(False)
+        with patch(
+            "scanner.mod_installer.urlopen", side_effect=lambda *a, **k: response(content)
+        ) as opener:
+            apply_mod_files(mod, str(self.game))
+            self.assertEqual(b"new", (self.game / "mod.dll").read_bytes())
+            cached, = cache.glob("*.zip")
+            cached.write_bytes(b"corrupt")
+            (self.game / "mod.dll").unlink()
+            apply_mod_files(mod, str(self.game))
+            self.assertEqual(b"new", (self.game / "mod.dll").read_bytes())
+            self.assertEqual(2, opener.call_count)
 
 
 if __name__ == "__main__":

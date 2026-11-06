@@ -1,0 +1,18 @@
+# Thank you, mod authors!
+
+To everyone who creates and shares game fixes: thank you. Your time, curiosity,
+and generosity help more people enjoy their games on the screens they love.
+This project is possible because of your work.
+
+Special thanks to:
+
+- [Lyall](https://codeberg.org/Lyall), for an extraordinary collection of game fixes.
+  If you enjoy his work, consider supporting him on
+  [Patreon](https://www.patreon.com/Wintermance) or [Ko-fi](https://ko-fi.com/W7W01UAI9).
+- [MinuteReversal](https://github.com/MinuteReversal/MHW16x10Fix), for MHW16x10Fix.
+- [TEODORMAX](https://www.nexusmods.com/finalfantasyxiii2/mods/42), for Final Fantasy XIII-2 and Lightning Returns fixes.
+
+Thank you as well to every contributor and author credited in the individual
+mod READMEs and licenses. Please visit the original projects for their work,
+documentation, and support. The [game list](../README.md#game-mods) links to
+each mod and its author.

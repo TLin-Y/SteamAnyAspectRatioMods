@@ -2,7 +2,7 @@
 
 ## 1. Install
 
-Extract the ZIP into the game's `Visions.of.Mana\VisionsofMana\Binaries\Win64` folder.
+Extract the ZIP into the game's `VisionsofMana\Binaries\Win64` folder, next to `VisionsofMana-Win64-Shipping.exe`.
 
 ## 2. Set resolution and FOV
 

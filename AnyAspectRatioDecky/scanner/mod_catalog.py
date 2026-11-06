@@ -38,6 +38,7 @@ from helper.constants import (
     MOD_CATALOG_UNSUPPORTED_SCHEMA_MESSAGE,
     MOD_CATALOG_UNSAFE_PATH_CHARACTERS,
     MOD_EXECUTABLE_KEY,
+    MOD_EXECUTABLE_ALTERNATIVES_KEY,
     MOD_FILES_KEY,
     MOD_ID_KEY,
     MOD_INI_FILE_KEY,
@@ -97,6 +98,7 @@ class ModDefinition:
     wine_dll_overrides: tuple[str, ...]
     credits: tuple[ModCredit, ...] = ()
     manual: bool = False
+    executable_alternatives: tuple[str, ...] = ()
 
 
 def _https_url(value: object) -> bool:
@@ -288,6 +290,23 @@ def _parse_mod(
     _validate_relative_path(install_dir, mod_id)
     if executable:
         _validate_relative_path(executable, mod_id)
+    alternatives = entry.get(MOD_EXECUTABLE_ALTERNATIVES_KEY, [])
+    if not isinstance(alternatives, list) or not all(
+        isinstance(path, str) and path for path in alternatives
+    ):
+        raise ValueError(
+            MOD_CATALOG_MISSING_FIELD_MESSAGE.format(
+                mod_id=mod_id, field=MOD_EXECUTABLE_ALTERNATIVES_KEY
+            )
+        )
+    seen_executables = {executable} if executable else set()
+    for path in alternatives:
+        _validate_relative_path(path, mod_id)
+        if path in seen_executables:
+            raise ValueError(
+                MOD_CATALOG_DUPLICATE_FILE_MESSAGE.format(mod_id=mod_id, path=path)
+            )
+        seen_executables.add(path)
     source = _parse_source(entry, mod_id, repository_url, repository_ref)
 
     ini_file = entry.get(MOD_INI_FILE_KEY)
@@ -345,6 +364,7 @@ def _parse_mod(
         wine_dll_overrides=tuple(raw_overrides),
         credits=_parse_credits(entry.get(MOD_CATALOG_CREDITS_KEY)) or default_credits,
         manual=manual,
+        executable_alternatives=tuple(alternatives),
     )
 
 
