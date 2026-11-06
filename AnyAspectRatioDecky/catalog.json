@@ -610,8 +610,8 @@
       "id": "clairobscurfix",
       "name": "Clair Obscur: Expedition 33 - ClairObscurFix",
       "steam_app_id": "1903340",
-      "install_dir": "Expedition33",
-      "executable": "Sandfall/Binaries/Win64/Sandfall-Win64-Shipping.exe",
+      "install_dir": "Expedition 33",
+      "executable": "Sandfall/Binaries/Win64/SandFall-Win64-Shipping.exe",
       "source": {
         "kind": "archive",
         "path": "external/Lyall/ClairObscurFix/ClairObscurFix_0.0.15.zip",
