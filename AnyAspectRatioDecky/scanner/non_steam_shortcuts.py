@@ -1,3 +1,4 @@
+import os
 import struct
 import zlib
 from pathlib import Path
@@ -75,6 +76,7 @@ def parse_shortcuts(data: bytes) -> list[InstalledApp]:
                 install_dir=Path(game_path).name,
                 library_path="",
                 game_path=game_path if Path(game_path).is_dir() else None,
+                shortcut_executable=os.path.abspath(exe) if Path(exe).is_absolute() else None,
             )
         )
     return apps

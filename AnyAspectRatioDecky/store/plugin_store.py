@@ -109,6 +109,7 @@ class PluginStore:
         self.pack_dir = data_dir / "pack"
         self.local_index_path = self.cache_dir / "local_archives.json"
         self.last_scan_path = self.cache_dir / "last_scan.json"
+        self.applied_hashes_path = self.data_dir / "applied_hashes.json"
         self.log_dir = data_dir / "logs"
         self.log_path = self.log_dir / "plugin.log"
 
@@ -130,6 +131,41 @@ class PluginStore:
 
     def save_settings(self, settings: Settings) -> None:
         write_json_atomic(self.settings_path, asdict(settings))
+
+    def load_applied_hashes(self) -> dict[str, dict[str, str]]:
+        try:
+            document = json.loads(self.applied_hashes_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return {}
+        except (OSError, ValueError) as error:
+            raise ValueError(f"Unable to read applied mod hashes: {error}") from error
+        if not isinstance(document, dict) or not all(
+            isinstance(path, str)
+            and isinstance(mods, dict)
+            and all(
+                isinstance(mod_id, str)
+                and isinstance(digest, str)
+                and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+                for mod_id, digest in mods.items()
+            )
+            for path, mods in document.items()
+        ):
+            raise ValueError("Applied mod hashes are invalid")
+        return document
+
+    def set_applied_hash(self, game_path: str, mod_id: str, digest: str | None) -> None:
+        hashes = self.load_applied_hashes()
+        if digest is not None:
+            if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                raise ValueError("Invalid applied mod SHA-256")
+            hashes.setdefault(game_path, {})[mod_id] = digest
+        elif game_path in hashes:
+            hashes[game_path].pop(mod_id, None)
+            if not hashes[game_path]:
+                del hashes[game_path]
+        else:
+            return
+        write_json_atomic(self.applied_hashes_path, hashes)
 
     def catalog_meta(self) -> dict[str, object] | None:
         meta = read_json(self.catalog_meta_path)

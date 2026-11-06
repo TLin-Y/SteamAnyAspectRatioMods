@@ -55,6 +55,7 @@ class InstalledApp:
     install_dir: str
     library_path: str
     game_path: str | None
+    shortcut_executable: str | None = None
 
 
 @dataclass

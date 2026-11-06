@@ -1,6 +1,7 @@
 import asyncio
 import sys
 from dataclasses import asdict, replace
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import decky
@@ -26,9 +27,10 @@ from helper.constants import (
     LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE,
     LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED,
     LOG_SCAN_PHASE_FORMAT,
+    MOD_SOURCE_ARCHIVE,
     STEAM_LIBRARY_UNAVAILABLE_WARNING,
 )
-from logger.plugin_logger import PluginLogger, attach_file_handler
+from logger.plugin_logger import PluginLogger, attach_file_handler, clear_file_handler_logs
 from scanner import scan_supported_games as scan_supported_games_report
 from scanner.local_archives import scan_local_archives
 from scanner.plugin_updater import (
@@ -53,8 +55,10 @@ from store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
     Settings,
+    download_release_pack,
     install_pack,
     load_active_catalog,
+    pack_operation,
     refresh_catalog_on_start,
     update_dependencies,
     validate_settings,
@@ -63,11 +67,12 @@ from store import (
 
 log = PluginLogger(decky.logger)
 _store: PluginStore | None = None
+_file_handler: RotatingFileHandler | None = None
 
 
 def get_store() -> PluginStore:
     """Open the persistent data directory once and wire the cache and file log to it."""
-    global _store
+    global _store, _file_handler
     if _store is None:
         data_dir = (
             getattr(decky, "DECKY_PLUGIN_RUNTIME_DIR", None)
@@ -79,7 +84,7 @@ def get_store() -> PluginStore:
         set_archive_cache_dir(store.archive_cache_dir)
         set_pack_dir(store.pack_dir)
         block_network(store.load_settings().offline_mode)
-        attach_file_handler(decky.logger, store.log_path)
+        _file_handler = attach_file_handler(decky.logger, store.log_path)
         _store = store
     return _store
 
@@ -95,6 +100,26 @@ class Plugin:
             local_archive_dir=settings.local_archive_dir or None,
             local_index_path=store.local_index_path,
         )
+        try:
+            hashes = store.load_applied_hashes()
+        except ValueError as error:
+            log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="applied-hashes")
+            report.warnings.append(str(error))
+            hashes = {}
+        report.supported_games = [
+            replace(
+                game,
+                update_available=bool(
+                    game.game_path
+                    and game.files_present
+                    and report.mods[game.mod_id].source.kind == MOD_SOURCE_ARCHIVE
+                    and report.mods[game.mod_id].source.sha256
+                    and (applied_hash := hashes.get(game.game_path, {}).get(game.mod_id))
+                    and applied_hash != report.mods[game.mod_id].source.sha256
+                ),
+            )
+            for game in report.supported_games
+        ]
         if source.warning:
             log.warning(LOG_EVENT_CATALOG_FALLBACK)
             report.warnings.append(source.warning)
@@ -153,8 +178,25 @@ class Plugin:
             log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-import")
             return {"error": str(error) or type(error).__name__}
 
+    async def download_offline_pack(self) -> dict[str, object]:
+        store = get_store()
+        try:
+            return await asyncio.to_thread(download_release_pack, store, store.load_settings())
+        except (OSError, ValueError) as error:
+            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-download")
+            return {"error": str(error) or type(error).__name__}
+
     async def clear_local_data(self) -> dict[str, object]:
-        get_store().clear_local_data()
+        store = get_store()
+        try:
+            with pack_operation():
+                store.clear_local_data()
+                if _file_handler is None:
+                    raise ValueError("Plugin log handler is unavailable.")
+                clear_file_handler_logs(_file_handler)
+        except (OSError, ValueError) as error:
+            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="clear-local-data")
+            return {"error": str(error) or type(error).__name__}
         return {}
 
     async def get_settings(self) -> dict[str, object]:
@@ -207,22 +249,23 @@ class Plugin:
 
         # Values equal to the shipped defaults are stored as "use default".
         default_url, default_ref = read_catalog_repository()
-        previous = store.load_settings()
-        settings = Settings(
-            "" if requested.catalog_repository_url == default_url else requested.catalog_repository_url,
-            "" if requested.catalog_ref == default_ref else requested.catalog_ref,
-            "" if requested.catalog_path == DEFAULT_CATALOG_PATH else requested.catalog_path,
-            requested.local_archive_dir,
-            previous.offline_mode,
-        )
-        store.save_settings(settings)
-        source_changed = previous.source_key() != settings.source_key()
-        if source_changed:
-            store.clear_catalog_cache()
-            store.clear_archive_cache()
-            store.clear_pack()
-        if previous.local_archive_dir != settings.local_archive_dir:
-            store.local_index_path.unlink(missing_ok=True)
+        with pack_operation():
+            previous = store.load_settings()
+            settings = Settings(
+                "" if requested.catalog_repository_url == default_url else requested.catalog_repository_url,
+                "" if requested.catalog_ref == default_ref else requested.catalog_ref,
+                "" if requested.catalog_path == DEFAULT_CATALOG_PATH else requested.catalog_path,
+                requested.local_archive_dir,
+                previous.offline_mode,
+            )
+            store.save_settings(settings)
+            source_changed = previous.source_key() != settings.source_key()
+            if source_changed:
+                store.clear_catalog_cache()
+                store.clear_archive_cache()
+                store.clear_pack()
+            if previous.local_archive_dir != settings.local_archive_dir:
+                store.local_index_path.unlink(missing_ok=True)
         log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"source-changed-{source_changed}")
         return {"saved": True, "source_changed": source_changed}
 
@@ -251,7 +294,8 @@ class Plugin:
         settings = store.load_settings()
         log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED)
         try:
-            result = update_dependencies(store, settings)
+            with pack_operation():
+                result = update_dependencies(store, settings)
         except NetworkError as error:
             log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="network")
             return {"error": str(error)}
@@ -329,6 +373,20 @@ class Plugin:
                     preserve_modified_ini=preserve_modified_ini,
                 )
                 copied_file_count = 0
+            if mod.source.kind == MOD_SOURCE_ARCHIVE:
+                complete_apply = applied and not conflicting_files
+                complete_remove = not applied and not conflicting_files
+                if complete_apply or complete_remove:
+                    try:
+                        get_store().set_applied_hash(
+                            installed_game_path, mod.mod_id,
+                            mod.source.sha256 if complete_apply and mod.source.sha256 else None,
+                        )
+                    except (OSError, ValueError) as error:
+                        raise ValueError(
+                            f"Mod files were {'applied' if applied else 'removed'}, "
+                            f"but the applied version could not be saved: {error}"
+                        ) from error
         except NetworkError as error:
             log.warning(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,
@@ -460,10 +518,13 @@ class Plugin:
     async def _refresh_catalog(store: PluginStore) -> None:
         """Fetch the newest catalog in the background; the bundled or cached one stays in use on failure."""
         log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase="startup")
+
+        def refresh():
+            with pack_operation():
+                return refresh_catalog_on_start(store, store.load_settings())
+
         try:
-            changed = await asyncio.to_thread(
-                refresh_catalog_on_start, store, store.load_settings()
-            )
+            changed = await asyncio.to_thread(refresh)
         except Exception:
             log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="startup")
             return

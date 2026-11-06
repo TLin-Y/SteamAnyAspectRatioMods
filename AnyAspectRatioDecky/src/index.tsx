@@ -45,6 +45,8 @@ type SupportedGameReport = {
     source_kind: string;
     wine_dll_overrides: string[];
     manual?: boolean;
+    matched_by_executable?: boolean;
+    update_available?: boolean;
   }[];
   warnings: string[];
 };
@@ -100,7 +102,7 @@ const installPluginUpdateRequest = callable<
   }
 >("install_plugin_update");
 // Keep in sync with package.json and plugin.json (major.minor).
-const PLUGIN_VERSION = "1.4";
+const PLUGIN_VERSION = "1.5";
 const updateDependencies = callable<
   [],
   {
@@ -125,6 +127,7 @@ type CreditsInfo = {
 };
 const getCredits = callable<[], CreditsInfo>("get_credits");
 const importOfflinePack = callable<[string], { error?: string }>("import_offline_pack");
+const downloadOfflinePack = callable<[], { error?: string; version?: string }>("download_offline_pack");
 const clearLocalData = callable<[], { error?: string }>("clear_local_data");
 
 const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
@@ -811,7 +814,12 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </ButtonItem>
           </PanelSectionRow>
           <PanelSectionRow>
-            <strong style={{ overflowWrap: "anywhere" }}>{selectedGame.app_name}</strong>
+            <strong style={{ overflowWrap: "anywhere" }}>
+              {selectedGame.app_name}
+              {selectedGame.source_kind === "local_archive" && " (Custom)"}
+              {selectedGame.update_available && " (New)"}
+              {selectedGame.matched_by_executable && " (By Exe)"}
+            </strong>
           </PanelSectionRow>
           {detailView === "readme" ? (
             <PanelSectionRow>
@@ -925,7 +933,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
-              {game.source_kind === "local_archive" ? " (local archive)" : ""}
+              {game.source_kind === "local_archive" && " (Custom)"}
+              {game.update_available && " (New)"}
+              {game.matched_by_executable && " (By Exe)"}
             </strong>
           </PanelSectionRow>
           <PanelSectionRow>
@@ -970,6 +980,18 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               onChange={(checked) => changeModApplied(game, checked)}
             />
           </PanelSectionRow>
+
+          {game.update_available && (
+            <PanelSectionRow>
+              <ButtonItem
+                layout="below"
+                disabled={updatingMod || !game.game_path}
+                onClick={() => changeModApplied(game, true)}
+              >
+                Apply update
+              </ButtonItem>
+            </PanelSectionRow>
+          )}
 
           {game.file_status === "partial" && (
             <PanelSectionRow>
@@ -1421,15 +1443,16 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
 
   const runAction = async (
     title: string,
-    action: () => Promise<{ error?: string }>,
-    doneMessage: string,
+    action: () => Promise<{ error?: string; version?: string }>,
+    doneMessage: string | ((result: { version?: string }) => string),
+    pendingMessage = "Working...",
   ) => {
     setBusy(true);
-    setStatus("Working...");
+    setStatus(pendingMessage);
     try {
       const result = await action();
       if (result.error) throw new Error(result.error);
-      setStatus(doneMessage);
+      setStatus(typeof doneMessage === "function" ? doneMessage(result) : doneMessage);
       await refresh();
       onDataChanged();
     } catch (reason) {
@@ -1465,9 +1488,24 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
     showModal(
       <ConfirmModal
         strTitle="Delete local files and caches?"
-        strDescription="Removes the imported repository zip, the downloaded catalog, and all caches. Settings, logs, and mods already applied to games are kept."
+        strDescription="Removes the imported repository zip, the downloaded catalog, caches, and plugin logs. Settings and mods already applied to games are kept."
         strOKButtonText="Delete"
         onOK={() => runAction("Delete failed", clearLocalData, "Local files and caches deleted.")}
+      />,
+    );
+
+  const confirmDownloadOfflinePack = () =>
+    showModal(
+      <ConfirmModal
+        strTitle="Download all mods for offline use?"
+        strDescription="Downloads the offline pack from the latest release. This may use around 500 MB or more and replaces the current offline pack and catalog with the release versions."
+        strOKButtonText="Download"
+        onOK={() => runAction(
+          "Download failed",
+          downloadOfflinePack,
+          (result) => `Offline pack ${result.version ?? ""} downloaded and imported.`,
+          "Downloading and importing the offline pack. This may take several minutes...",
+        )}
       />,
     );
 
@@ -1481,7 +1519,7 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
             {credits.mod_count} mod(s) by {credits.authors.length} author(s) -{" "}
             {pack?.file_count
               ? `local files: ${pack.file_count}, ${formatBytes(pack.size_bytes)}`
-              : "no local repository zip imported"}
+              : "no offline pack imported"}
           </div>
         </PanelSectionRow>
       )}
@@ -1515,6 +1553,19 @@ function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </PanelSectionRow>
         );
       })}
+      <PanelSectionRow>
+        <div style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.25)", margin: "8px 0" }} />
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          disabled={busy || !credits || credits.offline_mode}
+          description={credits?.offline_mode ? "Turn off offline mode to download." : "Downloads the latest release's offline pack."}
+          onClick={confirmDownloadOfflinePack}
+        >
+          Download all mods for offline use
+        </ButtonItem>
+      </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem layout="below" disabled={busy} onClick={importRepositoryZip}>
           Import repository zip...

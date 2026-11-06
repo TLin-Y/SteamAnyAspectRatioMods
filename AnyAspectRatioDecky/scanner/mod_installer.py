@@ -226,8 +226,14 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
         return
     packed = _pack_file(source.path)
     if packed is not None:
-        yield packed
-        return
+        if not source.sha256 or _file_sha256(packed) == source.sha256:
+            yield packed
+            return
+        if _offline_mode:
+            raise OfflineModeError(
+                "The offline pack has an outdated mod archive. "
+                "Import an updated offline pack or turn off offline mode."
+            )
 
     archive_url = repository_file_url(
         source.repository_url,
@@ -236,12 +242,15 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
     )
     cached_path = _cached_archive_path(archive_url, source.sha256)
     if cached_path is not None and cached_path.is_file():
-        try:
-            yield cached_path
-        except BaseException:
+        if source.sha256 and _file_sha256(cached_path) != source.sha256:
             cached_path.unlink(missing_ok=True)
-            raise
-        return
+        else:
+            try:
+                yield cached_path
+            except BaseException:
+                cached_path.unlink(missing_ok=True)
+                raise
+            return
 
     if cached_path is not None:
         cached_path.parent.mkdir(parents=True, exist_ok=True)
