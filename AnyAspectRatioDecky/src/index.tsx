@@ -45,6 +45,8 @@ type SupportedGameReport = {
     source_kind: string;
     wine_dll_overrides: string[];
     manual?: boolean;
+    matched_by_executable?: boolean;
+    update_available?: boolean;
   }[];
   warnings: string[];
 };
@@ -100,7 +102,7 @@ const installPluginUpdateRequest = callable<
   }
 >("install_plugin_update");
 // Keep in sync with package.json and plugin.json (major.minor).
-const PLUGIN_VERSION = "1.4";
+const PLUGIN_VERSION = "1.5";
 const updateDependencies = callable<
   [],
   {
@@ -811,7 +813,12 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </ButtonItem>
           </PanelSectionRow>
           <PanelSectionRow>
-            <strong style={{ overflowWrap: "anywhere" }}>{selectedGame.app_name}</strong>
+            <strong style={{ overflowWrap: "anywhere" }}>
+              {selectedGame.app_name}
+              {selectedGame.source_kind === "local_archive" && " (Custom)"}
+              {selectedGame.update_available && " (New)"}
+              {selectedGame.matched_by_executable && " (By Exe)"}
+            </strong>
           </PanelSectionRow>
           {detailView === "readme" ? (
             <PanelSectionRow>
@@ -925,7 +932,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
-              {game.source_kind === "local_archive" ? " (local archive)" : ""}
+              {game.source_kind === "local_archive" && " (Custom)"}
+              {game.update_available && " (New)"}
+              {game.matched_by_executable && " (By Exe)"}
             </strong>
           </PanelSectionRow>
           <PanelSectionRow>
@@ -970,6 +979,18 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               onChange={(checked) => changeModApplied(game, checked)}
             />
           </PanelSectionRow>
+
+          {game.update_available && (
+            <PanelSectionRow>
+              <ButtonItem
+                layout="below"
+                disabled={updatingMod || !game.game_path}
+                onClick={() => changeModApplied(game, true)}
+              >
+                Apply update
+              </ButtonItem>
+            </PanelSectionRow>
+          )}
 
           {game.file_status === "partial" && (
             <PanelSectionRow>

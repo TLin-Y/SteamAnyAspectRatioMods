@@ -13,7 +13,7 @@ This Decky Loader plugin finds your supported games and applies aspect-ratio fix
 
 Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download `AnyAspectRatio-1.4.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
+1. Download `AnyAspectRatio-1.5.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
 2. Put the zip on the Deck (for example in `Downloads`).
 3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
 4. Open **Settings → Developer → Install Plugin from ZIP**, pick the zip, and confirm.
@@ -24,14 +24,17 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 ## Tabs
 
 - **Games**: lists your games that have a mod, including non-Steam shortcuts. Apply or remove a mod per game, edit its settings, or read its ReadMe. Fixes that need manual steps are grouped under **Manual fixes** with a ReadMe button only.
+- Steam games are matched by app ID and install folder. If the folder differs, or for unknown Steam games and non-Steam shortcuts, the plugin can match catalogued executable paths relative to the game folder. Ambiguous executable names are skipped and reported as warnings.
+- Scan warnings also flag missing catalogued executables and mod destination folders, which may indicate that a game update changed its layout. Check the game folder before applying the mod.
+- **By Exe** marks executable-based matches; **Custom** marks local archives. **New** means a catalog archive's SHA-256 differs from the version last fully applied by the plugin. Existing installations without a recorded version are not labeled New; a successful full Apply records the current version.
 - **Mods**: shows who made the mods. Two buttons:
-  - **Import repository zip...**: install every mod without internet. Download `AnyAspectRatio-Offline-Mods-1.4.0.zip` from the release page, put it in the Deck's `Downloads` folder, then pick it here. It holds only the mod files, no source code.
+  - **Import repository zip...**: install every mod without internet. Download `AnyAspectRatio-Offline-Mods-1.5.0.zip` from the release page, put it in the Deck's `Downloads` folder, then pick it here. It holds only the mod files, no source code.
   - **Delete all local files and caches**: frees the space used by imported or downloaded files. Your settings and already-applied mods are kept.
 - **Settings**: an **Offline mode** switch, where mods come from, an optional folder of your own mod zips, **Update** to fetch the newest mod list, and **Check for plugin update** to install a newer plugin release from the configured GitHub repository.
 
 ### Offline mode and privacy
 
-Turn on **Settings → Offline mode** and the plugin never connects to the internet: no catalog refresh at startup, no downloads, and the author links are disabled. The switch is saved, so it stays on after a reboot. To use it, import the **Offline Pack** (`AnyAspectRatio-Offline-Mods-1.4.0.zip`) once under **Mods → Import repository zip...**; it contains only the mod files and READMEs, no source code. Without the pack, mods install only from your own mod folder. Offline mode covers this plugin only, not Decky Loader or Steam.
+Turn on **Settings → Offline mode** and the plugin never connects to the internet: no catalog refresh at startup, no downloads, and the author links are disabled. The switch is saved, so it stays on after a reboot. To use it, import the **Offline Pack** (`AnyAspectRatio-Offline-Mods-1.5.0.zip`) once under **Mods → Import repository zip...**; it contains only the mod files and READMEs, no source code. Without the pack, mods install only from your own mod folder. Offline mode covers this plugin only, not Decky Loader or Steam.
 
 ## License
 

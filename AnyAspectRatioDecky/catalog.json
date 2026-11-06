@@ -612,6 +612,7 @@
       "steam_app_id": "1903340",
       "install_dir": "Expedition 33",
       "executable": "Sandfall/Binaries/Win64/SandFall-Win64-Shipping.exe",
+      "executable_alternatives": ["Expedition33_Steam.exe"],
       "source": {
         "kind": "archive",
         "path": "external/Lyall/ClairObscurFix/ClairObscurFix_0.0.15.zip",

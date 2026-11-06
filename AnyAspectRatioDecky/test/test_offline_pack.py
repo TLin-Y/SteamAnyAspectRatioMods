@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -28,6 +29,7 @@ class OfflinePackTests(unittest.TestCase):
         with ZipFile(inner, "w") as archive:
             for name in ("d3d11.dll", "dinput8.dll", "DS3_ARFix.asi", "DS3_ARFix.ini"):
                 archive.writestr(name, name.encode())
+        mod["source"]["sha256"] = hashlib.sha256(inner.read_bytes()).hexdigest()
         with ZipFile(self.repo_zip, "w") as archive:
             archive.writestr("repo-main/AnyAspectRatioDecky/catalog.json", json.dumps(document))
             archive.write(inner, f"repo-main/{self.mod_path}")
