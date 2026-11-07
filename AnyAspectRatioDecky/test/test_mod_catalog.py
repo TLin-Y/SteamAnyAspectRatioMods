@@ -61,7 +61,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([23, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([24, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -76,7 +76,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 24), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 25), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -87,11 +87,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(24, len(catalog))
+        self.assertEqual(25, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            21,
+            22,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -285,6 +285,20 @@ class ModCatalogTests(unittest.TestCase):
             mod.files,
         )
         self.assertEqual("RaymanLegends_ARFix.ini", mod.ini_file)
+
+    def test_ys_viii_catalog_paths(self) -> None:
+        mod = next(
+            mod for mod in load_mod_catalog()
+            if mod.mod_id == "ys-viii-lacrimosa-of-dana"
+        )
+        self.assertEqual("579180", mod.steam_app_id)
+        self.assertEqual("Ys VIII Lacrimosa of Dana", mod.install_dir)
+        self.assertEqual("ys8.exe", mod.executable)
+        self.assertEqual(
+            ("dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"),
+            mod.files,
+        )
+        self.assertEqual("Ys8_AspectPatch.ini", mod.ini_file)
 
     def test_verified_external_mod_install_paths(self) -> None:
         catalog = {mod.mod_id: mod for mod in load_mod_catalog()}
