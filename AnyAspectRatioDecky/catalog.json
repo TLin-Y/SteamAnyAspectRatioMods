@@ -84,6 +84,22 @@
       "wine_dll_overrides": ["d3d9,dinput8=n,b"]
     },
     {
+      "id": "guacamelee-2",
+      "name": "Guacamelee! 2 - Custom Aspect Ratio",
+      "steam_app_id": "534550",
+      "install_dir": "Guacamelee 2",
+      "executable": "Guac2_64.exe",
+      "executable_alternatives": ["Guac2_x64.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "Guacamelee 2/Guacamelee-2-v1.0.0.zip",
+        "sha256": "8e6238e53f3607680a1af437ed303bb9f9180e846b7fecf604a3a13914b61e24"
+      },
+      "files": ["dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"],
+      "ini_file": "Guac2_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "monster-hunter-rise",
       "name": "Monster Hunter Rise - Custom Aspect Ratio",
       "steam_app_id": "1446780",
