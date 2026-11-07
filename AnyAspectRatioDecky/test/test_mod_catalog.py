@@ -61,7 +61,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([24, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([25, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -76,7 +76,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 25), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 26), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -87,11 +87,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(25, len(catalog))
+        self.assertEqual(26, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            22,
+            23,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -163,6 +163,17 @@ class ModCatalogTests(unittest.TestCase):
             },
             set(palworld.files),
         )
+
+    def test_sanabi_catalog_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "sanabi")
+        self.assertEqual("1562700", mod.steam_app_id)
+        self.assertEqual("SANABI", mod.install_dir)
+        self.assertEqual("SNB.exe", mod.executable)
+        self.assertEqual(("winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"), mod.files)
+        self.assertEqual("SNB_ARFix.ini", mod.ini_file)
+        self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
+        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("SANABI/SANABI-v1.0.0.zip", mod.source.path)
 
     def test_undertale_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "undertale")
