@@ -1,14 +1,13 @@
-# AnyAspectRatio for Steam Deck v1.5.0: play at full-screen 16:10, one tap per game
+# AnyAspectRatio for Steam Deck v1.6.0: play at full-screen 16:10, one tap per game
 
 Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 screen? **AnyAspectRatio** is a Decky Loader plugin that finds the games you own, installs the right aspect-ratio fix, and sets the Steam launch options for you. No file copying, no terminal.
 
-## New in 1.5.0
+## New in 1.6.0
 
-- **Better game matching.** A catalogued executable can identify a game when its Steam folder name changes, or when it is a non-Steam shortcut. Choose the correct fix when multiple matches are found.
-- **Clearer labels.** **.exe** marks executable matches, **Custom** marks local archives, and **New** marks a catalog archive whose checksum differs from the version last fully applied by the plugin. Use **Apply update** to install it.
-- **Game layout warnings.** Missing expected executables or catalogued destination folders are reported so you can check the game's files.
-- **Download mods for offline use.** The Mods tab can download and import the latest release's offline pack.
-- **Expedition 33 and Ninja Gaiden Sigma 2.** Corrected Expedition 33's catalog paths and included all Black V18 files for Ninja Gaiden Sigma 2.
+- **Refined Games tab.** More compact controls, color-coded game names, and a clearer scan status.
+- **Easier mod updates.** **New** marks a newer mod version; turn Apply off and on again to install it.
+- **Improved offline packs.** Online catalog updates no longer prevent using the offline pack when offline mode is enabled.
+- **Download progress.** The offline pack button shows when a download is in progress.
 
 ![Games tab](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/resources/games-tab.jpg)
 
@@ -29,16 +28,16 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 - **Manual fixes section.** A few fixes can't be installed automatically. They are listed with a ReadMe button, so you can still see which of your games have one.
 - **Always fresh.** The mod list refreshes when the plugin starts (unless Offline mode is on).
 - **Full offline mode.** One switch in Settings locks the plugin so it never connects to the internet: no startup refresh, no downloads, no tracking. It stays on after a reboot. Great if you care about privacy.
-- **Offline friendly.** Grab the **Offline Pack** zip from the Assets (all mods, no source code), and import it once under **Mods → Import repository zip**. After that, nothing needs the internet. You can also point the plugin at a folder of your own mod zips.
+- **Offline friendly.** Download or import the **Offline Pack** from the Mods tab to use its fixes without internet. You can also point the plugin at a folder of your own mod zips.
 
 ## Install (about 2 minutes)
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-1.5.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-1.6.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import repository zip...** and pick **AnyAspectRatio-Offline-Mods-1.5.0.zip** (also in the Assets, about 500 MB). This installs every mod without internet. Skip this step if your Deck is online: the plugin downloads the mod list itself.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-1.6.0.zip** (also in the Assets, about 500 MB). Skip this step if your Deck is online.
 5. Press **Scan Steam libraries**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
