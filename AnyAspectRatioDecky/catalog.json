@@ -84,6 +84,21 @@
       "wine_dll_overrides": ["d3d9,dinput8=n,b"]
     },
     {
+      "id": "ys-viii-lacrimosa-of-dana",
+      "name": "Ys VIII: Lacrimosa of DANA - Custom Aspect Ratio",
+      "steam_app_id": "579180",
+      "install_dir": "Ys VIII Lacrimosa of Dana",
+      "executable": "ys8.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Ys VIII Lacrimosa of DANA/Ys-VIII-Lacrimosa-of-DANA-v1.0.0.zip",
+        "sha256": "b5f1c21cd3defedd0eda8a08d9687457c5cc3823d699748e73b5c591436277eb"
+      },
+      "files": ["dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"],
+      "ini_file": "Ys8_AspectPatch.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "guacamelee-2",
       "name": "Guacamelee! 2 - Custom Aspect Ratio",
       "steam_app_id": "534550",
