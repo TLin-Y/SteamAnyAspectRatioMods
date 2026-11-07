@@ -43,8 +43,11 @@ from scanner.mod_catalog import ModDefinition, read_catalog_repository, summariz
 from scanner.mod_installer import (
     NetworkError,
     apply_mod_files,
+    existing_mod_logs,
     fetch_mod_readme,
+    mod_log_names,
     read_mod_ini,
+    read_mod_log,
     remove_mod_files,
     set_archive_cache_dir,
     set_offline_mode as block_network,
@@ -89,9 +92,60 @@ def get_store() -> PluginStore:
     return _store
 
 
+def _update_available(
+    game_path: str | None,
+    files_present: list[str],
+    mod: ModDefinition,
+    hashes: dict[str, dict[str, str]],
+) -> bool:
+    applied_hash = hashes.get(game_path, {}).get(mod.mod_id) if game_path else None
+    return bool(
+        files_present
+        and mod.source.kind == MOD_SOURCE_ARCHIVE
+        and mod.source.sha256
+        and applied_hash
+        and applied_hash != mod.source.sha256
+    )
+
+
+def _selected_groups(
+    candidates: list[tuple[object, object, object]],
+    choices: dict[str, dict[str, str]],
+) -> set[str]:
+    return {
+        group for group, mod_id, game_path in candidates
+        if isinstance(group, str) and group
+        and (choice := choices.get(group))
+        and choice["mod_id"] == mod_id and choice["game_path"] == game_path
+    }
+
+
+def _matches_selection(
+    group: object, mod_id: object, game_path: object,
+    groups: set[str], choices: dict[str, dict[str, str]],
+) -> bool:
+    if not isinstance(group, str) or group not in groups:
+        return True
+    choice = choices[group]
+    return choice["mod_id"] == mod_id and choice["game_path"] == game_path
+
+
+def _find_mod_logs(
+    files: tuple[str, ...] | list[str], name: str, game_path: str | None, warnings: list[str],
+) -> list[str]:
+    if not game_path or not mod_log_names(files):
+        return []
+    try:
+        return existing_mod_logs(files, game_path)
+    except (OSError, ValueError) as error:
+        log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="mod-logs")
+        warnings.append(f"Could not check logs for {name}: {error}")
+        return []
+
+
 class Plugin:
     @staticmethod
-    def _scan():
+    def _scan(*, include_all_matches: bool = False):
         store = get_store()
         settings = store.load_settings()
         source = load_active_catalog(store, settings)
@@ -109,17 +163,27 @@ class Plugin:
         report.supported_games = [
             replace(
                 game,
-                update_available=bool(
-                    game.game_path
-                    and game.files_present
-                    and report.mods[game.mod_id].source.kind == MOD_SOURCE_ARCHIVE
-                    and report.mods[game.mod_id].source.sha256
-                    and (applied_hash := hashes.get(game.game_path, {}).get(game.mod_id))
-                    and applied_hash != report.mods[game.mod_id].source.sha256
+                update_available=_update_available(
+                    game.game_path, game.files_present, report.mods[game.mod_id], hashes
+                ),
+                log_files=_find_mod_logs(
+                    report.mods[game.mod_id].files, game.mod_name, game.game_path, report.warnings,
                 ),
             )
             for game in report.supported_games
         ]
+        if not include_all_matches:
+            choices = store.load_matched_games()
+            groups = _selected_groups(
+                [(game.ambiguity_group, game.mod_id, game.game_path) for game in report.supported_games],
+                choices,
+            )
+            report.supported_games = [
+                replace(game, match_locked=True)
+                if game.ambiguity_group in groups else game
+                for game in report.supported_games
+                if _matches_selection(game.ambiguity_group, game.mod_id, game.game_path, groups, choices)
+            ]
         if source.warning:
             log.warning(LOG_EVENT_CATALOG_FALLBACK)
             report.warnings.append(source.warning)
@@ -158,7 +222,102 @@ class Plugin:
         )
 
     async def get_cached_scan(self) -> dict[str, object] | None:
-        return get_store().load_last_scan()
+        store = get_store()
+        cached = store.load_last_scan()
+        if cached is None:
+            return None
+        report = cached["report"]
+        games = report.get("supported_games") if isinstance(report, dict) else None
+        if not isinstance(games, list):
+            return None
+        choices = store.load_matched_games()
+        selected_groups = _selected_groups(
+            [(game.get("ambiguity_group"), game.get("mod_id"), game.get("game_path"))
+             for game in games if isinstance(game, dict)],
+            choices,
+        )
+        report["supported_games"] = games = [
+            game for game in games
+            if not isinstance(game, dict)
+            or _matches_selection(
+                game.get("ambiguity_group"), game.get("mod_id"),
+                game.get("game_path"), selected_groups, choices,
+            )
+        ]
+        for game in games:
+            if isinstance(game, dict) and isinstance(game.get("ambiguity_group"), str) and game["ambiguity_group"] in selected_groups:
+                game["match_locked"] = True
+        source = load_active_catalog(store, store.load_settings())
+        mods = {mod.mod_id: mod for mod in source.mods}
+        hashes = None
+        try:
+            hashes = store.load_applied_hashes()
+        except ValueError as error:
+            log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="applied-hashes")
+            warnings = report.get("warnings")
+            if isinstance(warnings, list):
+                warnings.append(str(error))
+
+        for game in games:
+            if not isinstance(game, dict):
+                continue
+            mod_id, game_path, files_present = (
+                game.get("mod_id"), game.get("game_path"), game.get("files_present")
+            )
+            if (
+                isinstance(mod_id, str)
+                and mod_id in mods
+                and (game_path is None or isinstance(game_path, str))
+                and isinstance(files_present, list)
+            ):
+                if hashes is not None:
+                    game["update_available"] = _update_available(
+                        game_path, files_present, mods[mod_id], hashes
+                    )
+            warnings = report.get("warnings")
+            mod_files = list(mods[mod_id].files) if isinstance(mod_id, str) and mod_id in mods else game.get("mod_files")
+            mod_name = game.get("mod_name")
+            if (
+                isinstance(warnings, list)
+                and isinstance(mod_name, str)
+                and (game_path is None or isinstance(game_path, str))
+                and isinstance(mod_files, list)
+                and all(isinstance(path, str) for path in mod_files)
+            ):
+                game["log_files"] = _find_mod_logs(mod_files, mod_name, game_path, warnings)
+        return cached
+
+    async def select_matched_game(self, group: str, mod_id: str, game_path: str) -> dict[str, object]:
+        report = self._scan(include_all_matches=True)
+        if not any(
+            game.ambiguity_group == group and game.mod_id == mod_id and game.game_path == game_path
+            for game in report.supported_games
+        ):
+            raise ValueError("Selected game is no longer available. Scan again and retry.")
+        store = get_store()
+        store.set_matched_game(group, mod_id, game_path)
+        store.last_scan_path.unlink(missing_ok=True)
+        return {"selected": True}
+
+    async def clear_matched_game(self, group: str, mod_id: str, game_path: str) -> dict[str, object]:
+        try:
+            report = self._scan()
+            game = next(
+                (game for game in report.supported_games
+                 if game.ambiguity_group == group and game.mod_id == mod_id and game.game_path == game_path),
+                None,
+            )
+            if game is None or not game.match_locked:
+                raise ValueError("Saved game selection has changed. Scan again and retry.")
+            if not game.manual and game.files_present:
+                raise ValueError("Remove the mod files before changing the game selection.")
+            store = get_store()
+            store.last_scan_path.unlink(missing_ok=True)
+            store.clear_matched_game(group, mod_id, game_path)
+        except (OSError, ValueError):
+            log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, mod_id=mod_id, phase="clear-match")
+            raise
+        return {"cleared": True}
 
     async def get_credits(self) -> dict[str, object]:
         store = get_store()
@@ -387,6 +546,24 @@ class Plugin:
                             f"Mod files were {'applied' if applied else 'removed'}, "
                             f"but the applied version could not be saved: {error}"
                         ) from error
+            awaiting_confirmation = bool(conflicting_files) and (
+                replace_existing_files is None if applied else preserve_modified_ini is None
+            )
+            if not awaiting_confirmation:
+                try:
+                    get_store().last_scan_path.unlink(missing_ok=True)
+                except OSError as error:
+                    raise ValueError(
+                        f"Mod files were {'applied' if applied else 'removed'}, "
+                        f"but the cached game status could not be cleared: {error}"
+                    ) from error
+            if not applied and not conflicting_files:
+                try:
+                    get_store().remove_matched_game(mod.mod_id, installed_game_path)
+                except (OSError, ValueError) as error:
+                    raise ValueError(
+                        f"Mod files were removed, but the saved game match could not be cleared: {error}"
+                    ) from error
         except NetworkError as error:
             log.warning(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,
@@ -429,6 +606,15 @@ class Plugin:
             "content": content,
             "exists": exists,
         }
+
+    async def get_mod_log(self, mod_id: str, game_path: str, name: str) -> dict[str, object]:
+        try:
+            mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
+            content, truncated = read_mod_log(mod, installed_game_path, name)
+        except (OSError, ValueError):
+            log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, mod_id=mod_id, phase="read-mod-log")
+            raise
+        return {"name": name, "content": content, "truncated": truncated}
 
     async def get_mod_readme(self, mod_id: str) -> dict[str, str]:
         mod = self._get_mod_definition(mod_id)

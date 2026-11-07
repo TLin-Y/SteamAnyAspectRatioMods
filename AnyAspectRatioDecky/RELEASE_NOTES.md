@@ -4,8 +4,8 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 ## New in 1.5.0
 
-- **Better game matching.** A unique catalogued executable can identify a game when its Steam folder name changes, or when it is a non-Steam shortcut. Ambiguous executable names are skipped with a warning.
-- **Clearer labels.** **By Exe** marks executable matches, **Custom** marks local archives, and **New** marks a catalog archive whose checksum differs from the version last fully applied by the plugin. Use **Apply update** to install it.
+- **Better game matching.** A catalogued executable can identify a game when its Steam folder name changes, or when it is a non-Steam shortcut. Choose the correct fix when multiple matches are found.
+- **Clearer labels.** **.exe** marks executable matches, **Custom** marks local archives, and **New** marks a catalog archive whose checksum differs from the version last fully applied by the plugin. Use **Apply update** to install it.
 - **Game layout warnings.** Missing expected executables or catalogued destination folders are reported so you can check the game's files.
 - **Download mods for offline use.** The Mods tab can download and import the latest release's offline pack.
 - **Expedition 33 and Ninja Gaiden Sigma 2.** Corrected Expedition 33's catalog paths and included all Black V18 files for Ninja Gaiden Sigma 2.

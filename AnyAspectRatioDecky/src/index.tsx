@@ -1,6 +1,7 @@
 import {
   ButtonItem,
   ConfirmModal,
+  DialogCheckbox,
   DialogButton,
   Navigation,
   PanelSection,
@@ -47,6 +48,9 @@ type SupportedGameReport = {
     manual?: boolean;
     matched_by_executable?: boolean;
     update_available?: boolean;
+    ambiguity_group?: string | null;
+    match_locked?: boolean;
+    log_files?: string[];
   }[];
   warnings: string[];
 };
@@ -131,6 +135,13 @@ const downloadOfflinePack = callable<[], { error?: string; version?: string }>("
 const clearLocalData = callable<[], { error?: string }>("clear_local_data");
 
 const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
+const MOD_LOG_BUTTON_STYLE = {
+  flex: "0 0 22%",
+  width: "22%",
+  minWidth: 0,
+  maxWidth: "25%",
+  padding: "0 4px",
+};
 
 function formatBytes(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
@@ -145,6 +156,16 @@ const setModApplied = callable<
     error?: string;
   }
 >("set_mod_applied");
+const selectMatchedGame = callable<[string, string, string], { selected: boolean }>(
+  "select_matched_game",
+);
+const clearMatchedGame = callable<[string, string, string], { cleared: boolean }>(
+  "clear_matched_game",
+);
+const getModLog = callable<
+  [string, string, string],
+  { name: string; content: string; truncated: boolean }
+>("get_mod_log");
 const getOfflineMode = callable<[], boolean>("get_offline_mode");
 const getLog = callable<[number], { content?: string; path?: string; error?: string }>(
   "get_log",
@@ -341,6 +362,66 @@ function showErrorModal(title: string, message: string) {
   );
 }
 
+type SupportedGame = SupportedGameReport["supported_games"][number];
+type ModLogResult = { name: string; content: string; truncated: boolean } | { name: string; error: string };
+
+function GameChoiceModal({
+  games,
+  onChoose,
+  onCancel,
+}: {
+  games: SupportedGame[];
+  onChoose: (game: SupportedGame) => void;
+  onCancel: () => void;
+}) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  return (
+    <ConfirmModal
+      strTitle={`Select the game for ${games[0].app_name}`}
+      strDescription="Several fixes match this executable. Select exactly one game."
+      strOKButtonText="Confirm"
+      strCancelButtonText="Cancel"
+      bOKDisabled={selectedIndex === null}
+      onOK={() => {
+        if (selectedIndex !== null) onChoose(games[selectedIndex]);
+      }}
+      onCancel={onCancel}
+      onEscKeypress={onCancel}
+    >
+      {games.map((game, index) => (
+        <DialogCheckbox
+          key={`${game.mod_id}-${game.game_path}`}
+          label={game.mod_name}
+          description={game.game_path ?? "Unknown game folder"}
+          checked={selectedIndex === index}
+          controlled
+          onChange={(checked) => setSelectedIndex(checked ? index : null)}
+        />
+      ))}
+    </ConfirmModal>
+  );
+}
+
+function chooseGame(games: SupportedGame[]): Promise<SupportedGame | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let closeModal: (() => void) | undefined;
+    const finish = (game: SupportedGame | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(game);
+      closeModal?.();
+    };
+    const modal = showModal(
+      <GameChoiceModal games={games} onChoose={finish} onCancel={() => finish(null)} />,
+      undefined,
+      { fnOnClose: () => finish(null) },
+    );
+    closeModal = modal.Close;
+  });
+}
+
 function isEditableIniLine(line: string): boolean {
   const trimmed = line.trim();
   return (
@@ -358,11 +439,13 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [updatingMod, setUpdatingMod] = useState(false);
   const [toggleRevision, setToggleRevision] = useState(0);
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
+  const [ambiguitySelections, setAmbiguitySelections] = useState<Record<string, string>>({});
   const [iniGameKey, setIniGameKey] = useState<string | null>(null);
-  const [detailView, setDetailView] = useState<"manage" | "readme">("manage");
+  const [detailView, setDetailView] = useState<"manage" | "readme" | "log">("manage");
   const [readmeTitle, setReadmeTitle] = useState("");
   const [readmeContent, setReadmeContent] = useState("");
   const [readmeLoading, setReadmeLoading] = useState(false);
+  const [modLogs, setModLogs] = useState<ModLogResult[] | null>(null);
   const [iniLines, setIniLines] = useState<string[]>([]);
   const [savedIniContent, setSavedIniContent] = useState("");
   const [iniExists, setIniExists] = useState(false);
@@ -472,6 +555,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           null,
         );
         if (result.error) throw new Error(result.error);
+        let remainingConflicts = result.conflicting_files;
         if (result.conflicting_files.length > 0) {
           if (applied) {
             const replaceFiles = await confirmFileReplacement(
@@ -486,6 +570,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               null,
             );
             if (retry.error) throw new Error(retry.error);
+            remainingConflicts = retry.conflicting_files;
           } else {
             const keepIni = await confirmModifiedIniRemoval(
               game.app_name,
@@ -499,7 +584,34 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               keepIni,
             );
             if (retry.error) throw new Error(retry.error);
+            remainingConflicts = retry.conflicting_files;
           }
+        }
+        if (applied && remainingConflicts.length === 0) {
+          setReport((current) => current && {
+            ...current,
+            supported_games: current.supported_games.map((candidate) =>
+              candidate.mod_id === game.mod_id && candidate.game_path === game.game_path
+                ? { ...candidate, update_available: false }
+                : candidate,
+            ),
+          });
+        }
+        const ambiguityGroup = game.ambiguity_group;
+        if (!applied && remainingConflicts.length === 0) {
+          setAmbiguitySelections((current) => {
+            const updated = { ...current };
+            if (ambiguityGroup) delete updated[ambiguityGroup];
+            for (const candidate of report?.supported_games ?? []) {
+              const group = candidate.ambiguity_group;
+              if (
+                group && candidate.mod_id === game.mod_id &&
+                candidate.game_path === game.game_path &&
+                current[group] === gameKey(candidate)
+              ) delete updated[group];
+            }
+            return updated;
+          });
         }
       } catch (error) {
         const refreshError = await refreshReport();
@@ -650,6 +762,23 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const selectedGame = report?.supported_games.find(
     (game) => gameKey(game) === selectedGameKey,
   );
+  const gameGroups: SupportedGameReport["supported_games"][] = [];
+  const ambiguityGroups = new Map<string, SupportedGameReport["supported_games"]>();
+  for (const game of [...(report?.supported_games ?? [])].sort(
+    (a, b) => Number(!!a.manual) - Number(!!b.manual),
+  )) {
+    if (!game.ambiguity_group) {
+      gameGroups.push([game]);
+      continue;
+    }
+    let group = ambiguityGroups.get(game.ambiguity_group);
+    if (!group) {
+      group = [];
+      ambiguityGroups.set(game.ambiguity_group, group);
+      gameGroups.push(group);
+    }
+    group.push(game);
+  }
 
   const openGameDetails = async (
     game: SupportedGameReport["supported_games"][number],
@@ -706,6 +835,47 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       if (requestId === detailRequestId.current) {
         setReadmeLoading(false);
       }
+    }
+  };
+
+  const openGameLog = async (game: SupportedGame) => {
+    if (!game.game_path) return;
+    const requestId = ++detailRequestId.current;
+    setSelectedGameKey(gameKey(game));
+    setDetailView("log");
+    setModLogs(null);
+    const gamePath = game.game_path;
+    const results = await Promise.all((game.log_files ?? []).map(async (name): Promise<ModLogResult> => {
+      try {
+        return await getModLog(game.mod_id, gamePath, name);
+      } catch (error) {
+        return { name, error: String(error) };
+      }
+    }));
+    if (requestId === detailRequestId.current) setModLogs(results);
+  };
+
+  const resetGameChoice = async (game: SupportedGame) => {
+    const group = game.ambiguity_group;
+    if (!group || !game.game_path) return;
+    setUpdatingMod(true);
+    try {
+      await clearMatchedGame(group, game.mod_id, game.game_path);
+      setAmbiguitySelections((current) => {
+        const updated = { ...current };
+        delete updated[group];
+        return updated;
+      });
+      try {
+        setReport(await scanSupportedGames());
+      } catch (error) {
+        setReport(null);
+        notifyError("Status refresh failed", `Choice cleared; scan again: ${String(error)}`);
+      }
+    } catch (error) {
+      notifyError("Could not clear game choice", String(error));
+    } finally {
+      setUpdatingMod(false);
     }
   };
 
@@ -784,7 +954,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           <div role="status">
             {errorMessage ||
               (report
-                ? `Scanned ${report.steam_scan.apps_scanned} installed Steam apps across ${report.steam_scan.libraries_scanned} libraries. Found ${report.supported_games.length} supported installation(s); ${report.catalogued_mods} fix(es) in the catalog, ${report.local_archive_count ?? 0} local archive(s).${cachedScanTime ? ` Showing saved results from ${cachedScanTime}.` : ""}`
+                ? `Scanned ${report.steam_scan.apps_scanned} installed Steam apps across ${report.steam_scan.libraries_scanned} libraries. Found ${gameGroups.length} supported game row(s); ${report.catalogued_mods} fix(es) in the catalog, ${report.local_archive_count ?? 0} local archive(s).${cachedScanTime ? ` Showing saved results from ${cachedScanTime}.` : ""}`
                 : "Steam libraries have not been scanned.")}
           </div>
         </PanelSectionRow>
@@ -818,7 +988,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               {selectedGame.app_name}
               {selectedGame.source_kind === "local_archive" && " (Custom)"}
               {selectedGame.update_available && " (New)"}
-              {selectedGame.matched_by_executable && " (By Exe)"}
+              {selectedGame.matched_by_executable && " (.exe)"}
             </strong>
           </PanelSectionRow>
           {detailView === "readme" ? (
@@ -841,6 +1011,26 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
                     <ReactMarkdown>{readmeContent}</ReactMarkdown>
                   </>
                 )}
+              </div>
+            </PanelSectionRow>
+          ) : detailView === "log" ? (
+            <PanelSectionRow>
+              <div style={{ maxHeight: "60vh", overflowY: "auto", overflowWrap: "anywhere", width: "100%" }}>
+                {modLogs ? (
+                  modLogs.map((entry) => (
+                    <div key={entry.name}>
+                      <strong>{entry.name}</strong>
+                      {"error" in entry ? (
+                        <div role="status">Could not load log: {entry.error}</div>
+                      ) : (
+                        <>
+                          {entry.truncated && <div>Showing the last 256 KiB of this log.</div>}
+                          <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{entry.content}</pre>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : "Loading mod log..."}
               </div>
             </PanelSectionRow>
           ) : (
@@ -914,12 +1104,49 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             </>
           )}
         </>
-      ) : [...(report?.supported_games ?? [])]
-          .sort((a, b) => Number(!!a.manual) - Number(!!b.manual))
-          .map((game, index, ordered) => {
+      ) : gameGroups.map((group, index, ordered) => {
+        const first = group[0];
+        const groupId = first.ambiguity_group;
+        const game = first.match_locked ? first : groupId
+          ? group.find((candidate) => gameKey(candidate) === ambiguitySelections[groupId])
+          : first;
+        const selectGame = async () => {
+          if (!groupId) return;
+          const chosen = await chooseGame(group);
+          if (!chosen) {
+            setToggleRevision((revision) => revision + 1);
+            return;
+          }
+          if (!chosen.game_path) {
+            notifyError("Game selection failed", "The selected game folder is unavailable. Scan again and retry.");
+            return;
+          }
+          try {
+            await selectMatchedGame(groupId, chosen.mod_id, chosen.game_path);
+          } catch (error) {
+            notifyError("Game selection failed", String(error));
+            setToggleRevision((revision) => revision + 1);
+            return;
+          }
+          setAmbiguitySelections((current) => ({ ...current, [groupId]: gameKey(chosen) }));
+          if (!chosen.manual) {
+            await changeModApplied(chosen, true);
+          } else {
+            await openGameReadme(chosen);
+          }
+        };
+        const applyToggle = game && (
+          <ToggleField
+            key={`${game.steam_app_id}-${toggleRevision}`}
+            label={game.file_status === "partial" ? "Apply *" : "Apply"}
+            checked={game.file_status === "complete"}
+            disabled={updatingMod || !game.game_path}
+            onChange={(checked) => changeModApplied(game, checked)}
+          />
+        );
         return (
-        <Fragment key={gameKey(game)}>
-        {game.manual && !ordered[index - 1]?.manual && (
+        <Fragment key={groupId ?? gameKey(first)}>
+        {first.manual && !ordered[index - 1]?.[0].manual && (
           <PanelSection title="Manual fixes">
             <PanelSectionRow>
               <div>
@@ -930,14 +1157,46 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           </PanelSection>
         )}
         <PanelSection>
+          {groupId && !game && (
+            <>
+            <PanelSectionRow>
+              <strong>{index + 1}. {first.app_name} (.exe)</strong>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ToggleField
+                key={`${groupId}-${toggleRevision}`}
+                label="Apply"
+                checked={false}
+                disabled={updatingMod}
+                onChange={(checked) => {
+                  if (checked) void selectGame();
+                }}
+              />
+            </PanelSectionRow>
+            </>
+          )}
+          {game && (
+          <>
           <PanelSectionRow>
             <strong style={{ overflowWrap: "anywhere" }}>
               {index + 1}. {game.app_name}
               {game.source_kind === "local_archive" && " (Custom)"}
               {game.update_available && " (New)"}
-              {game.matched_by_executable && " (By Exe)"}
+              {game.matched_by_executable && " (.exe)"}
             </strong>
           </PanelSectionRow>
+          {groupId && (
+            <PanelSectionRow>
+              <div role="status">Selected fix: {game.mod_name}</div>
+            </PanelSectionRow>
+          )}
+          {groupId && (game.manual || game.file_status === "none") && (
+            <PanelSectionRow>
+              <ButtonItem layout="below" disabled={updatingMod} onClick={() => void resetGameChoice(game)}>
+                Clear game choice
+              </ButtonItem>
+            </PanelSectionRow>
+          )}
           <PanelSectionRow>
             <div
               style={{
@@ -967,18 +1226,30 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           </PanelSectionRow>
           {game.manual ? (
             <PanelSectionRow>
-              <div>Manual install — see the ReadMe</div>
+              {game.log_files?.length ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                <div style={{ flex: 1 }}>Manual install — see the ReadMe</div>
+                <DialogButton style={MOD_LOG_BUTTON_STYLE} disabled={updatingMod} onClick={() => void openGameLog(game)}>
+                  Log
+                </DialogButton>
+              </div>
+              ) : <div>Manual install — see the ReadMe</div>}
             </PanelSectionRow>
           ) : (
             <>
           <PanelSectionRow>
-            <ToggleField
-              key={`${game.steam_app_id}-${toggleRevision}`}
-              label="Apply"
-              checked={game.file_status === "complete"}
-              disabled={updatingMod || !game.game_path}
-              onChange={(checked) => changeModApplied(game, checked)}
-            />
+            {game.log_files?.length ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {applyToggle}
+              </div>
+              <DialogButton style={MOD_LOG_BUTTON_STYLE} disabled={updatingMod} onClick={() => void openGameLog(game)}>
+                Log
+              </DialogButton>
+            </div>
+            ) : (
+              applyToggle
+            )}
           </PanelSectionRow>
 
           {game.update_available && (
@@ -1009,13 +1280,15 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               {game.file_status === "complete"
                 ? `Applied ${game.files_present.length} mod files`
                 : game.file_status === "partial"
-                  ? `Not applied — ${game.files_present.length}/${
+                  ? `* Incomplete — ${game.files_present.length}/${
                       game.files_present.length + game.files_missing.length
                     } mod files present`
                   : "Not applied — no mod files present"}
             </div>
           </PanelSectionRow>
             </>
+          )}
+          </>
           )}
         </PanelSection>
         </Fragment>

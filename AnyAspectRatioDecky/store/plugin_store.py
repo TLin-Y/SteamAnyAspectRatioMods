@@ -110,6 +110,7 @@ class PluginStore:
         self.local_index_path = self.cache_dir / "local_archives.json"
         self.last_scan_path = self.cache_dir / "last_scan.json"
         self.applied_hashes_path = self.data_dir / "applied_hashes.json"
+        self.matched_games_path = self.data_dir / "matched_games.json"
         self.log_dir = data_dir / "logs"
         self.log_path = self.log_dir / "plugin.log"
 
@@ -166,6 +167,45 @@ class PluginStore:
         else:
             return
         write_json_atomic(self.applied_hashes_path, hashes)
+
+    def load_matched_games(self) -> dict[str, dict[str, str]]:
+        try:
+            document = json.loads(self.matched_games_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return {}
+        except (OSError, ValueError) as error:
+            raise ValueError(f"Unable to read matched games: {error}") from error
+        if not isinstance(document, dict) or not all(
+            isinstance(group, str)
+            and isinstance(choice, dict)
+            and isinstance(choice.get("mod_id"), str)
+            and isinstance(choice.get("game_path"), str)
+            for group, choice in document.items()
+        ):
+            raise ValueError("Matched games are invalid")
+        return document
+
+    def set_matched_game(self, group: str, mod_id: str, game_path: str) -> None:
+        choices = self.load_matched_games()
+        choices[group] = {"mod_id": mod_id, "game_path": game_path}
+        write_json_atomic(self.matched_games_path, choices)
+
+    def remove_matched_game(self, mod_id: str, game_path: str) -> None:
+        choices = self.load_matched_games()
+        remaining = {
+            group: choice for group, choice in choices.items()
+            if choice["mod_id"] != mod_id or choice["game_path"] != game_path
+        }
+        if remaining != choices:
+            write_json_atomic(self.matched_games_path, remaining)
+
+    def clear_matched_game(self, group: str, mod_id: str, game_path: str) -> None:
+        choices = self.load_matched_games()
+        choice = choices.get(group)
+        if not choice or choice["mod_id"] != mod_id or choice["game_path"] != game_path:
+            raise ValueError("Saved game selection has changed. Scan again and retry.")
+        del choices[group]
+        write_json_atomic(self.matched_games_path, choices)
 
     def catalog_meta(self) -> dict[str, object] | None:
         meta = read_json(self.catalog_meta_path)

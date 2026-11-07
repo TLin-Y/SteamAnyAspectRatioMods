@@ -15,7 +15,6 @@ from helper.constants import (
     MOD_CATALOG_INI_FILE_FIELD,
     MOD_CATALOG_MOD_FILES_FIELD,
     MOD_CATALOG_GAME_PATH_FIELD,
-    MOD_CATALOG_AMBIGUOUS_EXECUTABLE_WARNING,
     MOD_CATALOG_DESTINATION_MISSING_WARNING,
     MOD_CATALOG_EXECUTABLE_MISSING_WARNING,
     MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING,
@@ -64,6 +63,9 @@ class SupportedGame:
     manual: bool = False
     matched_by_executable: bool = False
     update_available: bool = False
+    ambiguity_group: str | None = None
+    match_locked: bool = False
+    log_files: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -85,6 +87,9 @@ class SupportedGame:
             MOD_WINE_OVERRIDES_KEY: self.wine_dll_overrides,
             "matched_by_executable": self.matched_by_executable,
             "update_available": self.update_available,
+            "ambiguity_group": self.ambiguity_group,
+            "match_locked": self.match_locked,
+            "log_files": self.log_files,
         }
 
 
@@ -209,7 +214,7 @@ def match_supported_games(
                 (mod, executable)
             )
 
-    def fallback(app: InstalledApp, allowed: set[str] | None = None) -> list[ModDefinition]:
+    def fallback(app: InstalledApp, allowed: set[str] | None = None) -> list[tuple[ModDefinition, bool]]:
         if app.game_path is None:
             return []
         root = Path(app.game_path)
@@ -234,27 +239,21 @@ def match_supported_games(
         if not matched_ids:
             return []
         file_cache.update((path, True) for path, exists in probes.items() if exists)
-        owners = set().union(*(executable_owners[name] for name in matching_names))
         ambiguous = len(matched_ids) > 1 or any(
             len(executable_owners[name]) > 1 for name in matching_names
         )
-        if ambiguous:
-            warnings.append(
-                MOD_CATALOG_AMBIGUOUS_EXECUTABLE_WARNING.format(
-                    app_id=app.app_id, path=app.game_path,
-                    matches=", ".join(sorted(owners)),
-                )
-            )
-            return []
         return [
-            mod for mod in catalog
+            (mod, ambiguous) for mod in catalog
             if mod.mod_id in matched_ids and (allowed is None or mod.mod_id in allowed)
         ]
 
-    def add_game(mod: ModDefinition, app: InstalledApp, *, by_executable: bool = False) -> None:
+    def add_game(
+        mod: ModDefinition, app: InstalledApp, *, by_executable: bool = False,
+        ambiguity_group: str | None = None,
+    ) -> None:
         game = _build_game(mod, app, file_cache)
-        if by_executable:
-            game = replace(game, matched_by_executable=True)
+        if by_executable or ambiguity_group is not None:
+            game = replace(game, matched_by_executable=by_executable, ambiguity_group=ambiguity_group)
         games.append(game)
         if app.game_path is None:
             return
@@ -279,7 +278,7 @@ def match_supported_games(
     known: set[tuple[str | None, str]] = set()
     for app in steam_scan.apps:
         app_mods = mods_by_app_id.get(app.app_id, [])
-        matched = [(mod, False) for mod in app_mods if app.install_dir == mod.install_dir]
+        matched = [(mod, False, False) for mod in app_mods if app.install_dir == mod.install_dir]
         mismatched = [mod for mod in app_mods if app.install_dir != mod.install_dir]
         for mod in mismatched:
             warnings.append(
@@ -288,11 +287,14 @@ def match_supported_games(
                 )
             )
         if mismatched:
-            matched.extend((mod, True) for mod in fallback(app, {mod.mod_id for mod in mismatched}))
+            matched.extend((mod, True, ambiguous) for mod, ambiguous in fallback(app, {mod.mod_id for mod in mismatched}))
         elif not app_mods:
-            matched.extend((mod, True) for mod in fallback(app))
-        for mod, by_executable in matched:
-            add_game(mod, app, by_executable=by_executable)
+            matched.extend((mod, True, ambiguous) for mod, ambiguous in fallback(app))
+        for mod, by_executable, ambiguous in matched:
+            add_game(
+                mod, app, by_executable=by_executable,
+                ambiguity_group=f"{app.app_id}:{app.game_path}" if ambiguous else None,
+            )
             known.add((app.game_path, mod.mod_id))
 
     for shortcut in steam_scan.shortcuts:
@@ -303,14 +305,6 @@ def match_supported_games(
         if not candidates or not executable.is_file():
             continue
         owners = executable_owners[executable.name.casefold()]
-        if len(owners) > 1:
-            warnings.append(
-                MOD_CATALOG_AMBIGUOUS_EXECUTABLE_WARNING.format(
-                    app_id=shortcut.app_id, path=executable,
-                    matches=", ".join(sorted(owners)),
-                )
-            )
-            continue
         matched_roots: list[tuple[ModDefinition, Path]] = []
         for mod, relative in candidates:
             parts = Path(relative).parts
@@ -322,18 +316,14 @@ def match_supported_games(
             if root / relative != executable:
                 continue
             matched_roots.append((mod, root))
-        if len(matched_roots) > 1:
-            warnings.append(
-                MOD_CATALOG_AMBIGUOUS_EXECUTABLE_WARNING.format(
-                    app_id=shortcut.app_id, path=executable,
-                    matches=", ".join(sorted({mod.mod_id for mod, _ in matched_roots})),
-                )
-            )
-            continue
+        ambiguous = len(owners) > 1 or len(matched_roots) > 1
         for mod, root in matched_roots:
             game = replace(shortcut, game_path=str(root))
             if (game.game_path, mod.mod_id) not in known:
-                add_game(mod, game, by_executable=True)
+                add_game(
+                    mod, game, by_executable=True,
+                    ambiguity_group=f"{shortcut.app_id}:{executable}" if ambiguous else None,
+                )
                 known.add((game.game_path, mod.mod_id))
 
     return SupportedGameScanReport(

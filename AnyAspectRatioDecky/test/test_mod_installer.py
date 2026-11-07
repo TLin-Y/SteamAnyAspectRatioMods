@@ -11,8 +11,10 @@ from scanner.mod_installer import (
     create_ssl_context,
     apply_mod_files,
     fetch_mod_readme,
+    existing_mod_logs,
     mod_readme_path,
     read_mod_ini,
+    read_mod_log,
     remove_mod_files,
     write_mod_ini,
 )
@@ -64,6 +66,31 @@ class ModInstallerTests(unittest.TestCase):
             for name, value in entries.items():
                 archive.writestr(name, value)
         return content.getvalue()
+
+    def test_mod_logs_are_catalog_scoped_and_bounded(self) -> None:
+        mod = self._mod("archive", ("nested/Fix.ASI", "nested/Other.asi", "loader.dll"))
+        nested = self.game_path / "nested"
+        nested.mkdir()
+        (nested / "Fix.log").write_bytes(b"prefix" + b"x" * (256 * 1024))
+        (nested / "loader.log").write_text("unrelated", encoding="utf-8")
+        self.assertEqual(["nested/Fix.log"], existing_mod_logs(mod.files, str(self.game_path)))
+        content, truncated = read_mod_log(mod, str(self.game_path), "nested/Fix.log")
+        self.assertTrue(truncated)
+        self.assertEqual("x" * (256 * 1024), content)
+        with self.assertRaisesRegex(ValueError, "not associated"):
+            read_mod_log(mod, str(self.game_path), "nested/loader.log")
+        with self.assertRaisesRegex(ValueError, "no longer available"):
+            read_mod_log(mod, str(self.game_path), "nested/Other.log")
+        (nested / "Fix.log").write_bytes(b"invalid \xff text")
+        self.assertEqual(("invalid \ufffd text", False), read_mod_log(mod, str(self.game_path), "nested/Fix.log"))
+
+    def test_mod_log_symlink_is_rejected(self) -> None:
+        mod = self._mod("archive", ("fix.asi",))
+        with patch.object(Path, "is_symlink", autospec=True, side_effect=lambda path: path.name == "fix.log"):
+            with self.assertRaisesRegex(ValueError, "symbolic link"):
+                read_mod_log(mod, str(self.game_path), "fix.log")
+            with self.assertRaisesRegex(ValueError, "symbolic link"):
+                existing_mod_logs(mod.files, str(self.game_path))
 
     def test_fetches_readme_from_mod_source_root(self) -> None:
         mod = self._mod(
@@ -507,6 +534,41 @@ class ModInstallerTests(unittest.TestCase):
         self.assertFalse((self.game_path / "mods" / "fix.dat").exists())
         self.assertFalse((self.game_path / "fix.ini").exists())
         self.assertEqual(b"user", (self.game_path / "mods" / "user.dat").read_bytes())
+
+    def test_removal_deletes_same_named_logs_and_keeps_unrelated_files(self) -> None:
+        mod = self._mod("archive", ("mods/Fix.ASI", "mods/Other.asi", "fix.ini"))
+        directory = self.game_path / "mods"
+        directory.mkdir()
+        (directory / "Fix.ASI").write_bytes(b"mod")
+        (directory / "Fix.log").write_bytes(b"log")
+        (directory / "Other.log").write_bytes(b"log")
+        (directory / "unrelated.log").write_bytes(b"keep")
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
+        self.assertFalse((directory / "Fix.ASI").exists())
+        self.assertFalse((directory / "Fix.log").exists())
+        self.assertFalse((directory / "Other.log").exists())
+        self.assertEqual(b"keep", (directory / "unrelated.log").read_bytes())
+
+    def test_removal_rejects_unsafe_log_before_deleting_mod_files(self) -> None:
+        mod = self._mod("archive", ("fix.asi",))
+        (self.game_path / "fix.asi").write_bytes(b"mod")
+        with patch.object(Path, "is_symlink", autospec=True, side_effect=lambda path: path.name == "fix.log"):
+            with self.assertRaisesRegex(ValueError, "symbolic link"):
+                remove_mod_files(mod, str(self.game_path))
+        self.assertTrue((self.game_path / "fix.asi").exists())
+
+    def test_log_deletion_failure_is_reported(self) -> None:
+        mod = self._mod("archive", ("fix.asi",))
+        (self.game_path / "fix.asi").write_bytes(b"mod")
+        (self.game_path / "fix.log").write_bytes(b"log")
+        unlink = Path.unlink
+        def guarded_unlink(path: Path, *args: object, **kwargs: object) -> None:
+            if path.name == "fix.log":
+                raise PermissionError("log is locked")
+            unlink(path, *args, **kwargs)
+        with patch.object(Path, "unlink", autospec=True, side_effect=guarded_unlink):
+            with self.assertRaisesRegex(PermissionError, "log is locked"):
+                remove_mod_files(mod, str(self.game_path))
 
     def test_removing_mod_prompts_before_deleting_modified_ini(self) -> None:
         mod = self._mod(
