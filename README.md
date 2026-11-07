@@ -6,7 +6,7 @@ Play your favorite games at the aspect ratio you want, on the platform you choos
 
 On Steam Deck, the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
 
-![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg)
+![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg?v=4556e8ed)
 
 ## Support
 
