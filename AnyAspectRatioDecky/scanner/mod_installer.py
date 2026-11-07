@@ -28,6 +28,7 @@ MAX_MOD_FILE_SIZE_BYTES = 256 * 1024 * 1024
 MAX_MOD_TOTAL_SIZE_BYTES = 512 * 1024 * 1024
 MAX_INI_SIZE_BYTES = 256 * 1024
 MAX_README_SIZE_BYTES = 1024 * 1024
+MAX_MOD_LOG_SIZE_BYTES = 256 * 1024
 SYSTEM_CA_BUNDLE_PATHS = (
     Path("/etc/ssl/certs/ca-certificates.crt"),
     Path("/etc/ssl/cert.pem"),
@@ -571,6 +572,38 @@ def read_mod_ini(mod: ModDefinition, game_path: str) -> tuple[str, bool]:
         raise ValueError("Mod INI file is not valid UTF-8 text") from error
 
 
+def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
+    return list(dict.fromkeys(
+        str(PurePosixPath(path).with_suffix(".log"))
+        for path in files
+        if PurePosixPath(path).suffix.lower() == ".asi"
+    ))
+
+
+def existing_mod_logs(files: tuple[str, ...] | list[str], game_path: str) -> list[str]:
+    root = Path(game_path).resolve(strict=True)
+    if not root.is_dir():
+        raise ValueError("Game installation directory is unavailable")
+    return [name for name in mod_log_names(files) if _target_path(root, name).is_file()]
+
+
+def read_mod_log(mod: ModDefinition, game_path: str, name: str) -> tuple[str, bool]:
+    if name not in mod_log_names(mod.files):
+        raise ValueError("Log is not associated with this mod")
+    root = Path(game_path).resolve(strict=True)
+    if not root.is_dir():
+        raise ValueError("Game installation directory is unavailable")
+    path = _target_path(root, name)
+    if not path.is_file():
+        raise ValueError("Mod log is no longer available")
+    with path.open("rb") as stream:
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+        stream.seek(max(0, size - MAX_MOD_LOG_SIZE_BYTES))
+        content = stream.read(MAX_MOD_LOG_SIZE_BYTES)
+    return content.decode("utf-8", errors="replace"), size > MAX_MOD_LOG_SIZE_BYTES
+
+
 def write_mod_ini(mod: ModDefinition, game_path: str, content: str) -> None:
     if mod.ini_file is None:
         raise ValueError("This mod does not define an INI configuration file")
@@ -639,6 +672,10 @@ def remove_mod_files(
             if modified:
                 modified_ini_path = ini_path
 
+    targets = list(dict.fromkeys([
+        *targets,
+        *(_target_path(game_root, name) for name in mod_log_names(mod.files)),
+    ]))
     for target in targets:
         if target == modified_ini_path:
             continue

@@ -432,7 +432,7 @@ class SupportedGameScannerTests(unittest.TestCase):
                 self.assertTrue(game.executable_found)
                 self.assertEqual(str(self.game_path / "other.exe"), game.executable_path)
 
-    def test_ambiguous_executable_names_are_not_fallback_matches(self) -> None:
+    def test_ambiguous_executable_names_require_selection(self) -> None:
         mod = replace(self.mod, executable="dir/game.exe")
         other = replace(mod, mod_id="other", steam_app_id="123456", executable="other/game.exe")
         self._touch(mod.executable)
@@ -444,18 +444,20 @@ class SupportedGameScannerTests(unittest.TestCase):
                 )
                 scan = SteamScanReport(1, 1, [] if is_shortcut else [app], [], [app] if is_shortcut else [])
                 report = match_supported_games(scan, (mod, other))
-                self.assertEqual([], report.supported_games)
-                self.assertIn("ambiguous executable", report.warnings[0])
-                self.assertIn("other", report.warnings[0])
+                (game,) = report.supported_games
+                self.assertEqual(mod.mod_id, game.mod_id)
+                self.assertIsNotNone(game.ambiguity_group)
+                self.assertEqual(game.ambiguity_group, game.to_dict()["ambiguity_group"])
 
-    def test_ambiguous_executable_is_not_used_for_mismatched_known_steam_id(self) -> None:
+    def test_ambiguous_executable_for_mismatched_known_steam_id_requires_selection(self) -> None:
         mod = replace(self.mod, executable="game.exe")
         other = replace(mod, mod_id="other", steam_app_id="123456")
         self._touch(mod.executable)
         app = replace(self.app, install_dir="different-directory")
         report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod, other))
-        self.assertEqual([], report.supported_games)
-        self.assertTrue(any("ambiguous executable" in warning for warning in report.warnings))
+        (game,) = report.supported_games
+        self.assertEqual(mod.mod_id, game.mod_id)
+        self.assertIsNotNone(game.ambiguity_group)
 
     def test_known_steam_id_keeps_all_mods_when_executable_is_shared(self) -> None:
         mod = replace(self.mod, executable="game.exe")
@@ -524,15 +526,16 @@ class SupportedGameScannerTests(unittest.TestCase):
         report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
         self.assertFalse(any("catalog destination" in warning for warning in report.warnings))
 
-    def test_multiple_unique_executables_in_one_directory_are_ambiguous(self) -> None:
+    def test_multiple_unique_executables_in_one_directory_require_selection(self) -> None:
         mod = replace(self.mod, executable="first.exe")
         other = replace(mod, mod_id="other", steam_app_id="123456", executable="second.exe")
         self._touch(mod.executable)
         self._touch(other.executable)
         app = replace(self.app, app_id="999999")
         report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod, other))
-        self.assertEqual([], report.supported_games)
-        self.assertIn("ambiguous executable", report.warnings[0])
+        self.assertEqual({mod.mod_id, other.mod_id}, {game.mod_id for game in report.supported_games})
+        self.assertEqual(1, len({game.ambiguity_group for game in report.supported_games}))
+        self.assertIsNotNone(report.supported_games[0].ambiguity_group)
 
     def test_expedition_33_alternatives_at_game_root(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "clairobscurfix")
