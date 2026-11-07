@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 118 game mods](https://img.shields.io/badge/Game%20mods-118-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 119 game mods](https://img.shields.io/badge/Game%20mods-119-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -124,6 +124,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Persona 5 Strikers | Lyall | [1382330](https://store.steampowered.com/app/1382330) | [v1.0.2](./external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip) | 2026-08-21 | [P5StrikersFix](https://codeberg.org/Lyall/P5StrikersFix) |
 | Prince of Persia: The Lost Crown | Lyall | [2751000](https://store.steampowered.com/app/2751000) | [v0.8.6](./external/Lyall/PoPTLCFix/PoPTLCFix_0.8.6.zip) | 2025-06-06 | [PoPTLCFix](https://codeberg.org/Lyall/PoPTLCFix) |
 | RAIDOU Remastered: The Mystery of the Soulless Army | Lyall | [2288350](https://store.steampowered.com/app/2288350) | [v0.0.4](./external/Lyall/RaidouFix/RaidouFix_0.0.4.zip) | 2025-06-25 | [RaidouFix](https://codeberg.org/Lyall/RaidouFix) |
+| Rayman Legends | TLin-Y | [242550](https://store.steampowered.com/app/242550) | [v1.0.0](./Rayman%20Legends/Rayman-Legends-v1.0.0.zip) | 2026-11-07 | [README](./Rayman%20Legends/README.md) |
 | Resident Evil 2 Remake | TLin-Y | [883710](https://store.steampowered.com/app/883710) | [v1.2.0](./Resident%20Evil%202%20Remake/Resident-Evil-2-Remake-v1.2.0.zip) | 2026-11-06 | [README](./Resident%20Evil%202%20Remake/README.md) |
 | Resident Evil 3 Remake | TLin-Y | [952060](https://store.steampowered.com/app/952060) | [v1.2.0](./Resident%20Evil%203%20Remake/Resident-Evil-3-Remake-v1.2.0.zip) | 2026-11-06 | [README](./Resident%20Evil%203%20Remake/README.md) |
 | Resident Evil 4 Remake | TLin-Y | [2050650](https://store.steampowered.com/app/2050650) | [v1.1.0](./Resident%20Evil%204%20Remake/Resident-Evil-4-Remake-v1.1.0.zip) | 2026-11-03 | [README](./Resident%20Evil%204%20Remake/README.md) |

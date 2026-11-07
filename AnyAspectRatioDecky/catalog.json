@@ -307,6 +307,21 @@
       "wine_dll_overrides": ["version=n,b"]
     },
     {
+      "id": "rayman-legends",
+      "name": "Rayman Legends - Custom Aspect Ratio",
+      "steam_app_id": "242550",
+      "install_dir": "Rayman Legends",
+      "executable": "Rayman Legends.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Rayman Legends/Rayman-Legends-v1.0.0.zip",
+        "sha256": "3ac4e42f0250712860cf4e1232223969a7b7ccf703a84917a8b112e7c964b148"
+      },
+      "files": ["dinput8.dll", "RaymanLegends_ARFix.asi", "RaymanLegends_ARFix.ini"],
+      "ini_file": "RaymanLegends_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "palworld",
       "name": "Palworld - Custom Resolution",
       "steam_app_id": "1623730",
