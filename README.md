@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 120 game mods](https://img.shields.io/badge/Game%20mods-120-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 121 game mods](https://img.shields.io/badge/Game%20mods-121-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -133,6 +133,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Resident Evil Village | TLin-Y | [1196590](https://store.steampowered.com/app/1196590) | [v1.1.0](./Resident%20Evil%20Village/Resident-Evil-Village-v1.1.0.zip) | 2026-11-03 | [README](./Resident%20Evil%20Village/README.md) |
 | Rise of the Ronin | Lyall | [1340990](https://store.steampowered.com/app/1340990) | [v0.0.4](./external/Lyall/RiseOfTheRoninFix/RiseOfTheRoninFix_0.0.4.zip) | 2025-05-30 | [RiseOfTheRoninFix](https://codeberg.org/Lyall/RiseOfTheRoninFix) |
 | SAMURAI WARRIORS: Spirit of Sanada | TLin-Y | [595740](https://store.steampowered.com/app/595740) | [v1.0.0](./Samurai%20Warriors%20Spirit%20of%20Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.0.0.zip) | 2026-11-04 | [README](./Samurai%20Warriors%20Spirit%20of%20Sanada/README.md) |
+| SANABI | TLin-Y | [1562700](https://store.steampowered.com/app/1562700) | [v1.0.0](./SANABI/SANABI-v1.0.0.zip) | 2026-11-07 | [README](./SANABI/README.md) |
 | Sekiro: Shadows Die Twice - GOTY Edition | Lyall | [814380](https://store.steampowered.com/app/814380) | [v0.0.1](./external/Lyall/SekiroFix/SekiroFix_0.0.1.zip) | 2025-06-09 | [SekiroFix](https://codeberg.org/Lyall/SekiroFix) |
 | Shadows of the Damned: Hella Remastered | Lyall | [2535440](https://store.steampowered.com/app/2535440) | [v0.0.3](./external/Lyall/SotDFix/SotDFix_0.0.3.zip) | 2025-06-04 | [SotDFix](https://codeberg.org/Lyall/SotDFix) |
 | Shin Megami Tensei V: Vengeance | Lyall | [1875830](https://store.steampowered.com/app/1875830) | [v1.0.0](./external/Lyall/SMTVFix/SMTVFix_1.0.0.zip) | 2025-09-20 | [SMTVFix](https://codeberg.org/Lyall/SMTVFix) |

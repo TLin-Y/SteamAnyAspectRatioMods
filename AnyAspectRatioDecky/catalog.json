@@ -337,6 +337,21 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "sanabi",
+      "name": "SANABI - Custom Aspect Ratio",
+      "steam_app_id": "1562700",
+      "install_dir": "SANABI",
+      "executable": "SNB.exe",
+      "source": {
+        "kind": "archive",
+        "path": "SANABI/SANABI-v1.0.0.zip",
+        "sha256": "46ff9b5989efc0720698cf23fe1706fbf9a1509204cb772d402114fe2ea86198"
+      },
+      "files": ["winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"],
+      "ini_file": "SNB_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "palworld",
       "name": "Palworld - Custom Resolution",
       "steam_app_id": "1623730",
