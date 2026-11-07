@@ -20,7 +20,6 @@ from store.plugin_store import (
 )
 
 MAX_CATALOG_SIZE_BYTES = 2 * 1024 * 1024
-OFFLINE_PACK_SOURCE = "offline pack"
 
 
 @dataclass(frozen=True)
@@ -40,6 +39,12 @@ def repository_overrides(settings: Settings) -> dict[str, str | None]:
 def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource:
     """Prefer the cached catalog fetched for the current settings; fall back to the bundled one."""
     overrides = repository_overrides(settings)
+    pack_catalog = store.pack_dir / (settings.catalog_path or DEFAULT_CATALOG_PATH)
+    if settings.offline_mode and pack_catalog.is_file():
+        try:
+            return CatalogSource("cache", load_mod_catalog(pack_catalog, **overrides))
+        except (OSError, ValueError) as error:
+            raise ValueError(f"Offline pack catalog is unusable: {error}") from error
     meta = store.catalog_meta()
     warning = None
     if (
@@ -117,13 +122,11 @@ def catalog_url(settings: Settings) -> str:
 def refresh_catalog_on_start(store: PluginStore, settings: Settings) -> bool | None:
     """Best-effort catalog refresh at plugin load; returns whether it changed, None when skipped.
 
-    A user-imported offline pack is left alone, and cached mod archives are only dropped when
-    the catalog actually changed.
+    An imported offline pack does not block the refresh: the newest online catalog wins, and pack
+    files are then used only while their checksum still matches it. Cached mod archives are only
+    dropped when the catalog actually changed.
     """
     if settings.offline_mode:
-        return None
-    meta = store.catalog_meta()
-    if meta is not None and meta.get("source_url") == OFFLINE_PACK_SOURCE:
         return None
     url = catalog_url(settings)
     _, changed, _ = save_catalog(store, settings, _download_catalog(url), url)

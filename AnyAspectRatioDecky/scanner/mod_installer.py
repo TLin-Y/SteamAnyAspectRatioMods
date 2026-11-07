@@ -5,7 +5,8 @@ import ssl
 import stat
 import tempfile
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
+from http.client import IncompleteRead
 from pathlib import Path, PurePosixPath
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
@@ -111,7 +112,7 @@ class _GuardedResponse:
     def read(self, size: int = -1) -> bytes:
         try:
             return self._stream.read(size)
-        except OSError as error:
+        except (OSError, IncompleteRead) as error:
             raise NetworkError(describe_network_error(error, self._url)) from error
 
 
@@ -162,14 +163,25 @@ def _pack_file(path: str) -> Path | None:
 
 @contextmanager
 def open_repository_file(source: ModSource, path: str):
+    """Newest online file first; the offline pack is used in offline mode or when the network fails."""
     local = _pack_file(path)
-    if local is not None:
+    if local is not None and _offline_mode:
         with local.open("rb") as stream:
             yield stream
         return
     url = repository_file_url(source.repository_url, source.repository_ref, path)
-    with open_url(url) as stream:
-        yield stream
+    with tempfile.TemporaryFile() as staged:
+        try:
+            with open_url(url) as stream:
+                copy_limited(stream, staged, MAX_MOD_FILE_SIZE_BYTES, "Mod file")
+        except NetworkError:
+            if local is None:
+                raise
+            with local.open("rb") as stream:
+                yield stream
+            return
+        staged.seek(0)
+        yield staged
 
 
 def _mib(size: int) -> int:
@@ -216,7 +228,12 @@ def _drop_stale_cache(cached_path: Path) -> None:
 
 @contextmanager
 def _open_archive(source: ModSource) -> Iterator[Path]:
-    """Yield a local path to the mod archive, downloading it into the cache if needed."""
+    """Yield a local path to the mod archive.
+
+    A pack archive whose checksum matches the catalog is the newest version, so it is used
+    directly. Otherwise the newest archive is downloaded; the pack copy is only a fallback
+    when the network fails, and the only source in offline mode.
+    """
     if source.path is None:
         raise ValueError("Archive source path is missing")
     if source.kind == MOD_SOURCE_LOCAL_ARCHIVE:
@@ -227,22 +244,39 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
         return
     packed = _pack_file(source.path)
     if packed is not None:
-        if not source.sha256 or _file_sha256(packed) == source.sha256:
+        if source.sha256:
+            if _file_sha256(packed) == source.sha256:
+                yield packed
+                return
+            if _offline_mode:
+                raise OfflineModeError(
+                    "The offline pack has an outdated mod archive. "
+                    "Import an updated offline pack or turn off offline mode."
+                )
+        elif _offline_mode:
             yield packed
             return
-        if _offline_mode:
-            raise OfflineModeError(
-                "The offline pack has an outdated mod archive. "
-                "Import an updated offline pack or turn off offline mode."
-            )
 
+    with ExitStack() as stack:
+        try:
+            archive_path = stack.enter_context(_open_downloaded_archive(source))
+        except NetworkError:
+            if packed is None or source.sha256:
+                raise
+            archive_path = packed
+        yield archive_path
+
+
+@contextmanager
+def _open_downloaded_archive(source: ModSource) -> Iterator[Path]:
+    """Yield the downloaded (or cached) archive, verified against the catalog checksum."""
     archive_url = repository_file_url(
         source.repository_url,
         source.repository_ref,
         source.path,
     )
     cached_path = _cached_archive_path(archive_url, source.sha256)
-    if cached_path is not None and cached_path.is_file():
+    if cached_path is not None and cached_path.is_file() and (source.sha256 or _offline_mode):
         if source.sha256 and _file_sha256(cached_path) != source.sha256:
             cached_path.unlink(missing_ok=True)
         else:

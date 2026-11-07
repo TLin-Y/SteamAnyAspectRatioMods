@@ -332,18 +332,35 @@ class Plugin:
     async def import_offline_pack(self, archive_path: str) -> dict[str, object]:
         store = get_store()
         try:
-            return install_pack(store, store.load_settings(), Path(archive_path))
+            result = await asyncio.to_thread(install_pack, store, store.load_settings(), Path(archive_path))
         except (OSError, ValueError) as error:
             log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-import")
             return {"error": str(error) or type(error).__name__}
+        warning = await self._refresh_online_catalog(store)
+        return {**result, "warning": warning}
 
     async def download_offline_pack(self) -> dict[str, object]:
         store = get_store()
         try:
-            return await asyncio.to_thread(download_release_pack, store, store.load_settings())
+            result = await asyncio.to_thread(download_release_pack, store, store.load_settings())
         except (OSError, ValueError) as error:
             log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-download")
             return {"error": str(error) or type(error).__name__}
+        warning = await self._refresh_online_catalog(store)
+        return {**result, "warning": warning}
+
+    @staticmethod
+    async def _refresh_online_catalog(store: PluginStore) -> str | None:
+        def refresh():
+            with pack_operation():
+                return refresh_catalog_on_start(store, store.load_settings())
+
+        try:
+            await asyncio.to_thread(refresh)
+        except (OSError, ValueError) as error:
+            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="catalog-refresh")
+            return f"Could not refresh the online catalog: {error}"
+        return None
 
     async def clear_local_data(self) -> dict[str, object]:
         store = get_store()
@@ -431,6 +448,9 @@ class Plugin:
     async def get_offline_mode(self) -> bool:
         return get_store().load_settings().offline_mode
 
+    async def get_disk_usage(self) -> int:
+        return await asyncio.to_thread(get_store().disk_usage)
+
     async def get_log(self, max_lines: int = 300) -> dict[str, object]:
         path = get_store().log_path
         try:
@@ -446,7 +466,8 @@ class Plugin:
         store.save_settings(replace(store.load_settings(), offline_mode=bool(enabled)))
         block_network(bool(enabled))
         log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"offline-mode-{bool(enabled)}")
-        return {"offline_mode": bool(enabled)}
+        warning = None if enabled else await self._refresh_online_catalog(store)
+        return {"offline_mode": bool(enabled), "warning": warning}
 
     async def update_dependencies(self) -> dict[str, object]:
         store = get_store()

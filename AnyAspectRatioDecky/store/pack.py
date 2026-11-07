@@ -150,6 +150,12 @@ def install_pack(store: PluginStore, settings: Settings, archive_path: Path) -> 
     finally:
         shutil.rmtree(staging, ignore_errors=True)
 
-    save_catalog(store, settings, catalog_bytes, "offline pack")
-    store.clear_archive_cache()
+    meta = store.catalog_meta()
+    if (
+        meta is None
+        or meta.get("source") != list(settings.source_key())
+        or not store.catalog_path.is_file()
+        or meta.get("source_url") == "offline pack"
+    ):
+        save_catalog(store, settings, catalog_bytes, "offline pack")
     return {"mod_count": len(mods), **store.pack_stats()}

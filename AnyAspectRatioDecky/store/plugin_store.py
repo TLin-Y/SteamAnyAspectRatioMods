@@ -232,6 +232,18 @@ class PluginStore:
         files = [path for path in self.pack_dir.rglob("*") if path.is_file()]
         return {"file_count": len(files), "size_bytes": sum(p.stat().st_size for p in files)}
 
+    def disk_usage(self) -> int:
+        def raise_walk_error(error: OSError) -> None:
+            raise error
+
+        total = 0
+        for root, _, files in os.walk(self.data_dir, onerror=raise_walk_error):
+            for name in files:
+                path = Path(root) / name
+                if not path.is_symlink():
+                    total += path.stat().st_size
+        return total
+
     def save_last_scan(self, report: dict[str, object]) -> None:
         write_json_atomic(self.last_scan_path, {"scanned_at": utc_now(), "report": report})
 

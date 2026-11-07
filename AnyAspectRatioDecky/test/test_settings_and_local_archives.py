@@ -138,14 +138,17 @@ class DependencyUpdateTests(unittest.TestCase):
                 refresh_catalog_on_start(self.store, Settings())
         self.assertEqual("bundled", load_active_catalog(self.store, Settings()).origin)
 
-    def test_startup_refresh_skips_an_imported_offline_pack(self) -> None:
+    def test_startup_refresh_replaces_an_imported_offline_pack_catalog(self) -> None:
         with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
             update_dependencies(self.store, Settings())
         meta = json.loads(self.store.catalog_meta_path.read_text(encoding="utf-8"))
         meta["source_url"] = "offline pack"
+        meta["sha256"] = "0" * 64
         self.store.catalog_meta_path.write_text(json.dumps(meta), encoding="utf-8")
-        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
-            self.assertIsNone(refresh_catalog_on_start(self.store, Settings()))
+        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+            self.assertTrue(refresh_catalog_on_start(self.store, Settings()))
+        meta = json.loads(self.store.catalog_meta_path.read_text(encoding="utf-8"))
+        self.assertNotEqual("offline pack", meta["source_url"])
 
     def test_corrupt_cached_catalog_falls_back_with_warning(self) -> None:
         with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
@@ -298,7 +301,7 @@ class LocalArchiveTests(unittest.TestCase):
         self.assertEqual(b"new", (self.game / "bin" / "mod.dll").read_bytes())
         self.assertEqual(b"x", (self.game / "bin" / "data" / "x.bin").read_bytes())
 
-    def test_remote_archive_is_cached_between_applies(self) -> None:
+    def test_unhashed_remote_archive_is_refetched_between_applies(self) -> None:
         cache = self.root / "cache"
         set_archive_cache_dir(cache)
         archive_path = self.root / "remote.zip"
@@ -324,8 +327,9 @@ class LocalArchiveTests(unittest.TestCase):
             apply_mod_files(mod, str(self.game))
             (self.game / "mod.dll").unlink()
             apply_mod_files(mod, str(self.game))
-        self.assertEqual(1, opener.call_count)
+        self.assertEqual(2, opener.call_count)
         self.assertEqual(1, len(list(cache.glob("*.zip"))))
+
     def test_replaced_archive_is_downloaded_again_when_checksum_changes(self) -> None:
         cache = self.root / "cache"
         set_archive_cache_dir(cache)
