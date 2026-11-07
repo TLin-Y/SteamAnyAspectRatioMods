@@ -61,7 +61,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([21, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([22, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -76,7 +76,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 22), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 23), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -87,11 +87,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(22, len(catalog))
+        self.assertEqual(23, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            19,
+            20,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -262,6 +262,18 @@ class ModCatalogTests(unittest.TestCase):
             mod.files,
         )
         self.assertEqual("Guac2_ARFix.ini", mod.ini_file)
+
+    def test_guacamelee_stce_catalog_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-stce")
+        self.assertEqual("275390", mod.steam_app_id)
+        self.assertEqual("DrinkBox_Game4", mod.install_dir)
+        self.assertEqual("GuacSTCE.exe", mod.executable)
+        self.assertEqual(("Game.exe",), mod.executable_alternatives)
+        self.assertEqual(
+            ("dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"),
+            mod.files,
+        )
+        self.assertEqual("Guac1_ARFix.ini", mod.ini_file)
 
     def test_verified_external_mod_install_paths(self) -> None:
         catalog = {mod.mod_id: mod for mod in load_mod_catalog()}
@@ -552,6 +564,28 @@ class SupportedGameScannerTests(unittest.TestCase):
         self.assertEqual("534550", game.steam_app_id)
         self.assertEqual(str(self.game_path / "Guac2_x64.exe"), game.executable_path)
         self.assertTrue(game.matched_by_executable)
+
+    def test_guacamelee_stce_executable_names_match_steam_and_other_folders(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-stce")
+        for executable, install_dir, matched_by_executable in (
+            ("Game.exe", "DrinkBox_Game4", False),
+            ("GuacSTCE.exe", "Guacamelee.STCE", True),
+        ):
+            with self.subTest(executable=executable, install_dir=install_dir):
+                self._touch(executable)
+                app = InstalledApp(
+                    app_id=mod.steam_app_id,
+                    name="Guacamelee! Super Turbo Championship Edition",
+                    install_dir=install_dir,
+                    library_path=self.app.library_path,
+                    game_path=self.app.game_path,
+                )
+                report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+
+                (game,) = report.supported_games
+                self.assertEqual("275390", game.steam_app_id)
+                self.assertEqual(str(self.game_path / executable), game.executable_path)
+                self.assertEqual(matched_by_executable, game.matched_by_executable)
 
     def test_ambiguous_executable_names_require_selection(self) -> None:
         mod = replace(self.mod, executable="dir/game.exe")
