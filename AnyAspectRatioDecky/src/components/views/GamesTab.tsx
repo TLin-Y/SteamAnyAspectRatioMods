@@ -21,6 +21,7 @@ import {
 } from "../../services/callables";
 import {
   confirmFileReplacement,
+  confirmOfflineMod,
   confirmModifiedIniRemoval,
   showErrorModal,
   showLaunchOptionsInfo,
@@ -146,6 +147,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     };
 
     try {
+      if (applied && game.offline_only && !await confirmOfflineMod(game.app_name)) {
+        return;
+      }
       let launchPlan: Awaited<ReturnType<typeof prepareLaunchOptions>> | null =
         null;
       let launchOptionsNotice = "";
@@ -587,7 +591,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           <div role="status">
             {errorMessage ||
               (report
-                ? `Scanned ${report.steam_scan.apps_scanned} apps across ${report.steam_scan.libraries_scanned} dirs.${cachedScanTime ? ` Last scanned ${formatRelativeTime(cachedScanTime)}.` : ""}`
+                ? `Found ${gameGroups.length} supported games.${cachedScanTime ? ` Last scanned ${formatRelativeTime(cachedScanTime)}.` : ""}`
                 : "Steam libraries have not been scanned.")}
           </div>
         </PanelSectionRow>

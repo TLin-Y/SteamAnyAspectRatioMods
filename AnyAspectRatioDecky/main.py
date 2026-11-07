@@ -543,7 +543,9 @@ class Plugin:
                 if conflicting_files and replace_existing_files is None:
                     copied_file_count = 0
                 elif replace_existing_files is False:
-                    copied_file_count = len(mod.files) - len(conflicting_files)
+                    copied_file_count = len(mod.files) - sum(
+                        path in mod.files for path in conflicting_files
+                    )
                 else:
                     copied_file_count = len(mod.files)
             else:

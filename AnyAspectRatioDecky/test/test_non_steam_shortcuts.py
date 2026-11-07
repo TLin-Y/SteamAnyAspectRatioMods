@@ -126,6 +126,37 @@ class NonSteamShortcutTests(unittest.TestCase):
         report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (self.mod,))
         self.assertEqual([], report.supported_games)
 
+    def test_elden_ring_launcher_shortcuts_match_only_with_game_executable(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "elden-ring-ultrawide-fix")
+        root = self.root / "localGames" / "ELDEN RING"
+        folder = root / "Game"
+        folder.mkdir(parents=True)
+        executable = folder / "eldenring.exe"
+        for name in (
+            "modengine2_launcher.exe", "start_protected_game.exe",
+            "start_game_in_offline_mode.exe", "start_protected_game-old.exe",
+        ):
+            with self.subTest(launcher=name):
+                executable.unlink(missing_ok=True)
+                wrapper = folder / name
+                wrapper.touch()
+                shortcuts = parse_shortcuts(_shortcuts_vdf(
+                    3000000001, "Elden Ring custom", str(wrapper), str(folder)
+                ))
+                scan = SteamScanReport(0, 0, [], [], shortcuts)
+                self.assertEqual([], match_supported_games(scan, (mod,)).supported_games)
+                executable.write_bytes(b"game")
+                games = match_supported_games(scan, (mod,)).supported_games
+                if name == "start_protected_game-old.exe":
+                    self.assertEqual([], games)
+                    continue
+                (game,) = games
+                self.assertEqual(str(root), game.game_path)
+                self.assertEqual("elden-ring-ultrawide-fix", game.mod_id)
+                self.assertTrue(game.offline_only)
+                self.assertTrue(game.matched_by_executable)
+                self.assertEqual("3000000001", game.steam_app_id)
+
     def test_shortcut_with_ambiguous_basename_requires_selection(self) -> None:
         executable = self.game / self.mod.executable
         shortcuts = parse_shortcuts(

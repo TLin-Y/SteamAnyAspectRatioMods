@@ -34,6 +34,7 @@ from helper.constants import (
 )
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
+from scanner.mod_installer import launcher_setup_complete
 from scanner.non_steam_shortcuts import scan_non_steam_shortcuts
 from scanner.steam_library_scanner import (
     InstalledApp,
@@ -66,6 +67,7 @@ class SupportedGame:
     ambiguity_group: str | None = None
     match_locked: bool = False
     log_files: list[str] = field(default_factory=list)
+    offline_only: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -90,6 +92,7 @@ class SupportedGame:
             "ambiguity_group": self.ambiguity_group,
             "match_locked": self.match_locked,
             "log_files": self.log_files,
+            "offline_only": self.offline_only,
         }
 
 
@@ -154,7 +157,17 @@ def _build_game(
     ]
     present_set = set(present_files)
     missing_files = [path for path in mod.files if path not in present_set]
-    if not present_files:
+    launcher_backup_present = False
+    if mod.launcher_replacement is not None:
+        launcher = mod.launcher_replacement
+        launcher_backup_present = (
+            game_path is not None and _is_file(game_path / launcher.backup, file_cache)
+        )
+        if game_path is not None and launcher_setup_complete(mod, game_path):
+            present_files.append(launcher.target)
+        else:
+            missing_files.append(launcher.target)
+    if not present_files and not launcher_backup_present:
         file_status = MOD_CATALOG_FILE_STATUS_NONE
     elif missing_files:
         file_status = MOD_CATALOG_FILE_STATUS_PARTIAL
@@ -181,10 +194,14 @@ def _build_game(
         files_missing=missing_files,
         ini_path=ini_path,
         ini_file=mod.ini_file,
-        mod_files=list(mod.files),
+        mod_files=[
+            *mod.files,
+            *([mod.launcher_replacement.target] if mod.launcher_replacement else []),
+        ],
         source_kind=mod.source.kind,
         wine_dll_overrides=list(mod.wine_dll_overrides),
         manual=mod.manual,
+        offline_only=mod.offline_only,
 )
 
 
@@ -314,6 +331,12 @@ def match_supported_games(
             for _ in parts:
                 root = root.parent
             if root / relative != executable:
+                continue
+            if (
+                mod.launcher_replacement is not None
+                and relative != mod.executable
+                and not _is_file(root / mod.executable, file_cache)
+            ):
                 continue
             matched_roots.append((mod, root))
         ambiguous = len(owners) > 1 or len(matched_roots) > 1

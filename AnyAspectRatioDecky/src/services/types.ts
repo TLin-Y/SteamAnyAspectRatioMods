@@ -22,6 +22,7 @@ export type SupportedGameReport = {
     source_kind: string;
     wine_dll_overrides: string[];
     manual?: boolean;
+    offline_only?: boolean;
     matched_by_executable?: boolean;
     update_available?: boolean;
     ambiguity_group?: string | null;

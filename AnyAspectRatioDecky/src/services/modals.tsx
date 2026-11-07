@@ -34,6 +34,33 @@ export function confirmFileReplacement(
   });
 }
 
+export function confirmOfflineMod(gameName: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let closeModal: (() => void) | undefined;
+    const finish = (confirmed: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(confirmed);
+      closeModal?.();
+    };
+    const modal = showModal(
+      <ConfirmModal
+        strTitle="Offline play only"
+        strDescription={`${gameName}'s mod must only be used offline. Do not play online with mods active; this can result in a ban. Close the game before applying or removing the mod. Continue?`}
+        strOKButtonText="Apply offline mod"
+        strCancelButtonText="Cancel"
+        onOK={() => finish(true)}
+        onCancel={() => finish(false)}
+        onEscKeypress={() => finish(false)}
+      />,
+      undefined,
+      { fnOnClose: () => finish(false) },
+    );
+    closeModal = modal.Close;
+  });
+}
+
 export function confirmModifiedIniRemoval(
   gameName: string,
   iniFile: string,

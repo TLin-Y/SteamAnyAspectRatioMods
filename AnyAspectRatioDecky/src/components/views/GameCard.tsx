@@ -27,9 +27,7 @@ export function GameCard({
     return (
       <PanelSection>
         <PanelSectionRow>
-          <strong style={{ display: "block", overflowWrap: "anywhere", color: "#9e9e9e" }}>
-            {index + 1}. {first.app_name} (.exe)
-          </strong>
+          <GameTitle game={first} index={index} unresolved />
         </PanelSectionRow>
         <PanelSectionRow>
           <ToggleField

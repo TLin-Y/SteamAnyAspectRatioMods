@@ -125,6 +125,9 @@ MOD_SOURCE_KINDS = (
     MOD_SOURCE_FILES,
 )
 MOD_FILES_KEY = "files"
+MOD_BACKUP_FILE_KEY = "backup_file"
+MOD_OFFLINE_ONLY_KEY = "offline_only"
+MOD_LAUNCHER_REPLACEMENT_KEY = "launcher_replacement"
 MOD_INI_FILE_KEY = "ini_file"
 MOD_WINE_OVERRIDES_KEY = "wine_dll_overrides"
 MOD_MANUAL_KEY = "manual"
@@ -146,6 +149,9 @@ MOD_CATALOG_INVALID_SOURCE_FILES_MESSAGE = (
 )
 MOD_CATALOG_INVALID_REPOSITORY_MESSAGE = "Mod catalog has invalid source repository metadata"
 MOD_CATALOG_INVALID_FILE_LIST_MESSAGE = "Mod catalog entry {mod_id} has an invalid files list"
+MOD_CATALOG_INVALID_BACKUP_FILE_MESSAGE = (
+    "Mod catalog entry {mod_id} has an invalid backup_file"
+)
 MOD_CATALOG_INVALID_OVERRIDE_LIST_MESSAGE = (
     "Mod catalog entry {mod_id} has an invalid Wine DLL overrides list"
 )
