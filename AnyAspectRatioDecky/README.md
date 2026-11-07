@@ -6,7 +6,7 @@ This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and 
 
 | Apply a fix per game                     | Edit its settings                                 |
 | ---------------------------------------- | ------------------------------------------------- |
-| ![Games tab](../resources/games-tab.jpg) | ![Editing a fix's INI](../resources/edit-ini.jpg) |
+| ![Games tab](../resources/games-tab.jpg?v=4556e8ed) | ![Editing a fix's INI](../resources/edit-ini.jpg) |
 
 ## Install
 

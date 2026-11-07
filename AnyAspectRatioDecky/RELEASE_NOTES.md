@@ -9,7 +9,7 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 - **Improved offline packs.** Online catalog updates no longer prevent using the offline pack when offline mode is enabled.
 - **Download progress.** The offline pack button shows when a download is in progress.
 
-![Games tab](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/resources/games-tab.jpg)
+![Games tab](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/resources/games-tab.jpg?v=4556e8ed)
 
 ## What it does
 
