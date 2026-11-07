@@ -2,11 +2,12 @@ import io
 import ssl
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from scanner.mod_catalog import ModDefinition, ModSource, ModSourceFile
+from scanner.mod_catalog import LauncherReplacement, ModDefinition, ModSource, ModSourceFile
 from scanner.mod_installer import (
     create_ssl_context,
     apply_mod_files,
@@ -17,6 +18,7 @@ from scanner.mod_installer import (
     read_mod_log,
     remove_mod_files,
     write_mod_ini,
+    launcher_setup_complete,
 )
 
 
@@ -153,6 +155,36 @@ class ModInstallerTests(unittest.TestCase):
         )
         self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
 
+    def test_file_mod_renames_original_to_backup_and_restores_on_remove(self) -> None:
+        mod = self._mod(
+            "files",
+            ("data.win",),
+            source_files=(ModSourceFile("source/data.win", "data.win"),),
+        )
+        mod = replace(mod, backup_file="data.win.bak")
+        target = self.game_path / "data.win"
+        backup = self.game_path / "data.win.bak"
+        target.write_bytes(b"original")
+
+        with patch(
+            "scanner.mod_installer.open_repository_file",
+            return_value=io.BytesIO(b"ultrawide"),
+        ):
+            self.assertEqual(
+                [],
+                apply_mod_files(
+                    mod,
+                    str(self.game_path),
+                    replace_existing_files=True,
+                ),
+            )
+
+        self.assertEqual(b"ultrawide", target.read_bytes())
+        self.assertEqual(b"original", backup.read_bytes())
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
+        self.assertEqual(b"original", target.read_bytes())
+        self.assertFalse(backup.exists())
+
     def test_missing_archive_member_does_not_replace_existing_files(self) -> None:
         mod = self._mod(
             "archive",
@@ -171,6 +203,232 @@ class ModInstallerTests(unittest.TestCase):
 
         self.assertEqual(b"keep old", (self.game_path / "fix.dll").read_bytes())
         self.assertFalse((self.game_path / "fix.ini").exists())
+
+    def _launcher_mod(self) -> ModDefinition:
+        return replace(
+            self._mod(
+                "archive",
+                ("Game/offline.exe", "Game/mods/fix.dll"),
+                source_path="fixes/test.zip",
+                destination="Game",
+            ),
+            executable="Game/game.exe",
+            offline_only=True,
+            launcher_replacement=LauncherReplacement(
+                "Game/offline.exe", "Game/protected.exe", "Game/protected-old.exe"
+            ),
+        )
+
+    def _launcher_game(self) -> tuple[Path, Path]:
+        folder = self.game_path / "Game"
+        folder.mkdir()
+        (folder / "game.exe").write_bytes(b"game executable")
+        (folder / "protected.exe").write_bytes(b"original protected launcher")
+        return folder / "protected.exe", folder / "protected-old.exe"
+
+    def _launcher_archive(self):
+        archive = self._archive({"offline.exe": b"offline", "mods/fix.dll": b"fix"})
+        return patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda url, **kwargs: io.BytesIO(archive),
+        )
+
+    def test_launcher_confirm_apply_reapply_remove_and_scan_status(self) -> None:
+        from scanner import InstalledApp, SteamScanReport, match_supported_games
+
+        mod = self._launcher_mod()
+        target, backup = self._launcher_game()
+        unrelated = self.game_path / "Game" / "mods" / "unrelated.dll"
+        unrelated.parent.mkdir()
+        unrelated.write_bytes(b"keep")
+        app = InstalledApp("123", "Test", "Test Game", "", str(self.game_path))
+        scan = lambda: match_supported_games(SteamScanReport(1, 1, [app], []), (mod,)).supported_games[0]
+        self.assertEqual("not_detected", scan().file_status)
+        self.assertTrue(scan().to_dict()["offline_only"])
+        with self._launcher_archive():
+            self.assertEqual(["Game/protected.exe"], apply_mod_files(mod, str(self.game_path)))
+            self.assertFalse(backup.exists())
+            self.assertFalse((self.game_path / "Game" / "offline.exe").exists())
+            for _ in range(2):
+                self.assertEqual(
+                    [], apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+                )
+                self.assertEqual(b"offline", target.read_bytes())
+                self.assertEqual(b"original protected launcher", backup.read_bytes())
+                self.assertTrue(launcher_setup_complete(mod, self.game_path))
+                self.assertEqual("complete", scan().file_status)
+        target.write_bytes(b"original protected launcher")
+        self.assertEqual("partial", scan().file_status)
+        self.assertIn("Game/protected.exe", scan().files_missing)
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
+        self.assertEqual(b"original protected launcher", target.read_bytes())
+        self.assertFalse(backup.exists())
+        self.assertEqual(b"game executable", (self.game_path / "Game" / "game.exe").read_bytes())
+        self.assertEqual(b"keep", unrelated.read_bytes())
+        self.assertEqual("not_detected", scan().file_status)
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
+
+    def test_launcher_declining_replacement_leaves_original_and_backup_untouched(self) -> None:
+        target, backup = self._launcher_game()
+        with self._launcher_archive():
+            self.assertEqual(
+                ["Game/protected.exe"],
+                apply_mod_files(self._launcher_mod(), str(self.game_path), replace_existing_files=False),
+            )
+        self.assertEqual(b"original protected launcher", target.read_bytes())
+        self.assertFalse(backup.exists())
+
+    def test_launcher_copy_failure_restores_original_and_partial_files_can_be_removed(self) -> None:
+        mod = self._launcher_mod()
+        target, backup = self._launcher_game()
+        from scanner.mod_installer import os
+        original_replace = os.replace
+
+        def replace_except_launcher(source, destination):
+            if destination == target:
+                raise PermissionError("launcher locked")
+            return original_replace(source, destination)
+
+        with self._launcher_archive(), patch(
+            "scanner.mod_installer.os.replace", side_effect=replace_except_launcher
+        ):
+            with self.assertRaisesRegex(PermissionError, "launcher locked"):
+                apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        self.assertEqual(b"original protected launcher", target.read_bytes())
+        self.assertFalse(backup.exists())
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
+        self.assertEqual(b"original protected launcher", target.read_bytes())
+
+    def test_launcher_remove_restoration_failure_keeps_mod_dependencies(self) -> None:
+        mod = self._launcher_mod()
+        target, backup = self._launcher_game()
+        with self._launcher_archive():
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        with patch("scanner.mod_installer.os.replace", side_effect=PermissionError("locked")):
+            with self.assertRaisesRegex(PermissionError, "locked"):
+                remove_mod_files(mod, str(self.game_path))
+        self.assertTrue(backup.is_file())
+        self.assertEqual(b"offline", target.read_bytes())
+        self.assertTrue((self.game_path / "Game" / "offline.exe").is_file())
+
+    def test_launcher_mod_deletion_failure_does_not_restore_online_launcher(self) -> None:
+        mod = self._launcher_mod()
+        target, backup = self._launcher_game()
+        with self._launcher_archive():
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        original_unlink = Path.unlink
+
+        def unlink_except_mod(path, *args, **kwargs):
+            if path.name == "fix.dll":
+                raise PermissionError("mod locked")
+            return original_unlink(path, *args, **kwargs)
+
+        with patch.object(Path, "unlink", autospec=True, side_effect=unlink_except_mod):
+            with self.assertRaisesRegex(PermissionError, "mod locked"):
+                remove_mod_files(mod, str(self.game_path))
+        self.assertEqual(b"offline", target.read_bytes())
+        self.assertTrue(backup.is_file())
+        self.assertTrue((self.game_path / "Game" / "offline.exe").is_file())
+
+    def test_launcher_can_copy_game_executable_without_removing_it(self) -> None:
+        mod = self._launcher_mod()
+        mod = replace(mod, launcher_replacement=replace(
+            mod.launcher_replacement, source="Game/game.exe"
+        ))
+        target, backup = self._launcher_game()
+        executable = self.game_path / "Game" / "game.exe"
+        original_game = executable.read_bytes()
+        original_launcher = target.read_bytes()
+        with self._launcher_archive():
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        self.assertEqual(original_game, target.read_bytes())
+        self.assertTrue(launcher_setup_complete(mod, self.game_path))
+        remove_mod_files(mod, str(self.game_path))
+        self.assertEqual(original_game, executable.read_bytes())
+        self.assertEqual(original_launcher, target.read_bytes())
+        self.assertFalse(backup.exists())
+
+    def test_elden_ring_real_archive_apply_and_remove_in_temporary_game(self) -> None:
+        from scanner.mod_catalog import load_mod_catalog
+        from scanner.mod_installer import set_offline_mode, set_pack_dir
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "elden-ring-ultrawide-fix")
+        folder = self.game_path / "Game"
+        folder.mkdir()
+        (folder / "eldenring.exe").write_bytes(b"original game")
+        target = folder / "start_protected_game.exe"
+        target.write_bytes(b"original launcher")
+        set_pack_dir(Path(__file__).resolve().parents[2])
+        set_offline_mode(True)
+        try:
+            self.assertEqual(
+                [], apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+            )
+            self.assertTrue(launcher_setup_complete(mod, self.game_path))
+            self.assertEqual(
+                (folder / "start_game_in_offline_mode.exe").read_bytes(),
+                target.read_bytes(),
+            )
+            for relative in mod.files:
+                self.assertTrue((self.game_path / relative).is_file(), relative)
+            self.assertEqual(
+                [], remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
+            )
+            self.assertEqual(b"original launcher", target.read_bytes())
+            self.assertEqual(b"original game", (folder / "eldenring.exe").read_bytes())
+            self.assertFalse((folder / "start_protected_game-old.exe").exists())
+            for relative in mod.files:
+                self.assertFalse((self.game_path / relative).exists(), relative)
+        finally:
+            set_pack_dir(None)
+            set_offline_mode(False)
+
+    def test_launcher_missing_backup_never_saves_offline_copy_as_original(self) -> None:
+        mod = self._launcher_mod()
+        target, backup = self._launcher_game()
+        target.write_bytes(b"offline")
+        with self._launcher_archive():
+            with self.assertRaisesRegex(ValueError, "backup is missing"):
+                apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        self.assertFalse(backup.exists())
+        self.assertEqual(b"offline", target.read_bytes())
+
+    def test_launcher_symlink_backup_rejected_before_mod_changes(self) -> None:
+        mod = self._launcher_mod()
+        self._launcher_game()
+        with patch.object(
+            Path, "is_symlink", autospec=True,
+            side_effect=lambda path: path.name == "protected-old.exe",
+        ):
+            for operation in (apply_mod_files, remove_mod_files):
+                with self.assertRaisesRegex(ValueError, "symbolic link"):
+                    operation(mod, str(self.game_path))
+
+    def test_archive_reapply_preserves_original_backup_and_remove_restores_it(self) -> None:
+        mod = replace(
+            self._mod("archive", ("data.win",), source_path="fixes/undertale.zip"),
+            backup_file="data.win.bak",
+        )
+        target = self.game_path / "data.win"
+        backup = self.game_path / "data.win.bak"
+        target.write_bytes(b"original")
+        archive_bytes = self._archive({"data.win": b"ultrawide"})
+
+        with patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
+        ):
+            for _ in range(2):
+                self.assertEqual(
+                    [],
+                    apply_mod_files(mod, str(self.game_path), replace_existing_files=True),
+                )
+                self.assertEqual(b"ultrawide", target.read_bytes())
+                self.assertEqual(b"original", backup.read_bytes())
+
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
+        self.assertEqual(b"original", target.read_bytes())
+        self.assertFalse(backup.exists())
 
     def test_rejects_oversized_archive_download_before_installing(self) -> None:
         mod = self._mod(

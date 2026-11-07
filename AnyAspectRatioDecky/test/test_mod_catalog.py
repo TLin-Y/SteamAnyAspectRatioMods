@@ -61,7 +61,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([19, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([20, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -76,7 +76,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 20), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 21), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -87,11 +87,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(20, len(catalog))
+        self.assertEqual(21, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            17,
+            18,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -146,6 +146,97 @@ class ModCatalogTests(unittest.TestCase):
             set(mod.files),
         )
         self.assertEqual(f"{destination}/VoM_ARFix.ini", mod.ini_file)
+
+    def test_palworld_catalog_paths(self) -> None:
+        catalog = {mod.mod_id: mod for mod in load_mod_catalog()}
+        palworld = catalog["palworld"]
+        self.assertEqual("Palworld", palworld.install_dir)
+        self.assertEqual(
+            "Pal/Binaries/Win64/Palworld-Win64-Shipping.exe",
+            palworld.executable,
+        )
+        self.assertEqual(
+            {
+                "Pal/Binaries/Win64/winmm.dll",
+                "Pal/Binaries/Win64/Palworld_ARFix.asi",
+                "Pal/Binaries/Win64/Palworld_ARFix.ini",
+            },
+            set(palworld.files),
+        )
+
+    def test_undertale_catalog_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "undertale")
+        self.assertEqual("Undertale", mod.install_dir)
+        self.assertEqual("UNDERTALE.exe", mod.executable)
+        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual(
+            "external/Twig/Undertale/Undertale-Ultrawide-Fix.zip", mod.source.path
+        )
+        self.assertEqual(("data.win",), mod.files)
+        self.assertEqual("data.win.bak", mod.backup_file)
+        self.assertEqual("external/Twig/Undertale/README.md", mod_readme_path(mod))
+        self.assertEqual(("Twig",), tuple(credit.name for credit in mod.credits))
+
+    def test_elden_ring_offline_launcher_and_archive_paths(self) -> None:
+        catalog = {mod.mod_id: mod for mod in load_mod_catalog()}
+        mod = catalog["elden-ring-ultrawide-fix"]
+        self.assertTrue(mod.offline_only)
+        self.assertTrue(catalog["dark-souls-iii"].offline_only)
+        self.assertIsNone(catalog["dark-souls-iii"].launcher_replacement)
+        self.assertEqual("ELDEN RING", mod.install_dir)
+        self.assertEqual("Game/eldenring.exe", mod.executable)
+        self.assertEqual((
+            "Game/modengine2_launcher.exe",
+            "Game/start_protected_game.exe",
+            "Game/start_game_in_offline_mode.exe",
+        ), mod.executable_alternatives)
+        self.assertEqual("Game", mod.source.destination)
+        self.assertEqual("Game/start_game_in_offline_mode.exe", mod.launcher_replacement.source)
+        self.assertEqual("Game/start_protected_game.exe", mod.launcher_replacement.target)
+        self.assertEqual("Game/start_protected_game-old.exe", mod.launcher_replacement.backup)
+        self.assertEqual(("TechieW",), tuple(credit.name for credit in mod.credits))
+        self.assertEqual("external/TechieW/ELDEN RING/README.md", mod_readme_path(mod))
+        root = Path(__file__).resolve().parents[2]
+        self.assertTrue((root / mod_readme_path(mod)).is_file())
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertEqual(
+                {f"Game/{info.filename}" for info in archive.infolist() if not info.is_dir()},
+                set(mod.files),
+            )
+
+    def test_rejects_invalid_offline_launcher_metadata(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        entry = next(mod for mod in document["mods"] if mod["id"] == "elden-ring-ultrawide-fix")
+        document["mods"] = [entry]
+        original = dict(entry["launcher_replacement"])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            for change in (
+                {"source": "../outside.exe"},
+                {"source": "Game/missing.exe"},
+                {"target": "Game/eldenring.exe"},
+                {"target": original["source"]},
+                {"backup": "Game/dinput8.dll"},
+                {"backup": "Game/modengine2_launcher.exe"},
+                {"backup": original["target"]},
+                {"backup": "other/backup.exe"},
+                {"source": 123},
+                {"extra": "value"},
+            ):
+                with self.subTest(change=change):
+                    entry["launcher_replacement"] = {**original, **change}
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load_mod_catalog(path)
+            entry["launcher_replacement"] = original
+            for value in (False, "true", 1):
+                with self.subTest(offline_only=value):
+                    entry["offline_only"] = value
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load_mod_catalog(path)
 
     def test_beast_of_reincarnation_install_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "beastofreincarnationfix")

@@ -26,6 +26,15 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 - **Mods**: see mod credits, download or import an offline pack, or delete local files and caches. Deleting local files keeps your settings and applied mods.
 - **Settings**: change mod sources, enable offline mode, or check for updates.
 
+The Games scan summary counts supported games found, not all scanned Steam apps.
+Elden Ring non-Steam shortcuts can target `Game/eldenring.exe`,
+`Game/modengine2_launcher.exe`, `Game/start_protected_game.exe`, or
+`Game/start_game_in_offline_mode.exe`. Launcher alternatives require the real
+`Game/eldenring.exe`; the backup launcher is not a detection alternative.
+Its fix is offline-only. Apply preserves the protected launcher as
+`start_protected_game-old.exe`; Remove restores it. Existing Mod Engine 2 files
+are not removed. Review file conflicts before replacing files used by other mods.
+
 ### Offline mode and privacy
 
 Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, choose **Mods → Download offline pack**, or download `AnyAspectRatio-Offline-Mods-1.6.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.

@@ -3,15 +3,18 @@ import ReactMarkdown from "react-markdown";
 import { isEditableIniLine } from "../../services/modals";
 import type { ModLogResult, SupportedGame } from "../../services/types";
 
-export function GameTitle({ game, index }: { game: SupportedGame; index?: number }) {
-  const color = game.manual ? "#ff9830" : game.matched_by_executable ? "#9e9e9e" : "#64b5f6";
+export function GameTitle({ game, index, unresolved = false }: {
+  game: SupportedGame; index?: number; unresolved?: boolean;
+}) {
+  const color = unresolved ? "#9e9e9e" : game.manual ? "#ff9830" : game.matched_by_executable ? "#9e9e9e" : "#64b5f6";
   return (
     <strong style={{ display: "block", overflowWrap: "anywhere", color }}>
       {index !== undefined && `${index + 1}. `}
       {game.app_name}
+      {game.offline_only && " (Offline)"}
       {game.source_kind === "local_archive" && " (Custom)"}
       {game.update_available && " (New)"}
-      {game.matched_by_executable && " (.exe)"}
+      {(unresolved || game.matched_by_executable) && " (.exe)"}
     </strong>
   );
 }

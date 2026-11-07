@@ -18,6 +18,7 @@
   "mods": [
     {
       "id": "dark-souls-iii",
+      "offline_only": true,
       "name": "Dark Souls III - Custom Aspect Ratio",
       "steam_app_id": "374320",
       "install_dir": "DARK SOULS III",
@@ -189,6 +190,76 @@
       "wine_dll_overrides": []
     },
     {
+      "id": "elden-ring-ultrawide-fix",
+      "name": "Elden Ring - Ultrawide Fix",
+      "steam_app_id": "1245620",
+      "install_dir": "ELDEN RING",
+      "executable": "Game/eldenring.exe",
+      "executable_alternatives": ["Game/modengine2_launcher.exe", "Game/start_protected_game.exe", "Game/start_game_in_offline_mode.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "external/TechieW/ELDEN RING/Elden Ring Ultrawide Fix-7870-1-0-1-1746293446.zip",
+        "sha256": "6859f4c790668b12294d23c3288c09130f5d2257bd2e60c855fccb2e92b8d9d7",
+        "destination": "Game"
+      },
+      "files": [
+        "Game/anti_cheat_toggler_config.ini",
+        "Game/anti_cheat_toggler_mod_list.txt",
+        "Game/dinput8.dll",
+        "Game/mods/AdjustTheFov/config.ini",
+        "Game/mods/AdjustTheFov.dll",
+        "Game/mods/IncreaseAnimationDistance.dll",
+        "Game/mods/RemoveChromaticAberration.dll",
+        "Game/mods/RemoveVignette.dll",
+        "Game/mods/SkipTheIntro/config.ini",
+        "Game/mods/SkipTheIntro/load.txt",
+        "Game/mods/SkipTheIntro.dll",
+        "Game/mods/UltrawideFix/load.txt",
+        "Game/mods/UltrawideFix.dll",
+        "Game/mod_loader_config.ini",
+        "Game/start_game_in_offline_mode.exe",
+        "Game/toggle_anti_cheat.exe",
+        "Game/_steam_appid.txt",
+        "Game/_winhttp.dll"
+      ],
+      "ini_file": "Game/mods/AdjustTheFov/config.ini",
+      "wine_dll_overrides": ["dinput8=n,b"],
+      "offline_only": true,
+      "launcher_replacement": {
+        "source": "Game/start_game_in_offline_mode.exe",
+        "target": "Game/start_protected_game.exe",
+        "backup": "Game/start_protected_game-old.exe"
+      },
+      "credits": [
+        {
+          "name": "TechieW",
+          "url": "https://www.nexusmods.com/eldenring/mods/7870"
+        }
+      ]
+    },
+    {
+      "id": "undertale",
+      "name": "Undertale - Ultrawide Fix",
+      "steam_app_id": "391540",
+      "install_dir": "Undertale",
+      "executable": "UNDERTALE.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Twig/Undertale/Undertale-Ultrawide-Fix.zip",
+        "sha256": "235c2e668eea15f2abc2bb85cf005cb026ee560af6d08b57153574cd84c5ea6a"
+      },
+      "files": ["data.win"],
+      "backup_file": "data.win.bak",
+      "ini_file": null,
+      "wine_dll_overrides": [],
+      "credits": [
+        {
+          "name": "Twig",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517"
+        }
+      ]
+    },
+    {
       "id": "ori-and-the-will-of-the-wisps",
       "name": "Ori and the Will of the Wisps - Custom Aspect Ratio",
       "steam_app_id": "1057090",
@@ -202,6 +273,22 @@
       "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
       "ini_file": "OriARFix.ini",
       "wine_dll_overrides": ["version=n,b"]
+    },
+    {
+      "id": "palworld",
+      "name": "Palworld - Custom Resolution",
+      "steam_app_id": "1623730",
+      "install_dir": "Palworld",
+      "executable": "Pal/Binaries/Win64/Palworld-Win64-Shipping.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Palworld/Palworld-v1.0.0.zip",
+        "sha256": "b3fe133b223b7d2da2822bfafee745e20a95e4e387b3fef3f0c60450add49ff6",
+        "destination": "Pal/Binaries/Win64"
+      },
+      "files": ["Pal/Binaries/Win64/winmm.dll", "Pal/Binaries/Win64/Palworld_ARFix.asi", "Pal/Binaries/Win64/Palworld_ARFix.ini"],
+      "ini_file": "Pal/Binaries/Win64/Palworld_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
     },
     {
       "id": "persona-5-royal",

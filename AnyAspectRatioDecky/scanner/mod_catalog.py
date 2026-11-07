@@ -16,6 +16,7 @@ from helper.constants import (
     MOD_CATALOG_INVALID_CREDITS_MESSAGE,
     MOD_CATALOG_PINNED_AUTHOR,
     MOD_CATALOG_INVALID_APP_ID_MESSAGE,
+    MOD_CATALOG_INVALID_BACKUP_FILE_MESSAGE,
     MOD_CATALOG_INVALID_ENTRY_MESSAGE,
     MOD_CATALOG_INVALID_FILE_LIST_MESSAGE,
     MOD_CATALOG_INVALID_JSON_MESSAGE,
@@ -40,6 +41,9 @@ from helper.constants import (
     MOD_EXECUTABLE_KEY,
     MOD_EXECUTABLE_ALTERNATIVES_KEY,
     MOD_FILES_KEY,
+    MOD_BACKUP_FILE_KEY,
+    MOD_OFFLINE_ONLY_KEY,
+    MOD_LAUNCHER_REPLACEMENT_KEY,
     MOD_ID_KEY,
     MOD_INI_FILE_KEY,
     MOD_INSTALL_DIRECTORY_KEY,
@@ -86,6 +90,13 @@ class ModCredit:
 
 
 @dataclass(frozen=True)
+class LauncherReplacement:
+    source: str
+    target: str
+    backup: str
+
+
+@dataclass(frozen=True)
 class ModDefinition:
     mod_id: str
     name: str
@@ -99,6 +110,9 @@ class ModDefinition:
     credits: tuple[ModCredit, ...] = ()
     manual: bool = False
     executable_alternatives: tuple[str, ...] = ()
+    backup_file: str | None = None
+    offline_only: bool = False
+    launcher_replacement: LauncherReplacement | None = None
 
 
 def _https_url(value: object) -> bool:
@@ -337,12 +351,61 @@ def _parse_mod(
                 MOD_CATALOG_DUPLICATE_FILE_MESSAGE.format(mod_id=mod_id, path=path)
             )
         seen_files.add(path)
+    backup_file = entry.get(MOD_BACKUP_FILE_KEY)
+    if backup_file is not None:
+        if (
+            not isinstance(backup_file, str)
+            or len(files) != 1
+        ):
+            raise ValueError(
+                MOD_CATALOG_INVALID_BACKUP_FILE_MESSAGE.format(mod_id=mod_id)
+            )
+        _validate_relative_path(backup_file, mod_id)
+        if (
+            PurePosixPath(files[0]).parent != PurePosixPath(backup_file).parent
+            or backup_file == files[0]
+        ):
+            raise ValueError(
+                MOD_CATALOG_INVALID_BACKUP_FILE_MESSAGE.format(mod_id=mod_id)
+            )
     if ini_file is not None and ini_file not in seen_files:
         raise ValueError(MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE.format(mod_id=mod_id))
     if source.kind == MOD_SOURCE_FILES and {
         source_file.destination for source_file in source.files
     } != seen_files:
         raise ValueError(MOD_CATALOG_INVALID_SOURCE_FILES_MESSAGE.format(mod_id=mod_id))
+    offline_only = entry.get(MOD_OFFLINE_ONLY_KEY, False)
+    if not isinstance(offline_only, bool):
+        raise ValueError(f"Mod {mod_id} offline_only must be a boolean")
+    launcher_replacement = None
+    raw_launcher = entry.get(MOD_LAUNCHER_REPLACEMENT_KEY)
+    if raw_launcher is not None:
+        if not isinstance(raw_launcher, dict) or set(raw_launcher) != {
+            "source", "target", "backup"
+        }:
+            raise ValueError(f"Mod {mod_id} has invalid launcher_replacement metadata")
+        for key in ("source", "target", "backup"):
+            value = _require_string(raw_launcher, key, mod_id)
+            _validate_relative_path(value, mod_id)
+        launcher_replacement = LauncherReplacement(**raw_launcher)
+        launcher_paths = {
+            launcher_replacement.source,
+            launcher_replacement.target,
+            launcher_replacement.backup,
+        }
+        if (
+            len(launcher_paths) != 3
+            or not offline_only
+            or manual
+            or backup_file is not None
+            or launcher_replacement.source not in (seen_files | seen_executables)
+            or launcher_replacement.target in seen_files
+            or launcher_replacement.target == executable
+            or launcher_replacement.backup in (seen_files | seen_executables)
+            or PurePosixPath(launcher_replacement.target).parent
+            != PurePosixPath(launcher_replacement.backup).parent
+        ):
+            raise ValueError(f"Mod {mod_id} has invalid launcher_replacement paths")
     if (
         not isinstance(raw_overrides, list)
         or not all(
@@ -365,6 +428,9 @@ def _parse_mod(
         credits=_parse_credits(entry.get(MOD_CATALOG_CREDITS_KEY)) or default_credits,
         manual=manual,
         executable_alternatives=tuple(alternatives),
+        backup_file=backup_file,
+        offline_only=offline_only,
+        launcher_replacement=launcher_replacement,
     )
 
 
