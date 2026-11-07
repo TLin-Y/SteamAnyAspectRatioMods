@@ -100,6 +100,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "guacamelee-stce",
+      "name": "Guacamelee! Super Turbo Championship Edition - Custom Aspect Ratio",
+      "steam_app_id": "275390",
+      "install_dir": "DrinkBox_Game4",
+      "executable": "GuacSTCE.exe",
+      "executable_alternatives": ["Game.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v1.0.0.zip",
+        "sha256": "f4a537e25e78b84e1d3637fcd97e24fe482c2d2bd7934213d653a55f4e1e2dc9"
+      },
+      "files": ["dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"],
+      "ini_file": "Guac1_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "monster-hunter-rise",
       "name": "Monster Hunter Rise - Custom Aspect Ratio",
       "steam_app_id": "1446780",
