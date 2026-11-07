@@ -1,5 +1,7 @@
 # SteamAnyAspectRatioMods
 
+[![Currently supports 116 game mods](https://img.shields.io/badge/Game%20mods-116-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
 On Steam Deck, the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
@@ -8,9 +10,7 @@ On Steam Deck, the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md
 
 ## Support
 
-If these fixes make your games better, you can support the author:
-
-[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+If these fixes make your games better, you can [support the author on Ko-fi](https://ko-fi.com/lin66961).
 
 Fixes by [Lyall](https://codeberg.org/Lyall) are mirrored here unchanged for the Decky plugin; please support him too: [Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)
 
