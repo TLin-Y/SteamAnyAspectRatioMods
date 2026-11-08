@@ -337,6 +337,21 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "dave-the-diver",
+      "name": "DAVE THE DIVER - Custom Aspect Ratio",
+      "steam_app_id": "1868140",
+      "install_dir": "Dave the Diver",
+      "executable": "DaveTheDiver.exe",
+      "source": {
+        "kind": "archive",
+        "path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.0.0.zip",
+        "sha256": "02b7923ad9ec676ebc82dc0f49aa52a24d6d1277e648d4dcfbcb1b297d65d2c8"
+      },
+      "files": ["winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"],
+      "ini_file": "Dave_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "sanabi",
       "name": "SANABI - Custom Aspect Ratio",
       "steam_app_id": "1562700",
