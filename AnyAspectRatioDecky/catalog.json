@@ -102,13 +102,13 @@
       "id": "guacamelee-2",
       "name": "Guacamelee! 2 - Custom Aspect Ratio",
       "steam_app_id": "534550",
-      "install_dir": "Guacamelee 2",
-      "executable": "Guac2_64.exe",
-      "executable_alternatives": ["Guac2_x64.exe"],
+      "install_dir": "Guacamelee2",
+      "executable": "Guac2_x64.exe",
+      "executable_alternatives": ["Guac2_64.exe"],
       "source": {
         "kind": "archive",
-        "path": "Guacamelee 2/Guacamelee-2-v1.0.0.zip",
-        "sha256": "8e6238e53f3607680a1af437ed303bb9f9180e846b7fecf604a3a13914b61e24"
+        "path": "Guacamelee 2/Guacamelee-2-v2.0.1.zip",
+        "sha256": "e88ee8946bb54474352c64983d40e105f8a4bedfb0c3b3e9319c6a6311925785"
       },
       "files": ["dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"],
       "ini_file": "Guac2_ARFix.ini",
@@ -123,8 +123,8 @@
       "executable_alternatives": ["Game.exe"],
       "source": {
         "kind": "archive",
-        "path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v1.0.0.zip",
-        "sha256": "f4a537e25e78b84e1d3637fcd97e24fe482c2d2bd7934213d653a55f4e1e2dc9"
+        "path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.0.zip",
+        "sha256": "a8ea1f8b9153c270d6d0bbc207438e2e20f79d373cb0ac125edc479e53f547ba"
       },
       "files": ["dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"],
       "ini_file": "Guac1_ARFix.ini",
@@ -2958,7 +2958,7 @@
     },
     {
       "id": "poptlcfix",
-      "name": "Prince of Persia: The Lost Crown - PoPTLCFix",
+      "name": "Prince of Persia: The Lost Crown - PoPTLCFix (Steam Deck crashes reported)",
       "steam_app_id": "2751000",
       "install_dir": "Prince of Persia The Lost Crown",
       "executable": "TheLostCrown.exe",
