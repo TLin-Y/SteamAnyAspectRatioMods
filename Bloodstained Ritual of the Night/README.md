@@ -3,22 +3,27 @@
 ## Install
 
 Extract `BloodstainedARFix.asi`,
-`BloodstainedARFix.ini`, and the Ultimate ASI Loader `winmm.dll` beside
+`BloodstainedARFix.ini`, and the Ultimate ASI Loader `winhttp.dll` beside
 `BloodstainedRotN-Win64-Shipping.exe` in `BloodstainedRotN\Binaries\Win64`.
 Use the game's windowed mode.
 
 The root `BloodstainedRotN.exe` is the launcher; install the files beside the shipping executable, not beside the launcher.
+
+When updating from the earlier `winmm.dll` package, remove that mod loader from
+`BloodstainedRotN\Binaries\Win64` before installing `winhttp.dll`. Do not keep both loaders.
 
 ## SteamOS / Winlator
 
 Add the launch option:
 
 ```text
-WINEDLLOVERRIDES="winmm=n,b" %command%
+WINEDLLOVERRIDES="winhttp=n,b;msvcp140,vcruntime140,vcruntime140_1=b" %command%
 ```
 
-The mod uses the Microsoft Visual C++ x64 runtime. Wine environments
-must have the corresponding runtime available.
+The mod uses the Microsoft Visual C++ x64 runtime. On Steam Deck, the game's
+older native VC++ runtime can crash during mod initialization. The launch option
+above uses Proton's builtin VC++ runtime and was verified across two launches.
+Keep the quotes exactly as shown and preserve any other existing launch parameters.
 
 ## Custom Aspect Ratio
 
