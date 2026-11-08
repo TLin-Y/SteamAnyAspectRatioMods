@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 121 game mods](https://img.shields.io/badge/Game%20mods-121-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 122 game mods](https://img.shields.io/badge/Game%20mods-122-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -60,6 +60,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | BRAVELY DEFAULT II | Lyall | [1446650](https://store.steampowered.com/app/1446650) | [v0.0.4](./external/Lyall/BravelyDefault2Fix/BravelyDefault2Fix_0.0.4.zip) | 2025-06-21 | [BravelyDefault2Fix](https://codeberg.org/Lyall/BravelyDefault2Fix) |
 | Clair Obscur: Expedition 33 | Lyall | [1903340](https://store.steampowered.com/app/1903340) | [v0.0.15](./external/Lyall/ClairObscurFix/ClairObscurFix_0.0.15.zip) | 2025-12-22 | [ClairObscurFix](https://codeberg.org/Lyall/ClairObscurFix) |
 | Dark Souls III (Offline) | TLin-Y (fullscreen fix by ellekz) | [374320](https://store.steampowered.com/app/374320) | [v1.1.0](./Dark%20Souls%20III/Dark-Souls-III-v1.1.0.zip) | 2026-11-03 | [README](./Dark%20Souls%20III/README.md) |
+| DAVE THE DIVER | TLin-Y | [1868140](https://store.steampowered.com/app/1868140) | [v1.0.0](./DAVE%20THE%20DIVER/DAVE-THE-DIVER-v1.0.0.zip) | 2026-11-07 | [README](./DAVE%20THE%20DIVER/README.md) |
 | DEAD OR ALIVE 5 Last Round: Core Fighters | Lyall | [311730](https://store.steampowered.com/app/311730) | [v0.0.1](./external/Lyall/DOA5LRFix/DOA5LRFix_0.0.1.zip) | 2025-11-30 | [DOA5LRFix](https://codeberg.org/Lyall/DOA5LRFix) |
 | DEAD OR ALIVE 6 | Lyall | [838380](https://store.steampowered.com/app/838380) | [v0.0.1](./external/Lyall/DOA6Fix/DOA6Fix_0.0.1.zip) | 2025-12-08 | [DOA6Fix](https://codeberg.org/Lyall/DOA6Fix) |
 | DEATH STRANDING 2: ON THE BEACH | Lyall | [3280350](https://store.steampowered.com/app/3280350) | [v0.0.5](./external/Lyall/DeathStranding2Fix/DeathStranding2Fix_0.0.5.zip) | 2026-06-12 | [DeathStranding2Fix](https://codeberg.org/Lyall/DeathStranding2Fix) |
