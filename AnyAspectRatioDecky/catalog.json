@@ -17,6 +17,23 @@
   ],
   "mods": [
     {
+      "id": "bloodstained-ritual-of-the-night",
+      "name": "Bloodstained: Ritual of the Night - Custom Aspect Ratio",
+      "steam_app_id": "692850",
+      "install_dir": "Bloodstained Ritual of the Night",
+      "executable": "BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe",
+      "executable_alternatives": ["BloodstainedRotN.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
+        "sha256": "f2039ed3f82ba815ac3df3c477e815b202bcf453312a8428005514e352e42387",
+        "destination": "BloodstainedRotN/Binaries/Win64"
+      },
+      "files": ["BloodstainedRotN/Binaries/Win64/winmm.dll", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.asi", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini"],
+      "ini_file": "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "sonic-x-shadow-generations",
       "name": "SONIC X SHADOW GENERATIONS - Custom Aspect Ratio",
       "steam_app_id": "2513280",

@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 123 game mods](https://img.shields.io/badge/Game%20mods-123-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 124 game mods](https://img.shields.io/badge/Game%20mods-124-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -57,6 +57,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Binary Domain | Lyall | [203750](https://store.steampowered.com/app/203750) | [v0.0.2](./external/Lyall/BinaryDomainFix/BinaryDomainFix_0.0.2.zip) | 2026-07-30 | [BinaryDomainFix](https://codeberg.org/Lyall/BinaryDomainFix) |
 | Black Myth: Wukong | Lyall | [2358720](https://store.steampowered.com/app/2358720) | [v0.8.5](./external/Lyall/WukongTweak/WukongTweak_0.8.5.zip) | 2025-06-04 | [WukongTweak](https://codeberg.org/Lyall/WukongTweak) |
 | BRAVELY DEFAULT FLYING FAIRY HD Remaster | Lyall | [2833580](https://store.steampowered.com/app/2833580) | [v0.0.1](./external/Lyall/BDFFHDFix/BDFFHDFix_0.0.1.zip) | 2026-04-30 | [BDFFHDFix](https://codeberg.org/Lyall/BDFFHDFix) |
+| Bloodstained: Ritual of the Night | TLin-Y | [692850](https://store.steampowered.com/app/692850) | [v1.0.0](./Bloodstained%20Ritual%20of%20the%20Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip) | 2026-11-08 | [README](./Bloodstained%20Ritual%20of%20the%20Night/README.md) |
 | BRAVELY DEFAULT II | Lyall | [1446650](https://store.steampowered.com/app/1446650) | [v0.0.4](./external/Lyall/BravelyDefault2Fix/BravelyDefault2Fix_0.0.4.zip) | 2025-06-21 | [BravelyDefault2Fix](https://codeberg.org/Lyall/BravelyDefault2Fix) |
 | Clair Obscur: Expedition 33 | Lyall | [1903340](https://store.steampowered.com/app/1903340) | [v0.0.15](./external/Lyall/ClairObscurFix/ClairObscurFix_0.0.15.zip) | 2025-12-22 | [ClairObscurFix](https://codeberg.org/Lyall/ClairObscurFix) |
 | Dark Souls III (Offline) | TLin-Y (fullscreen fix by ellekz) | [374320](https://store.steampowered.com/app/374320) | [v1.1.0](./Dark%20Souls%20III/Dark-Souls-III-v1.1.0.zip) | 2026-11-03 | [README](./Dark%20Souls%20III/README.md) |
