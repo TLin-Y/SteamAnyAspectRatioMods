@@ -1677,41 +1677,19 @@
     },
     {
       "id": "absolumfix",
-      "name": "Absolum - AbsolumFix",
+      "name": "Absolum - Custom Aspect Ratio",
       "steam_app_id": "1904480",
       "install_dir": "Absolum",
       "executable": "x64.steam/Absolum.exe",
       "source": {
         "kind": "archive",
-        "path": "external/Lyall/AbsolumFix/AbsolumFix_0.0.2.zip",
-        "sha256": "a8e2581be83f0d12c082d657cfdc6946fcb424233ae0233489c4ab37c59f7f7f",
+        "path": "Reimpl-Absolum/Absolum-v0.1.0.zip",
+        "sha256": "e633a7c392e422e83f84f4ea1fa6fea2f5e382549e70e8d9214cbde49ab1c145",
         "destination": "x64.steam"
       },
-      "files": [
-        "x64.steam/AbsolumFix.asi",
-        "x64.steam/AbsolumFix.ini",
-        "x64.steam/winhttp.dll"
-      ],
-      "wine_dll_overrides": [
-        "winhttp=n,b"
-      ],
-      "credits": [
-        {
-          "name": "Lyall",
-          "url": "https://codeberg.org/Lyall",
-          "support": [
-            {
-              "label": "Patreon",
-              "url": "https://www.patreon.com/Wintermance"
-            },
-            {
-              "label": "Ko-fi",
-              "url": "https://ko-fi.com/W7W01UAI9"
-            }
-          ]
-        }
-      ],
-      "ini_file": "x64.steam/AbsolumFix.ini"
+      "files": ["x64.steam/winhttp.dll", "x64.steam/Absolum_ARFix.asi", "x64.steam/Absolum_ARFix.ini"],
+      "wine_dll_overrides": ["winhttp=n,b"],
+      "ini_file": "x64.steam/Absolum_ARFix.ini"
     },
     {
       "id": "doa5lrfix",
