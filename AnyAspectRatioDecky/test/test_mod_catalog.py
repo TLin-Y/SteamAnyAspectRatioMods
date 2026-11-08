@@ -292,14 +292,15 @@ class ModCatalogTests(unittest.TestCase):
     def test_guacamelee_2_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-2")
         self.assertEqual("534550", mod.steam_app_id)
-        self.assertEqual("Guacamelee 2", mod.install_dir)
-        self.assertEqual("Guac2_64.exe", mod.executable)
-        self.assertEqual(("Guac2_x64.exe",), mod.executable_alternatives)
+        self.assertEqual("Guacamelee2", mod.install_dir)
+        self.assertEqual("Guac2_x64.exe", mod.executable)
+        self.assertEqual(("Guac2_64.exe",), mod.executable_alternatives)
         self.assertEqual(
             ("dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"),
             mod.files,
         )
         self.assertEqual("Guac2_ARFix.ini", mod.ini_file)
+        self.assertEqual("Guacamelee 2/Guacamelee-2-v2.0.1.zip", mod.source.path)
 
     def test_guacamelee_stce_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-stce")
@@ -312,6 +313,10 @@ class ModCatalogTests(unittest.TestCase):
             mod.files,
         )
         self.assertEqual("Guac1_ARFix.ini", mod.ini_file)
+        self.assertEqual(
+            "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.0.zip",
+            mod.source.path,
+        )
 
     def test_rayman_legends_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "rayman-legends")
@@ -627,23 +632,31 @@ class SupportedGameScannerTests(unittest.TestCase):
                 self.assertTrue(game.executable_found)
                 self.assertEqual(matched_by_executable, game.matched_by_executable)
 
-    def test_guacamelee_alternative_executable_matches_steam_install(self) -> None:
+    def test_guacamelee_2_executables_match_steam_and_shortcuts(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-2")
-        self._touch("Guac2_x64.exe")
-        app = InstalledApp(
-            app_id=mod.steam_app_id,
-            name="Guacamelee! 2",
-            install_dir="Guacamelee! 2",
-            library_path=self.app.library_path,
-            game_path=self.app.game_path,
-        )
-
-        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
-
-        (game,) = report.supported_games
-        self.assertEqual("534550", game.steam_app_id)
-        self.assertEqual(str(self.game_path / "Guac2_x64.exe"), game.executable_path)
-        self.assertTrue(game.matched_by_executable)
+        for executable in ("Guac2_64.exe", "Guac2_x64.exe"):
+            self._touch(executable)
+            for is_shortcut in (False, True):
+                with self.subTest(executable=executable, is_shortcut=is_shortcut):
+                    app = InstalledApp(
+                        app_id=mod.steam_app_id,
+                        name="Guacamelee! 2",
+                        install_dir="Guacamelee2",
+                        library_path=self.app.library_path,
+                        game_path=self.app.game_path,
+                        shortcut_executable=str(self.game_path / executable),
+                    )
+                    scan = SteamScanReport(
+                        1, 1, [] if is_shortcut else [app], [],
+                        [app] if is_shortcut else [],
+                    )
+                    report = match_supported_games(scan, (mod,))
+                    (game,) = report.supported_games
+                    self.assertEqual("534550", game.steam_app_id)
+                    self.assertEqual(str(self.game_path / executable), game.executable_path)
+                    self.assertTrue(game.executable_found)
+                    self.assertEqual(is_shortcut, game.matched_by_executable)
+            (self.game_path / executable).unlink()
 
     def test_guacamelee_stce_executable_names_match_steam_and_other_folders(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-stce")
