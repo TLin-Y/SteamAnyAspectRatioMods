@@ -26,12 +26,12 @@
       "source": {
         "kind": "archive",
         "path": "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
-        "sha256": "f2039ed3f82ba815ac3df3c477e815b202bcf453312a8428005514e352e42387",
+        "sha256": "bad9273f31874660ca580702d429e25aa2456dc9b137f987cd23f174e8b5c0ef",
         "destination": "BloodstainedRotN/Binaries/Win64"
       },
-      "files": ["BloodstainedRotN/Binaries/Win64/winmm.dll", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.asi", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini"],
+      "files": ["BloodstainedRotN/Binaries/Win64/winhttp.dll", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.asi", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini"],
       "ini_file": "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini",
-      "wine_dll_overrides": ["winmm=n,b"]
+      "wine_dll_overrides": ["winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"]
     },
     {
       "id": "sonic-x-shadow-generations",

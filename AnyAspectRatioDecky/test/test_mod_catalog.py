@@ -148,11 +148,14 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(destination, mod.source.destination)
         self.assertEqual(
             tuple(f"{destination}/{name}" for name in
-                  ("winmm.dll", "BloodstainedARFix.asi", "BloodstainedARFix.ini")),
+                  ("winhttp.dll", "BloodstainedARFix.asi", "BloodstainedARFix.ini")),
             mod.files,
         )
         self.assertEqual(f"{destination}/BloodstainedARFix.ini", mod.ini_file)
-        self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
+        self.assertEqual(
+            ("winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"),
+            mod.wine_dll_overrides,
+        )
         self.assertEqual(
             "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
             mod.source.path,
@@ -160,12 +163,16 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         with ZipFile(root / mod.source.path) as archive:
             self.assertEqual(
-                {"winmm.dll", "BloodstainedARFix.asi", "BloodstainedARFix.ini",
+                {"winhttp.dll", "BloodstainedARFix.asi", "BloodstainedARFix.ini",
                  "README.md", "LICENSE-Ultimate-ASI-Loader.txt"},
                 set(archive.namelist()),
             )
             self.assertEqual(
                 (root / mod_readme_path(mod)).read_bytes(), archive.read("README.md")
+            )
+            self.assertIn(
+                b'WINEDLLOVERRIDES="' + ";".join(mod.wine_dll_overrides).encode("ascii") + b'" %command%',
+                archive.read("README.md"),
             )
             config = configparser.ConfigParser()
             config.read_string(archive.read("BloodstainedARFix.ini").decode("utf-8"))
