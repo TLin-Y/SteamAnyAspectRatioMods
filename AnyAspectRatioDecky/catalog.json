@@ -17,6 +17,22 @@
   ],
   "mods": [
     {
+      "id": "sonic-x-shadow-generations",
+      "name": "SONIC X SHADOW GENERATIONS - Custom Aspect Ratio",
+      "steam_app_id": "2513280",
+      "install_dir": "SONIC_X_SHADOW_GENERATIONS",
+      "executable": "SONIC_X_SHADOW_GENERATIONS.exe",
+      "executable_alternatives": ["SONIC_GENERATIONS.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "SONIC X SHADOW GENERATIONS/SONIC-X-SHADOW-GENERATIONS-v1.0.0.zip",
+        "sha256": "6a3200390914015164e14a2bd1207a68a6630ddfd097dc8f17c3683f4f9141ee"
+      },
+      "files": ["winmm.dll", "SonicShadow_ARFix.asi", "GenerationsARFix.asi", "SonicShadow_ARFix.ini"],
+      "ini_file": "SonicShadow_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "dark-souls-iii",
       "offline_only": true,
       "name": "Dark Souls III - Custom Aspect Ratio",

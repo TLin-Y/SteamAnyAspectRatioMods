@@ -61,7 +61,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([27, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([28, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -76,7 +76,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 28), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 29), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -87,11 +87,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(28, len(catalog))
+        self.assertEqual(29, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            25,
+            26,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -134,6 +134,50 @@ class ModCatalogTests(unittest.TestCase):
                         (repository_root / source_file.path).is_file(),
                         candidate.mod_id,
                     )
+
+    def test_sonic_x_shadow_generations_package(self) -> None:
+        import configparser
+
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "sonic-x-shadow-generations")
+        self.assertEqual("2513280", mod.steam_app_id)
+        self.assertEqual("SONIC_X_SHADOW_GENERATIONS", mod.install_dir)
+        self.assertEqual("SONIC_X_SHADOW_GENERATIONS.exe", mod.executable)
+        self.assertEqual(("SONIC_GENERATIONS.exe",), mod.executable_alternatives)
+        self.assertEqual(
+            ("winmm.dll", "SonicShadow_ARFix.asi", "GenerationsARFix.asi", "SonicShadow_ARFix.ini"),
+            mod.files,
+        )
+        self.assertEqual("SonicShadow_ARFix.ini", mod.ini_file)
+        self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
+        from scanner.mod_installer import existing_mod_logs, read_mod_log
+
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "SonicShadow_ARFix.log"
+            log.write_text("shared Sonic and Shadow log", encoding="utf-8")
+            self.assertEqual(["SonicShadow_ARFix.log"], existing_mod_logs(mod.files, directory))
+            self.assertEqual(
+                ("shared Sonic and Shadow log", False),
+                read_mod_log(mod, directory, "SonicShadow_ARFix.log"),
+            )
+        self.assertEqual(
+            "SONIC X SHADOW GENERATIONS/SONIC-X-SHADOW-GENERATIONS-v1.0.0.zip",
+            mod.source.path,
+        )
+        root = Path(__file__).resolve().parents[2]
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertEqual(
+                set(mod.files) | {"README.md", "LICENSE-Ultimate-ASI-Loader.txt"},
+                set(archive.namelist()),
+            )
+            self.assertEqual(
+                (root / mod_readme_path(mod)).read_bytes(), archive.read("README.md")
+            )
+            config = configparser.ConfigParser()
+            config.read_string(archive.read(mod.ini_file).decode("utf-8"))
+            for section in ("Shadow", "Generations"):
+                self.assertTrue(config.getboolean(section, "CameraCorrection"))
+                self.assertTrue(config.getboolean(section, "RemoveLetterbox"))
+            self.assertFalse(config.getboolean("Diagnostics", "VerboseDiagnostics"))
 
     def test_visions_of_mana_install_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "visions-of-mana")
