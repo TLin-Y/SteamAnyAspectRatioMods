@@ -61,7 +61,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([26, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([27, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -76,7 +76,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 27), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 28), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -87,11 +87,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(27, len(catalog))
+        self.assertEqual(28, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            24,
+            25,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -163,6 +163,22 @@ class ModCatalogTests(unittest.TestCase):
             },
             set(palworld.files),
         )
+
+    def test_absolum_catalog_paths(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "absolumfix")
+        self.assertEqual("1904480", mod.steam_app_id)
+        self.assertEqual("Absolum", mod.install_dir)
+        self.assertEqual("x64.steam/Absolum.exe", mod.executable)
+        self.assertEqual("x64.steam", mod.source.destination)
+        self.assertEqual(
+            ("x64.steam/winhttp.dll", "x64.steam/Absolum_ARFix.asi", "x64.steam/Absolum_ARFix.ini"),
+            mod.files,
+        )
+        self.assertEqual("x64.steam/Absolum_ARFix.ini", mod.ini_file)
+        self.assertEqual(("winhttp=n,b",), mod.wine_dll_overrides)
+        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("Reimpl-Absolum/Absolum-v0.1.0.zip", mod.source.path)
+        self.assertEqual(("TLin-Y",), tuple(credit.name for credit in mod.credits))
 
     def test_dave_the_diver_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "dave-the-diver")
@@ -593,6 +609,23 @@ class SupportedGameScannerTests(unittest.TestCase):
                 (game,) = match_supported_games(scan, (mod,)).supported_games
                 self.assertTrue(game.executable_found)
                 self.assertEqual(str(self.game_path / "other.exe"), game.executable_path)
+
+    def test_absolum_steam_and_executable_fallback(self) -> None:
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "absolumfix")
+        self._touch("x64.steam/Absolum.exe")
+        for install_dir, matched_by_executable in (("Absolum", False), ("Other", True)):
+            with self.subTest(install_dir=install_dir):
+                app = replace(
+                    self.app,
+                    app_id=mod.steam_app_id,
+                    install_dir=install_dir,
+                )
+                report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+                (game,) = report.supported_games
+                self.assertEqual("1904480", game.steam_app_id)
+                self.assertEqual(str(self.game_path / mod.executable), game.executable_path)
+                self.assertTrue(game.executable_found)
+                self.assertEqual(matched_by_executable, game.matched_by_executable)
 
     def test_guacamelee_alternative_executable_matches_steam_install(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "guacamelee-2")
