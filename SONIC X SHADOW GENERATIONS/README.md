@@ -25,10 +25,10 @@ Both fixes write to `SonicShadow_ARFix.log`, which is available in the plugin's 
 
 ## Demos
 
-Shadow Generations:  right shows the limitation of the existing community mod.
+Shadow Generations: left is this mod; right shows the limitation of the existing community mod.
 
-![Shadow Generations](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/SONIC%20X%20SHADOW%20GENERATIONS/shadow.jpg)
+![Shadow Generations: this mod on the left, existing community mod limitation on the right](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/SONIC%20X%20SHADOW%20GENERATIONS/shadow.jpg)
 
-Sonic Generations:
+Sonic Generations: this mod.
 
-![Sonic Generations](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/SONIC%20X%20SHADOW%20GENERATIONS/sonic.jpg)
+![Sonic Generations with this mod](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/SONIC%20X%20SHADOW%20GENERATIONS/sonic.jpg)

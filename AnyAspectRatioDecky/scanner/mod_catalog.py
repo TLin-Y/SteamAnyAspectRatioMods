@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
@@ -49,6 +50,8 @@ from helper.constants import (
     MOD_INSTALL_DIRECTORY_KEY,
     MOD_MANUAL_KEY,
     MOD_NAME_KEY,
+    MOD_DISPLAY_TAGS_KEY,
+    MOD_DISPLAY_TAG_PATTERN,
     MOD_SOURCE_ARCHIVE,
     MOD_SOURCE_DESTINATION_KEY,
     MOD_SOURCE_DIRECTORY,
@@ -97,6 +100,14 @@ class LauncherReplacement:
 
 
 @dataclass(frozen=True)
+class IniResolutionPair:
+    section: str
+    width: str
+    height: str
+    kind: str
+
+
+@dataclass(frozen=True)
 class ModDefinition:
     mod_id: str
     name: str
@@ -113,6 +124,8 @@ class ModDefinition:
     backup_file: str | None = None
     offline_only: bool = False
     launcher_replacement: LauncherReplacement | None = None
+    display_tags: tuple[str, ...] = ()
+    ini_resolution: tuple[IniResolutionPair, ...] = ()
 
 
 def _https_url(value: object) -> bool:
@@ -334,6 +347,28 @@ def _parse_mod(
     if ini_file is not None:
         _validate_relative_path(ini_file, mod_id)
 
+    raw_resolution = entry.get("ini_resolution", [])
+    if not isinstance(raw_resolution, list) or (raw_resolution and (not ini_file or manual)):
+        raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
+    resolution_pairs: list[IniResolutionPair] = []
+    seen_resolution_keys: set[tuple[str, str]] = set()
+    for pair in raw_resolution:
+        if (
+            not isinstance(pair, dict)
+            or set(pair) != {"section", "width", "height", "kind"}
+            or not all(isinstance(pair[key], str) for key in pair)
+            or not re.fullmatch(r"[A-Za-z0-9 _.-]{1,80}", pair["section"], re.ASCII)
+            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair["width"], re.ASCII)
+            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair["height"], re.ASCII)
+            or pair["kind"] not in ("pixels", "ratio")
+        ):
+            raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
+        keys = {(pair["section"].casefold(), pair[key].casefold()) for key in ("width", "height")}
+        if len(keys) != 2 or keys & seen_resolution_keys:
+            raise ValueError(f"Mod {mod_id} has duplicate ini_resolution keys")
+        seen_resolution_keys.update(keys)
+        resolution_pairs.append(IniResolutionPair(**pair))
+
     raw_files = entry.get(MOD_FILES_KEY)
     raw_overrides = entry.get(MOD_WINE_OVERRIDES_KEY)
     if (
@@ -377,6 +412,16 @@ def _parse_mod(
     offline_only = entry.get(MOD_OFFLINE_ONLY_KEY, False)
     if not isinstance(offline_only, bool):
         raise ValueError(f"Mod {mod_id} offline_only must be a boolean")
+    raw_display_tags = entry.get(MOD_DISPLAY_TAGS_KEY, [])
+    if (
+        not isinstance(raw_display_tags, list)
+        or not all(
+            isinstance(tag, str) and MOD_DISPLAY_TAG_PATTERN.fullmatch(tag)
+            for tag in raw_display_tags
+        )
+        or len(set(raw_display_tags)) != len(raw_display_tags)
+    ):
+        raise ValueError(f"Mod {mod_id} has invalid display_tags")
     launcher_replacement = None
     raw_launcher = entry.get(MOD_LAUNCHER_REPLACEMENT_KEY)
     if raw_launcher is not None:
@@ -431,6 +476,8 @@ def _parse_mod(
         backup_file=backup_file,
         offline_only=offline_only,
         launcher_replacement=launcher_replacement,
+        display_tags=tuple(raw_display_tags),
+        ini_resolution=tuple(resolution_pairs),
     )
 
 

@@ -77,6 +77,8 @@ LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE = (
 LOG_EVENT_MOD_FILE_OPERATION_STARTED = "mod_files.operation_started"
 LOG_EVENT_MOD_FILE_OPERATION_COMPLETED = "mod_files.operation_completed"
 LOG_EVENT_MOD_FILE_OPERATION_FAILED = "mod_files.operation_failed"
+LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK = "mod_files.ini_permissions_fallback"
+LOG_EVENT_MOD_INI_ADJUSTMENT_SKIPPED = "mod_files.ini_adjustment_skipped"
 LOG_EVENT_SETTINGS_SAVED = "settings.saved"
 LOG_EVENT_SETTINGS_REJECTED = "settings.rejected"
 LOG_EVENT_DEPENDENCY_UPDATE_STARTED = "dependencies.update_started"
@@ -131,6 +133,8 @@ MOD_LAUNCHER_REPLACEMENT_KEY = "launcher_replacement"
 MOD_INI_FILE_KEY = "ini_file"
 MOD_WINE_OVERRIDES_KEY = "wine_dll_overrides"
 MOD_MANUAL_KEY = "manual"
+MOD_DISPLAY_TAGS_KEY = "display_tags"
+MOD_DISPLAY_TAG_PATTERN = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
 MOD_MANUAL_INSTALL_MESSAGE = "Mod {mod_id} must be installed manually; follow its ReadMe"
 
 MOD_CATALOG_INVALID_JSON_MESSAGE = "Mod catalog is not valid JSON: {error}"

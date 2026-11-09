@@ -31,6 +31,7 @@
       },
       "files": ["BloodstainedRotN/Binaries/Win64/winhttp.dll", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.asi", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini"],
       "ini_file": "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"]
     },
     {
@@ -43,7 +44,7 @@
       "source": {
         "kind": "archive",
         "path": "SONIC X SHADOW GENERATIONS/SONIC-X-SHADOW-GENERATIONS-v1.0.0.zip",
-        "sha256": "6a3200390914015164e14a2bd1207a68a6630ddfd097dc8f17c3683f4f9141ee"
+        "sha256": "ced0c3b87bd646afee6dbc69ffcce47e1d6e44c0a06d36a68b6ebdca1606da68"
       },
       "files": ["winmm.dll", "SonicShadow_ARFix.asi", "GenerationsARFix.asi", "SonicShadow_ARFix.ini"],
       "ini_file": "SonicShadow_ARFix.ini",
@@ -64,6 +65,7 @@
       },
       "files": ["Game/d3d11.dll", "Game/dinput8.dll", "Game/DS3_ARFix.asi", "Game/DS3_ARFix.ini"],
       "ini_file": "Game/DS3_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8,d3d11=n,b"]
     },
     {
@@ -79,6 +81,7 @@
       },
       "files": ["dxgi.dll", "DW3RE_ARFix.asi", "DW3RE_ARFix.ini"],
       "ini_file": "DW3RE_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
@@ -94,6 +97,7 @@
       },
       "files": ["dinput8.dll", "DWOriginsFix.asi", "DWOriginsFix.ini"],
       "ini_file": "DWOriginsFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -114,6 +118,7 @@
         "white_data/prog/win/bin/dinput8.dll"
       ],
       "ini_file": "white_data/prog/win/bin/FF13_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "TargetWidth", "height": "TargetHeight", "kind": "pixels"}],
       "wine_dll_overrides": ["d3d9,dinput8=n,b"]
     },
     {
@@ -129,6 +134,7 @@
       },
       "files": ["dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"],
       "ini_file": "Ys8_AspectPatch.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -145,6 +151,7 @@
       },
       "files": ["dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"],
       "ini_file": "Guac2_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -161,6 +168,7 @@
       },
       "files": ["dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"],
       "ini_file": "Guac1_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -176,6 +184,8 @@
       },
       "files": ["dinput8.dll", "MHRiseFix.asi", "MHRiseFix.ini"],
       "ini_file": "MHRiseFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -248,6 +258,7 @@
         "plugin/nmeffect.dll", "plugin/nmloader.dll"
       ],
       "ini_file": "NinjaGaidenMCFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -352,6 +363,7 @@
       },
       "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
       "ini_file": "OriARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "ratio"}],
       "wine_dll_overrides": ["version=n,b"]
     },
     {
@@ -367,6 +379,8 @@
       },
       "files": ["dinput8.dll", "RaymanLegends_ARFix.asi", "RaymanLegends_ARFix.ini"],
       "ini_file": "RaymanLegends_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -382,6 +396,7 @@
       },
       "files": ["winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"],
       "ini_file": "Dave_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
@@ -413,6 +428,7 @@
       },
       "files": ["Pal/Binaries/Win64/winmm.dll", "Pal/Binaries/Win64/Palworld_ARFix.asi", "Pal/Binaries/Win64/Palworld_ARFix.ini"],
       "ini_file": "Pal/Binaries/Win64/Palworld_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "TargetWidth", "height": "TargetHeight", "kind": "pixels"}],
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
@@ -428,6 +444,8 @@
       },
       "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
       "ini_file": "P5R_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -439,10 +457,12 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil 2 Remake/Resident-Evil-2-Remake-v1.2.0.zip",
-        "sha256": "f7cb3e6f34247e3f53c2d88e5c0f288cec41ffeed0b4a75ff1b3ae4c16539bf0"
+        "sha256": "fc8cd52274f2e4b0bea68e49e0ce9d6aafc95d3d6008835dc0ab720bbca85534"
       },
       "files": ["dinput8.dll", "RE2_ARFix.asi", "RE2_ARFix.ini"],
       "ini_file": "RE2_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -458,6 +478,8 @@
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -473,6 +495,8 @@
       },
       "files": ["dinput8.dll", "RE4_ARFix.asi", "RE4_ARFix.ini"],
       "ini_file": "RE4_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -488,6 +512,8 @@
       },
       "files": ["dinput8.dll", "RE7_ARFix.asi", "RE7_ARFix.ini"],
       "ini_file": "RE7_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -507,6 +533,8 @@
         "RE8_AR_FOV_Fix.ini"
       ],
       "ini_file": "RE8_AR_FOV_Fix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -527,6 +555,7 @@
         "Arise/Binaries/Win64/winmm.dll"
       ],
       "ini_file": "Arise/Binaries/Win64/ToA_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "ratio"}],
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
@@ -558,6 +587,7 @@
         "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini"
       ],
       "ini_file": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "TargetWidth", "height": "TargetHeight", "kind": "pixels"}],
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
@@ -578,6 +608,7 @@
         "VisionsofMana/Binaries/Win64/VoM_ARFix.ini"
       ],
       "ini_file": "VisionsofMana/Binaries/Win64/VoM_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
@@ -593,6 +624,8 @@
       },
       "files": ["dinput8.dll", "SWSanada_ARFix.asi", "SWSanada_ARFix.ini"],
       "ini_file": "SWSanada_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -604,7 +637,7 @@
       "source": {
         "kind": "archive",
         "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.1.0.zip",
-        "sha256": "ebe728831b356d42b94b42c0426f68b7edbdf51e13ada81d6452fa4eab678770"
+        "sha256": "b7413040c5079b64f550b5f81ecdd82d6ff71acfdd3c8e3e68ce2141d60021e8"
       },
       "files": [
         "dinput8.dll",
@@ -616,6 +649,8 @@
         "mods/fix.dll"
       ],
       "ini_file": "WO3U_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -631,6 +666,8 @@
       },
       "files": ["dinput8.dll", "WO4U_ARFix.asi", "WO4U_ARFix.ini"],
       "ini_file": "WO4U_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -816,7 +853,8 @@
           ]
         }
       ],
-      "ini_file": "HundredLineFix.ini"
+      "ini_file": "HundredLineFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "clairobscurfix",
@@ -892,7 +930,8 @@
           ]
         }
       ],
-      "ini_file": "RiseOfTheRoninFix.ini"
+      "ini_file": "RiseOfTheRoninFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "atelieryumiafix",
@@ -929,7 +968,8 @@
           ]
         }
       ],
-      "ini_file": "AtelierYumiaFix.ini"
+      "ini_file": "AtelierYumiaFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "ff7remakefix",
@@ -966,7 +1006,8 @@
           ]
         }
       ],
-      "ini_file": "End/Binaries/Win64/FF7RemakeFix.ini"
+      "ini_file": "End/Binaries/Win64/FF7RemakeFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "metaphorfix",
@@ -1225,7 +1266,8 @@
           ]
         }
       ],
-      "ini_file": "OPPW4Fix.ini"
+      "ini_file": "OPPW4Fix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "ffxvifix",
@@ -1262,7 +1304,8 @@
           ]
         }
       ],
-      "ini_file": "FFXVIFix.ini"
+      "ini_file": "FFXVIFix.ini",
+      "ini_resolution": [{"section": "Fix Resolution", "width": "WindowedResX", "height": "WindowedResY", "kind": "pixels"}]
     },
     {
       "id": "wukongtweak",
@@ -1410,7 +1453,8 @@
           ]
         }
       ],
-      "ini_file": "WOFFFix.ini"
+      "ini_file": "WOFFFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "bravelydefault2fix",
@@ -1521,7 +1565,8 @@
           ]
         }
       ],
-      "ini_file": "DeathStrandingDCFix.ini"
+      "ini_file": "DeathStrandingDCFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "wolongfix",
@@ -1558,7 +1603,8 @@
           ]
         }
       ],
-      "ini_file": "WoLongFix.ini"
+      "ini_file": "WoLongFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "mgsdeltafix",
@@ -1722,7 +1768,8 @@
       },
       "files": ["x64.steam/winhttp.dll", "x64.steam/Absolum_ARFix.asi", "x64.steam/Absolum_ARFix.ini"],
       "wine_dll_overrides": ["winhttp=n,b"],
-      "ini_file": "x64.steam/Absolum_ARFix.ini"
+      "ini_file": "x64.steam/Absolum_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "doa5lrfix",
@@ -1759,7 +1806,8 @@
           ]
         }
       ],
-      "ini_file": "DOA5LRFix.ini"
+      "ini_file": "DOA5LRFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "doa6fix",
@@ -1796,7 +1844,8 @@
           ]
         }
       ],
-      "ini_file": "DOA6Fix.ini"
+      "ini_file": "DOA6Fix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "tormentedsouls2fix",
@@ -1907,7 +1956,8 @@
           ]
         }
       ],
-      "ini_file": "DQ7RFix.ini"
+      "ini_file": "DQ7RFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "nioh2fix",
@@ -1944,7 +1994,8 @@
           ]
         }
       ],
-      "ini_file": "Nioh2Fix.ini"
+      "ini_file": "Nioh2Fix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "nioh3fix",
@@ -1981,7 +2032,8 @@
           ]
         }
       ],
-      "ini_file": "Nioh3Fix.ini"
+      "ini_file": "Nioh3Fix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "futuresoldierfix",
@@ -2055,7 +2107,8 @@
           ]
         }
       ],
-      "ini_file": "FF2RFix.ini"
+      "ini_file": "FF2RFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "deathstranding2fix",
@@ -2465,7 +2518,8 @@
           ]
         }
       ],
-      "ini_file": "End/Binaries/Win64/FF7RebirthFix.ini"
+      "ini_file": "End/Binaries/Win64/FF7RebirthFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "p3rfix",
@@ -2503,7 +2557,8 @@
           ]
         }
       ],
-      "ini_file": "P3R/Binaries/Win64/P3RFix.ini"
+      "ini_file": "P3R/Binaries/Win64/P3RFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "gbfrelinkfix",
@@ -2540,7 +2595,8 @@
           ]
         }
       ],
-      "ini_file": "scripts/GBFRelinkFix.ini"
+      "ini_file": "scripts/GBFRelinkFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "so4fix",
@@ -2577,7 +2633,8 @@
           ]
         }
       ],
-      "ini_file": "SO4Fix.ini"
+      "ini_file": "SO4Fix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "octopath2fix",
@@ -2691,7 +2748,8 @@
           ]
         }
       ],
-      "ini_file": "scripts/P5StrikersFix.ini"
+      "ini_file": "scripts/P5StrikersFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "doaxvvprismfix",
@@ -2728,7 +2786,8 @@
           ]
         }
       ],
-      "ini_file": "DOAXVVPrismFix.ini"
+      "ini_file": "DOAXVVPrismFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "ninja-gaiden-sigma-mcfix",
@@ -2765,7 +2824,8 @@
           ]
         }
       ],
-      "ini_file": "NinjaGaidenMCFix.ini"
+      "ini_file": "NinjaGaidenMCFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "ninja-gaiden-3-mcfix",
@@ -2802,7 +2862,8 @@
           ]
         }
       ],
-      "ini_file": "NinjaGaidenMCFix.ini"
+      "ini_file": "NinjaGaidenMCFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "fatesamurairemnantfix",
@@ -2839,7 +2900,8 @@
           ]
         }
       ],
-      "ini_file": "FateSamuraiRemnantFix.ini"
+      "ini_file": "FateSamuraiRemnantFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "mdaraincodeplusfix",
@@ -5894,7 +5956,9 @@
           "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
         }
       ],
-      "ini_file": "UltrawideFix.ini"
+      "ini_file": "UltrawideFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["stretch"]
     },
     {
       "id": "mhw16x10fix",
@@ -5920,7 +5984,8 @@
           "url": "https://github.com/MinuteReversal"
         }
       ],
-      "ini_file": "mhw_16x10.ini"
+      "ini_file": "mhw_16x10.ini",
+      "ini_resolution": [{"section": "Fix", "width": "Width", "height": "Height", "kind": "pixels"}]
     }
   ]
 }

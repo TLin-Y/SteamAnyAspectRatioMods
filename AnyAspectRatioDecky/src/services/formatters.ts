@@ -1,3 +1,12 @@
+import type { updateDependencies } from "./callables";
+
+export function formatCatalogUpdate(result: Awaited<ReturnType<typeof updateDependencies>>): string {
+  const summary = `${result.catalog_changed ? "Catalog updated" : "Catalog already up to date"}: ` +
+    `${result.mod_count} mod(s), ${result.local_archive_count} local archive(s). ` +
+    "Cached mod downloads were refreshed.";
+  return [summary, ...result.warnings].join("\n");
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;

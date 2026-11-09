@@ -18,6 +18,8 @@ from helper.constants import (
     LOG_EVENT_MOD_FILE_OPERATION_COMPLETED,
     LOG_EVENT_MOD_FILE_OPERATION_FAILED,
     LOG_EVENT_MOD_FILE_OPERATION_STARTED,
+    LOG_EVENT_MOD_INI_ADJUSTMENT_SKIPPED,
+    LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK,
     LOG_EVENT_PLUGIN_STARTED,
     LOG_EVENT_PLUGIN_STOPPED,
     LOG_EVENT_SETTINGS_REJECTED,
@@ -31,7 +33,7 @@ from helper.constants import (
     STEAM_LIBRARY_UNAVAILABLE_WARNING,
 )
 from logger.plugin_logger import PluginLogger, attach_file_handler, clear_file_handler_logs
-from scanner import scan_supported_games as scan_supported_games_report
+from scanner import SupportedGame, scan_supported_games as scan_supported_games_report
 from scanner.local_archives import scan_local_archives
 from scanner.plugin_updater import (
     PLUGIN_NAME,
@@ -52,6 +54,7 @@ from scanner.mod_installer import (
     set_archive_cache_dir,
     set_offline_mode as block_network,
     set_pack_dir,
+    update_existing_ini_resolution,
     write_mod_ini,
 )
 from store import (
@@ -378,6 +381,7 @@ class Plugin:
     async def get_settings(self) -> dict[str, object]:
         store = get_store()
         settings = store.load_settings()
+        defaults = Settings()
         source = load_active_catalog(store, settings)
         default_url, default_ref = read_catalog_repository()
         archives, warnings = self._scan_local_archives(store, settings)
@@ -388,6 +392,8 @@ class Plugin:
                 "catalog_repository_url": default_url,
                 "catalog_ref": default_ref,
                 "catalog_path": DEFAULT_CATALOG_PATH,
+                "ini_resolution_width": defaults.ini_resolution_width,
+                "ini_resolution_height": defaults.ini_resolution_height,
             },
             "catalog": {
                 "origin": source.origin,
@@ -408,15 +414,28 @@ class Plugin:
         catalog_ref: str,
         catalog_path: str,
         local_archive_dir: str,
+        ini_resolution_width: str,
+        ini_resolution_height: str,
     ) -> dict[str, object]:
         store = get_store()
         try:
+            if (
+                not isinstance(ini_resolution_width, str)
+                or not ini_resolution_width.isascii()
+                or not ini_resolution_width.isdecimal()
+                or not isinstance(ini_resolution_height, str)
+                or not ini_resolution_height.isascii()
+                or not ini_resolution_height.isdecimal()
+            ):
+                raise ValueError("INI resolution dimensions must be whole numbers")
             requested = validate_settings(
                 Settings(
                     catalog_repository_url,
                     catalog_ref,
                     catalog_path,
                     local_archive_dir,
+                    ini_resolution_width=int(ini_resolution_width),
+                    ini_resolution_height=int(ini_resolution_height),
                 )
             )
         except ValueError:
@@ -427,12 +446,26 @@ class Plugin:
         default_url, default_ref = read_catalog_repository()
         with pack_operation():
             previous = store.load_settings()
-            settings = Settings(
-                "" if requested.catalog_repository_url == default_url else requested.catalog_repository_url,
-                "" if requested.catalog_ref == default_ref else requested.catalog_ref,
-                "" if requested.catalog_path == DEFAULT_CATALOG_PATH else requested.catalog_path,
-                requested.local_archive_dir,
-                previous.offline_mode,
+            settings = replace(
+                requested,
+                catalog_repository_url=(
+                    "" if requested.catalog_repository_url == default_url
+                    else requested.catalog_repository_url
+                ),
+                catalog_ref=(
+                    "" if requested.catalog_ref == default_ref
+                    else requested.catalog_ref
+                ),
+                catalog_path=(
+                    "" if requested.catalog_path == DEFAULT_CATALOG_PATH
+                    else requested.catalog_path
+                ),
+                offline_mode=previous.offline_mode,
+                ini_resolution_update_pending=(
+                    previous.ini_resolution_update_pending
+                    or (requested.ini_resolution_width, requested.ini_resolution_height)
+                    != (previous.ini_resolution_width, previous.ini_resolution_height)
+                ),
             )
             store.save_settings(settings)
             source_changed = previous.source_key() != settings.source_key()
@@ -518,6 +551,80 @@ class Plugin:
             log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="cache-write")
         return result
 
+    async def update_current_resolution(self) -> dict[str, object]:
+        log.info(LOG_EVENT_MOD_FILE_OPERATION_STARTED, phase="update-resolution")
+        try:
+            report = self._scan()
+            settings = get_store().load_settings()
+        except (OSError, ValueError):
+            log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, phase="update-resolution")
+            raise
+
+        candidates: dict[tuple[str, str], list[SupportedGame]] = {}
+        skipped: list[str] = []
+        for game in report.supported_games:
+            mod = report.mods[game.mod_id]
+            if not game.game_path or game.manual:
+                continue
+            if not mod.ini_resolution:
+                if game.ini_path and game.file_status == "complete":
+                    skipped.append(f"{game.app_name}: no catalogued resolution fields.")
+                continue
+            if game.ambiguity_group and not game.match_locked:
+                skipped.append(f"{game.app_name}: select the correct mod first.")
+                continue
+            if not game.ini_path:
+                continue
+            if game.file_status != "complete":
+                skipped.append(f"{game.app_name}: mod files are incomplete.")
+                continue
+            key = (str(Path(game.game_path).resolve()), mod.ini_file or "")
+            candidates.setdefault(key, []).append(game)
+
+        updated: list[str] = []
+        unchanged: list[str] = []
+        failures: list[str] = []
+        warnings = list(report.warnings)
+        for games in candidates.values():
+            if len(games) != 1:
+                skipped.extend(f"{game.app_name}: INI is shared by multiple matches." for game in games)
+                continue
+            game = games[0]
+            mod = report.mods[game.mod_id]
+            if game.game_path is None:
+                continue
+            try:
+                changed, permissions_preserved = update_existing_ini_resolution(
+                    mod, game.game_path, settings.ini_resolution_width, settings.ini_resolution_height
+                )
+            except (OSError, ValueError) as error:
+                log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, mod_id=mod.mod_id, phase="update-resolution")
+                failures.append(f"{game.app_name}: {error}")
+                continue
+            if changed:
+                updated.append(game.app_name)
+                if not permissions_preserved:
+                    log.warning(LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK, mod_id=mod.mod_id)
+            else:
+                unchanged.append(game.app_name)
+        with pack_operation():
+            store = get_store()
+            latest = store.load_settings()
+            if (
+                not failures
+                and latest.ini_resolution_update_pending
+                and (latest.ini_resolution_width, latest.ini_resolution_height)
+                == (settings.ini_resolution_width, settings.ini_resolution_height)
+            ):
+                latest = replace(latest, ini_resolution_update_pending=False)
+                store.save_settings(latest)
+        log.info(LOG_EVENT_MOD_FILE_OPERATION_COMPLETED, phase="update-resolution")
+        return {
+            "updated": updated, "unchanged": unchanged, "skipped": skipped,
+            "failures": failures, "warnings": warnings,
+            "resolution_update_pending": latest.ini_resolution_update_pending,
+        }
+
     async def set_mod_applied(
         self,
         mod_id: str,
@@ -532,13 +639,21 @@ class Plugin:
             mod_id=mod_id,
             phase=phase,
         )
+        ini_adjustment_warnings: list[str] = []
         try:
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
+            settings = get_store().load_settings()
+            ini_resolution = (
+                settings.ini_resolution_width,
+                settings.ini_resolution_height,
+            )
             if applied:
                 conflicting_files = apply_mod_files(
                     mod,
                     installed_game_path,
                     replace_existing_files=replace_existing_files,
+                    ini_resolution=ini_resolution,
+                    ini_adjustment_warnings=ini_adjustment_warnings,
                 )
                 if conflicting_files and replace_existing_files is None:
                     copied_file_count = 0
@@ -553,6 +668,7 @@ class Plugin:
                     mod,
                     installed_game_path,
                     preserve_modified_ini=preserve_modified_ini,
+                    ini_resolution=ini_resolution,
                 )
                 copied_file_count = 0
             if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -607,11 +723,21 @@ class Plugin:
             mod_id=mod_id,
             phase=phase,
         )
-        return {
+        result = {
             "applied": applied,
             "copied_file_count": copied_file_count,
             "conflicting_files": conflicting_files,
         }
+        if ini_adjustment_warnings:
+            log.warning(
+                LOG_EVENT_MOD_INI_ADJUSTMENT_SKIPPED,
+                mod_id=mod_id,
+                phase="apply",
+            )
+            result["ini_adjustment_warning"] = " ".join(
+                ini_adjustment_warnings
+            )
+        return result
 
     async def get_mod_ini(self, mod_id: str, game_path: str) -> dict[str, object]:
         try:
@@ -667,7 +793,7 @@ class Plugin:
     ) -> dict[str, object]:
         try:
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
-            write_mod_ini(mod, installed_game_path, content)
+            permissions_preserved = write_mod_ini(mod, installed_game_path, content)
         except (OSError, ValueError):
             log.exception(
                 LOG_EVENT_MOD_FILE_OPERATION_FAILED,
@@ -675,7 +801,17 @@ class Plugin:
                 phase="save-ini",
             )
             raise
-        return {"saved": True, "ini_file": mod.ini_file}
+        if not permissions_preserved:
+            log.warning(
+                LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK,
+                mod_id=mod_id,
+                phase="save-ini",
+            )
+        return {
+            "saved": True,
+            "ini_file": mod.ini_file,
+            "permissions_preserved": permissions_preserved,
+        }
 
     @staticmethod
     def _update_repository() -> str:

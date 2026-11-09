@@ -20,6 +20,7 @@ from helper.constants import (
     MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING,
     MOD_CATALOG_MOD_ID_FIELD,
     MOD_CATALOG_MOD_NAME_FIELD,
+    MOD_DISPLAY_TAGS_KEY,
     MOD_CATALOG_SOURCE_KIND_FIELD,
     MOD_MANUAL_KEY,
     MOD_WINE_OVERRIDES_KEY,
@@ -68,6 +69,7 @@ class SupportedGame:
     match_locked: bool = False
     log_files: list[str] = field(default_factory=list)
     offline_only: bool = False
+    display_tags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -93,6 +95,7 @@ class SupportedGame:
             "match_locked": self.match_locked,
             "log_files": self.log_files,
             "offline_only": self.offline_only,
+            MOD_DISPLAY_TAGS_KEY: self.display_tags,
         }
 
 
@@ -202,7 +205,8 @@ def _build_game(
         wine_dll_overrides=list(mod.wine_dll_overrides),
         manual=mod.manual,
         offline_only=mod.offline_only,
-)
+        display_tags=list(mod.display_tags),
+    )
 
 
 def match_supported_games(

@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from scanner.mod_catalog import LauncherReplacement, ModDefinition, ModSource, ModSourceFile
+from scanner.mod_catalog import IniResolutionPair, LauncherReplacement, ModDefinition, ModSource, ModSourceFile
 from scanner.mod_installer import (
     create_ssl_context,
     apply_mod_files,
@@ -17,6 +17,7 @@ from scanner.mod_installer import (
     read_mod_ini,
     read_mod_log,
     remove_mod_files,
+    update_existing_ini_resolution,
     write_mod_ini,
     launcher_setup_complete,
 )
@@ -59,6 +60,11 @@ class ModInstallerTests(unittest.TestCase):
             files=files,
             ini_file=ini_file,
             wine_dll_overrides=(),
+            ini_resolution=(
+                IniResolutionPair("Resolution", "Width", "Height", "pixels"),
+                IniResolutionPair("TargetResolution", "TargetWidth", "TargetHeight", "pixels"),
+                IniResolutionPair("Aspect", "AspectWidth", "AspectHeight", "ratio"),
+            ) if ini_file == "fix.ini" else (),
         )
 
     @staticmethod
@@ -154,6 +160,211 @@ class ModInstallerTests(unittest.TestCase):
             open_url.call_args.kwargs["context"].verify_mode,
         )
         self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
+
+    def test_apply_adjusts_pixel_resolution_and_aspect_ratio_only(self) -> None:
+        mod = self._mod(
+            "archive",
+            ("fix.ini",),
+            source_path="fixes/test.zip",
+            ini_file="fix.ini",
+        )
+        original_ini = (
+            b"[Resolution]\r\n"
+            b"Width = 1280\r\n"
+            b"Height = 800 ; keep comment\r\n"
+            b"\r\n[TargetResolution]\n"
+            b"TargetWidth=1280\n"
+            b"TargetHeight=800\n"
+            b"\n[Ratio]\n"
+            b"TargetWidth=16.0\n"
+            b"TargetHeight=10.0\n"
+            b"\n[SecondaryTarget]\n"
+            b"TargetWidth=3840\n"
+            b"TargetHeight=2160\n"
+            b"\n[Unset]\n"
+            b"Width=0\n"
+            b"Height=0\n"
+            b"\n[Replacement]\n"
+            b"ReplaceWidth=1280\n"
+            b"ReplaceHeight=720\n"
+            b"\n[Aspect]\n"
+            b"AspectWidth=16\n"
+            b"AspectHeight=10\n"
+        )
+        archive_bytes = self._archive({"fix.ini": original_ini})
+        expected_ini = original_ini.replace(
+            b"Width = 1280\r\n",
+            b"Width = 1920\r\n",
+            1,
+        ).replace(
+            b"Height = 800 ; keep comment\r\n",
+            b"Height = 1080 ; keep comment\r\n",
+            1,
+        ).replace(
+            b"TargetWidth=1280\nTargetHeight=800",
+            b"TargetWidth=1920\nTargetHeight=1080",
+            1,
+        ).replace(
+            b"AspectWidth=16\nAspectHeight=10",
+            b"AspectWidth=16\nAspectHeight=9",
+            1,
+        )
+
+        with patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
+        ):
+            apply_mod_files(
+                mod,
+                str(self.game_path),
+                replace_existing_files=True,
+                ini_resolution=(1920, 1080),
+            )
+            self.assertEqual(expected_ini, (self.game_path / "fix.ini").read_bytes())
+            self.assertEqual(
+                [],
+                remove_mod_files(
+                    mod,
+                    str(self.game_path),
+                    ini_resolution=(1920, 1080),
+                ),
+            )
+
+        self.assertFalse((self.game_path / "fix.ini").exists())
+
+    def test_catalogued_ori_ratio_preserves_keys_and_other_bytes(self) -> None:
+        from scanner.mod_catalog import load_mod_catalog
+
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")
+        original = (
+            b"\xef\xbb\xbf[AspectRatio]\r\nTargetWidth = 16.0 ; width\r\n"
+            b"TargetHeight = 10.0\r\n[FOV]\r\nFOVScale = 1.0\r\n"
+        )
+        path = self.game_path / mod.ini_file
+        path.write_bytes(original)
+        changed, preserved = update_existing_ini_resolution(mod, str(self.game_path), 1920, 1080)
+        self.assertTrue(changed)
+        self.assertTrue(preserved)
+        self.assertEqual(original.replace(b"TargetHeight = 10.0", b"TargetHeight = 9.0"), path.read_bytes())
+        changed, _ = update_existing_ini_resolution(mod, str(self.game_path), 1280, 800)
+        self.assertTrue(changed)
+        self.assertEqual(
+            original.replace(b"TargetWidth = 16.0", b"TargetWidth = 8.0")
+            .replace(b"TargetHeight = 10.0", b"TargetHeight = 5.0"),
+            path.read_bytes(),
+        )
+
+    def test_zero_custom_windowed_resolution_remains_default(self) -> None:
+        from scanner.mod_catalog import load_mod_catalog
+        from scanner.mod_installer import _rewrite_ini_resolution
+
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ffxvifix")
+        content = (
+            b"[Fix Resolution]\r\n"
+            b"WindowedResX = 0\r\n"
+            b"WindowedResY = 0\r\n"
+        )
+
+        self.assertEqual(
+            content,
+            _rewrite_ini_resolution(content, 1920, 1080, mod.ini_resolution),
+        )
+
+    def test_undeclared_target_and_duplicate_keys_are_never_changed(self) -> None:
+        from scanner.mod_installer import _rewrite_ini_resolution
+        content = (
+            b"[Custom Resolution]\nWidth=1280\nWidth=invalid\nHeight=800\n"
+            b"TargetWidth=3840\nTargetHeight=2160\n"
+        )
+        pair = IniResolutionPair("Custom Resolution", "Width", "Height", "pixels")
+        self.assertEqual(content, _rewrite_ini_resolution(content, 1920, 1080, (pair,)))
+
+    def test_bulk_update_does_not_overwrite_concurrent_ini_edit(self) -> None:
+        mod = self._mod("archive", ("fix.ini",), ini_file="fix.ini")
+        path = self.game_path / "fix.ini"
+        path.write_bytes(b"[Resolution]\nWidth=1280\nHeight=800\n")
+        edited = b"[Resolution]\nWidth=1024\nHeight=768\n"
+
+        def concurrent_edit(*args):
+            path.write_bytes(edited)
+
+        with patch("scanner.mod_installer.os.chmod", side_effect=concurrent_edit):
+            with self.assertRaisesRegex(ValueError, "changed during"):
+                update_existing_ini_resolution(mod, str(self.game_path), 1920, 1080)
+        self.assertEqual(edited, path.read_bytes())
+        self.assertFalse(list(self.game_path.glob(".anyaspectratio-ini-*")))
+
+    def test_apply_keeps_original_ini_when_automatic_adjustment_fails(self) -> None:
+        mod = self._mod(
+            "archive",
+            ("fix.ini",),
+            source_path="fixes/test.zip",
+            ini_file="fix.ini",
+        )
+        original_ini = b"[Resolution]\nWidth=1280\nHeight=800\n"
+        archive_bytes = self._archive({"fix.ini": original_ini})
+        warnings: list[str] = []
+
+        with (
+            patch(
+                "scanner.mod_installer.urlopen",
+                side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
+            ),
+            patch(
+                "scanner.mod_installer._rewrite_ini_resolution",
+                side_effect=ValueError("unsupported format"),
+            ),
+        ):
+            apply_mod_files(
+                mod,
+                str(self.game_path),
+                replace_existing_files=True,
+                ini_resolution=(1920, 1080),
+                ini_adjustment_warnings=warnings,
+            )
+
+        self.assertEqual(original_ini, (self.game_path / "fix.ini").read_bytes())
+        self.assertEqual(
+            ["Could not adjust fix.ini; the original INI was kept."],
+            warnings,
+        )
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-ini-edit-*")))
+
+    def test_apply_keeps_original_ini_when_staged_replacement_fails(self) -> None:
+        mod = self._mod(
+            "archive",
+            ("fix.ini",),
+            source_path="fixes/test.zip",
+            ini_file="fix.ini",
+        )
+        original_ini = b"[Resolution]\nWidth=1280\nHeight=800\n"
+        archive_bytes = self._archive({"fix.ini": original_ini})
+        warnings: list[str] = []
+
+        with (
+            patch(
+                "scanner.mod_installer.urlopen",
+                side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
+            ),
+            patch(
+                "scanner.mod_installer._replace_staged_file",
+                side_effect=PermissionError("read-only staging filesystem"),
+            ),
+        ):
+            apply_mod_files(
+                mod,
+                str(self.game_path),
+                replace_existing_files=True,
+                ini_resolution=(1920, 1080),
+                ini_adjustment_warnings=warnings,
+            )
+
+        self.assertEqual(original_ini, (self.game_path / "fix.ini").read_bytes())
+        self.assertEqual(
+            ["Could not adjust fix.ini; the original INI was kept."],
+            warnings,
+        )
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-ini-edit-*")))
 
     def test_file_mod_renames_original_to_backup_and_restores_on_remove(self) -> None:
         mod = self._mod(
@@ -744,8 +955,33 @@ class ModInstallerTests(unittest.TestCase):
 
         self.assertEqual(("", False), read_mod_ini(mod, str(self.game_path)))
 
-        write_mod_ini(mod, str(self.game_path), "[Fix]\nEnabled=1\n")
+        self.assertTrue(write_mod_ini(mod, str(self.game_path), "[Fix]\nEnabled=1\n"))
 
+        self.assertEqual(
+            ("[Fix]\nEnabled=1\n", True),
+            read_mod_ini(mod, str(self.game_path)),
+        )
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-ini-*")))
+
+    def test_writes_ini_when_filesystem_rejects_chmod(self) -> None:
+        mod = self._mod(
+            "files",
+            ("fix.ini",),
+            source_files=(ModSourceFile("source/fix.ini", "fix.ini"),),
+            ini_file="fix.ini",
+        )
+
+        with patch(
+            "scanner.mod_installer.os.chmod",
+            side_effect=PermissionError("unsupported"),
+        ):
+            permissions_preserved = write_mod_ini(
+                mod,
+                str(self.game_path),
+                "[Fix]\nEnabled=1\n",
+            )
+
+        self.assertFalse(permissions_preserved)
         self.assertEqual(
             ("[Fix]\nEnabled=1\n", True),
             read_mod_ini(mod, str(self.game_path)),
