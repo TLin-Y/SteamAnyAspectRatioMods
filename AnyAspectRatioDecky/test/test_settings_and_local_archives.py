@@ -26,6 +26,7 @@ from store import (
     update_dependencies,
     validate_settings,
 )
+from store.dependencies import _with_bundled_resolution_metadata
 
 
 def write_zip(path: Path, files: dict[str, bytes]) -> None:
@@ -43,6 +44,18 @@ def response(content: bytes) -> Mock:
 
 
 class SettingsTests(unittest.TestCase):
+    def test_legacy_official_catalog_uses_only_hash_matched_bundled_metadata(self) -> None:
+        from dataclasses import replace
+
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")
+        legacy = replace(mod, ini_resolution=())
+        self.assertEqual(mod.ini_resolution, _with_bundled_resolution_metadata((legacy,), Settings())[0].ini_resolution)
+        changed = replace(legacy, source=replace(legacy.source, sha256="0" * 64))
+        self.assertEqual((), _with_bundled_resolution_metadata((changed,), Settings())[0].ini_resolution)
+        self.assertEqual((), _with_bundled_resolution_metadata(
+            (legacy,), Settings(catalog_repository_url="https://github.com/example/other")
+        )[0].ini_resolution)
+
     def test_accepts_defaults_and_github_repositories(self) -> None:
         self.assertEqual(Settings(), validate_settings(Settings()))
         settings = validate_settings(
@@ -68,8 +81,29 @@ class SettingsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             store = PluginStore(Path(directory))
             self.assertEqual(Settings(), store.load_settings())
-            store.save_settings(Settings(catalog_ref="dev"))
-            self.assertEqual("dev", store.load_settings().catalog_ref)
+            store.save_settings(
+                Settings(
+                    catalog_ref="dev",
+                    ini_resolution_width=1920,
+                    ini_resolution_height=1080,
+                )
+            )
+            loaded = store.load_settings()
+            self.assertEqual("dev", loaded.catalog_ref)
+            self.assertEqual((1920, 1080), (
+                loaded.ini_resolution_width,
+                loaded.ini_resolution_height,
+            ))
+
+    def test_rejects_invalid_ini_resolution_dimensions(self) -> None:
+        for width, height in ((0, 800), (1280, -1), (16385, 800), (True, 800)):
+            with self.subTest(width=width, height=height), self.assertRaises(ValueError):
+                validate_settings(
+                    Settings(
+                        ini_resolution_width=width,
+                        ini_resolution_height=height,
+                    )
+                )
 
 
 class DependencyUpdateTests(unittest.TestCase):

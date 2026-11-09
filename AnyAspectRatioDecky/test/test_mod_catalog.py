@@ -31,6 +31,102 @@ from scanner.mod_catalog import summarize_credits
 
 
 class ModCatalogTests(unittest.TestCase):
+    def test_invalid_ini_resolution_metadata_is_rejected(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        entry = next(mod for mod in document["mods"] if mod["id"] == "ori-and-the-will-of-the-wisps")
+        document["mods"] = [entry]
+        original = entry["ini_resolution"][0]
+        invalid = (
+            "width",
+            [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "guess"}],
+            [{**original, "width": "TargetWidth\nOther"}],
+            [{**original, "height": "targetwidth"}],
+            [original, original],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            for value in invalid:
+                with self.subTest(value=value):
+                    entry["ini_resolution"] = value
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "ini_resolution"):
+                        load_mod_catalog(path)
+
+    def test_ini_resolution_metadata_matches_catalogued_ini_contents(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        mods = load_mod_catalog()
+        configured = [mod for mod in mods if mod.ini_resolution]
+        self.assertEqual(53, len(configured))
+        for mod in configured:
+            with self.subTest(mod=mod.mod_id):
+                if mod.source.kind == MOD_SOURCE_ARCHIVE:
+                    prefix = f"{mod.source.destination}/" if mod.source.destination else ""
+                    name = mod.ini_file.removeprefix(prefix)
+                    with ZipFile(root / mod.source.path) as archive:
+                        content = archive.read(name).decode("utf-8-sig")
+                elif mod.source.kind == MOD_SOURCE_FILES:
+                    source = next(item for item in mod.source.files if item.destination == mod.ini_file)
+                    content = (root / source.path).read_text(encoding="utf-8-sig")
+                elif mod.source.kind == MOD_SOURCE_DIRECTORY:
+                    content = (root / mod.source.path / mod.ini_file).read_text(encoding="utf-8-sig")
+                else:
+                    self.fail(f"Unsupported source for {mod.mod_id}")
+                sections = {}
+                current = ""
+                for line in content.splitlines():
+                    if line.strip().startswith("[") and "]" in line:
+                        current = line.strip()[1:].split("]", 1)[0].strip().lower()
+                    elif "=" in line and not line.lstrip().startswith((";", "#")):
+                        sections.setdefault(current, []).append(line.split("=", 1)[0].strip().lower())
+                for pair in mod.ini_resolution:
+                    keys = sections.get(pair.section.lower(), [])
+                    self.assertEqual(1, keys.count(pair.width.lower()))
+                    self.assertEqual(1, keys.count(pair.height.lower()))
+        origins = next(mod for mod in mods if mod.mod_id == "dynasty-warriors-origins")
+        self.assertEqual({"Width", "Height"}, {
+            key for pair in origins.ini_resolution for key in (pair.width, pair.height)
+        })
+
+    def test_display_tags_are_catalogued_for_game_title(self) -> None:
+        mods = {mod.mod_id: mod for mod in load_mod_catalog()}
+        expected = {
+            "monster-hunter-rise",
+            "rayman-legends",
+            "persona-5-royal",
+            "resident-evil-2",
+            "resident-evil-3",
+            "resident-evil-4",
+            "resident-evil-7",
+            "resident-evil-village",
+            "samurai-warriors-spirit-of-sanada",
+            "warriors-orochi-3-ultimate",
+            "warriors-orochi-4-ultimate",
+            "ultrawidefix-lrff13",
+        }
+
+        self.assertEqual(
+            expected,
+            {mod_id for mod_id, mod in mods.items() if "stretch" in mod.display_tags},
+        )
+        self.assertTrue(all("(Stretch)" not in mods[mod_id].name for mod_id in expected))
+
+    def test_display_tags_must_be_unique_safe_identifiers(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        entry = next(mod for mod in document["mods"] if mod["id"] == "monster-hunter-rise")
+        document["mods"] = [entry]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            for value in (["stretch", "stretch"], ["bad tag"], [1], "stretch"):
+                with self.subTest(display_tags=value):
+                    entry["display_tags"] = value
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "display_tags"):
+                        load_mod_catalog(path)
+
     def test_readme_sits_beside_archive_zips(self) -> None:
         from scanner.mod_installer import mod_readme_path
 
@@ -556,7 +652,9 @@ class ManualModTests(unittest.TestCase):
             app = InstalledApp("1938010", "WILD HEARTS", "WILD HEARTS", directory, str(game))
             report = match_supported_games(SteamScanReport(1, 1, [app], []), (wild_hearts,))
             self.assertEqual(1, len(report.supported_games))
-            self.assertTrue(report.supported_games[0].to_dict()["manual"])
+            game_data = report.supported_games[0].to_dict()
+            self.assertTrue(game_data["manual"])
+            self.assertEqual([], game_data["display_tags"])
 
             with self.assertRaisesRegex(ValueError, "manually"):
                 apply_mod_files(wild_hearts, str(game))

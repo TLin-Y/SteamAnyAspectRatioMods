@@ -14,4 +14,4 @@ Name: WINEDLLOVERRIDES
 Value: dinput8=n,b
 
 # Custom Aspect Ratio
-Open .ini with any text editor. You can easily change TargetWidth and TargetHeight to match any screen ratio you want (e.g., 4:3, 16:10, 21:9).
+Open WO3U_ARFix.ini with any text editor. Set AspectWidth and AspectHeight to the desired aspect ratio (for example, 16 and 10 for 16:10, or 21 and 9 for 21:9). These are ratio values, not pixel dimensions.

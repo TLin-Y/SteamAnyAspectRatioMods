@@ -10,9 +10,9 @@ import {
 } from "@decky/ui";
 import { openFilePicker } from "@decky/api";
 import type { FileSelectionType } from "@decky/api";
-import { getCredits, importOfflinePack, downloadOfflinePack, clearLocalData, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
+import { getCredits, importOfflinePack, downloadOfflinePack, clearLocalData, updateDependencies, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
 import { showErrorModal } from "../../services/modals";
-import { formatBytes } from "../../services/formatters";
+import { formatBytes, formatCatalogUpdate } from "../../services/formatters";
 import type { CreditsInfo } from "../../services/types";
 
 type ActionState = { busy: boolean; downloading: boolean; status: string; completions: number };
@@ -36,10 +36,10 @@ const subscribeActionState = (listener: () => void) => {
 
 const getActionState = () => actionState;
 
-async function runAction(
+async function runAction<T extends { error?: string; warning?: string | null }>(
   title: string,
-  action: () => Promise<{ error?: string; version?: string; warning?: string | null }>,
-  doneMessage: string | ((result: { version?: string }) => string),
+  action: () => Promise<T>,
+  doneMessage: string | ((result: T) => string),
   onDone: () => void,
   pendingMessage = "Working...",
   downloading = false,
@@ -135,6 +135,21 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const pack = credits?.pack;
   return (
     <PanelSection title="Mods">
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          disabled={busy || !credits || credits.offline_mode}
+          onClick={() => runAction(
+            "Update failed",
+            updateDependencies,
+            formatCatalogUpdate,
+            onDataChanged,
+            "Checking the repository for updates...",
+          )}
+        >
+          Update catalog &amp; mods
+        </ButtonItem>
+      </PanelSectionRow>
       {error && <PanelSectionRow>{error}</PanelSectionRow>}
       {credits && (
         <PanelSectionRow>
@@ -148,7 +163,7 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
       )}
       {status && (
         <PanelSectionRow>
-          <div style={{ fontSize: "12px" }}>{status}</div>
+          <div role="status" style={{ fontSize: "12px", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{status}</div>
         </PanelSectionRow>
       )}
       {credits?.authors.map((author) => {

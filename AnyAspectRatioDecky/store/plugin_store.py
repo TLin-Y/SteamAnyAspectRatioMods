@@ -22,12 +22,22 @@ class Settings:
     catalog_path: str = ""
     local_archive_dir: str = ""
     offline_mode: bool = False
+    ini_resolution_width: int = 1280
+    ini_resolution_height: int = 800
+    ini_resolution_update_pending: bool = False
 
     def source_key(self) -> tuple[str, str, str]:
         return (self.catalog_repository_url, self.catalog_ref, self.catalog_path)
 
 
 def validate_settings(settings: Settings) -> Settings:
+    for label, dimension in (
+        ("INI resolution width", settings.ini_resolution_width),
+        ("INI resolution height", settings.ini_resolution_height),
+    ):
+        if type(dimension) is not int or not 1 <= dimension <= 16384:
+            raise ValueError(f"{label} must be an integer between 1 and 16384")
+
     url = settings.catalog_repository_url.strip().rstrip("/")
     if url.endswith(".git"):
         url = url[: -len(".git")]
@@ -126,8 +136,11 @@ class PluginStore:
         values = {
             key: value
             for key, value in document.items()
-            if key in field_types and isinstance(value, type(field_types[key]))
+            if key in field_types and type(value) is type(field_types[key])
         }
+        for key in ("ini_resolution_width", "ini_resolution_height"):
+            if key in values and not 1 <= values[key] <= 16384:
+                del values[key]
         return Settings(**values)
 
     def save_settings(self, settings: Settings) -> None:

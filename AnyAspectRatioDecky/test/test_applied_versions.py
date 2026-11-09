@@ -13,7 +13,7 @@ from zipfile import ZipFile
 
 from scanner import InstalledApp, SteamScanReport, load_mod_catalog, match_supported_games
 from scanner import mod_installer
-from store import PluginStore
+from store import PluginStore, Settings
 from store.dependencies import CatalogSource
 
 
@@ -55,6 +55,150 @@ class AppliedVersionTests(unittest.TestCase):
             return asyncio.run(
                 self.main.Plugin().set_mod_applied(mod.mod_id, str(self.game), applied, **kwargs)
             )
+
+    def test_settings_rpc_saves_global_ini_resolution(self) -> None:
+        self.store.save_settings(Settings(offline_mode=True))
+        with patch.object(self.main, "get_store", return_value=self.store):
+            result = asyncio.run(
+                self.main.Plugin().save_settings("", "", "", "", "1600", "900")
+            )
+
+        self.assertTrue(result["saved"])
+        settings = self.store.load_settings()
+        self.assertTrue(settings.offline_mode)
+        self.assertEqual(
+            (1600, 900),
+            (settings.ini_resolution_width, settings.ini_resolution_height),
+        )
+        self.assertTrue(settings.ini_resolution_update_pending)
+
+    def test_resolution_reminder_survives_other_settings_saves(self) -> None:
+        self.store.save_settings(Settings(ini_resolution_update_pending=True))
+        with patch.object(self.main, "get_store", return_value=self.store):
+            asyncio.run(self.main.Plugin().save_settings("", "", "", "", "1280", "800"))
+        self.assertTrue(self.store.load_settings().ini_resolution_update_pending)
+
+    def test_settings_rpc_reports_resolution_defaults_from_settings(self) -> None:
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(self.main, "load_active_catalog", return_value=CatalogSource("bundled", ())),
+            patch.object(self.main.Plugin, "_scan_local_archives", return_value=([], [])),
+        ):
+            result = asyncio.run(self.main.Plugin().get_settings())
+        self.assertEqual(
+            (Settings().ini_resolution_width, Settings().ini_resolution_height),
+            (result["defaults"]["ini_resolution_width"], result["defaults"]["ini_resolution_height"]),
+        )
+
+    def test_update_current_uses_saved_resolution_only_for_complete_unambiguous_mods(self) -> None:
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")
+        for name in mod.files:
+            path = self.game / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"mod")
+        ini = self.game / mod.ini_file
+        ini.write_bytes(b"[AspectRatio]\nTargetWidth = 16.0\nTargetHeight = 10.0\nOther = keep\n")
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        self.store.save_settings(Settings(
+            ini_resolution_width=1920, ini_resolution_height=1080, ini_resolution_update_pending=True
+        ))
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(self.main.Plugin, "_scan", return_value=report),
+        ):
+            result = asyncio.run(self.main.Plugin().update_current_resolution())
+            self.assertEqual(["Game"], result["updated"])
+            self.assertEqual([], result["failures"])
+            self.assertFalse(result["resolution_update_pending"])
+            self.assertFalse(self.store.load_settings().ini_resolution_update_pending)
+            self.assertEqual(
+                b"[AspectRatio]\nTargetWidth = 16.0\nTargetHeight = 9.0\nOther = keep\n",
+                ini.read_bytes(),
+            )
+            again = asyncio.run(self.main.Plugin().update_current_resolution())
+            self.assertEqual(["Game"], again["unchanged"])
+            report.supported_games = [
+                replace(report.supported_games[0], ambiguity_group="ambiguous", match_locked=False)
+            ]
+            skipped = asyncio.run(self.main.Plugin().update_current_resolution())
+            self.assertEqual([], skipped["updated"])
+            self.assertIn("select the correct mod", skipped["skipped"][0])
+
+    def test_update_current_reports_failure_without_modifying_other_inis(self) -> None:
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")
+        for name in mod.files:
+            path = self.game / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"mod")
+        ini = self.game / mod.ini_file
+        original = b"[AspectRatio]\nTargetWidth = 16.0\nTargetHeight = 10.0\n"
+        ini.write_bytes(original)
+        self.store.save_settings(Settings(ini_resolution_update_pending=True))
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(self.main.Plugin, "_scan", return_value=report),
+            patch("scanner.mod_installer.os.replace", side_effect=PermissionError("denied")),
+        ):
+            result = asyncio.run(self.main.Plugin().update_current_resolution())
+        self.assertEqual([], result["updated"])
+        self.assertIn("denied", result["failures"][0])
+        self.assertEqual(original, ini.read_bytes())
+        self.assertTrue(result["resolution_update_pending"])
+        self.assertTrue(self.store.load_settings().ini_resolution_update_pending)
+
+    def test_update_current_logs_permission_fallback_without_warning_per_game(self) -> None:
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "warriors-orochi-3-ultimate")
+        (self.game / mod.executable).touch()
+        for name in mod.files:
+            path = self.game / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"mod")
+        ini = self.game / mod.ini_file
+        ini.write_bytes(b"[AspectRatio]\r\nAspectWidth = 4\r\nAspectHeight = 3\r\n")
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        self.store.save_settings(Settings(ini_resolution_update_pending=True))
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(self.main.Plugin, "_scan", return_value=report),
+            patch("scanner.mod_installer.os.chmod", side_effect=PermissionError("denied")),
+            self.assertLogs("test_applied_versions", level="WARNING") as logs,
+        ):
+            result = asyncio.run(self.main.Plugin().update_current_resolution())
+        self.assertEqual(["Game"], result["updated"])
+        self.assertEqual([], result["warnings"])
+        self.assertFalse(result["resolution_update_pending"])
+        self.assertIn("ini_permissions_fallback", "\n".join(logs.output))
+        self.assertEqual(b"[AspectRatio]\r\nAspectWidth = 8\r\nAspectHeight = 5\r\n", ini.read_bytes())
+
+    def test_bulk_update_keeps_reminder_when_saved_resolution_changes_during_scan(self) -> None:
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")
+        for name in mod.files:
+            path = self.game / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"mod")
+        (self.game / mod.ini_file).write_bytes(b"[AspectRatio]\nTargetWidth = 4\nTargetHeight = 3\n")
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        self.store.save_settings(Settings(ini_resolution_update_pending=True))
+
+        def update_and_change(*args):
+            self.store.save_settings(Settings(
+                ini_resolution_width=1920, ini_resolution_height=1080, ini_resolution_update_pending=True
+            ))
+            return True, True
+
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(self.main.Plugin, "_scan", return_value=report),
+            patch.object(self.main, "update_existing_ini_resolution", side_effect=update_and_change),
+        ):
+            result = asyncio.run(self.main.Plugin().update_current_resolution())
+        self.assertTrue(result["resolution_update_pending"])
+        self.assertTrue(self.store.load_settings().ini_resolution_update_pending)
 
     def test_hash_tracking_survives_cache_clear_and_updates_only_on_full_apply(self) -> None:
         file_path = self.game / self.mod.files[0]

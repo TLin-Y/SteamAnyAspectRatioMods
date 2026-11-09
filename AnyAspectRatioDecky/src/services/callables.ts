@@ -1,7 +1,7 @@
 import { callable } from "@decky/api";
 import type { SupportedGameReport, PluginSettingsInfo, PluginUpdateInfo, CreditsInfo } from "./types";
 
-export const PLUGIN_VERSION = "1.6";
+export const PLUGIN_VERSION = "1.7";
 
 export const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
 
@@ -14,8 +14,13 @@ export const getCachedScan = callable<
 
 export const getPluginSettings = callable<[], PluginSettingsInfo>("get_settings");
 
+export const updateCurrentResolution = callable<
+  [],
+  { updated: string[]; unchanged: string[]; skipped: string[]; failures: string[]; warnings: string[]; resolution_update_pending: boolean }
+>("update_current_resolution");
+
 export const savePluginSettings = callable<
-  [string, string, string, string],
+  [string, string, string, string, string, string],
   { saved: boolean; source_changed: boolean }
 >("save_settings");
 
@@ -62,6 +67,7 @@ export const setModApplied = callable<
     applied: boolean;
     copied_file_count: number;
     conflicting_files: string[];
+    ini_adjustment_warning?: string;
     error?: string;
   }
 >("set_mod_applied");
@@ -94,7 +100,7 @@ export const getModIni = callable<
 
 export const saveModIni = callable<
   [string, string, string],
-  { saved: boolean; ini_file: string | null }
+  { saved: boolean; ini_file: string | null; permissions_preserved: boolean }
 >("save_mod_ini");
 
 export const getModReadme = callable<[string], { title: string; content: string }>(

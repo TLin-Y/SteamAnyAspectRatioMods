@@ -1,5 +1,7 @@
 import hashlib
+import math
 import os
+import re
 import socket
 import ssl
 import stat
@@ -20,7 +22,7 @@ from helper.constants import (
     MOD_SOURCE_FILES,
     MOD_SOURCE_LOCAL_ARCHIVE,
 )
-from scanner.mod_catalog import ModDefinition, ModSource
+from scanner.mod_catalog import IniResolutionPair, ModDefinition, ModSource
 
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
@@ -30,6 +32,11 @@ MAX_MOD_TOTAL_SIZE_BYTES = 512 * 1024 * 1024
 MAX_INI_SIZE_BYTES = 256 * 1024
 MAX_README_SIZE_BYTES = 1024 * 1024
 MAX_MOD_LOG_SIZE_BYTES = 256 * 1024
+INI_ASSIGNMENT_PATTERN = re.compile(
+    rb"^([ \t]*)([A-Za-z][A-Za-z0-9_]*)([ \t]*=[ \t]*)"
+    rb"([^;#\r\n]*?)([ \t]*(?:[;#].*)?)(\r?\n)?$"
+)
+INI_NUMBER_PATTERN = re.compile(rb"[0-9]+(?:\.[0-9]+)?")
 SYSTEM_CA_BUNDLE_PATHS = (
     Path("/etc/ssl/certs/ca-certificates.crt"),
     Path("/etc/ssl/cert.pem"),
@@ -547,6 +554,8 @@ def apply_mod_files(
     game_path: str,
     *,
     replace_existing_files: bool | None = None,
+    ini_resolution: tuple[int, int] | None = None,
+    ini_adjustment_warnings: list[str] | None = None,
 ) -> list[str]:
     if mod.manual:
         raise ValueError(MOD_MANUAL_INSTALL_MESSAGE.format(mod_id=mod.mod_id))
@@ -598,6 +607,23 @@ def apply_mod_files(
                 _check_total_size(total_download_size)
 
         staged_by_target = {target: staged for staged, target in staged_files}
+        if mod.ini_file is not None and ini_resolution is not None and mod.ini_resolution:
+            staged_ini = staged_by_target.get(_target_path(game_root, mod.ini_file))
+            if staged_ini is not None:
+                try:
+                    content = staged_ini.read_bytes()
+                    if len(content) > MAX_INI_SIZE_BYTES:
+                        raise ValueError(
+                            "Mod INI exceeds the 256 KiB automatic edit limit"
+                        )
+                    adjusted = _rewrite_ini_resolution(content, *ini_resolution, mod.ini_resolution)
+                    if adjusted != content:
+                        _replace_staged_file(staged_ini, adjusted)
+                except (OSError, ValueError):
+                    if ini_adjustment_warnings is not None:
+                        ini_adjustment_warnings.append(
+                            f"Could not adjust {mod.ini_file}; the original INI was kept."
+                        )
         conflicting_files = []
         for relative_path, target in targets.items():
             if target.is_dir():
@@ -720,7 +746,79 @@ def read_mod_log(mod: ModDefinition, game_path: str, name: str) -> tuple[str, bo
     return content.decode("utf-8", errors="replace"), size > MAX_MOD_LOG_SIZE_BYTES
 
 
-def write_mod_ini(mod: ModDefinition, game_path: str, content: str) -> None:
+def _rewrite_ini_resolution(
+    content: bytes, width: int, height: int, pairs: tuple[IniResolutionPair, ...]
+) -> bytes:
+    lines = content.splitlines(keepends=True)
+    sections: dict[bytes, dict[bytes, list[tuple[int, re.Match[bytes], int]]]] = {}
+    section = b""
+
+    for index, line in enumerate(lines):
+        prefix = b"\xef\xbb\xbf" if index == 0 and line.startswith(b"\xef\xbb\xbf") else b""
+        candidate = line[len(prefix):]
+        stripped = candidate.strip()
+        if stripped.startswith(b"[") and b"]" in stripped:
+            section = stripped[1:stripped.index(b"]")].strip().lower()
+            continue
+        match = INI_ASSIGNMENT_PATTERN.match(candidate)
+        if match is None:
+            continue
+        key = match.group(2).lower()
+        sections.setdefault(section, {}).setdefault(key, []).append(
+            (index, match, len(prefix))
+        )
+
+    replacements: dict[int, tuple[int, int, bytes]] = {}
+    divisor = math.gcd(width, height)
+    ratio_width, ratio_height = width // divisor, height // divisor
+    for pair in pairs:
+        values = sections.get(pair.section.lower().encode("ascii"), {})
+        width_rows = values.get(pair.width.lower().encode("ascii"), [])
+        height_rows = values.get(pair.height.lower().encode("ascii"), [])
+        if len(width_rows) != 1 or len(height_rows) != 1:
+            continue
+        width_row, height_row = width_rows[0], height_rows[0]
+        width_value, height_value = width_row[1].group(4), height_row[1].group(4)
+        if not all(INI_NUMBER_PATTERN.fullmatch(value) for value in (width_value, height_value)):
+            continue
+        if pair.kind == "pixels" and (not width_value.isdigit() or not height_value.isdigit()):
+            continue
+        if float(width_value) <= 0 or float(height_value) <= 0:
+            continue
+        dimensions = (ratio_width, ratio_height) if pair.kind == "ratio" else (width, height)
+        for row, dimension in zip((width_row, height_row), dimensions):
+            old_value = row[1].group(4)
+            value = str(dimension).encode("ascii")
+            if b"." in old_value:
+                value += b"." + b"0" * len(old_value.split(b".", 1)[1])
+            replacements[row[0]] = (
+                row[1].start(4) + row[2],
+                row[1].end(4) + row[2],
+                value,
+            )
+
+    for index, (start, end, value) in replacements.items():
+        lines[index] = lines[index][:start] + value + lines[index][end:]
+    return b"".join(lines)
+
+
+def _replace_staged_file(path: Path, content: bytes) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=".anyaspectratio-ini-edit-",
+        dir=path.parent,
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as target:
+            target.write(content)
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def write_mod_ini(
+    mod: ModDefinition, game_path: str, content: str, *, expected_content: bytes | None = None
+) -> bool:
     if mod.ini_file is None:
         raise ValueError("This mod does not define an INI configuration file")
     if not isinstance(content, str):
@@ -748,13 +846,41 @@ def write_mod_ini(mod: ModDefinition, game_path: str, content: str) -> None:
         dir=ini_path.parent,
     )
     temporary_path = Path(temporary_name)
+    permissions_preserved = True
     try:
         with os.fdopen(descriptor, "wb") as target:
             target.write(encoded_content)
-        os.chmod(temporary_path, existing_mode)
+        try:
+            os.chmod(temporary_path, existing_mode)
+        except PermissionError:
+            permissions_preserved = False
+        if expected_content is not None:
+            if not ini_path.is_file():
+                raise ValueError("Mod INI no longer exists")
+            with ini_path.open("rb") as current:
+                if current.read(MAX_INI_SIZE_BYTES + 1) != expected_content:
+                    raise ValueError("Mod INI changed during the update; try again")
         os.replace(temporary_path, ini_path)
     finally:
         temporary_path.unlink(missing_ok=True)
+    return permissions_preserved
+
+
+def update_existing_ini_resolution(
+    mod: ModDefinition, game_path: str, width: int, height: int
+) -> tuple[bool, bool]:
+    if not mod.ini_resolution:
+        raise ValueError("This mod has no catalogued resolution fields")
+    content, exists = read_mod_ini(mod, game_path)
+    if not exists:
+        raise ValueError("Mod INI no longer exists")
+    original = content.encode("utf-8")
+    adjusted = _rewrite_ini_resolution(original, width, height, mod.ini_resolution)
+    if adjusted == original:
+        return False, True
+    return True, write_mod_ini(
+        mod, game_path, adjusted.decode("utf-8"), expected_content=original
+    )
 
 
 def remove_mod_files(
@@ -762,6 +888,7 @@ def remove_mod_files(
     game_path: str,
     *,
     preserve_modified_ini: bool | None = None,
+    ini_resolution: tuple[int, int] | None = None,
 ) -> list[str]:
     if mod.manual:
         raise ValueError(MOD_MANUAL_INSTALL_MESSAGE.format(mod_id=mod.mod_id))
@@ -804,6 +931,12 @@ def remove_mod_files(
         if ini_path.is_file() and preserve_modified_ini is not False:
             try:
                 source_content = _read_source_file(mod, mod.ini_file)
+                if ini_resolution is not None:
+                    source_content = _rewrite_ini_resolution(
+                        source_content,
+                        *ini_resolution,
+                        mod.ini_resolution,
+                    )
                 modified = (
                     ini_path.stat().st_size != len(source_content)
                     or ini_path.read_bytes() != source_content

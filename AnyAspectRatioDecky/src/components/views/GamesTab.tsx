@@ -189,6 +189,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           null,
         );
         if (result.error) throw new Error(result.error);
+        let iniAdjustmentWarning = result.ini_adjustment_warning ?? "";
         let remainingConflicts = result.conflicting_files;
         if (result.conflicting_files.length > 0) {
           if (applied) {
@@ -204,6 +205,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
               null,
             );
             if (retry.error) throw new Error(retry.error);
+            iniAdjustmentWarning = retry.ini_adjustment_warning ?? iniAdjustmentWarning;
             remainingConflicts = retry.conflicting_files;
           } else {
             const keepIni = await confirmModifiedIniRemoval(
@@ -230,6 +232,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
                 : candidate,
             ),
           });
+        }
+        if (iniAdjustmentWarning) {
+          setErrorMessage(iniAdjustmentWarning);
         }
         const ambiguityGroup = game.ambiguity_group;
         if (!applied && remainingConflicts.length === 0) {
@@ -533,7 +538,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     setIniSaving(true);
     setIniStatus("");
     try {
-      await saveModIni(
+      const result = await saveModIni(
         gameBeingSaved.mod_id,
         gamePath,
         iniContent,
@@ -541,7 +546,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       if (requestId !== detailRequestId.current) return;
       setSavedIniContent(iniContent);
       setIniExists(true);
-      setIniStatus("Configuration saved.");
+      setIniStatus(result.permissions_preserved
+        ? "Configuration saved."
+        : "Configuration saved, but this filesystem could not preserve the file permissions.");
     } catch (error) {
       if (requestId === detailRequestId.current) {
         notifyError("Could not save configuration", String(error));

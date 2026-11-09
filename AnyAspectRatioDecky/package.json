@@ -1,6 +1,6 @@
 {
   "name": "any-aspect-ratio-decky",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "description": "Decky plugin for managing AnyAspectRatio game fixes",
   "type": "module",
@@ -8,6 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "test:backend": "python -m unittest discover -s test -v",
+    "test:frontend": "node --test test/test_settings_ui.cjs test/test_mods_ui.cjs",
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",

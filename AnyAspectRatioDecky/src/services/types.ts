@@ -28,6 +28,7 @@ export type SupportedGameReport = {
     ambiguity_group?: string | null;
     match_locked?: boolean;
     log_files?: string[];
+    display_tags?: string[];
   }[];
   warnings: string[];
 };
@@ -40,8 +41,16 @@ export type PluginSettingsValues = {
 };
 
 export type PluginSettingsInfo = {
-  settings: PluginSettingsValues & { offline_mode: boolean };
-  defaults: Omit<PluginSettingsValues, "local_archive_dir">;
+  settings: PluginSettingsValues & {
+    offline_mode: boolean;
+    ini_resolution_width: number;
+    ini_resolution_height: number;
+    ini_resolution_update_pending: boolean;
+  };
+  defaults: Omit<PluginSettingsValues, "local_archive_dir"> & {
+    ini_resolution_width: number;
+    ini_resolution_height: number;
+  };
   catalog: {
     origin: "cache" | "bundled";
     mod_count: number;
