@@ -24,7 +24,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 - **Games**: scan for supported games, apply or remove fixes, edit settings, and read instructions.
 - **Mods**: update the catalog, see mod credits, download or import an offline pack, or delete local files and caches. Deleting local files keeps your settings and applied mods.
-- **Settings**: set the resolution written into supported mod INIs when applying (enter both dimensions and choose **Save resolution**). After changing it, **Update current** is highlighted as a reminder to scan installed mods and update supported INIs using the saved resolution; confirm before overwriting their existing resolution values. Review the results for skipped or failed mods. Catalogued fields only are changed, and zero-valued defaults are left unchanged. You can also change mod sources, enable offline mode, or check for updates.
+- **Settings**: set the resolution written into supported mod INIs when applying (enter both dimensions and choose **Save resolution**). After changing it, **Update current** is highlighted as a reminder to scan installed mods and update supported INIs using the saved resolution. You can also change mod sources, enable offline mode, or check for updates.
 
 ### Offline mode and privacy
 
