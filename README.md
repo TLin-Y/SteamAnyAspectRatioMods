@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 124 game mods](https://img.shields.io/badge/Game%20mods-124-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 125 game mods](https://img.shields.io/badge/Game%20mods-125-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -29,7 +29,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
-- **MinuteReversal**, **TEODORMAX**, **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
+- **MinuteReversal**, **Nicolas Busseneau** ([Hephaistos](https://github.com/nbusseneau/hephaistos)), **TEODORMAX**, **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
 
 ## In action
 
@@ -89,6 +89,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Granblue Fantasy: Relink | Lyall | [881020](https://store.steampowered.com/app/881020) | [v1.1.5](./external/Lyall/GBFRelinkFix/GBFRelinkFix_1.1.5.zip) | 2026-08-07 | [GBFRelinkFix](https://codeberg.org/Lyall/GBFRelinkFix) |
 | Guacamelee! Super Turbo Championship Edition | TLin-Y | [275390](https://store.steampowered.com/app/275390) | [v2.0.0](./Guacamelee%20Super%20Turbo%20Championship%20Edition/Guacamelee-STCE-v2.0.0.zip) | 2026-11-08 | [README](./Guacamelee%20Super%20Turbo%20Championship%20Edition/README.md) |
 | Guacamelee! 2 | TLin-Y | [534550](https://store.steampowered.com/app/534550) | [v2.0.1](./Guacamelee%202/Guacamelee-2-v2.0.1.zip) | 2026-11-08 | [README](./Guacamelee%202/README.md) |
+| Hades | Nicolas Busseneau | [1145360](https://store.steampowered.com/app/1145360) | [v1.7.10](./external/NicolasBusseneau/Hephaistos/hephaistos-linux.zip) | 2024-07-01 | [Hephaistos](https://github.com/nbusseneau/hephaistos) |
 | Hatsune Miku: Project DIVA Mega Mix+ | Lyall | [1761390](https://store.steampowered.com/app/1761390) | [v0.0.1](./external/Lyall/MegaMixPlusFix/MegaMixPlusFix_0.0.1.zip) | 2025-06-01 | [MegaMixPlusFix](https://codeberg.org/Lyall/MegaMixPlusFix) |
 | Indiana Jones and the Great Circle | Lyall | [2677660](https://store.steampowered.com/app/2677660) | [v0.0.8](./external/Lyall/GreatCircleFix/GreatCircleFix_0.0.8.zip) | 2025-06-01 | [GreatCircleFix](https://codeberg.org/Lyall/GreatCircleFix) |
 | Judgment | Lyall | [2058180](https://store.steampowered.com/app/2058180) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) (manual install) |

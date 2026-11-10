@@ -351,6 +351,29 @@
       ]
     },
     {
+      "id": "hades-hephaistos",
+      "name": "Hades - Hephaistos Aspect Ratio Fix",
+      "steam_app_id": "1145360",
+      "install_dir": "Hades",
+      "executable": "x64/Hades.exe",
+      "executable_alternatives": ["x64Vk/Hades.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "external/NicolasBusseneau/Hephaistos/hephaistos-linux.zip",
+        "sha256": "c24924b42e5b26ce9bc7370f5ff5ba9bc7d476678f9305fb31313fe1f4b06477"
+      },
+      "files": ["hephaistos", "Hephaistos-README.md"],
+      "ini_file": null,
+      "display_tags": ["manual-setup"],
+      "wine_dll_overrides": [],
+      "credits": [
+        {
+          "name": "Nicolas Busseneau",
+          "url": "https://github.com/nbusseneau/hephaistos"
+        }
+      ]
+    },
+    {
       "id": "ori-and-the-will-of-the-wisps",
       "name": "Ori and the Will of the Wisps - Custom Aspect Ratio",
       "steam_app_id": "1057090",
