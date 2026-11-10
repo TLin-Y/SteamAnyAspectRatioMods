@@ -20,6 +20,21 @@ Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
 To update, install the newer zip the same way. To remove, uninstall from the Decky plugin list.
 
+## Good to know
+
+- Fixes by **Lyall** are shipped as-is and haven't all been tested by me. If one misbehaves, press Remove and tell me which game.
+- Some fixes are for specific game versions. If a game updates, a fix may need a new release.
+- Anti-cheat or online games: use fixes at your own risk.
+
+## What it does
+
+- **100+ games supported.**
+- **Made for the SteamOS.** My fixes default to **16:10 (1280x800)**, matching the SteamDeck screen.
+- **Finds your games everywhere.** Scans every Steam library, including the microSD card.
+- **Non-Steam games work too.** It is matched by its exe name.
+- **Edit settings in the plugin.** Change resolution, aspect ratio or FOV right from **Game Mode**. Changes save automatically.
+- **Offline friendly.** Import the repository zip once, or point it at a folder of your own mod zips.
+
 ## Tabs
 
 - **Games**: scan for supported games, apply or remove fixes, edit settings, and read instructions.
