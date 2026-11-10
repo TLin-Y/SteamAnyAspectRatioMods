@@ -10,6 +10,7 @@ Special thanks to:
   If you enjoy his work, consider supporting him on
   [Patreon](https://www.patreon.com/Wintermance) or [Ko-fi](https://ko-fi.com/W7W01UAI9).
 - [MinuteReversal](https://github.com/MinuteReversal/MHW16x10Fix), for MHW16x10Fix.
+- [Nicolas Busseneau](https://github.com/nbusseneau/hephaistos), for Hephaistos, the Hades aspect-ratio patcher.
 - [TEODORMAX](https://www.nexusmods.com/finalfantasyxiii2/mods/42), for Final Fantasy XIII-2 and Lightning Returns fixes.
 - [Twig](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517), for the Undertale Ultrawide Fix.
 - [TechieW](https://www.nexusmods.com/eldenring/mods/7870), for the Elden Ring Ultrawide Fix.
