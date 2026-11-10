@@ -58,7 +58,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(53, len(configured))
+        self.assertEqual(54, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -92,6 +92,7 @@ class ModCatalogTests(unittest.TestCase):
     def test_display_tags_are_catalogued_for_game_title(self) -> None:
         mods = {mod.mod_id: mod for mod in load_mod_catalog()}
         expected = {
+            "dynasty-warriors-7-xtreme-legends-definitive-edition",
             "monster-hunter-rise",
             "rayman-legends",
             "persona-5-royal",
@@ -157,7 +158,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([30, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([31, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -172,7 +173,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 31), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 32), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -183,11 +184,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(31, len(catalog))
+        self.assertEqual(32, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            28,
+            29,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -230,6 +231,40 @@ class ModCatalogTests(unittest.TestCase):
                         (repository_root / source_file.path).is_file(),
                         candidate.mod_id,
                     )
+
+    def test_dw7xl_package_and_install_paths(self) -> None:
+        import configparser
+
+        mod = next(
+            mod for mod in load_mod_catalog()
+            if mod.mod_id == "dynasty-warriors-7-xtreme-legends-definitive-edition"
+        )
+        self.assertEqual("968790", mod.steam_app_id)
+        self.assertEqual("Dynasty Warriors 7 DX", mod.install_dir)
+        self.assertEqual("SM6EN.exe", mod.executable)
+        self.assertEqual(("SM6JP.exe", "SM6TC.exe"), mod.executable_alternatives)
+        self.assertFalse(mod.source.destination)
+        self.assertEqual(("dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"), mod.files)
+        self.assertEqual("DW7XL_ARFix.ini", mod.ini_file)
+        self.assertEqual(("stretch",), mod.display_tags)
+        self.assertEqual(("dinput8=n,b",), mod.wine_dll_overrides)
+        root = Path(__file__).resolve().parents[2]
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                {"dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini",
+                 "README.md", "LICENSE-Ultimate-ASI-Loader.txt"},
+                set(archive.namelist()),
+            )
+            readme = archive.read("README.md")
+            self.assertEqual((root / mod_readme_path(mod)).read_bytes(), readme)
+            self.assertIn(b'1280x720', readme)
+            self.assertIn(b'SteamOS display scaling to "Stretch"', readme)
+            self.assertIn(b'WINEDLLOVERRIDES="dinput8=n,b" %command%', readme)
+            config = configparser.ConfigParser()
+            config.read_string(archive.read("DW7XL_ARFix.ini").decode("utf-8-sig"))
+            self.assertEqual(1280, config.getint("Resolution", "Width"))
+            self.assertEqual(800, config.getint("Resolution", "Height"))
 
     def test_bloodstained_package_and_install_paths(self) -> None:
         import configparser

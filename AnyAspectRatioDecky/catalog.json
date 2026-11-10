@@ -101,6 +101,24 @@
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
+      "id": "dynasty-warriors-7-xtreme-legends-definitive-edition",
+      "name": "DYNASTY WARRIORS 7: Xtreme Legends Definitive Edition - Custom Aspect Ratio",
+      "steam_app_id": "968790",
+      "install_dir": "Dynasty Warriors 7 DX",
+      "executable": "SM6EN.exe",
+      "executable_alternatives": ["SM6JP.exe", "SM6TC.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.0.0.zip",
+        "sha256": "999a8051e9c2b250675e9fbe1a9bf8ef89a406ed5e757b3e965a29e8ce3d7e28"
+      },
+      "files": ["dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"],
+      "ini_file": "DW7XL_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["stretch"],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "dynasty-warriors-origins",
       "name": "Dynasty Warriors: Origins - Custom Resolution",
       "steam_app_id": "2384580",
