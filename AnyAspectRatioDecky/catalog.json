@@ -1719,6 +1719,7 @@
         "CrossWorldsFix.ini",
         "winmm.dll"
       ],
+      "display_tags": ["may-be-outdated-report-to-lyall"],
       "wine_dll_overrides": [
         "winmm=n,b"
       ],
@@ -3085,6 +3086,7 @@
         "path": "external/Lyall/PoPTLCFix/PoPTLCFix_0.8.6.zip",
         "sha256": "43a8957bec7da9ea9937ea183b3f841f8a5d39dc6d4fa37984be33f3efae3430"
       },
+      "display_tags": ["may-be-outdated-report-to-lyall"],
       "files": [
         "BepInEx/config/BepInEx.cfg",
         "BepInEx/core/0Harmony.dll",
