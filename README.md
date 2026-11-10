@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 126 game mods](https://img.shields.io/badge/Game%20mods-126-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 127 game mods](https://img.shields.io/badge/Game%20mods-127-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -77,6 +77,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | DRAGON QUEST XI S: Echoes of an Elusive Age - Definitive Edition | Lyall | [1295510](https://store.steampowered.com/app/1295510) | [v0.9.3](./external/Lyall/DQXISFix/DQXISFix_0.9.3.zip) | 2026-01-18 | [DQXISFix](https://codeberg.org/Lyall/DQXISFix) |
 | Dragon's Dogma: Dark Arisen | Lyall | [367500](https://store.steampowered.com/app/367500) | [v0.9.1](./external/Lyall/DDDAFix/DDDAFix_0.9.1.zip) | 2025-06-21 | [DDDAFix](https://codeberg.org/Lyall/DDDAFix) |
 | Dynasty Warriors 3: Complete Edition Remastered | TLin-Y | [3841510](https://store.steampowered.com/app/3841510) | [v1.1.0](./Dynasty%20Warriors%203%20Remastered/DW3RE-v1.1.0.zip) | 2026-11-03 | [README](./Dynasty%20Warriors%203%20Remastered/README.md) |
+| DYNASTY WARRIORS 7: Xtreme Legends Definitive Edition | TLin-Y | [968790](https://store.steampowered.com/app/968790) | [v1.0.0](./DYNASTY%20WARRIORS%207%20Xtreme%20Legends%20Definitive%20Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.0.0.zip) | 2026-11-09 | [README](./DYNASTY%20WARRIORS%207%20Xtreme%20Legends%20Definitive%20Edition/README.md) |
 | Dynasty Warriors: Origins | TLin-Y | [2384580](https://store.steampowered.com/app/2384580) | [v1.0.0](./Dynasty%20Warriors%20Origins/Dynasty-Warriors-Origins-v1.0.0.zip) | 2026-11-02 | [README](./Dynasty%20Warriors%20Origins/README.md) |
 | Eiyuden Chronicle: Hundred Heroes | Lyall | [1658280](https://store.steampowered.com/app/1658280) | [v0.9.8](./external/Lyall/HundredHeroesFix/HundredHeroesFix_0.9.8.zip) | 2025-06-06 | [HundredHeroesFix](https://codeberg.org/Lyall/HundredHeroesFix) |
 | Elden Ring (Offline) | TechieW | [1245620](https://store.steampowered.com/app/1245620) | [v1.0.1](./external/TechieW/ELDEN%20RING/Elden%20Ring%20Ultrawide%20Fix-7870-1-0-1-1746293446.zip) | 2025-05-03 | [README](./external/TechieW/ELDEN%20RING/README.md) |
