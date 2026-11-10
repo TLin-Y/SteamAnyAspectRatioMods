@@ -119,6 +119,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "dynasty-warriors-8-xtreme-legends-complete-edition",
+      "name": "DYNASTY WARRIORS 8: Xtreme Legends Complete Edition - Custom Aspect Ratio",
+      "steam_app_id": "278080",
+      "install_dir": "Dynasty Warriors 8",
+      "executable": "Launch.exe",
+      "source": {
+        "kind": "archive",
+        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.0.0.zip",
+        "sha256": "7fd2bca21fc74f059c4c58515dae7310d570d3ead7b1f7565fdd025706f5e916"
+      },
+      "files": ["dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"],
+      "ini_file": "DW8XL_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["stretch"],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "dynasty-warriors-origins",
       "name": "Dynasty Warriors: Origins - Custom Resolution",
       "steam_app_id": "2384580",
