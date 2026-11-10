@@ -69,6 +69,22 @@
       "wine_dll_overrides": ["dinput8,d3d11=n,b"]
     },
     {
+      "id": "dark-souls-remastered-fov-crop-fix",
+      "name": "DARK SOULS: REMASTERED - FOV Crop Fix",
+      "steam_app_id": "570940",
+      "install_dir": "DARK SOULS REMASTERED",
+      "executable": "DarkSoulsRemastered.exe",
+      "source": {
+        "kind": "archive",
+        "path": "DARK SOULS REMASTERED FOV/Dark-Souls-Remastered-FOV-v1.0.0.zip",
+        "sha256": "d875df799136bd03cec2a1132035ae39a0b675a5a1ed2684c2286f820e1c953c"
+      },
+      "files": ["dinput8.dll", "DSR_FovFix.asi", "DSR_FovFix.ini"],
+      "ini_file": "DSR_FovFix.ini",
+      "display_tags": ["fov-crop-fix"],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "dw3re",
       "name": "Dynasty Warriors 3: Complete Edition Remastered - Custom Resolution",
       "steam_app_id": "3841510",
