@@ -17,6 +17,25 @@
   ],
   "mods": [
     {
+      "id": "ai-the-somnium-files",
+      "name": "AI: THE SOMNIUM FILES - Custom Aspect Ratio",
+      "steam_app_id": "948740",
+      "install_dir": "AI The Somnium Files",
+      "executable": "AI_TheSomniumFiles.exe",
+      "source": {
+        "kind": "archive",
+        "path": "AI The Somnium Files/AI-The-Somnium-Files-v1.0.0.zip",
+        "sha256": "b01f7bd6cc511adad77aee3f31e30eb2fa1938d1cb327c86ec5f44c2a3871c73"
+      },
+      "files": ["AI_TheSomniumFiles_Data/Managed/Assembly-CSharp.dll", "AI_TheSomniumFiles_Data/Managed/AI1Resolution.dll", "AI1_ARFix.ini"],
+      "backups": [
+        {"target": "AI_TheSomniumFiles_Data/Managed/Assembly-CSharp.dll", "backup": "AI_TheSomniumFiles_Data/Managed/Assembly-CSharp.dll.ai1-original.bak"}
+      ],
+      "ini_file": "AI1_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": []
+    },
+    {
       "id": "bloodstained-ritual-of-the-night",
       "name": "Bloodstained: Ritual of the Night - Custom Aspect Ratio",
       "steam_app_id": "692850",
@@ -110,7 +129,7 @@
       "source": {
         "kind": "archive",
         "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.0.0.zip",
-        "sha256": "999a8051e9c2b250675e9fbe1a9bf8ef89a406ed5e757b3e965a29e8ce3d7e28"
+        "sha256": "7afb2330652cf1513a2fe02c5f443b4128f8774a753aa1db684d463767ca3a09"
       },
       "files": ["dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"],
       "ini_file": "DW7XL_ARFix.ini",
@@ -127,7 +146,7 @@
       "source": {
         "kind": "archive",
         "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.0.0.zip",
-        "sha256": "7fd2bca21fc74f059c4c58515dae7310d570d3ead7b1f7565fdd025706f5e916"
+        "sha256": "ac2ecc1da38648b14505bc34cf2078452840fd345ae6fa5ff4d46dd4591304d6"
       },
       "files": ["dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"],
       "ini_file": "DW8XL_ARFix.ini",
@@ -466,7 +485,7 @@
       "source": {
         "kind": "archive",
         "path": "Pentiment/Pentiment-v0.1.0.zip",
-        "sha256": "a52199f88d5daa5e4c3fbbc57b01fdbd198a1e4a7ac47996c0950a77aeab5404"
+        "sha256": "9fe737ba08f501c43c9b299f9959177737d5ed2fbf59a97da58ebbed588b38f6"
       },
       "files": ["winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"],
       "ini_file": "Pentiment_ARFix.ini",

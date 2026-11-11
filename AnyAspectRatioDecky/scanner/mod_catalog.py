@@ -43,6 +43,7 @@ from helper.constants import (
     MOD_EXECUTABLE_ALTERNATIVES_KEY,
     MOD_FILES_KEY,
     MOD_BACKUP_FILE_KEY,
+    MOD_BACKUPS_KEY,
     MOD_OFFLINE_ONLY_KEY,
     MOD_LAUNCHER_REPLACEMENT_KEY,
     MOD_ID_KEY,
@@ -108,6 +109,12 @@ class IniResolutionPair:
 
 
 @dataclass(frozen=True)
+class ModBackup:
+    target: str
+    backup: str
+
+
+@dataclass(frozen=True)
 class ModDefinition:
     mod_id: str
     name: str
@@ -126,6 +133,13 @@ class ModDefinition:
     launcher_replacement: LauncherReplacement | None = None
     display_tags: tuple[str, ...] = ()
     ini_resolution: tuple[IniResolutionPair, ...] = ()
+    backups: tuple[ModBackup, ...] = ()
+
+    @property
+    def file_backups(self) -> tuple[ModBackup, ...]:
+        if self.backup_file is not None:
+            return (ModBackup(self.files[0], self.backup_file),)
+        return self.backups
 
 
 def _https_url(value: object) -> bool:
@@ -398,11 +412,43 @@ def _parse_mod(
         _validate_relative_path(backup_file, mod_id)
         if (
             PurePosixPath(files[0]).parent != PurePosixPath(backup_file).parent
-            or backup_file == files[0]
+            or backup_file.casefold() in {path.casefold() for path in seen_files | seen_executables}
         ):
             raise ValueError(
                 MOD_CATALOG_INVALID_BACKUP_FILE_MESSAGE.format(mod_id=mod_id)
             )
+    raw_backups = entry.get(MOD_BACKUPS_KEY, [])
+    if not isinstance(raw_backups, list) or (raw_backups and (backup_file is not None or manual)):
+        raise ValueError(f"Mod {mod_id} has invalid backups metadata")
+    backups = []
+    seen_backup_targets: set[str] = set()
+    seen_backup_paths: set[str] = set()
+    reserved_paths = {path.casefold() for path in seen_files | seen_executables}
+    reserved_paths.update(
+        str(PurePosixPath(path).with_suffix(".log")).casefold()
+        for path in files if PurePosixPath(path).suffix.lower() == ".asi"
+    )
+    for item in raw_backups:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"target", "backup"}
+            or not all(isinstance(value, str) for value in item.values())
+        ):
+            raise ValueError(f"Mod {mod_id} has invalid backups metadata")
+        target, backup = item["target"], item["backup"]
+        _validate_relative_path(target, mod_id)
+        _validate_relative_path(backup, mod_id)
+        if (
+            target not in seen_files
+            or target == ini_file
+            or target.casefold() in seen_backup_targets
+            or backup.casefold() in seen_backup_paths | reserved_paths
+            or PurePosixPath(target).parent != PurePosixPath(backup).parent
+        ):
+            raise ValueError(f"Mod {mod_id} has invalid backups paths")
+        seen_backup_targets.add(target.casefold())
+        seen_backup_paths.add(backup.casefold())
+        backups.append(ModBackup(target, backup))
     if ini_file is not None and ini_file not in seen_files:
         raise ValueError(MOD_CATALOG_INI_NOT_IN_FILES_MESSAGE.format(mod_id=mod_id))
     if source.kind == MOD_SOURCE_FILES and {
@@ -443,6 +489,7 @@ def _parse_mod(
             or not offline_only
             or manual
             or backup_file is not None
+            or backups
             or launcher_replacement.source not in (seen_files | seen_executables)
             or launcher_replacement.target in seen_files
             or launcher_replacement.target == executable
@@ -478,6 +525,7 @@ def _parse_mod(
         launcher_replacement=launcher_replacement,
         display_tags=tuple(raw_display_tags),
         ini_resolution=tuple(resolution_pairs),
+        backups=tuple(backups),
     )
 
 

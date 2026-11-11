@@ -31,6 +31,73 @@ from scanner.mod_catalog import summarize_credits
 
 
 class ModCatalogTests(unittest.TestCase):
+    def test_backups_array_validation_and_legacy_compatibility(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        entry = next(mod for mod in document["mods"] if mod["id"] == "ai-the-somnium-files")
+        document["mods"] = [entry]
+        original = entry["backups"]
+        target = original[0]["target"]
+        invalid = (
+            None, {}, "backup", [None], [{"target": target}],
+            [{"target": target, "backup": 123}],
+            [{"target": target, "backup": target, "extra": True}],
+            [{"target": "missing.dll", "backup": "missing.dll.bak"}],
+            [{"target": target, "backup": "../outside.bak"}],
+            [{"target": target, "backup": "other/original.bak"}],
+            [{"target": target, "backup": entry["files"][1]}],
+            [{"target": target, "backup": target.upper()}],
+            [{"target": entry["ini_file"], "backup": "AI1_ARFix.ini.bak"}],
+            original * 2,
+            original + [{"target": entry["files"][1], "backup": original[0]["backup"].upper()}],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            for value in invalid:
+                with self.subTest(value=value):
+                    entry["backups"] = value
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load_mod_catalog(path)
+            entry["backups"] = original
+            path.write_text(json.dumps(document), encoding="utf-8")
+            mod = load_mod_catalog(path)[0]
+            self.assertEqual((target, original[0]["backup"]),
+                             (mod.file_backups[0].target, mod.file_backups[0].backup))
+            entry["backup_file"] = original[0]["backup"]
+            path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_mod_catalog(path)
+        legacy = next(mod for mod in load_mod_catalog() if mod.mod_id == "undertale")
+        self.assertEqual((), legacy.backups)
+        self.assertEqual(("data.win", "data.win.bak"),
+                         (legacy.file_backups[0].target, legacy.file_backups[0].backup))
+
+    def test_ai1_release_paths_and_defaults(self) -> None:
+        import configparser
+
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "ai-the-somnium-files")
+        self.assertEqual("948740", mod.steam_app_id)
+        self.assertEqual("AI The Somnium Files", mod.install_dir)
+        self.assertEqual("AI_TheSomniumFiles.exe", mod.executable)
+        self.assertEqual((), mod.wine_dll_overrides)
+        self.assertIsNone(mod.backup_file)
+        self.assertEqual(1, len(mod.backups))
+        self.assertEqual(mod.files[0], mod.backups[0].target)
+        root = Path(__file__).resolve().parents[2]
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(set(mod.files) | {"README.md", "43.jpg", "ultrawide.jpg"},
+                             set(archive.namelist()))
+            for name in ("README.md", "43.jpg", "ultrawide.jpg"):
+                self.assertEqual((root / "AI The Somnium Files" / name).read_bytes(), archive.read(name))
+            config = configparser.ConfigParser()
+            config.read_string(archive.read(mod.ini_file).decode("utf-8-sig"))
+            self.assertEqual(1280, config.getint("Resolution", "Width"))
+            self.assertEqual(800, config.getint("Resolution", "Height"))
+            self.assertTrue(config.getboolean("Resolution", "PreserveHUDAspect"))
+
     def test_invalid_ini_resolution_metadata_is_rejected(self) -> None:
         document = json.loads(
             (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
@@ -58,7 +125,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(57, len(configured))
+        self.assertEqual(58, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -159,7 +226,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([34, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([35, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -174,7 +241,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 35), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 36), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -185,11 +252,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(35, len(catalog))
+        self.assertEqual(36, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            32,
+            33,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(

@@ -568,13 +568,15 @@ def apply_mod_files(
         relative_path: _target_path(game_root, relative_path)
         for relative_path in mod.files
     }
-    backup = (
-        _target_path(game_root, mod.backup_file)
-        if mod.backup_file is not None
-        else None
-    )
-    if backup is not None and backup.is_dir():
-        raise ValueError(f"Mod backup path is a directory: {mod.backup_file}")
+    backups = {
+        targets[item.target]: _target_path(game_root, item.backup)
+        for item in mod.file_backups
+    }
+    for backup_target, backup in backups.items():
+        if backup.exists() and not backup.is_file():
+            raise ValueError(f"Mod backup path is not a regular file: {backup.name}")
+        if not backup.is_file() and not backup_target.is_file():
+            raise ValueError("Original mod target and its backup are missing; verify game files first")
     launcher = mod.launcher_replacement
     launcher_target = (
         _target_path(game_root, launcher.target) if launcher is not None else None
@@ -629,8 +631,16 @@ def apply_mod_files(
             if target.is_dir():
                 raise ValueError(f"Mod target is a directory: {relative_path}")
             staged = staged_by_target[target]
-            if target.is_file() and not files_equal(target, staged):
-                conflicting_files.append(relative_path)
+            if target.is_file():
+                matches_mod = files_equal(target, staged)
+                backup = backups.get(target)
+                if matches_mod and backup is not None and not backup.is_file():
+                    raise ValueError(
+                        "Mod target is already replaced but its original backup is missing; "
+                        "verify game files before applying"
+                    )
+                if not matches_mod:
+                    conflicting_files.append(relative_path)
         if launcher is not None and launcher_target is not None and launcher_backup is not None:
             source = _target_path(game_root, launcher.source)
             source = staged_by_target.get(source, source)
@@ -659,9 +669,23 @@ def apply_mod_files(
                 and relative_path in conflicting_files
             ):
                 continue
-            if backup is not None and target.is_file() and not backup.exists():
-                target.rename(backup)
-            os.replace(staged, target)
+            renamed = False
+            backup = backups.get(target)
+            try:
+                if backup is not None and target.is_file() and not backup.exists():
+                    target.rename(backup)
+                    renamed = True
+                os.replace(staged, target)
+            except OSError as error:
+                if renamed and backup is not None:
+                    try:
+                        backup.rename(target)
+                    except OSError as restore_error:
+                        raise OSError(
+                            f"Mod replacement failed ({error}) and restoration failed "
+                            f"({restore_error}); restore {backup.name} manually"
+                        ) from restore_error
+                raise
         if (
             staged_launcher is not None
             and launcher_target is not None
@@ -897,13 +921,19 @@ def remove_mod_files(
         raise ValueError("Game installation directory is unavailable")
 
     targets = [_target_path(game_root, path) for path in mod.files]
-    backup = (
-        _target_path(game_root, mod.backup_file)
-        if mod.backup_file is not None
-        else None
-    )
-    if backup is not None and backup.is_dir():
-        raise ValueError(f"Mod backup path is a directory: {mod.backup_file}")
+    backups = {
+        _target_path(game_root, item.target): _target_path(game_root, item.backup)
+        for item in mod.file_backups
+    }
+    for backup_target, backup in backups.items():
+        if backup.exists() and not backup.is_file():
+            raise ValueError(f"Mod backup path is not a regular file: {backup.name}")
+        if backup_target.exists() and not backup_target.is_file():
+            raise ValueError(f"Mod target is not a regular file: {backup_target.name}")
+        if not backup.is_file() and backup_target.exists():
+            raise ValueError(
+                "Original mod target backup is missing; verify game files before removing the mod"
+            )
     launcher = mod.launcher_replacement
     launcher_target = (
         _target_path(game_root, launcher.target) if launcher is not None else None
@@ -957,12 +987,22 @@ def remove_mod_files(
         _target_path(game_root, launcher.source)
         if launcher is not None and launcher.source in mod.files else None
     )
+    with ExitStack() as cleanup:
+        staged_backups = []
+        for backup_target, backup in backups.items():
+            if backup.is_file():
+                backup_size = backup.stat().st_size
+                with backup.open("rb") as stream:
+                    staged, staged_size = _stage_stream(stream, backup_target, backup_size)
+                if staged_size != backup_size:
+                    staged.unlink(missing_ok=True)
+                    raise OSError(f"Mod backup changed while being restored: {backup.name}")
+                cleanup.callback(staged.unlink, missing_ok=True)
+                staged_backups.append((staged, backup_target))
+        for staged, backup_target in staged_backups:
+            os.replace(staged, backup_target)
     for target in targets:
-        if target == modified_ini_path or target == launcher_source:
-            continue
-        if backup is not None and target == targets[0] and backup.is_file():
-            target.unlink(missing_ok=True)
-            backup.rename(target)
+        if target == modified_ini_path or target == launcher_source or target in backups:
             continue
         target.unlink(missing_ok=True)
 
@@ -970,6 +1010,8 @@ def remove_mod_files(
         os.replace(launcher_backup, launcher_target)
     if launcher_source is not None:
         launcher_source.unlink(missing_ok=True)
+    for backup in backups.values():
+        backup.unlink(missing_ok=True)
 
     for target in targets:
         if target == modified_ini_path:

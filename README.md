@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 130 game mods](https://img.shields.io/badge/Game%20mods-130-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 131 game mods](https://img.shields.io/badge/Game%20mods-131-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -50,6 +50,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Game | Author | Steam ID | Version | Released | Details |
 |---|---|---|---|---|---|
 | Absolum | TLin-Y | [1904480](https://store.steampowered.com/app/1904480) | [v0.1.0](./Reimpl-Absolum/Absolum-v0.1.0.zip) | 2026-11-07 | [README](./Reimpl-Absolum/README.md) |
+| AI: THE SOMNIUM FILES | TLin-Y | [948740](https://store.steampowered.com/app/948740) | [v1.0.0](./AI%20The%20Somnium%20Files/AI-The-Somnium-Files-v1.0.0.zip) | 2026-11-11 | [README](./AI%20The%20Somnium%20Files/README.md) |
 | AI: THE SOMNIUM FILES - nirvanA Initiative | Lyall | [1449200](https://store.steampowered.com/app/1449200) | [v1.0.7](./external/Lyall/AISomniumFiles2Fix/AISomniumFiles2Fix_1.0.7.zip) | 2025-07-07 | [AISomniumFiles2Fix](https://codeberg.org/Lyall/AISomniumFiles2Fix) |
 | Assassin’s Creed Shadows | Lyall | [3159330](https://store.steampowered.com/app/3159330) | [v0.0.8](./external/Lyall/ACShadowsFix/ACShadowsFix_0.0.8.zip) | 2026-06-17 | [ACShadowsFix](https://codeberg.org/Lyall/ACShadowsFix) |
 | Atelier Yumia: The Alchemist of Memories & the Envisioned Land | Lyall | [3123410](https://store.steampowered.com/app/3123410) | [v0.0.6](./external/Lyall/AtelierYumiaFix/AtelierYumiaFix_0.0.6.zip) | 2025-05-31 | [AtelierYumiaFix](https://codeberg.org/Lyall/AtelierYumiaFix) |

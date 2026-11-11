@@ -1,4 +1,10 @@
-# AnyAspectRatio for Steam Deck v1.7.0: play at full-screen 16:10, one tap per game
+# AnyAspectRatio for Steam Deck v1.8.0: play at full-screen 16:10, one tap per game
+
+## New in 1.8.0
+
+- **AI: THE SOMNIUM FILES fix.** Adds custom aspect-ratio support, with an option to preserve HUD proportions.
+- **Safe original-file backup and restore.** Applying a fix can preserve catalogued game files beside their replacements; Remove restores the originals.
+- **Large offline packs split into parts.** Download all parts together in the plugin, or keep them in one folder and select any part to import.
 
 Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 screen? **AnyAspectRatio** is a Decky Loader plugin that finds the games you own, installs the right aspect-ratio fix, and sets the Steam launch options for you. No file copying, no terminal.
 
@@ -41,10 +47,10 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-1.7.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-1.8.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-1.7.0.zip** (also in the Assets, about 500 MB). Skip this step if your Deck is online.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-1.8.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
 5. Press **Scan Steam libraries**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.

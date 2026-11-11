@@ -12,11 +12,15 @@ This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and 
 
 Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download `AnyAspectRatio-1.7.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
+1. Download `AnyAspectRatio-1.8.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
 2. Put the zip on the Deck (for example in `Downloads`).
 3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
 4. Open **Settings → Developer → Install Plugin from ZIP**, pick the zip, and confirm.
 5. Open **AnyAspectRatio** in the Decky menu and use **Scan Steam libraries**.
+
+On DroidDeck, open Steam **Settings → Plugins → Install from ZIP** and select the plugin zip:
+
+![Install AnyAspectRatio from ZIP on DroidDeck](DroidDeckInstall.jpg)
 
 To update, install the newer zip the same way. To remove, uninstall from the Decky plugin list.
 
@@ -34,6 +38,8 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 - **Non-Steam games work too.** It is matched by its exe name.
 - **Edit settings in the plugin.** Change resolution, aspect ratio or FOV right from **Game Mode**. Changes save automatically.
 - **Offline friendly.** Import the repository zip once, or point it at a folder of your own mod zips.
+- Offline packs larger than 800 MB are split into numbered parts. Keep all parts
+  in the same folder and select any part to import the complete pack.
 
 ## Tabs
 
@@ -43,7 +49,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 ### Offline mode and privacy
 
-Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, choose **Mods → Download offline pack**, or download `AnyAspectRatio-Offline-Mods-1.7.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
+Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, choose **Mods → Download offline pack**, or download `AnyAspectRatio-Offline-Mods-1.8.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
 
 ## License
 

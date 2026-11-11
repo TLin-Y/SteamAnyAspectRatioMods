@@ -1,7 +1,7 @@
 import { callable } from "@decky/api";
 import type { SupportedGameReport, PluginSettingsInfo, PluginUpdateInfo, CreditsInfo } from "./types";
 
-export const PLUGIN_VERSION = "1.7";
+export const PLUGIN_VERSION = "1.8";
 
 export const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
 
