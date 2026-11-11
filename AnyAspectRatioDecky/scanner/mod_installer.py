@@ -75,6 +75,10 @@ class OfflineModeError(NetworkError):
     """Raised instead of any network access while offline mode is on."""
 
 
+class MissingModBackupError(ValueError):
+    """A replacement file cannot be safely restored because its original backup is missing."""
+
+
 _offline_mode = False
 
 
@@ -627,6 +631,7 @@ def apply_mod_files(
                             f"Could not adjust {mod.ini_file}; the original INI was kept."
                         )
         conflicting_files = []
+        already_installed_without_backup: set[Path] = set()
         for relative_path, target in targets.items():
             if target.is_dir():
                 raise ValueError(f"Mod target is a directory: {relative_path}")
@@ -635,10 +640,7 @@ def apply_mod_files(
                 matches_mod = files_equal(target, staged)
                 backup = backups.get(target)
                 if matches_mod and backup is not None and not backup.is_file():
-                    raise ValueError(
-                        "Mod target is already replaced but its original backup is missing; "
-                        "verify game files before applying"
-                    )
+                    already_installed_without_backup.add(target)
                 if not matches_mod:
                     conflicting_files.append(relative_path)
         if launcher is not None and launcher_target is not None and launcher_backup is not None:
@@ -664,6 +666,8 @@ def apply_mod_files(
 
         for relative_path, target in targets.items():
             staged = staged_by_target[target]
+            if target in already_installed_without_backup:
+                continue
             if (
                 replace_existing_files is False
                 and relative_path in conflicting_files
@@ -931,8 +935,11 @@ def remove_mod_files(
         if backup_target.exists() and not backup_target.is_file():
             raise ValueError(f"Mod target is not a regular file: {backup_target.name}")
         if not backup.is_file() and backup_target.exists():
-            raise ValueError(
-                "Original mod target backup is missing; verify game files before removing the mod"
+            raise MissingModBackupError(
+                f"Cannot safely remove {backup_target.name} because its original backup "
+                f"{backup.name} is missing. In SteamOS, open Steam Library, select the game, "
+                "open Properties > Installed Files, and choose Verify integrity of game files. "
+                "Steam will restore the original file."
             )
     launcher = mod.launcher_replacement
     launcher_target = (

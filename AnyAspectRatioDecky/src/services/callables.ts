@@ -68,6 +68,7 @@ export const setModApplied = callable<
     copied_file_count: number;
     conflicting_files: string[];
     ini_adjustment_warning?: string;
+    warning?: string;
     error?: string;
   }
 >("set_mod_applied");

@@ -493,7 +493,7 @@ class ModInstallerTests(unittest.TestCase):
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
         self._backup_originals()
         (self.game_path / "helper.dll").write_bytes(b"helper")
-        with self.assertRaisesRegex(ValueError, "backup is missing"):
+        with self.assertRaisesRegex(ValueError, "Properties > Installed Files"):
             remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
         self.assertEqual(b"helper", (self.game_path / "helper.dll").read_bytes())
         (self.game_path / "Managed/Game.dll").write_bytes(b"patched game")
@@ -501,9 +501,16 @@ class ModInstallerTests(unittest.TestCase):
             "scanner.mod_installer.urlopen",
             side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
         ):
-            with self.assertRaisesRegex(ValueError, "backup is missing"):
-                apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
-        self.assertFalse(list(self.game_path.rglob("*.bak")))
+            self.assertEqual(
+                [],
+                apply_mod_files(mod, str(self.game_path), replace_existing_files=True),
+            )
+        self.assertEqual(b"patched game", (self.game_path / "Managed/Game.dll").read_bytes())
+        self.assertFalse((self.game_path / "Managed/Game.dll.bak").exists())
+        self.assertEqual(
+            b"original other",
+            (self.game_path / "other.dll.bak").read_bytes(),
+        )
 
     def test_backup_replacement_failure_restores_renamed_original(self) -> None:
         mod = self._backup_mod()

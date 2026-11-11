@@ -189,6 +189,11 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           null,
         );
         if (result.error) throw new Error(result.error);
+        if (result.warning) {
+          showErrorModal("Mod removal needs attention", result.warning);
+          await refreshReport();
+          return;
+        }
         let iniAdjustmentWarning = result.ini_adjustment_warning ?? "";
         let remainingConflicts = result.conflicting_files;
         if (result.conflicting_files.length > 0) {
@@ -196,6 +201,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
             const replaceFiles = await confirmFileReplacement(
               game.app_name,
               result.conflicting_files,
+              game.backup_files ?? [],
             );
             const retry = await setModApplied(
               game.mod_id,
