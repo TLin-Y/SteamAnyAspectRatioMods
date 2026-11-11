@@ -2,6 +2,10 @@
 
 # Set the in-game resolution to 1280x720 and the SteamOS display scaling to "Stretch" so the picture fills the screen (larger text on handhelds)
 
+# Demo
+
+![DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition aspect-ratio demo](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/DYNASTY%20WARRIORS%207%20Xtreme%20Legends%20Definitive%20Edition/demo.jpg)
+
 # Install
 Extract the mod files directly into your Steam game folder (where SM6EN.exe is located).
 

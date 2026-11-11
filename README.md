@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 128 game mods](https://img.shields.io/badge/Game%20mods-128-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 129 game mods](https://img.shields.io/badge/Game%20mods-129-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -125,6 +125,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Ori and the Blind Forest: Definitive Edition | TLin-Y | [387290](https://store.steampowered.com/app/387290) | [V2 (v1.0.0)](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition) · [resolution pack](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/ForceWindowSize-v1.0.0.zip) | 2026-11-07 | [README](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/README.md) |
 | Ori and the Will of the Wisps | TLin-Y | [1057090](https://store.steampowered.com/app/1057090) | [v1.1.0](./Ori%20and%20the%20Will%20of%20the%20Wisps/Ori-and-the-Will-of-the-Wisps-v1.1.0.zip) | 2026-11-03 | [README](./Ori%20and%20the%20Will%20of%20the%20Wisps/README.md) |
 | Palworld | TLin-Y | [1623730](https://store.steampowered.com/app/1623730) | [v1.0.0](./Palworld/Palworld-v1.0.0.zip) | 2026-11-06 | [README](./Palworld/README.md) |
+| Pentiment | TLin-Y | [1205520](https://store.steampowered.com/app/1205520) | [v0.1.0](./Pentiment/Pentiment-v0.1.0.zip) | 2026-11-10 | [README](./Pentiment/README.md) |
 | Persona 3 Reload | Lyall | [2161700](https://store.steampowered.com/app/2161700) | [v1.2.4](./external/Lyall/P3RFix/P3RFix_1.2.4.zip) | 2025-06-05 | [P3RFix](https://codeberg.org/Lyall/P3RFix) |
 | Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v1.0.0](./Persona%205%20Royal/Persona-5-Royal-v1.0.0.zip) | 2026-11-04 | [README](./Persona%205%20Royal/README.md) |
 | Persona 5 Strikers | Lyall | [1382330](https://store.steampowered.com/app/1382330) | [v1.0.2](./external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip) | 2026-08-21 | [P5StrikersFix](https://codeberg.org/Lyall/P5StrikersFix) |

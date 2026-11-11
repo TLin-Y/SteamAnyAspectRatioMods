@@ -2,6 +2,10 @@
 
 Set the in-game resolution to 1280x720 and the SteamOS display scaling to "Stretch" so the picture fills the screen.
 
+## Demo
+
+![DYNASTY WARRIORS 8 Xtreme Legends Complete Edition aspect-ratio demo](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/DYNASTY%20WARRIORS%208%20Xtreme%20Legends%20Complete%20Edition/demo.jpg)
+
 ## Install
 Extract the mod files directly into your Steam game folder (where Launch.exe is located).
 
