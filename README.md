@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 129 game mods](https://img.shields.io/badge/Game%20mods-129-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 130 game mods](https://img.shields.io/badge/Game%20mods-130-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -86,6 +86,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Fate/Samurai Remnant | Lyall | [1902690](https://store.steampowered.com/app/1902690) | [v0.0.2](./external/Lyall/FateSamuraiRemnantFix/FateSamuraiRemnantFix_0.0.2.zip) | 2025-06-01 | [FateSamuraiRemnantFix](https://codeberg.org/Lyall/FateSamuraiRemnantFix) |
 | FINAL FANTASY VII REBIRTH | Lyall | [2909400](https://store.steampowered.com/app/2909400) | [v0.0.13](./external/Lyall/FF7RebirthFix/FF7RebirthFix_0.0.13.zip) | 2026-06-04 | [FF7RebirthFix](https://codeberg.org/Lyall/FF7RebirthFix) |
 | FINAL FANTASY VII REMAKE INTERGRADE | Lyall | [1462040](https://store.steampowered.com/app/1462040) | [v0.0.2](./external/Lyall/FF7RemakeFix/FF7RemakeFix_0.0.2.zip) | 2026-01-30 | [FF7RemakeFix](https://codeberg.org/Lyall/FF7RemakeFix) |
+| FINAL FANTASY XII THE ZODIAC AGE | TLin-Y | [595520](https://store.steampowered.com/app/595520) | [v1.0.1](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.1.zip) | 2026-11-11 | [README](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/README.md) |
 | Final Fantasy XIII | TLin-Y | [292120](https://store.steampowered.com/app/292120) | [v1.0.0](./Final%20Fantasy%20XIII/Final-Fantasy-XIII-v1.0.0.zip) | 2026-11-02 | [README](./Final%20Fantasy%20XIII/README.md) |
 | Final Fantasy XIII-2 | TEODORMAX | [292140](https://store.steampowered.com/app/292140) | [v1.4.0](./external/TEODORMAX/FFXIII2UW/FFXIII2UW_1.4.0.zip) | 2026-07-17 | [FFXIII2UW](https://www.nexusmods.com/finalfantasyxiii2/mods/42) |
 | FINAL FANTASY XVI | Lyall | [2515020](https://store.steampowered.com/app/2515020) | [v0.8.5](./external/Lyall/FFXVIFix/FFXVIFix_0.8.5.zip) | 2025-06-05 | [FFXVIFix](https://codeberg.org/Lyall/FFXVIFix) |

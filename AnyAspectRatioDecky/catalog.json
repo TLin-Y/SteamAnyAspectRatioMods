@@ -152,6 +152,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "final-fantasy-xii-the-zodiac-age",
+      "name": "FINAL FANTASY XII THE ZODIAC AGE - Custom Aspect Ratio",
+      "steam_app_id": "595520",
+      "install_dir": "FINAL FANTASY XII THE ZODIAC AGE",
+      "executable": "x64/FFXII_TZA.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Final Fantasy XII The Zodiac Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.1.zip",
+        "sha256": "c7cc3af89471ca948f74806a1cb7190151945c4482c0c3a2b142700e8036b39c",
+        "destination": "x64"
+      },
+      "files": ["x64/dinput8.dll", "x64/FFXII_TZA_ARFix.asi", "x64/FFXII_TZA_ARFix.ini"],
+      "ini_file": "x64/FFXII_TZA_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "final-fantasy-xiii",
       "name": "Final Fantasy XIII - Custom Aspect Ratio",
       "steam_app_id": "292120",
