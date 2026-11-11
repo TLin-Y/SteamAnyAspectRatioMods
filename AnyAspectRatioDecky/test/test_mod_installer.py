@@ -1,4 +1,5 @@
 import io
+import os
 import ssl
 import tempfile
 import unittest
@@ -7,7 +8,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from scanner.mod_catalog import IniResolutionPair, LauncherReplacement, ModDefinition, ModSource, ModSourceFile
+from scanner.mod_catalog import IniResolutionPair, LauncherReplacement, ModBackup, ModDefinition, ModSource, ModSourceFile
 from scanner.mod_installer import (
     create_ssl_context,
     apply_mod_files,
@@ -395,6 +396,187 @@ class ModInstallerTests(unittest.TestCase):
         self.assertEqual([], remove_mod_files(mod, str(self.game_path)))
         self.assertEqual(b"original", target.read_bytes())
         self.assertFalse(backup.exists())
+
+    def _backup_mod(self) -> ModDefinition:
+        return replace(
+            self._mod(
+                "archive",
+                ("helper.dll", "Managed/Game.dll", "other.dll", "fix.ini"),
+                source_path="fixes/test.zip",
+                ini_file="fix.ini",
+            ),
+            backups=(
+                ModBackup("Managed/Game.dll", "Managed/Game.dll.bak"),
+                ModBackup("other.dll", "other.dll.bak"),
+            ),
+        )
+
+    def _backup_archive(self) -> bytes:
+        return self._archive({
+            "helper.dll": b"helper",
+            "Managed/Game.dll": b"patched game",
+            "other.dll": b"patched other",
+            "fix.ini": b"[Resolution]\nWidth=1280\nHeight=800\n",
+        })
+
+    def _backup_originals(self) -> None:
+        (self.game_path / "Managed").mkdir()
+        (self.game_path / "Managed" / "Game.dll").write_bytes(b"original game")
+        (self.game_path / "other.dll").write_bytes(b"original other")
+
+    def test_multiple_backups_apply_reapply_and_restore_only_targets(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        with patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
+        ):
+            for _ in range(2):
+                self.assertEqual([], apply_mod_files(
+                    mod, str(self.game_path), replace_existing_files=True,
+                ))
+                self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll.bak").read_bytes())
+                self.assertEqual(b"original other", (self.game_path / "other.dll.bak").read_bytes())
+                self.assertEqual(b"patched game", (self.game_path / "Managed/Game.dll").read_bytes())
+                self.assertEqual(b"helper", (self.game_path / "helper.dll").read_bytes())
+            (self.game_path / "fix.ini").write_bytes(b"custom ini")
+            self.assertEqual(["fix.ini"], remove_mod_files(mod, str(self.game_path)))
+            self.assertTrue((self.game_path / "Managed/Game.dll.bak").exists())
+            self.assertEqual([], remove_mod_files(
+                mod, str(self.game_path), preserve_modified_ini=True,
+            ))
+        self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll").read_bytes())
+        self.assertEqual(b"original other", (self.game_path / "other.dll").read_bytes())
+        self.assertEqual(b"custom ini", (self.game_path / "fix.ini").read_bytes())
+        self.assertFalse((self.game_path / "helper.dll").exists())
+        self.assertFalse(list(self.game_path.rglob("*.bak")))
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
+
+    def test_backup_restore_is_not_limited_by_mod_download_file_size(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        original = b"original game larger than the normal mod file limit"
+        (self.game_path / "Managed/Game.dll").write_bytes(original)
+        with patch(
+            "scanner.mod_installer.urlopen",
+            return_value=io.BytesIO(self._backup_archive()),
+        ):
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+
+        with patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4):
+            self.assertEqual(
+                [],
+                remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False),
+            )
+
+        self.assertEqual(original, (self.game_path / "Managed/Game.dll").read_bytes())
+
+    def test_backup_conflict_prompt_and_decline_leave_originals_untouched(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        with patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
+        ):
+            for choice in (None, False):
+                self.assertEqual(["Managed/Game.dll", "other.dll"], apply_mod_files(
+                    mod, str(self.game_path), replace_existing_files=choice,
+                ))
+                self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll").read_bytes())
+                self.assertEqual(b"original other", (self.game_path / "other.dll").read_bytes())
+                self.assertFalse(list(self.game_path.rglob("*.bak")))
+        self.assertTrue((self.game_path / "helper.dll").exists())
+
+    def test_missing_original_or_backup_is_rejected_without_removing_added_files(self) -> None:
+        mod = self._backup_mod()
+        with self.assertRaisesRegex(ValueError, "missing"):
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        self._backup_originals()
+        (self.game_path / "helper.dll").write_bytes(b"helper")
+        with self.assertRaisesRegex(ValueError, "backup is missing"):
+            remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
+        self.assertEqual(b"helper", (self.game_path / "helper.dll").read_bytes())
+        (self.game_path / "Managed/Game.dll").write_bytes(b"patched game")
+        with patch(
+            "scanner.mod_installer.urlopen",
+            side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
+        ):
+            with self.assertRaisesRegex(ValueError, "backup is missing"):
+                apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        self.assertFalse(list(self.game_path.rglob("*.bak")))
+
+    def test_backup_replacement_failure_restores_renamed_original(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        real_replace = os.replace
+
+        def fail_game(source: Path, target: Path) -> None:
+            if target == self.game_path / "Managed/Game.dll":
+                raise PermissionError("replacement blocked")
+            real_replace(source, target)
+
+        with (
+            patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(self._backup_archive())),
+            patch("scanner.mod_installer.os.replace", side_effect=fail_game),
+        ):
+            with self.assertRaisesRegex(PermissionError, "replacement blocked"):
+                apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll").read_bytes())
+        self.assertFalse(list(self.game_path.rglob("*.bak")))
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
+
+    def test_backup_restore_failure_keeps_helper_and_backup(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        with patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(self._backup_archive())):
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        with patch("scanner.mod_installer.os.replace", side_effect=PermissionError("restore blocked")):
+            with self.assertRaisesRegex(PermissionError, "restore blocked"):
+                remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
+        self.assertEqual(b"helper", (self.game_path / "helper.dll").read_bytes())
+        self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll.bak").read_bytes())
+        self.assertEqual(b"patched game", (self.game_path / "Managed/Game.dll").read_bytes())
+
+    def test_backup_symlink_and_directory_rejected_before_changes(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        with patch.object(
+            Path, "is_symlink", autospec=True,
+            side_effect=lambda path: path.name == "Game.dll.bak",
+        ):
+            for operation in (apply_mod_files, remove_mod_files):
+                with self.assertRaisesRegex(ValueError, "symbolic link"):
+                    operation(mod, str(self.game_path))
+        (self.game_path / "Managed/Game.dll.bak").mkdir()
+        for operation in (apply_mod_files, remove_mod_files):
+            with self.assertRaisesRegex(ValueError, "not a regular file"):
+                operation(mod, str(self.game_path))
+
+    def test_partial_backup_restore_failure_keeps_all_backups_for_retry(self) -> None:
+        mod = self._backup_mod()
+        self._backup_originals()
+        with patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(self._backup_archive())):
+            apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
+        real_replace = os.replace
+
+        def fail_second(source: Path, target: Path) -> None:
+            if target == self.game_path / "other.dll":
+                raise PermissionError("second restore blocked")
+            real_replace(source, target)
+
+        with patch("scanner.mod_installer.os.replace", side_effect=fail_second):
+            with self.assertRaisesRegex(PermissionError, "second restore blocked"):
+                remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
+        self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll").read_bytes())
+        self.assertEqual(b"patched other", (self.game_path / "other.dll").read_bytes())
+        self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll.bak").read_bytes())
+        self.assertEqual(b"original other", (self.game_path / "other.dll.bak").read_bytes())
+        self.assertTrue((self.game_path / "helper.dll").exists())
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
+        self.assertEqual([], remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False))
+        self.assertEqual(b"original other", (self.game_path / "other.dll").read_bytes())
+        self.assertFalse(list(self.game_path.rglob("*.bak")))
+        self.assertFalse((self.game_path / "helper.dll").exists())
 
     def test_missing_archive_member_does_not_replace_existing_files(self) -> None:
         mod = self._mod(

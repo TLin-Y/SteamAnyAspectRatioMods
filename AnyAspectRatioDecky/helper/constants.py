@@ -128,6 +128,7 @@ MOD_SOURCE_KINDS = (
 )
 MOD_FILES_KEY = "files"
 MOD_BACKUP_FILE_KEY = "backup_file"
+MOD_BACKUPS_KEY = "backups"
 MOD_OFFLINE_ONLY_KEY = "offline_only"
 MOD_LAUNCHER_REPLACEMENT_KEY = "launcher_replacement"
 MOD_INI_FILE_KEY = "ini_file"

@@ -68,6 +68,67 @@ class OfflinePackTests(unittest.TestCase):
             self.assertEqual("# DS3", fetch_mod_readme(mod))
         self.assertTrue((game / "Game" / "dinput8.dll").is_file())
 
+    def _create_pack_parts(self, catalog_bytes: bytes | None = None) -> tuple[Path, Path]:
+        parts_dir = self.root / "parts"
+        parts_dir.mkdir(exist_ok=True)
+        with ZipFile(self.repo_zip) as source:
+            members = {
+                item.filename: source.read(item)
+                for item in source.infolist()
+                if not item.is_dir()
+            }
+        catalog_name = "repo-main/AnyAspectRatioDecky/catalog.json"
+        if catalog_bytes is not None:
+            members[catalog_name] = catalog_bytes
+        part_names = (
+            "AnyAspectRatio-Offline-Mods-1.8.0-part1-of-2.zip",
+            "AnyAspectRatio-Offline-Mods-1.8.0-part2-of-2.zip",
+        )
+        groups = (
+            {catalog_name, f"repo-main/{self.mod_path}"},
+            {catalog_name, "repo-main/Dark Souls III/README.md"},
+        )
+        paths = tuple(parts_dir / name for name in part_names)
+        for path, group in zip(paths, groups):
+            with ZipFile(path, "w") as archive:
+                for member in sorted(group):
+                    archive.writestr(member, members[member])
+        return paths
+
+    def test_importing_one_part_imports_the_complete_matching_set(self) -> None:
+        first, _ = self._create_pack_parts()
+
+        result = install_pack(self.store, Settings(), first)
+
+        self.assertEqual(1, result["mod_count"])
+        self.assertTrue((self.store.pack_dir / self.mod_path).is_file())
+        with patch("scanner.mod_installer.urlopen", side_effect=OSError("offline")):
+            self.assertEqual(
+                "# DS3", fetch_mod_readme(load_mod_catalog(self.store.catalog_path)[0])
+            )
+
+    def test_missing_part_keeps_existing_pack(self) -> None:
+        install_pack(self.store, Settings(), self.repo_zip)
+        first, second = self._create_pack_parts()
+        second.unlink()
+
+        with self.assertRaisesRegex(ValueError, "Keep all 2 offline pack parts"):
+            install_pack(self.store, Settings(), first)
+
+        self.assertTrue((self.store.pack_dir / self.mod_path).is_file())
+
+    def test_parts_with_different_catalogs_are_rejected(self) -> None:
+        first, second = self._create_pack_parts()
+        with ZipFile(second, "w") as archive:
+            archive.writestr(
+                "repo-main/AnyAspectRatioDecky/catalog.json",
+                b'{"schema_version":3,"mods":[]}',
+            )
+            archive.writestr("repo-main/Dark Souls III/README.md", "# DS3")
+
+        with self.assertRaisesRegex(ValueError, "different catalogs"):
+            install_pack(self.store, Settings(), (first, second))
+
     def test_online_readme_prefers_the_newest_file_over_the_pack(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)
         mod = load_mod_catalog(self.store.catalog_path)[0]
@@ -200,6 +261,43 @@ class OfflinePackTests(unittest.TestCase):
         with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
             self.assertEqual([], apply_mod_files(mod, str(game)))
             self.assertEqual("# DS3", fetch_mod_readme(mod))
+
+    def test_downloads_and_installs_all_release_pack_parts(self) -> None:
+        paths = self._create_pack_parts()
+        repository = "TLin-Y/SteamAnyAspectRatioMods"
+        tag = "v1.8.0"
+        assets = []
+        part_contents = {}
+        for path in paths:
+            url = f"https://github.com/{repository}/releases/download/{tag}/{path.name}"
+            assets.append({"name": path.name, "browser_download_url": url})
+            part_contents[url] = path.read_bytes()
+
+        with (
+            patch("store.pack.latest_release", return_value=(repository, {"assets": assets}, tag)),
+            patch(
+                "store.pack.open_url",
+                side_effect=lambda url: io.BytesIO(part_contents[url]),
+            ) as download,
+        ):
+            result = download_release_pack(self.store, Settings())
+
+        self.assertEqual(2, download.call_count)
+        self.assertEqual("1.8.0", result["version"])
+        self.assertTrue((self.store.pack_dir / self.mod_path).is_file())
+
+    def test_incomplete_release_pack_parts_are_rejected_before_download(self) -> None:
+        repository = "TLin-Y/SteamAnyAspectRatioMods"
+        tag = "v1.8.0"
+        name = "AnyAspectRatio-Offline-Mods-1.8.0-part1-of-2.zip"
+        url = f"https://github.com/{repository}/releases/download/{tag}/{name}"
+        release = {"assets": [{"name": name, "browser_download_url": url}]}
+        with (
+            patch("store.pack.latest_release", return_value=(repository, release, tag)),
+            patch("store.pack.open_url", side_effect=AssertionError("download used")),
+        ):
+            with self.assertRaisesRegex(ValueError, "incomplete offline pack part set"):
+                download_release_pack(self.store, Settings())
 
     def test_missing_or_untrusted_release_asset_keeps_existing_pack(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)

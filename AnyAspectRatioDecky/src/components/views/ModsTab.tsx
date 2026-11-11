@@ -100,7 +100,7 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
     await runAction(
       "Import failed",
       () => importOfflinePack(picked.realpath || picked.path),
-      "Repository zip imported.",
+      "Offline pack imported.",
       onDataChanged,
     );
   };
@@ -119,7 +119,7 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
     showModal(
       <ConfirmModal
         strTitle="Download offline pack (5 mins)?"
-        strDescription="Downloads the offline pack from the latest release. This may use around 500 MB or more and replaces the current offline pack and catalog with the release versions."
+        strDescription="Downloads the offline pack from the latest release. Large packs may have multiple parts (up to 800 MB each); all parts are downloaded and imported together, replacing the current offline pack and catalog."
         strOKButtonText="Download"
         onOK={() => runAction(
           "Download failed",
