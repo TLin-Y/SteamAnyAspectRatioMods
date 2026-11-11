@@ -58,7 +58,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(55, len(configured))
+        self.assertEqual(56, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -159,7 +159,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([32, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([33, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -174,7 +174,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 33), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 34), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -185,11 +185,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(33, len(catalog))
+        self.assertEqual(34, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            30,
+            31,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -453,6 +453,37 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
         self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
         self.assertEqual("DAVE THE DIVER/DAVE-THE-DIVER-v1.0.0.zip", mod.source.path)
+
+    def test_pentiment_release_paths_and_defaults(self) -> None:
+        import configparser
+
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "pentiment")
+        self.assertEqual("1205520", mod.steam_app_id)
+        self.assertEqual("Pentiment", mod.install_dir)
+        self.assertEqual("Pentiment.exe", mod.executable)
+        self.assertEqual(("winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"), mod.files)
+        self.assertEqual("Pentiment_ARFix.ini", mod.ini_file)
+        self.assertEqual(("winhttp=n,b",), mod.wine_dll_overrides)
+        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("Pentiment/Pentiment-v0.1.0.zip", mod.source.path)
+        self.assertEqual(1, len(mod.ini_resolution))
+        pair = mod.ini_resolution[0]
+        self.assertEqual(("Resolution", "Width", "Height", "pixels"),
+                         (pair.section, pair.width, pair.height, pair.kind))
+        root = Path(__file__).resolve().parents[2]
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                set(mod.files) | {"README.md", "LICENSE-Ultimate-ASI-Loader.txt"},
+                set(archive.namelist()),
+            )
+            self.assertEqual((root / mod_readme_path(mod)).read_bytes(), archive.read("README.md"))
+            config = configparser.ConfigParser()
+            config.read_string(archive.read(mod.ini_file).decode("utf-8-sig"))
+            self.assertTrue(config.getboolean("AspectRatio", "Enabled"))
+            self.assertTrue(config.getboolean("Resolution", "Borderless"))
+            self.assertEqual(1280, config.getint("Resolution", "Width"))
+            self.assertEqual(800, config.getint("Resolution", "Height"))
 
     def test_sanabi_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "sanabi")

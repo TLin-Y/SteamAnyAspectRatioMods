@@ -441,6 +441,22 @@
       "wine_dll_overrides": ["version=n,b"]
     },
     {
+      "id": "pentiment",
+      "name": "Pentiment - Custom Aspect Ratio",
+      "steam_app_id": "1205520",
+      "install_dir": "Pentiment",
+      "executable": "Pentiment.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Pentiment/Pentiment-v0.1.0.zip",
+        "sha256": "a52199f88d5daa5e4c3fbbc57b01fdbd198a1e4a7ac47996c0950a77aeab5404"
+      },
+      "files": ["winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"],
+      "ini_file": "Pentiment_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["winhttp=n,b"]
+    },
+    {
       "id": "rayman-legends",
       "name": "Rayman Legends - Custom Aspect Ratio",
       "steam_app_id": "242550",
