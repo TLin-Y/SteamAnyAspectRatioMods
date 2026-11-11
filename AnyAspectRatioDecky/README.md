@@ -38,8 +38,6 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 - **Non-Steam games work too.** It is matched by its exe name.
 - **Edit settings in the plugin.** Change resolution, aspect ratio or FOV right from **Game Mode**. Changes save automatically.
 - **Offline friendly.** Import the repository zip once, or point it at a folder of your own mod zips.
-- Offline packs larger than 800 MB are split into numbered parts. Keep all parts
-  in the same folder and select any part to import the complete pack.
 
 ## Tabs
 
