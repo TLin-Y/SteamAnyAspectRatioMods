@@ -897,7 +897,7 @@ class SupportedGameScannerTests(unittest.TestCase):
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.game_path = Path(self.temporary_directory.name) / "game"
         self.game_path.mkdir()
-        self.mod = load_mod_catalog()[0]
+        self.mod = next(mod for mod in load_mod_catalog() if not mod.file_backups)
         self.app = InstalledApp(
             app_id=self.mod.steam_app_id,
             name="Test Game",
@@ -965,6 +965,32 @@ class SupportedGameScannerTests(unittest.TestCase):
         complete = self._scan()
         self.assertEqual(MOD_CATALOG_FILE_STATUS_COMPLETE, complete.file_status)
         self.assertEqual(str(self.game_path / self.mod.ini_file), complete.ini_path)
+
+    def test_restored_backup_target_is_not_reported_as_an_installed_mod_file(self) -> None:
+        mod = next(
+            item for item in load_mod_catalog()
+            if item.mod_id == "ai-the-somnium-files"
+        )
+        backup = mod.file_backups[0]
+        self._touch(backup.target)
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+
+        def scan() -> SupportedGame:
+            return match_supported_games(
+                SteamScanReport(1, 1, [app], []),
+                (mod,),
+            ).supported_games[0]
+
+        restored = scan()
+        self.assertEqual(MOD_CATALOG_FILE_STATUS_NONE, restored.file_status)
+        self.assertEqual([], restored.files_present)
+        self.assertNotIn(backup.target, restored.mod_files)
+
+        self._touch(backup.backup)
+        applied = scan()
+        self.assertEqual(MOD_CATALOG_FILE_STATUS_PARTIAL, applied.file_status)
+        self.assertIn(backup.target, applied.files_present)
+        self.assertIn(backup.target, applied.mod_files)
 
     def test_ignores_app_with_mismatched_install_directory(self) -> None:
         mismatched_app = InstalledApp(

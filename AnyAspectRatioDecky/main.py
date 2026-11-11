@@ -29,6 +29,9 @@ from helper.constants import (
     LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE,
     LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED,
     LOG_SCAN_PHASE_FORMAT,
+    MOD_CATALOG_FILE_STATUS_COMPLETE,
+    MOD_CATALOG_FILE_STATUS_NONE,
+    MOD_CATALOG_FILE_STATUS_PARTIAL,
     MOD_SOURCE_ARCHIVE,
     STEAM_LIBRARY_UNAVAILABLE_WARNING,
 )
@@ -44,6 +47,7 @@ from scanner.plugin_updater import (
 from scanner.mod_catalog import ModDefinition, read_catalog_repository, summarize_credits
 from scanner.mod_installer import (
     NetworkError,
+    MissingModBackupError,
     apply_mod_files,
     existing_mod_logs,
     fetch_mod_readme,
@@ -111,6 +115,44 @@ def _update_available(
     )
 
 
+def _include_tracked_backup_targets(
+    game: SupportedGame,
+    mod: ModDefinition,
+    hashes: dict[str, dict[str, str]],
+) -> SupportedGame:
+    if (
+        game.game_path is None
+        or mod.source.sha256 is None
+        or hashes.get(game.game_path, {}).get(mod.mod_id) != mod.source.sha256
+    ):
+        return game
+
+    missing_backups = [
+        item
+        for item in mod.file_backups
+        if (Path(game.game_path) / item.target).is_file()
+        and not (Path(game.game_path) / item.backup).is_file()
+    ]
+    if not missing_backups:
+        return game
+
+    targets = {item.target for item in missing_backups}
+    present_files = list(dict.fromkeys([*game.files_present, *targets]))
+    missing_files = [path for path in game.files_missing if path not in targets]
+    file_status = (
+        MOD_CATALOG_FILE_STATUS_COMPLETE if not missing_files
+        else MOD_CATALOG_FILE_STATUS_PARTIAL if present_files
+        else MOD_CATALOG_FILE_STATUS_NONE
+    )
+    return replace(
+        game,
+        file_status=file_status,
+        files_present=present_files,
+        files_missing=missing_files,
+        mod_files=list(dict.fromkeys([*game.mod_files, *targets])),
+    )
+
+
 def _selected_groups(
     candidates: list[tuple[object, object, object]],
     choices: dict[str, dict[str, str]],
@@ -163,18 +205,20 @@ class Plugin:
             log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="applied-hashes")
             report.warnings.append(str(error))
             hashes = {}
-        report.supported_games = [
-            replace(
+        games = []
+        for game in report.supported_games:
+            mod = report.mods[game.mod_id]
+            game = _include_tracked_backup_targets(game, mod, hashes)
+            games.append(replace(
                 game,
                 update_available=_update_available(
-                    game.game_path, game.files_present, report.mods[game.mod_id], hashes
+                    game.game_path, game.files_present, mod, hashes
                 ),
                 log_files=_find_mod_logs(
-                    report.mods[game.mod_id].files, game.mod_name, game.game_path, report.warnings,
+                    mod.files, game.mod_name, game.game_path, report.warnings,
                 ),
-            )
-            for game in report.supported_games
-        ]
+            ))
+        report.supported_games = games
         if not include_all_matches:
             choices = store.load_matched_games()
             groups = _selected_groups(
@@ -664,12 +708,29 @@ class Plugin:
                 else:
                     copied_file_count = len(mod.files)
             else:
-                conflicting_files = remove_mod_files(
-                    mod,
-                    installed_game_path,
-                    preserve_modified_ini=preserve_modified_ini,
-                    ini_resolution=ini_resolution,
-                )
+                try:
+                    conflicting_files = remove_mod_files(
+                        mod,
+                        installed_game_path,
+                        preserve_modified_ini=preserve_modified_ini,
+                        ini_resolution=ini_resolution,
+                    )
+                except MissingModBackupError as error:
+                    store = get_store()
+                    store.set_applied_hash(installed_game_path, mod.mod_id, None)
+                    store.last_scan_path.unlink(missing_ok=True)
+                    warning = str(error)
+                    log.warning(
+                        LOG_EVENT_MOD_FILE_OPERATION_FAILED,
+                        mod_id=mod_id,
+                        phase=f"{phase}-missing-backup",
+                    )
+                    return {
+                        "applied": True,
+                        "copied_file_count": 0,
+                        "conflicting_files": [],
+                        "warning": warning,
+                    }
                 copied_file_count = 0
             if mod.source.kind == MOD_SOURCE_ARCHIVE:
                 complete_apply = applied and not conflicting_files

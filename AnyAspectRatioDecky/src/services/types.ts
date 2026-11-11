@@ -29,6 +29,7 @@ export type SupportedGameReport = {
     match_locked?: boolean;
     log_files?: string[];
     display_tags?: string[];
+    backup_files?: string[];
   }[];
   warnings: string[];
 };

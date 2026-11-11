@@ -6,6 +6,7 @@ import { GameChoiceModal } from "../components/modals/GameChoiceModal";
 export function confirmFileReplacement(
   gameName: string,
   conflictingFiles: string[],
+  backupFiles: string[] = [],
 ): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false;
@@ -17,11 +18,16 @@ export function confirmFileReplacement(
       closeModal?.();
     };
 
+    const backupConflicts = conflictingFiles.filter((file) => backupFiles.includes(file));
+    const otherConflicts = conflictingFiles.filter((file) => !backupFiles.includes(file));
+    const description = backupConflicts.length > 0
+      ? `This mod requires replacing the original ${backupConflicts.join(", ")}. The original file will be backed up so it can be restored when you unapply the mod.${otherConflicts.length ? `\n\nOther conflicting files:\n${otherConflicts.join("\n")}` : ""}\n\nGo ahead?`
+      : `${gameName} has files that differ from this mod's source:\n${conflictingFiles.join("\n")}\n\nReplace these files? Choosing "Keep existing files" preserves them and still applies the other mod files.`;
     const modal = showModal(
       <ConfirmModal
-        strTitle="Existing mod files differ"
-        strDescription={`${gameName} has files that differ from this mod's source:\n${conflictingFiles.join("\n")}\n\nReplace these files? Choosing "Keep existing files" preserves them and still applies the other mod files.`}
-        strOKButtonText="Replace files"
+        strTitle={backupConflicts.length > 0 ? "Replace original game file?" : "Existing mod files differ"}
+        strDescription={description}
+        strOKButtonText={backupConflicts.length > 0 ? "Replace original file" : "Replace files"}
         strCancelButtonText="Keep existing files"
         onOK={() => finish(true)}
         onCancel={() => finish(false)}

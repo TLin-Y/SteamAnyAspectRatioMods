@@ -129,3 +129,40 @@ test("catalog update errors are surfaced without reporting success", async () =>
   assert.equal(h.changed, 0);
   assert.equal(h.render().props.children[0].props.children.props.disabled, false);
 });
+
+test("backup-target replacement confirmation explains the original-file backup", async () => {
+  let modal;
+  const source = fs.readFileSync(path.join(__dirname, "../src/services/modals.tsx"), "utf8");
+  const output = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText;
+  const module = { exports: {} };
+  new Function("require", "module", "exports", output)(
+    (name) => {
+      if (name === "react/jsx-runtime") return { jsx: (type, props) => ({ type, props }) };
+      if (name === "@decky/ui") return {
+        ConfirmModal: "ConfirmModal",
+        showModal: (node) => {
+          modal = node;
+          return { Close() {} };
+        },
+      };
+      if (name === "../components/modals/LaunchOptionsInfoModal") return { LaunchOptionsInfoModal: "LaunchOptionsInfoModal" };
+      if (name === "../components/modals/GameChoiceModal") return { GameChoiceModal: "GameChoiceModal" };
+      throw new Error(`Unexpected dependency: ${name}`);
+    },
+    module,
+    module.exports,
+  );
+  const confirmation = module.exports.confirmFileReplacement(
+    "AI: The Somnium Files",
+    ["AI_TheSomniumFiles_Data/Managed/Assembly-CSharp.dll"],
+    ["AI_TheSomniumFiles_Data/Managed/Assembly-CSharp.dll"],
+  );
+  assert.equal(modal.props.strTitle, "Replace original game file?");
+  assert.match(modal.props.strDescription, /requires replacing the original/);
+  assert.match(modal.props.strDescription, /backed up so it can be restored/);
+  assert.equal(modal.props.strOKButtonText, "Replace original file");
+  modal.props.onOK();
+  assert.equal(await confirmation, true);
+});

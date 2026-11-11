@@ -25,7 +25,10 @@ class AppliedVersionTests(unittest.TestCase):
         self.game = self.root / "game"
         self.game.mkdir()
         self.store = PluginStore(self.root / "data")
-        self.mod = next(mod for mod in load_mod_catalog() if mod.source.sha256)
+        self.mod = next(
+            mod for mod in load_mod_catalog()
+            if mod.source.sha256 and not mod.file_backups
+        )
         self.app = InstalledApp(
             self.mod.steam_app_id, "Game", self.mod.install_dir, "", str(self.game)
         )
@@ -221,6 +224,44 @@ class AppliedVersionTests(unittest.TestCase):
         self.assertIn(updated.mod_id, self.store.load_applied_hashes()[str(self.game)])
         self._operation(updated, False, [])
         self.assertEqual({}, self.store.load_applied_hashes())
+
+    def test_missing_backup_keeps_tracked_mod_applied_until_unapply_warns(self) -> None:
+        mod = next(item for item in load_mod_catalog() if item.mod_id == "undertale")
+        self.app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        (self.game / mod.files[0]).write_bytes(b"patched")
+        self.store.set_applied_hash(str(self.game), mod.mod_id, mod.source.sha256)
+
+        applied = self._scan(mod).supported_games[0]
+        self.assertEqual("complete", applied.file_status)
+        self.assertIn(mod.files[0], applied.mod_files)
+
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(
+                self.main.Plugin,
+                "_resolve_mod_game",
+                return_value=(mod, str(self.game)),
+            ),
+            patch.object(
+                self.main,
+                "remove_mod_files",
+                side_effect=mod_installer.MissingModBackupError(
+                    "Verify integrity of game files"
+                ),
+            ),
+        ):
+            result = asyncio.run(
+                self.main.Plugin().set_mod_applied(mod.mod_id, str(self.game), False)
+            )
+
+        self.assertIn("Verify integrity of game files", result["warning"])
+        self.assertNotIn(
+            mod.mod_id,
+            self.store.load_applied_hashes().get(str(self.game), {}),
+        )
+        restored = self._scan(mod).supported_games[0]
+        self.assertEqual("not_detected", restored.file_status)
+        self.assertNotIn(mod.files[0], restored.mod_files)
 
     def test_local_archives_do_not_record_or_display_updates(self) -> None:
         local = replace(self.mod, source=replace(self.mod.source, kind="local_archive"))

@@ -70,6 +70,7 @@ class SupportedGame:
     log_files: list[str] = field(default_factory=list)
     offline_only: bool = False
     display_tags: list[str] = field(default_factory=list)
+    backup_files: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -96,6 +97,7 @@ class SupportedGame:
             "log_files": self.log_files,
             "offline_only": self.offline_only,
             MOD_DISPLAY_TAGS_KEY: self.display_tags,
+            "backup_files": self.backup_files,
         }
 
 
@@ -153,10 +155,15 @@ def _build_game(
         game_path / mod.executable if game_path is not None and mod.executable else None
     )
     executable_found = found_executable is not None
+    backup_paths = {item.target: item.backup for item in mod.file_backups}
     present_files = [
         path
         for path in mod.files
         if game_path is not None and _is_file(game_path / path, file_cache)
+        and (
+            path not in backup_paths
+            or _is_file(game_path / backup_paths[path], file_cache)
+        )
     ]
     present_set = set(present_files)
     missing_files = [path for path in mod.files if path not in present_set]
@@ -198,7 +205,7 @@ def _build_game(
         ini_path=ini_path,
         ini_file=mod.ini_file,
         mod_files=[
-            *mod.files,
+            *(path for path in mod.files if path not in backup_paths or path in present_set),
             *([mod.launcher_replacement.target] if mod.launcher_replacement else []),
         ],
         source_kind=mod.source.kind,
@@ -206,6 +213,7 @@ def _build_game(
         manual=mod.manual,
         offline_only=mod.offline_only,
         display_tags=list(mod.display_tags),
+        backup_files=[item.target for item in mod.file_backups],
     )
 
 
