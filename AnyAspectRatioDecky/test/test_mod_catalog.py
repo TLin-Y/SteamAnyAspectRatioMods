@@ -58,7 +58,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(56, len(configured))
+        self.assertEqual(57, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -159,7 +159,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([33, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([34, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -174,7 +174,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 34), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 35), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -185,11 +185,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(34, len(catalog))
+        self.assertEqual(35, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            31,
+            32,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
@@ -232,6 +232,44 @@ class ModCatalogTests(unittest.TestCase):
                         (repository_root / source_file.path).is_file(),
                         candidate.mod_id,
                     )
+
+    def test_ffxii_package_and_install_paths(self) -> None:
+        import configparser
+
+        mod = next(
+            mod for mod in load_mod_catalog()
+            if mod.mod_id == "final-fantasy-xii-the-zodiac-age"
+        )
+        self.assertEqual("595520", mod.steam_app_id)
+        self.assertEqual("FINAL FANTASY XII THE ZODIAC AGE", mod.install_dir)
+        self.assertEqual("x64/FFXII_TZA.exe", mod.executable)
+        self.assertEqual("x64", mod.source.destination)
+        self.assertEqual(
+            ("x64/dinput8.dll", "x64/FFXII_TZA_ARFix.asi", "x64/FFXII_TZA_ARFix.ini"),
+            mod.files,
+        )
+        self.assertEqual("x64/FFXII_TZA_ARFix.ini", mod.ini_file)
+        self.assertEqual(("dinput8=n,b",), mod.wine_dll_overrides)
+        root = Path(__file__).resolve().parents[2]
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                {"dinput8.dll", "FFXII_TZA_ARFix.asi", "FFXII_TZA_ARFix.ini",
+                 "README.md", "LICENSE-Ultimate-ASI-Loader.txt"},
+                set(archive.namelist()),
+            )
+            readme = (root / mod_readme_path(mod)).read_bytes()
+            for image in (b"ff12.jpg", b"ff12demo.jpg", b"ff12demo2.jpg"):
+                self.assertIn(image, readme)
+            self.assertIn(b"at 4:3", readme)
+            self.assertIn(b"SteamOS / Winlator", readme)
+            self.assertIn(b"FOV fixes are enabled by default", readme)
+            config = configparser.ConfigParser()
+            config.read_string(archive.read("FFXII_TZA_ARFix.ini").decode("utf-8-sig"))
+            self.assertEqual(1280, config.getint("Window", "Width"))
+            self.assertEqual(800, config.getint("Window", "Height"))
+            self.assertTrue(config.getboolean("Resolution", "Enabled"))
+            self.assertTrue(config.getboolean("FOV", "Enabled"))
 
     def test_dw7xl_package_and_install_paths(self) -> None:
         import configparser
