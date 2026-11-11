@@ -159,8 +159,8 @@
       "executable": "x64/FFXII_TZA.exe",
       "source": {
         "kind": "archive",
-        "path": "Final Fantasy XII The Zodiac Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.1.zip",
-        "sha256": "c7cc3af89471ca948f74806a1cb7190151945c4482c0c3a2b142700e8036b39c",
+        "path": "Final Fantasy XII The Zodiac Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.0.zip",
+        "sha256": "2a15ec9572bfb06517137ca0b5c3ea10c0dc3eeefe9238fd1fb48a9d4436bdf5",
         "destination": "x64"
       },
       "files": ["x64/dinput8.dll", "x64/FFXII_TZA_ARFix.asi", "x64/FFXII_TZA_ARFix.ini"],
