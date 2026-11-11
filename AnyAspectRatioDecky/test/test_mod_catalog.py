@@ -245,6 +245,10 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual("x64/FFXII_TZA.exe", mod.executable)
         self.assertEqual("x64", mod.source.destination)
         self.assertEqual(
+            "Final Fantasy XII The Zodiac Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.0.zip",
+            mod.source.path,
+        )
+        self.assertEqual(
             ("x64/dinput8.dll", "x64/FFXII_TZA_ARFix.asi", "x64/FFXII_TZA_ARFix.ini"),
             mod.files,
         )
@@ -259,6 +263,7 @@ class ModCatalogTests(unittest.TestCase):
                 set(archive.namelist()),
             )
             readme = (root / mod_readme_path(mod)).read_bytes()
+            self.assertEqual(readme, archive.read("README.md"))
             for image in (b"ff12.jpg", b"ff12demo.jpg", b"ff12demo2.jpg"):
                 self.assertIn(image, readme)
             self.assertIn(b"at 4:3", readme)

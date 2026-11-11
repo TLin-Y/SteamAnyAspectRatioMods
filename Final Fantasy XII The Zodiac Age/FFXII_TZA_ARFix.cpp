@@ -24,7 +24,19 @@ namespace
     SafetyHookMid projectionHook;
     SafetyHookMid frustumHook;
     SafetyHookMid viewportHook;
+    SafetyHookMid legacyProjectionHook;
+    SafetyHookMid legacyAuxiliaryHook;
+    float* legacyProjection = nullptr;
     std::atomic<float> renderAspect{ 0.0f };
+
+    constexpr char legacyProjectionPattern[] =
+        "48 8D 15 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? "
+        "4C 8D 05 ?? ?? ?? ?? 48 8B D3 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? "
+        "48 8D 15 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ??";
+    constexpr char legacyAuxiliaryPattern[] =
+        "F3 0F 10 1D ?? ?? ?? ?? 48 8D 55 40 F3 0F 10 15 ?? ?? ?? ?? "
+        "48 8D 4C 24 60 E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? "
+        "4C 8D 45 40 48 8B D0 48 8D 0D ?? ?? ?? ??";
 
     constexpr char resolutionPattern[] =
         "44 8B D2 0F 57 C9 41 8B C0 4C 8B C9 44 89 51 10 44 89 41 14 "
@@ -301,6 +313,57 @@ namespace
             static_cast<std::uintptr_t>(site - base));
     }
 
+    void PreserveLegacyProjection(float* matrix, float originalAspect, const char* name)
+    {
+        const float aspect = renderAspect.load(std::memory_order_relaxed);
+        constexpr float nativeAspect = 16.0f / 9.0f;
+        if (!(aspect > 0.0f && aspect < nativeAspect))
+            return;
+        if (!matrix || !std::isfinite(originalAspect) || originalAspect <= 0.0f
+            || !std::isfinite(matrix[0]) || !std::isfinite(matrix[5])
+            || matrix[0] <= 0.0f || matrix[5] <= 0.0f)
+        {
+            SPDLOG_ERROR("Invalid {} legacy projection; leaving it unchanged.", name);
+            return;
+        }
+        const float horizontal = matrix[0];
+        const float vertical = matrix[5];
+        matrix[0] *= originalAspect / nativeAspect;
+        matrix[5] *= aspect / nativeAspect;
+        static std::atomic<unsigned> observations{ 0 };
+        if (observations.fetch_add(1, std::memory_order_relaxed) < 48)
+            SPDLOG_INFO("Legacy {} projection: source aspect={}, screen aspect={}, "
+                "H={} -> {}, V={} -> {}, physical aspect={}.",
+                name, originalAspect, aspect, horizontal, matrix[0],
+                vertical, matrix[5], matrix[5] / matrix[0]);
+    }
+
+    void PreserveLegacyScreenProjection(SafetyHookContext& ctx)
+    {
+        PreserveLegacyProjection(legacyProjection, ctx.xmm8.f32[0], "screen");
+    }
+
+    void PreserveLegacyAuxiliaryProjection(SafetyHookContext& ctx)
+    {
+        PreserveLegacyProjection(reinterpret_cast<float*>(ctx.rbp + 0x40),
+            16.0f / 9.0f, "auxiliary");
+    }
+
+    void InstallLegacyProjectionHooks()
+    {
+        if (!settings.fov)
+            return;
+        auto* base = reinterpret_cast<std::uint8_t*>(GetModuleHandleW(nullptr));
+        auto* site = FindHookSite(base, "Legacy screen projection", legacyProjectionPattern, 0x13);
+        std::int32_t displacement = 0;
+        std::memcpy(&displacement, site - 0x10, sizeof(displacement));
+        legacyProjection = reinterpret_cast<float*>(site - 0xC + displacement);
+        InstallFovHook(legacyProjectionHook, "Legacy screen projection",
+            legacyProjectionPattern, 0x13, PreserveLegacyScreenProjection);
+        InstallFovHook(legacyAuxiliaryHook, "Legacy auxiliary projection",
+            legacyAuxiliaryPattern, 0x1E, PreserveLegacyAuxiliaryProjection);
+    }
+
     struct WindowCandidate
     {
         HWND handle = nullptr;
@@ -452,6 +515,7 @@ namespace
                     PreserveSceneFrustum);
             });
             install("Viewport", [] { InstallViewportHook(); });
+            install("Legacy projection", [] { InstallLegacyProjectionHooks(); });
             if (!settings.enabled)
             {
                 SPDLOG_INFO("Window override disabled.");

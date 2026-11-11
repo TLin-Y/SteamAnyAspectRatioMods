@@ -20,5 +20,10 @@ Launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`
 Edit `Width` and `Height` in `[Window]` in `FFXII_TZA_ARFix.ini`. Resolution
 and FOV fixes are enabled by default.
 
+Narrower screens preserve horizontal coverage; ultrawide screens preserve
+vertical coverage. Legacy effect layers and menu backgrounds use matching
+projection framing, fixing ghosting and compressed pause-menu backgrounds.
+Set `Borderless = false` to keep window borders.
+
 The fix uses code signatures instead of an executable version check. Other
 versions may work, but have not been tested; missing hooks are logged.
