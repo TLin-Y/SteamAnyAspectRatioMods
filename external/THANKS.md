@@ -14,6 +14,7 @@ Special thanks to:
 - [TEODORMAX](https://www.nexusmods.com/finalfantasyxiii2/mods/42), for Final Fantasy XIII-2 and Lightning Returns fixes.
 - [Twig](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517), for the Undertale Ultrawide Fix.
 - [TechieW](https://www.nexusmods.com/eldenring/mods/7870), for the Elden Ring Ultrawide Fix.
+- [m.vico](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230), for Keyblade Masters Ultrawide for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
 - **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
 
 Thank you as well to every contributor and author credited in the individual

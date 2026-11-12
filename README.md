@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 131 game mods](https://img.shields.io/badge/Game%20mods-131-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 133 game mods](https://img.shields.io/badge/Game%20mods-133-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -29,6 +29,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
+- **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
 - **MinuteReversal**, **Nicolas Busseneau** ([Hephaistos](https://github.com/nbusseneau/hephaistos)), **TEODORMAX**, **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
 
 ## In action
@@ -98,6 +99,8 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Hatsune Miku: Project DIVA Mega Mix+ | Lyall | [1761390](https://store.steampowered.com/app/1761390) | [v0.0.1](./external/Lyall/MegaMixPlusFix/MegaMixPlusFix_0.0.1.zip) | 2025-06-01 | [MegaMixPlusFix](https://codeberg.org/Lyall/MegaMixPlusFix) |
 | Indiana Jones and the Great Circle | Lyall | [2677660](https://store.steampowered.com/app/2677660) | [v0.0.8](./external/Lyall/GreatCircleFix/GreatCircleFix_0.0.8.zip) | 2025-06-01 | [GreatCircleFix](https://codeberg.org/Lyall/GreatCircleFix) |
 | Judgment | Lyall | [2058180](https://store.steampowered.com/app/2058180) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) (manual install) |
+| KINGDOM HEARTS -HD 1.5+2.5 ReMIX- | m.vico | [2552430](https://store.steampowered.com/app/2552430) | [v1.0.1](./external/mvico/Keyblade%20Masters%20Ultrawide%20-%20KH%201.5-2.5/Keyblade%20Masters%20Ultrawide%20KH%201.5-2.5%20230%201.0.1.zip) | 2026-09-10 | [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) |
+| KINGDOM HEARTS III | m.vico | [2552450](https://store.steampowered.com/app/2552450) | [v1.0.1](./external/mvico/Keyblade%20Masters%20Ultrawide%20-%20KH3/Keyblade%20Masters%20Ultrawide%20KH3%202553%201.0.1.zip) | 2026-06-05 | [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomhearts3/mods/2553) |
 | LEGO Batman: Legacy of the Dark Knight | Lyall | [2215200](https://store.steampowered.com/app/2215200) | [v0.0.4](./external/Lyall/LEGOBatmanLotDKFix/LEGOBatmanLotDKFix_0.0.4.zip) | 2026-09-17 | [LEGOBatmanLotDKFix](https://codeberg.org/Lyall/LEGOBatmanLotDKFix) |
 | Lightning Returns: Final Fantasy XIII | TEODORMAX | [345350](https://store.steampowered.com/app/345350) | [v1.0.0](./external/TEODORMAX/UltrawideFix-LRFF13/UltrawideFix-LRFF13_1.0.0.zip) | 2026-07-28 | [UltrawideFix](https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35) |
 | Like a Dragon Gaiden: The Man Who Erased His Name | Lyall | [2375550](https://store.steampowered.com/app/2375550) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) (manual install) |
