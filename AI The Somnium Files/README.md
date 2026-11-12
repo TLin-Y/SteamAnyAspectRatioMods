@@ -19,7 +19,9 @@ Fullscreen = false
 PreserveHUDAspect = true
 ```
 
-`PreserveHUDAspect = true` keeps HUD proportions at all aspect ratios
+`PreserveHUDAspect = true` keeps HUD proportions at all aspect ratios.
+
+Fixes 3D/AI Sight selection and menu reopening after minimize/restore.
 
 Tested on Windows at 4:3 and ultrawide.
 

@@ -107,6 +107,115 @@ internal static class AI1ManagedPatch
         }
     }
 
+    private static void PatchQueries(ModuleDefinition module, TypeDefinition helper,
+        TypeDefinition controller, HashSet<string> changed)
+    {
+        var getComponent = (GenericInstanceMethod)controller.Methods.Single(m => m.Name == "Start")
+            .Body.Instructions.Select(i => i.Operand).OfType<GenericInstanceMethod>()
+            .First(m => m.Name == "GetComponent"
+                && m.DeclaringType.FullName == "UnityEngine.Component");
+        var getController = new GenericInstanceMethod(getComponent.ElementMethod);
+        getController.GenericArguments.Add(controller);
+        var queryNames = new[] {
+            "ViewportPointToRay", "ScreenPointToRay", "WorldToScreenPoint",
+            "WorldToViewportPoint", "ScreenToWorldPoint", "ViewportToWorldPoint"
+        };
+        var methods = module.GetType("Lua_UnityEngine_Camera").Methods.Where(m =>
+            queryNames.Contains(m.Name)).ToArray();
+        int calls = 0;
+        foreach (var method in methods)
+        {
+            var sites = method.Body.Instructions.Where(i =>
+                i.OpCode.Code == Code.Callvirt && i.Operand is MethodReference
+                && ((MethodReference)i.Operand).DeclaringType.FullName == "UnityEngine.Camera"
+                && queryNames.Contains(((MethodReference)i.Operand).Name)).ToArray();
+            if (sites.Length != 1)
+                throw new InvalidOperationException("Unexpected camera query sites: " + method.FullName);
+            foreach (var site in sites)
+            {
+                var original = (MethodReference)site.Operand;
+                if (original.Parameters.Count != 1
+                    || original.Parameters[0].ParameterType.FullName != "UnityEngine.Vector3")
+                    throw new InvalidOperationException("Unexpected camera query signature: " + original);
+                var replacement = helper.Methods.Single(m => m.Name == original.Name
+                    && m.IsPublic && m.IsStatic
+                    && m.ReturnType.FullName == original.ReturnType.FullName
+                    && string.Join(",", m.Parameters.Select(p => p.ParameterType.FullName)) ==
+                    "UnityEngine.Camera,System.Int32,UnityEngine.Vector3");
+                var point = new VariableDefinition(original.Parameters[0].ParameterType);
+                method.Body.Variables.Add(point);
+                method.Body.InitLocals = true;
+                var loadType = Instruction.Create(OpCodes.Ldfld,
+                    controller.Fields.Single(f => f.Name == "renderTextureType"));
+                var loadPoint = Instruction.Create(OpCodes.Ldloc, point);
+                var added = new[] {
+                    Instruction.Create(OpCodes.Dup),
+                    Instruction.Create(OpCodes.Callvirt, getController),
+                    Instruction.Create(OpCodes.Dup),
+                    Instruction.Create(OpCodes.Brtrue, loadType),
+                    Instruction.Create(OpCodes.Pop),
+                    Instruction.Create(OpCodes.Ldc_I4_0),
+                    Instruction.Create(OpCodes.Br, loadPoint),
+                    loadType,
+                    loadPoint,
+                    Instruction.Create(OpCodes.Call, module.ImportReference(replacement))
+                };
+                site.OpCode = OpCodes.Stloc;
+                site.Operand = point;
+                var processor = method.Body.GetILProcessor();
+                var previous = site;
+                foreach (var instruction in added)
+                {
+                    processor.InsertAfter(previous, instruction);
+                    previous = instruction;
+                }
+                calls++;
+            }
+            changed.Add(method.FullName);
+        }
+        if (methods.Length != 6 || calls != 6)
+            throw new InvalidOperationException("Unexpected camera query coverage.");
+
+        var picker = module.GetType("Game.RaycastCheck3D");
+        var getRay = picker.Methods.Single(m => m.Name == "GetRay");
+        if (getRay.Body.ExceptionHandlers.Count != 0
+            || getRay.Body.Instructions.Count(i => i.OpCode.Code == Code.Callvirt
+                && i.Operand.ToString() ==
+                "UnityEngine.Ray UnityEngine.Camera::ViewportPointToRay(UnityEngine.Vector3)") != 2)
+            throw new InvalidOperationException("Unexpected image picking implementation.");
+        var imageRay = helper.Methods.Single(m => m.Name == "ImagePointToRay"
+            && m.IsPublic && m.IsStatic && m.ReturnType.FullName == "System.Boolean"
+            && string.Join(",", m.Parameters.Select(p => p.ParameterType.FullName)) ==
+            "UnityEngine.RectTransform,UnityEngine.Camera,UnityEngine.Camera,System.Int32,"
+                + "UnityEngine.Vector2,UnityEngine.Ray&");
+        getRay.Body = new MethodBody(getRay);
+        var loadTypeField = Instruction.Create(OpCodes.Ldfld,
+            controller.Fields.Single(f => f.Name == "renderTextureType"));
+        var pointArgument = Instruction.Create(OpCodes.Ldarg_1);
+        var processorRay = getRay.Body.GetILProcessor();
+        foreach (var name in new[] { "rectTransform", "UICamera", "camera", "camera" })
+        {
+            processorRay.Append(Instruction.Create(OpCodes.Ldarg_0));
+            processorRay.Append(Instruction.Create(OpCodes.Ldfld,
+                picker.Fields.Single(f => f.Name == name)));
+        }
+        foreach (var instruction in new[] {
+            Instruction.Create(OpCodes.Callvirt, getController),
+            Instruction.Create(OpCodes.Dup),
+            Instruction.Create(OpCodes.Brtrue, loadTypeField),
+            Instruction.Create(OpCodes.Pop),
+            Instruction.Create(OpCodes.Ldc_I4_0),
+            Instruction.Create(OpCodes.Br, pointArgument),
+            loadTypeField,
+            pointArgument,
+            Instruction.Create(OpCodes.Ldarg_3),
+            Instruction.Create(OpCodes.Call, module.ImportReference(imageRay)),
+            Instruction.Create(OpCodes.Ret)
+        })
+            processorRay.Append(instruction);
+        changed.Add(getRay.FullName);
+    }
+
     private static int Main(string[] args)
     {
         if (args.Length != 3)
@@ -222,12 +331,13 @@ internal static class AI1ManagedPatch
                             il.InsertBefore(start, Instruction.Create(OpCodes.Call, restore));
                             changed.Add(method.FullName);
                         }
+                        PatchQueries(module, helperType, controller, changed);
                     }
                     changed.Add(launcher.FullName);
                     Console.WriteLine("Added INI configuration before the original launcher resolution call.");
                     expected = Fingerprints(module);
                     var actualChanges = before.Keys.Where(k => before[k] != expected[k]).ToArray();
-                    if (actualChanges.Length != Targets.Length + 4 || actualChanges.Any(k => !changed.Contains(k)))
+                    if (actualChanges.Length != Targets.Length + 11 || actualChanges.Any(k => !changed.Contains(k)))
                         throw new InvalidOperationException("Unexpected method changes.");
                     using (var buffer = new MemoryStream())
                     {
@@ -247,7 +357,7 @@ internal static class AI1ManagedPatch
             }
             using (var file = new FileStream(output, FileMode.CreateNew, FileAccess.Write))
                 file.Write(patched, 0, patched.Length);
-            Console.WriteLine("Verified: eight camera/layout/startup methods changed; other method bodies preserved.");
+            Console.WriteLine("Verified: fifteen camera/layout/startup/picking methods changed; other method bodies preserved.");
             Console.WriteLine("Original SHA256: " + OriginalHash);
             Console.WriteLine("Patched  SHA256: " + Hash(output));
             Console.WriteLine("AI: THE SOMNIUM FILES any-aspect-ratio patch created.");
