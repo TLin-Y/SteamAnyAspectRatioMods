@@ -130,8 +130,28 @@ public static class AI1Resolution
         var scale = rect.localScale;
         scale.x *= bounds.width / 1920f;
         scale.y *= bounds.height / 1080f;
-        rect.localScale = scale;
-        CorrectHUDChildren(rect, true);
+        if (rect.gameObject.scene.name == "OptionMenu")
+        {
+            if (PreserveHUDAspect)
+            {
+                var correction = HUDScale(
+                    Math.Abs(parent.lossyScale.x * scale.x),
+                    Math.Abs(parent.lossyScale.y * scale.y));
+                var center = rect.rect.center;
+                var position = rect.anchoredPosition;
+                rect.anchoredPosition = new Vector2(
+                    position.x + center.x * scale.x * (1f - correction.x),
+                    position.y + center.y * scale.y * (1f - correction.y));
+                scale.x *= correction.x;
+                scale.y *= correction.y;
+            }
+            rect.localScale = scale;
+        }
+        else
+        {
+            rect.localScale = scale;
+            CorrectHUDChildren(rect, true);
+        }
         if (!layoutLogged)
         {
             Debug.Log("[AI1_ARFix] Gameplay surface/cursor scale: " + scale.x + ", "
@@ -142,23 +162,28 @@ public static class AI1Resolution
 
     public static void ApplyProjection(Camera camera, int renderTextureType)
     {
-        if (camera == null || renderTextureType < 1 || renderTextureType > 4
-            || camera.orthographic)
-            return;
-        if (Projections.ContainsKey(camera))
+        if (camera != null && Projections.ContainsKey(camera))
         {
             ErrorOnce("A gameplay projection was not restored before the next render.");
             RestoreProjection(camera);
         }
+        SetProjection(camera, renderTextureType);
+    }
+
+    private static bool SetProjection(Camera camera, int renderTextureType)
+    {
+        if (camera == null || renderTextureType < 1 || renderTextureType > 4
+            || camera.orthographic)
+            return false;
         var aspect = camera.aspect;
         if (!(aspect > 0f) || float.IsInfinity(aspect))
         {
             ErrorOnce("Invalid gameplay camera aspect; not correcting projection.");
-            return;
+            return false;
         }
         var factor = Math.Min(1f, aspect / (16f / 9f));
         if (factor == 1f)
-            return;
+            return false;
         var original = camera.projectionMatrix;
         var corrected = original;
         corrected.m00 *= factor;
@@ -168,9 +193,85 @@ public static class AI1Resolution
         if (!projectionLogged)
         {
             Debug.Log("[AI1_ARFix] Narrow gameplay projection: aspect=" + aspect
-                + ", factor=" + factor + ". Original matrix restored after render.");
+                + ", factor=" + factor + ". Rendering and picking use the same correction.");
             projectionLogged = true;
         }
+        return true;
+    }
+
+    private static bool BeginQuery(Camera camera, int renderTextureType)
+    {
+        return camera != null && !Projections.ContainsKey(camera)
+            && SetProjection(camera, renderTextureType);
+    }
+
+    public static Ray ViewportPointToRay(Camera camera, int renderTextureType, Vector3 point)
+    {
+        var changed = BeginQuery(camera, renderTextureType);
+        try { return camera.ViewportPointToRay(point); }
+        finally { if (changed) RestoreProjection(camera); }
+    }
+
+    public static bool ImagePointToRay(RectTransform rect, Camera uiCamera, Camera camera,
+        int renderTextureType, Vector2 screenPoint, out Ray ray)
+    {
+        ray = new Ray();
+        if (rect == null || camera == null)
+        {
+            ErrorOnce("Image picking has no image rectangle or scene camera.");
+            return false;
+        }
+        var bounds = rect.rect;
+        if (!(bounds.width > 0f) || !(bounds.height > 0f)
+            || float.IsInfinity(bounds.width) || float.IsInfinity(bounds.height))
+        {
+            ErrorOnce("Image picking has invalid image dimensions.");
+            return false;
+        }
+        Vector2 local;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            rect, screenPoint, uiCamera, out local))
+            return false;
+        var point = new Vector3(
+            (local.x - bounds.xMin) / bounds.width,
+            (local.y - bounds.yMin) / bounds.height, 0f);
+        ray = ViewportPointToRay(camera, renderTextureType, point);
+        return true;
+    }
+
+    public static Ray ScreenPointToRay(Camera camera, int renderTextureType, Vector3 point)
+    {
+        var changed = BeginQuery(camera, renderTextureType);
+        try { return camera.ScreenPointToRay(point); }
+        finally { if (changed) RestoreProjection(camera); }
+    }
+
+    public static Vector3 WorldToScreenPoint(Camera camera, int renderTextureType, Vector3 point)
+    {
+        var changed = BeginQuery(camera, renderTextureType);
+        try { return camera.WorldToScreenPoint(point); }
+        finally { if (changed) RestoreProjection(camera); }
+    }
+
+    public static Vector3 WorldToViewportPoint(Camera camera, int renderTextureType, Vector3 point)
+    {
+        var changed = BeginQuery(camera, renderTextureType);
+        try { return camera.WorldToViewportPoint(point); }
+        finally { if (changed) RestoreProjection(camera); }
+    }
+
+    public static Vector3 ScreenToWorldPoint(Camera camera, int renderTextureType, Vector3 point)
+    {
+        var changed = BeginQuery(camera, renderTextureType);
+        try { return camera.ScreenToWorldPoint(point); }
+        finally { if (changed) RestoreProjection(camera); }
+    }
+
+    public static Vector3 ViewportToWorldPoint(Camera camera, int renderTextureType, Vector3 point)
+    {
+        var changed = BeginQuery(camera, renderTextureType);
+        try { return camera.ViewportToWorldPoint(point); }
+        finally { if (changed) RestoreProjection(camera); }
     }
 
     public static void RestoreProjection(Camera camera)
