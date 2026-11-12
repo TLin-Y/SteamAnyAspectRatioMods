@@ -6114,6 +6114,57 @@
       ],
       "ini_file": "mhw_16x10.ini",
       "ini_resolution": [{"section": "Fix", "width": "Width", "height": "Height", "kind": "pixels"}]
+    },
+    {
+      "id": "kingdom-hearts-hd-1-5-2-5-remix-keyblade-masters-ultrawide",
+      "name": "KINGDOM HEARTS -HD 1.5+2.5 ReMIX- - Keyblade Masters Ultrawide",
+      "steam_app_id": "2552430",
+      "install_dir": "KINGDOM HEARTS -HD 1.5+2.5 ReMIX-",
+      "executable": "KINGDOM HEARTS HD 1.5+2.5 ReMIX.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/mvico/Keyblade Masters Ultrawide - KH 1.5-2.5/Keyblade Masters Ultrawide KH 1.5-2.5 230 1.0.1.zip",
+        "sha256": "efbb1346707457129af2ddb588855125105d605a8e0738d0e9668b50bacb095d"
+      },
+      "files": [
+        "d3d11.dll",
+        "Keyblade Masters Ultrawide - KH 1.5+2.5.asi",
+        "Keyblade-Masters-UW-KH-1.5+2.5-config.ini"
+      ],
+      "wine_dll_overrides": ["d3d11=n,b"],
+      "credits": [
+        {
+          "name": "m.vico",
+          "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
+        }
+      ],
+      "ini_file": "Keyblade-Masters-UW-KH-1.5+2.5-config.ini"
+    },
+    {
+      "id": "kingdom-hearts-iii-keyblade-masters-ultrawide",
+      "name": "KINGDOM HEARTS III - Keyblade Masters Ultrawide",
+      "steam_app_id": "2552450",
+      "install_dir": "KINGDOM HEARTS III",
+      "executable": "Binaries/Win64/KINGDOM HEARTS III.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/mvico/Keyblade Masters Ultrawide - KH3/Keyblade Masters Ultrawide KH3 2553 1.0.1.zip",
+        "sha256": "743090a3de0a71c5cd844ccf290da24044f15f7d81fa8fb259983987507d909f",
+        "destination": "Binaries/Win64"
+      },
+      "files": [
+        "Binaries/Win64/d3d11.dll",
+        "Binaries/Win64/KH3-UW.asi",
+        "Binaries/Win64/KH3-UW-config.ini"
+      ],
+      "wine_dll_overrides": ["d3d11=n,b"],
+      "credits": [
+        {
+          "name": "m.vico",
+          "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
+        }
+      ],
+      "ini_file": "Binaries/Win64/KH3-UW-config.ini"
     }
   ]
 }
