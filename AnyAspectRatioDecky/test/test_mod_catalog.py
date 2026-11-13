@@ -241,17 +241,35 @@ class ModCatalogTests(unittest.TestCase):
             [{**original, "width": "TargetWidth\nOther"}],
             [{**original, "height": "targetwidth"}],
             [original, original],
-            [{"section": "UserSettings", "width": "Resolution", "height": "Size", "kind": "pixels_string"}],
             [{"section": "UserSettings", "key": "Resolution", "kind": "pixels"}],
+        )
+        invalid_strings = (
+            "key",
+            [{"section": "UserSettings", "key": "Resolution", "kind": "pixels"}],
+            [{"section": "AspectRatio", "key": "TargetWidth"}],
         )
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "catalog.json"
-            for value in invalid:
-                with self.subTest(value=value):
-                    entry["ini_resolution"] = value
-                    path.write_text(json.dumps(document), encoding="utf-8")
-                    with self.assertRaisesRegex(ValueError, "ini_resolution"):
-                        load_mod_catalog(path)
+            for field, values in (("ini_resolution", invalid), ("ini_resolution_strings", invalid_strings)):
+                for value in values:
+                    with self.subTest(field=field, value=value):
+                        entry.pop("ini_resolution_strings", None)
+                        entry["ini_resolution"] = [original]
+                        entry[field] = value
+                        path.write_text(json.dumps(document), encoding="utf-8")
+                        with self.assertRaisesRegex(ValueError, "ini_resolution"):
+                            load_mod_catalog(path)
+
+    def test_ini_resolution_stays_readable_by_released_plugins(self) -> None:
+        # Plugins up to 1.8.0 refuse the whole catalog on any other ini_resolution shape or kind.
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        for entry in document["mods"]:
+            for pair in entry.get("ini_resolution", []):
+                with self.subTest(mod=entry["id"]):
+                    self.assertEqual({"section", "width", "height", "kind"}, set(pair))
+                    self.assertIn(pair["kind"], ("pixels", "ratio"))
 
     def test_ini_resolution_metadata_matches_catalogued_ini_contents(self) -> None:
         root = Path(__file__).resolve().parents[2]

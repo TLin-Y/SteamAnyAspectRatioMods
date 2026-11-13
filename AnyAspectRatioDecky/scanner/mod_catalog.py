@@ -361,29 +361,36 @@ def _parse_mod(
     if ini_file is not None:
         _validate_relative_path(ini_file, mod_id)
 
+    # Single "WIDTHxHEIGHT" keys have their own list: plugins up to 1.8.0 reject an unknown
+    # ini_resolution kind (refusing the whole catalog) but ignore unknown entry keys.
     raw_resolution = entry.get("ini_resolution", [])
-    if not isinstance(raw_resolution, list) or (raw_resolution and (not ini_file or manual)):
-        raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
+    raw_strings = entry.get("ini_resolution_strings", [])
+    for raw in (raw_resolution, raw_strings):
+        if not isinstance(raw, list) or (raw and (not ini_file or manual)):
+            raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
     resolution_pairs: list[IniResolutionPair] = []
     seen_resolution_keys: set[tuple[str, str]] = set()
-    for pair in raw_resolution:
-        # "pixels_string" is one key holding "WIDTHxHEIGHT"; the other kinds use two keys.
-        names = ("key",) if isinstance(pair, dict) and pair.get("kind") == "pixels_string" else ("width", "height")
+    candidates = [(pair, ("width", "height")) for pair in raw_resolution]
+    candidates += [(pair, ("key",)) for pair in raw_strings]
+    for pair, names in candidates:
+        fields = {"section", *names} | ({"kind"} if len(names) == 2 else set())
         if (
             not isinstance(pair, dict)
-            or set(pair) != {"section", "kind", *names}
+            or set(pair) != fields
             or not all(isinstance(pair[key], str) for key in pair)
             or not re.fullmatch(r"[A-Za-z0-9 _.-]{1,80}", pair["section"], re.ASCII)
             or not all(re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair[name], re.ASCII) for name in names)
-            or pair["kind"] not in ("pixels", "ratio", "pixels_string")
+            or pair.get("kind", "pixels") not in ("pixels", "ratio")
         ):
             raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
         keys = {(pair["section"].casefold(), pair[name].casefold()) for name in names}
         if len(keys) != len(names) or keys & seen_resolution_keys:
             raise ValueError(f"Mod {mod_id} has duplicate ini_resolution keys")
         seen_resolution_keys.update(keys)
-        width, height = (pair["key"], pair["key"]) if names == ("key",) else (pair["width"], pair["height"])
-        resolution_pairs.append(IniResolutionPair(pair["section"], width, height, pair["kind"]))
+        if len(names) == 1:
+            resolution_pairs.append(IniResolutionPair(pair["section"], pair["key"], pair["key"], "pixels_string"))
+        else:
+            resolution_pairs.append(IniResolutionPair(pair["section"], pair["width"], pair["height"], pair["kind"]))
 
     raw_files = entry.get(MOD_FILES_KEY)
     raw_overrides = entry.get(MOD_WINE_OVERRIDES_KEY)

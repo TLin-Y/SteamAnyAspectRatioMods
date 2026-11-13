@@ -6323,7 +6323,7 @@
         "Game/Binaries/Win64/SUWSF.ini"
       ],
       "ini_file": "Game/Binaries/Win64/SUWSF.ini",
-      "ini_resolution": [{"section": "UserSettings", "key": "Resolution", "kind": "pixels_string"}],
+      "ini_resolution_strings": [{"section": "UserSettings", "key": "Resolution"}],
       "wine_dll_overrides": [
         "dsound=n,b"
       ],
@@ -6353,7 +6353,7 @@
         "LICENSE"
       ],
       "ini_file": "SUWSF.ini",
-      "ini_resolution": [{"section": "UserSettings", "key": "Resolution", "kind": "pixels_string"}],
+      "ini_resolution_strings": [{"section": "UserSettings", "key": "Resolution"}],
       "wine_dll_overrides": [
         "d3d11=n,b"
       ],
