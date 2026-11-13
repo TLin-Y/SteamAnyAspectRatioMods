@@ -20,6 +20,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <optional>
+#include <string_view>
+#include <vector>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -44,15 +47,6 @@ namespace
     bool bSharedProjection = false;
     safetyhook::MidHook letterboxHook;
     std::atomic<bool> letterboxObserved = false;
-
-    constexpr std::array<std::uint8_t, 10> aspect1Signature =
-        {0xC7, 0x87, 0x30, 0x08, 0, 0, 0x39, 0x8E, 0xE3, 0x3F};
-    constexpr std::array<std::uint8_t, 10> aspect2Signature =
-        {0xC7, 0x83, 0x30, 0x08, 0, 0, 0x39, 0x8E, 0xE3, 0x3F};
-    constexpr std::array<std::uint8_t, 8> letterboxLoadSignature =
-        {0xF3, 0x0F, 0x10, 0x15, 0xBF, 0x13, 0x40, 0};
-    constexpr std::array<std::uint8_t, 8> letterboxHookSignature =
-        {0x66, 0x41, 0x0F, 0x6E, 0xCA, 0x0F, 0x5B, 0xC9};
 
     void LetterboxCallback(safetyhook::Context& ctx)
     {
@@ -170,6 +164,60 @@ namespace
         return true;
     }
 
+    std::vector<std::uint8_t*> FindPattern(HMODULE module, std::string_view text)
+    {
+        std::vector<std::optional<std::uint8_t>> pattern;
+        for (std::size_t i = 0; i < text.size();)
+        {
+            if (text[i] == ' ')
+                ++i;
+            else if (text[i] == '?')
+            {
+                pattern.emplace_back(std::nullopt);
+                i += (i + 1 < text.size() && text[i + 1] == '?') ? 2 : 1;
+            }
+            else
+            {
+                pattern.emplace_back(static_cast<std::uint8_t>(std::stoul(std::string(text.substr(i, 2)), nullptr, 16)));
+                i += 2;
+            }
+        }
+        std::vector<std::uint8_t*> matches;
+        auto* base = reinterpret_cast<std::uint8_t*>(module);
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+        const auto* section = IMAGE_FIRST_SECTION(nt);
+        for (WORD index = 0; index < nt->FileHeader.NumberOfSections; ++index, ++section)
+        {
+            if (!(section->Characteristics & IMAGE_SCN_MEM_EXECUTE) || section->Misc.VirtualSize < pattern.size())
+                continue;
+            auto* start = base + section->VirtualAddress;
+            const std::size_t last = section->Misc.VirtualSize - pattern.size();
+            for (std::size_t offset = 0; offset <= last; ++offset)
+            {
+                std::size_t i = 0;
+                while (i < pattern.size() && (!pattern[i] || start[offset + i] == *pattern[i]))
+                    ++i;
+                if (i == pattern.size())
+                    matches.push_back(start + offset);
+            }
+        }
+        return matches;
+    }
+
+    std::uint8_t* FindUnique(HMODULE module, const char* name, std::string_view pattern, std::ptrdiff_t offset)
+    {
+        const auto matches = FindPattern(module, pattern);
+        if (matches.size() != 1)
+        {
+            SPDLOG_ERROR("{} pattern: expected 1 match, found {}.", name, matches.size());
+            return nullptr;
+        }
+        auto* address = matches.front() + offset;
+        SPDLOG_INFO("{} found at +{:X}.", name, address - reinterpret_cast<std::uint8_t*>(module));
+        return address;
+    }
+
     bool WriteFloat(std::uint8_t* address, float value)
     {
         DWORD oldProtect = 0;
@@ -190,61 +238,64 @@ namespace
 
     bool ApplyMemoryPatch()
     {
-        auto base = reinterpret_cast<std::uint8_t*>(exeModule);
-        const auto dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
-        if (!base || dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew <= 0 || dos->e_lfanew > 0x1000) {
-            SPDLOG_ERROR("Invalid executable DOS header.");
-            return false;
-        }
-        const auto nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
-        if (nt->Signature != IMAGE_NT_SIGNATURE || nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-            nt->FileHeader.TimeDateStamp != 0x641ED741 || nt->OptionalHeader.SizeOfImage != 0x74A000) {
-            SPDLOG_ERROR("Unsupported executable build. Expected timestamp 0x641ED741 / image size 0x74A000.");
-            return false;
-        }
-        const auto matches = [base](std::uint32_t rva, const auto& signature) {
-            return std::memcmp(base + rva, signature.data(), signature.size()) == 0;
-        };
-        if (!matches(0x204C4D, aspect1Signature) || !matches(0x2052E2, aspect2Signature) ||
-            !matches(0x1B1E51, letterboxLoadSignature) || !matches(0x1B1E59, letterboxHookSignature)) {
-            SPDLOG_ERROR("Original instruction validation failed. Disable other aspect patches; nothing changed.");
-            return false;
-        }
         constexpr float originalAR = 16.0f / 9.0f;
-        float sharedAR = 0.0f;
-        std::memcpy(&sharedAR, base + 0x5B5484, sizeof(sharedAR));
-        if (sharedAR != originalAR) {
-            SPDLOG_ERROR("Shared projection already modified; nothing changed.");
-            return false;
+        std::uint8_t* aspect1 = nullptr;
+        std::uint8_t* aspect2 = nullptr;
+        std::uint8_t* letterbox = nullptr;
+        std::uint8_t* sharedAR = nullptr;
+        if (bCameraAspect) {
+            aspect1 = FindUnique(exeModule, "Camera aspect 1", "C7 87 30 08 00 00 39 8E E3 3F", 6);
+            aspect2 = FindUnique(exeModule, "Camera aspect 2", "C7 83 30 08 00 00 39 8E E3 3F", 6);
+            if (!aspect1 || !aspect2)
+                return false;
+        }
+        if (bRemoveLetterbox) {
+            letterbox = FindUnique(exeModule, "Letterbox",
+                "F3 0F 10 15 ?? ?? ?? ?? 66 41 0F 6E CA 0F 5B C9 66 41 0F 6E F0", 8);
+            if (!letterbox)
+                return false;
+        }
+        if (bSharedProjection) {
+            auto* load = FindUnique(exeModule, "Shared projection",
+                "F3 0F 10 1D ?? ?? ?? ?? F3 0F 10 15 ?? ?? ?? ?? 0F 11 03 F3 0F 10 05", 8);
+            if (!load)
+                return false;
+            std::int32_t displacement = 0;
+            std::memcpy(&displacement, load + 4, sizeof(displacement));
+            sharedAR = load + 8 + displacement;
+            float value = 0.0f;
+            std::memcpy(&value, sharedAR, sizeof(value));
+            if (value != originalAR) {
+                SPDLOG_ERROR("Shared projection value is {}, expected 16/9; nothing changed.", value);
+                return false;
+            }
         }
 
         if (bRemoveLetterbox) {
             auto result = safetyhook::MidHook::create(
-                base + 0x1B1E59, LetterboxCallback, safetyhook::MidHook::StartDisabled);
+                letterbox, LetterboxCallback, safetyhook::MidHook::StartDisabled);
             if (!result) {
                 SPDLOG_ERROR("Letterbox hook creation failed: {}.", static_cast<int>(result.error().type));
                 return false;
             }
             letterboxHook = std::move(*result);
         }
-        const auto rollback = [base, originalAR]() {
+        const auto rollback = [=]() {
             if (bCameraAspect) {
-                const bool restored1 = WriteFloat(base + 0x204C53, originalAR);
-                const bool restored2 = WriteFloat(base + 0x2052E8, originalAR);
+                const bool restored1 = WriteFloat(aspect1, originalAR);
+                const bool restored2 = WriteFloat(aspect2, originalAR);
                 if (!restored1 || !restored2)
                     SPDLOG_ERROR("Camera patch rollback failed; restart the game.");
             }
-            if (bSharedProjection && !WriteFloat(base + 0x5B5484, originalAR))
+            if (bSharedProjection && !WriteFloat(sharedAR, originalAR))
                 SPDLOG_ERROR("Shared projection rollback failed; restart the game.");
             letterboxHook.reset();
         };
-        // These RVAs already point at the immediate operands; do NOT add another six bytes.
-        if (bCameraAspect &&
-            (!WriteFloat(base + 0x204C53, fCustomAR) || !WriteFloat(base + 0x2052E8, fCustomAR))) {
+        if (bCameraAspect && (!WriteFloat(aspect1, fCustomAR) || !WriteFloat(aspect2, fCustomAR))) {
             rollback();
             return false;
         }
-        if (bSharedProjection && !WriteFloat(base + 0x5B5484, fCustomAR)) {
+        if (bSharedProjection && !WriteFloat(sharedAR, fCustomAR)) {
             rollback();
             return false;
         }
@@ -258,7 +309,6 @@ namespace
         }
         SPDLOG_INFO("Applied: CameraAspect={}, RemoveLetterbox={}, SharedProjection={}.",
                     bCameraAspect, bRemoveLetterbox, bSharedProjection);
-        SPDLOG_INFO("Logarithm table at RVA 0x60F400 and shared 9/16 constant left untouched.");
         SPDLOG_WARN("Experimental: HUD, scripted FOV, map zoom and resolution changes still require in-game testing.");
         return true;
     }

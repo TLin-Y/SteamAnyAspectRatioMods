@@ -57,6 +57,8 @@ int main()
 #include <cstdint>
 #include <cstring>
 #include <cwchar>
+#include <optional>
+#include <string_view>
 #include <inipp/inipp.h>
 #include <safetyhook.hpp>
 #include <spdlog/spdlog.h>
@@ -78,6 +80,60 @@ namespace
     GetAspect getAspect = nullptr;
     GetTargetTexture getTargetTexture = nullptr;
     SetResolution setResolution = nullptr;
+
+    std::vector<std::uint8_t*> FindPattern(HMODULE module, std::string_view text)
+    {
+        std::vector<std::optional<std::uint8_t>> pattern;
+        for (std::size_t i = 0; i < text.size();)
+        {
+            if (text[i] == ' ')
+                ++i;
+            else if (text[i] == '?')
+            {
+                pattern.emplace_back(std::nullopt);
+                i += (i + 1 < text.size() && text[i + 1] == '?') ? 2 : 1;
+            }
+            else
+            {
+                pattern.emplace_back(static_cast<std::uint8_t>(std::stoul(std::string(text.substr(i, 2)), nullptr, 16)));
+                i += 2;
+            }
+        }
+        std::vector<std::uint8_t*> matches;
+        auto* base = reinterpret_cast<std::uint8_t*>(module);
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+        const auto* section = IMAGE_FIRST_SECTION(nt);
+        for (WORD index = 0; index < nt->FileHeader.NumberOfSections; ++index, ++section)
+        {
+            if (!(section->Characteristics & IMAGE_SCN_MEM_EXECUTE) || section->Misc.VirtualSize < pattern.size())
+                continue;
+            auto* start = base + section->VirtualAddress;
+            const std::size_t last = section->Misc.VirtualSize - pattern.size();
+            for (std::size_t offset = 0; offset <= last; ++offset)
+            {
+                std::size_t i = 0;
+                while (i < pattern.size() && (!pattern[i] || start[offset + i] == *pattern[i]))
+                    ++i;
+                if (i == pattern.size())
+                    matches.push_back(start + offset);
+            }
+        }
+        return matches;
+    }
+
+    std::uint8_t* FindUnique(HMODULE module, const char* name, std::string_view pattern, std::ptrdiff_t offset)
+    {
+        const auto matches = FindPattern(module, pattern);
+        if (matches.size() != 1)
+        {
+            SPDLOG_ERROR("{} pattern: expected 1 match, found {}.", name, matches.size());
+            return nullptr;
+        }
+        auto* address = matches.front() + offset;
+        SPDLOG_INFO("{} found at +{:X}.", name, address - reinterpret_cast<std::uint8_t*>(module));
+        return address;
+    }
 
     BOOL CALLBACK FindGameWindow(HWND window, LPARAM parameter)
     {
@@ -331,65 +387,54 @@ namespace
             SPDLOG_ERROR("GameAssembly.dll did not load within 60 seconds. No hooks installed.");
             return false;
         }
-        auto* base = reinterpret_cast<std::uint8_t*>(assembly);
-        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
-        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
-        if (nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-            nt->FileHeader.TimeDateStamp != 0x65E1470A || nt->OptionalHeader.SizeOfImage != 0x3637000)
-        {
-            SPDLOG_ERROR("Unsupported GameAssembly build (timestamp 0x{:X}, image size 0x{:X}). No hooks installed.",
-                nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage);
-            return false;
-        }
-
         struct HookSite
         {
-            std::uintptr_t rva;
-            std::vector<std::uint8_t> signature;
+            std::uint8_t* address;
             safetyhook::MidHookFn callback;
             const char* name;
         };
+        auto* lens = FindUnique(assembly, "Lens",
+            "F3 0F 10 4B 04 45 33 C0 48 8B CF E8 ?? ?? ?? ?? F3 0F 10 0B 45 33 C0 48 8B CF E8 ?? ?? ?? ?? F3 0F 10 43 1C", 0);
         const std::array sites{
-            HookSite{ 0x474602, { 0x0F, 0x28, 0x7C, 0x24, 0x50, 0x84, 0xC0, 0x0F, 0x85, 0x9B, 0x01, 0x00, 0x00 },
+            HookSite{ FindUnique(assembly, "Startup 16:9 clamp",
+                "F3 0F 10 15 ?? ?? ?? ?? 45 33 C9 F3 0F 10 0D ?? ?? ?? ?? 0F 28 C7 E8 ?? ?? ?? ?? 0F 28 7C 24 50 84 C0 0F 85", 27),
                 KeepStartingResolution, "startup 16:9 clamp" },
-            HookSite{ 0x3EE5AB, { 0x84, 0xC0, 0x0F, 0x84, 0x94, 0x02, 0x00, 0x00 },
+            HookSite{ FindUnique(assembly, "Resolution list filter",
+                "F3 0F 5E C1 45 33 C9 F3 0F 10 15 ?? ?? ?? ?? F3 0F 10 4C 24 3C E8 ?? ?? ?? ?? 84 C0 0F 84", 26),
                 AllowResolution, "resolution list filter" },
-            HookSite{ 0x66C133, { 0x45, 0x33, 0xC0, 0x48, 0x8B, 0xCF, 0xE8, 0x22, 0xB5, 0xBA, 0x01 },
+            HookSite{ lens ? lens + 5 : nullptr,
                 [](SafetyHookContext& ctx) { AdjustLens(ctx, false); }, "orthographic lens" },
-            HookSite{ 0x66C142, { 0x45, 0x33, 0xC0, 0x48, 0x8B, 0xCF, 0xE8, 0x23, 0xB1, 0xBA, 0x01 },
+            HookSite{ lens ? lens + 20 : nullptr,
                 [](SafetyHookContext& ctx) { AdjustLens(ctx, true); }, "perspective lens" }
         };
         for (const auto& site : sites)
         {
-            if (std::memcmp(base + site.rva, site.signature.data(), site.signature.size()) != 0)
+            if (!site.address)
             {
-                SPDLOG_ERROR("{} signature does not match. No hooks installed.", site.name);
+                SPDLOG_ERROR("{} code not identified. No hooks installed.", site.name);
                 return false;
             }
         }
-        const std::array apiSites{
-            HookSite{ 0x2215A80, { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x48, 0x8B, 0x05, 0xD3, 0xF7, 0xE9, 0x00 },
-                nullptr, "Camera.get_aspect" },
-            HookSite{ 0x2216A90, { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x48, 0x8B, 0x05, 0x03, 0xE9, 0xE9, 0x00 },
-                nullptr, "Camera.get_targetTexture" },
-            HookSite{ 0x2238F70, { 0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x20 },
-                nullptr, "Screen.SetResolution" }
-        };
-        for (const auto& site : apiSites)
+        using ResolveIcall = void* (*)(const char*);
+        const auto resolveIcall = reinterpret_cast<ResolveIcall>(GetProcAddress(assembly, "il2cpp_resolve_icall"));
+        if (!resolveIcall)
         {
-            if (std::memcmp(base + site.rva, site.signature.data(), site.signature.size()) != 0)
-            {
-                SPDLOG_ERROR("{} signature does not match. No hooks installed.", site.name);
-                return false;
-            }
+            SPDLOG_ERROR("il2cpp_resolve_icall not exported. No hooks installed.");
+            return false;
         }
-        getAspect = reinterpret_cast<GetAspect>(base + 0x2215A80);
-        getTargetTexture = reinterpret_cast<GetTargetTexture>(base + 0x2216A90);
-        setResolution = reinterpret_cast<SetResolution>(base + 0x2238F70);
+        getAspect = reinterpret_cast<GetAspect>(resolveIcall("UnityEngine.Camera::get_aspect()"));
+        getTargetTexture = reinterpret_cast<GetTargetTexture>(resolveIcall("UnityEngine.Camera::get_targetTexture()"));
+        setResolution = reinterpret_cast<SetResolution>(resolveIcall(
+            "UnityEngine.Screen::SetResolution(System.Int32,System.Int32,UnityEngine.FullScreenMode,System.Int32)"));
+        if (!getAspect || !getTargetTexture || !setResolution)
+        {
+            SPDLOG_ERROR("Unity camera/screen functions not resolved. No hooks installed.");
+            return false;
+        }
         for (std::size_t index = 0; index < sites.size(); ++index)
         {
             const auto& site = sites[index];
-            auto result = SafetyHookMid::create(base + site.rva, site.callback, SafetyHookMid::StartDisabled);
+            auto result = SafetyHookMid::create(site.address, site.callback, SafetyHookMid::StartDisabled);
             if (!result)
             {
                 SPDLOG_ERROR("Cannot install {} hook: error {}. Removing installed hooks.",
@@ -412,7 +457,7 @@ namespace
                     hook.reset();
                 return false;
             }
-            SPDLOG_INFO("{} hook installed at GameAssembly+0x{:X}.", sites[index].name, sites[index].rva);
+            SPDLOG_INFO("{} hook installed.", sites[index].name);
         }
         return true;
     }
