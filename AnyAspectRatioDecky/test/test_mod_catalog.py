@@ -275,7 +275,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(62, len(configured))
+        self.assertEqual(63, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -376,7 +376,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([35, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([36, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -391,7 +391,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 37), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 38), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Mod list", "Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -402,11 +402,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(37, len(catalog))
+        self.assertEqual(38, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            34,
+            35,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(

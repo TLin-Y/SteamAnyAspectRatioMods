@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 140 game mods](https://img.shields.io/badge/Game%20mods-140-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 141 game mods](https://img.shields.io/badge/Game%20mods-141-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -147,6 +147,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Persona 3 Reload | Lyall | [2161700](https://store.steampowered.com/app/2161700) | [v1.2.4](./external/Lyall/P3RFix/P3RFix_1.2.4.zip) | 2025-06-05 | [P3RFix](https://codeberg.org/Lyall/P3RFix) |
 | Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v1.0.0](./Persona%205%20Royal/Persona-5-Royal-v1.0.0.zip) | 2026-11-04 | [README](./Persona%205%20Royal/README.md) |
 | Persona 5 Strikers | Lyall | [1382330](https://store.steampowered.com/app/1382330) | [v1.0.2](./external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip) | 2026-08-21 | [P5StrikersFix](https://codeberg.org/Lyall/P5StrikersFix) |
+| PRAGMATA | TLin-Y | [3357650](https://store.steampowered.com/app/3357650) | [v1.0.0](./PRAGMATA/PRAGMATA-v1.0.0.zip) | 2026-11-13 | [README](./PRAGMATA/README.md) |
 | Prince of Persia: The Lost Crown | Lyall | [2751000](https://store.steampowered.com/app/2751000) | [v0.8.6](./external/Lyall/PoPTLCFix/PoPTLCFix_0.8.6.zip) | 2025-06-06 | [PoPTLCFix](https://codeberg.org/Lyall/PoPTLCFix) |
 | RAIDOU Remastered: The Mystery of the Soulless Army | Lyall | [2288350](https://store.steampowered.com/app/2288350) | [v0.0.4](./external/Lyall/RaidouFix/RaidouFix_0.0.4.zip) | 2025-06-25 | [RaidouFix](https://codeberg.org/Lyall/RaidouFix) |
 | Rayman Legends | TLin-Y | [242550](https://store.steampowered.com/app/242550) | [v1.0.0](./Rayman%20Legends/Rayman-Legends-v1.0.0.zip) | 2026-11-07 | [README](./Rayman%20Legends/README.md) |

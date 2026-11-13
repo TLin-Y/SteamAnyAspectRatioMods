@@ -608,6 +608,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "pragmata",
+      "name": "PRAGMATA - Custom Aspect Ratio",
+      "steam_app_id": "3357650",
+      "install_dir": "PRAGMATA",
+      "executable": "PRAGMATA.exe",
+      "source": {
+        "kind": "archive",
+        "path": "PRAGMATA/PRAGMATA-v1.0.0.zip",
+        "sha256": "17bf54e66e2b7c4334537819e56120be8a2007ebe73357cbedf30bce56447966"
+      },
+      "files": ["dinput8.dll", "PRAGMATA_ARFix.asi", "PRAGMATA_ARFix.ini"],
+      "ini_file": "PRAGMATA_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "resident-evil-2",
       "name": "Resident Evil 2 Remake - Custom Aspect Ratio",
       "steam_app_id": "883710",
