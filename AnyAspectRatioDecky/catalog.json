@@ -6303,6 +6303,35 @@
       ],
       "ini_file": "RoFRemasterFix.ini",
       "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
+    },
+    {
+      "id": "daemon-x-machina-titanic-scion-widescreen-fix",
+      "name": "Daemon X Machina: Titanic Scion - Widescreen Fix",
+      "steam_app_id": "1342490",
+      "install_dir": "Daemon X Machina Titanic Scion",
+      "executable": "Game.exe",
+      "display_tags": ["for-game-v1-2-2"],
+      "source": {
+        "kind": "archive",
+        "path": "external/Yuki/Daemon X Machina Titanic Scion Widescreen Fix/patch.zip",
+        "sha256": "ca2ef016469ed3a54a84c5546c6190bd6c4aabd71dd0d14900f7dca4a988ac78",
+        "destination": "Game/Binaries/Win64"
+      },
+      "files": [
+        "Game/Binaries/Win64/dsound.dll",
+        "Game/Binaries/Win64/SUWSF.asi",
+        "Game/Binaries/Win64/SUWSF.ini"
+      ],
+      "ini_file": "Game/Binaries/Win64/SUWSF.ini",
+      "wine_dll_overrides": [
+        "dsound=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Yuki",
+          "url": "https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/"
+        }
+      ]
     }
   ]
 }
