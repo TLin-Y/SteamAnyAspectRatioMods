@@ -235,6 +235,7 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual("787480", mod.steam_app_id)
         self.assertEqual("Phoenix Wright Ace Attorney Trilogy", mod.install_dir)
         self.assertEqual("PWAAT.exe", mod.executable)
+        self.assertEqual(("new-res-in-game-menu",), mod.display_tags)
         self.assertEqual((), mod.wine_dll_overrides)
         self.assertEqual(1, len(mod.backups))
         self.assertEqual(mod.files[0], mod.backups[0].target)

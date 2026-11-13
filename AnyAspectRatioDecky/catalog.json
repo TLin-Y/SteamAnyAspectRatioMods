@@ -549,6 +549,7 @@
       ],
       "ini_file": "PWAAT_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["new-res-in-game-menu"],
       "wine_dll_overrides": []
     },
     {
