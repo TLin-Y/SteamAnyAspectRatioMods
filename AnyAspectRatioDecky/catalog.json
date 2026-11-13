@@ -232,8 +232,8 @@
       "executable": "ys8.exe",
       "source": {
         "kind": "archive",
-        "path": "Ys VIII Lacrimosa of DANA/Ys-VIII-Lacrimosa-of-DANA-v1.0.0.zip",
-        "sha256": "b5f1c21cd3defedd0eda8a08d9687457c5cc3823d699748e73b5c591436277eb"
+        "path": "Ys VIII Lacrimosa of DANA/Ys-VIII-Lacrimosa-of-DANA-v1.1.0.zip",
+        "sha256": "a9bb4b27ea6cf491bb0678f444cd97a5edf2226a36e32aed1c76dbdaeeccd2b5"
       },
       "files": ["dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"],
       "ini_file": "Ys8_AspectPatch.ini",
@@ -517,8 +517,8 @@
       "executable": "Pentiment.exe",
       "source": {
         "kind": "archive",
-        "path": "Pentiment/Pentiment-v0.1.0.zip",
-        "sha256": "9fe737ba08f501c43c9b299f9959177737d5ed2fbf59a97da58ebbed588b38f6"
+        "path": "Pentiment/Pentiment-v0.2.0.zip",
+        "sha256": "7bf3cd75cde831eba2b05e7686117f8eb08e74b4f2973379e6f149a54f581624"
       },
       "files": ["winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"],
       "ini_file": "Pentiment_ARFix.ini",
@@ -566,8 +566,8 @@
       "executable": "SNB.exe",
       "source": {
         "kind": "archive",
-        "path": "SANABI/SANABI-v1.0.0.zip",
-        "sha256": "46ff9b5989efc0720698cf23fe1706fbf9a1509204cb772d402114fe2ea86198"
+        "path": "SANABI/SANABI-v1.1.0.zip",
+        "sha256": "b3c346f1c61f912e61f30b7004d2930f15c32febe618a4b149cd2ee44c61b323"
       },
       "files": ["winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"],
       "ini_file": "SNB_ARFix.ini",

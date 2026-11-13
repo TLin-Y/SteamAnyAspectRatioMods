@@ -6,6 +6,8 @@
 #include <atomic>
 #include <cstddef>
 #include <cstring>
+#include <optional>
+#include <string_view>
 #include <inipp/inipp.h>
 #include <safetyhook.hpp>
 #include <spdlog/spdlog.h>
@@ -68,6 +70,60 @@ namespace
     static_assert(offsetof(CameraProperties, useOffscreenRT) == 0x2C);
     static_assert(offsetof(CameraProperties, pixelRect) == 0x38);
     static_assert(offsetof(CameraProperties, orthoSize) == 0x48);
+
+    std::vector<std::uint8_t*> FindPattern(HMODULE module, std::string_view text)
+    {
+        std::vector<std::optional<std::uint8_t>> pattern;
+        for (std::size_t i = 0; i < text.size();)
+        {
+            if (text[i] == ' ')
+                ++i;
+            else if (text[i] == '?')
+            {
+                pattern.emplace_back(std::nullopt);
+                i += (i + 1 < text.size() && text[i + 1] == '?') ? 2 : 1;
+            }
+            else
+            {
+                pattern.emplace_back(static_cast<std::uint8_t>(std::stoul(std::string(text.substr(i, 2)), nullptr, 16)));
+                i += 2;
+            }
+        }
+        std::vector<std::uint8_t*> matches;
+        auto* base = reinterpret_cast<std::uint8_t*>(module);
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+        const auto* section = IMAGE_FIRST_SECTION(nt);
+        for (WORD index = 0; index < nt->FileHeader.NumberOfSections; ++index, ++section)
+        {
+            if (!(section->Characteristics & IMAGE_SCN_MEM_EXECUTE) || section->Misc.VirtualSize < pattern.size())
+                continue;
+            auto* start = base + section->VirtualAddress;
+            const std::size_t last = section->Misc.VirtualSize - pattern.size();
+            for (std::size_t offset = 0; offset <= last; ++offset)
+            {
+                std::size_t i = 0;
+                while (i < pattern.size() && (!pattern[i] || start[offset + i] == *pattern[i]))
+                    ++i;
+                if (i == pattern.size())
+                    matches.push_back(start + offset);
+            }
+        }
+        return matches;
+    }
+
+    std::uint8_t* FindUnique(HMODULE module, const char* name, std::string_view pattern, std::ptrdiff_t offset)
+    {
+        const auto matches = FindPattern(module, pattern);
+        if (matches.size() != 1)
+        {
+            SPDLOG_ERROR("{} pattern: expected 1 match, found {}.", name, matches.size());
+            return nullptr;
+        }
+        auto* address = matches.front() + offset;
+        SPDLOG_INFO("{} found at +{:X}.", name, address - reinterpret_cast<std::uint8_t*>(module));
+        return address;
+    }
 
     void LogInvalidCamera()
     {
@@ -230,31 +286,13 @@ namespace
             return false;
         }
 
-        auto* base = reinterpret_cast<std::uint8_t*>(gameAssembly);
-        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
-        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
-        SPDLOG_INFO("GameAssembly: timestamp 0x{:X}, image size 0x{:X}",
-            nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage);
-        if (nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-            nt->FileHeader.TimeDateStamp != 0x69783BD1 ||
-            nt->OptionalHeader.SizeOfImage != 0x45C0000)
+        auto* entry = FindUnique(gameAssembly, "Camera entry",
+            "89 54 24 10 53 41 55 41 56 48 81 EC 90 00 00 00 80 3D ?? ?? ?? ?? 00 45 8B E8 44 8B F2 48 8B D9", 0);
+        auto* exit = FindUnique(gameAssembly, "Camera exit",
+            "F3 0F 5E D0 F3 0F 11 53 48 40 84 FF 75 04 0F AF 73 28 F3 0F 10 0D ?? ?? ?? ?? 0F 28 74 24 60", 18);
+        if (!entry || !exit)
         {
-            SPDLOG_ERROR("Unsupported GameAssembly build. Expected SANABI 1.3.53; no hooks installed.");
-            return false;
-        }
-
-        constexpr std::array<std::uint8_t, 16> entryBytes{
-            0x89, 0x54, 0x24, 0x10, 0x53, 0x41, 0x55, 0x41,
-            0x56, 0x48, 0x81, 0xEC, 0x90, 0x00, 0x00, 0x00 };
-        constexpr std::array<std::uint8_t, 18> exitBytes{
-            0xF3, 0x0F, 0x10, 0x0D, 0x02, 0xE0, 0x18, 0x01,
-            0x0F, 0x28, 0x74, 0x24, 0x60, 0x4C, 0x8B, 0x7C, 0x24, 0x70 };
-        auto* entry = base + 0x1A27630;
-        auto* exit = base + 0x1A27A9E;
-        if (std::memcmp(entry, entryBytes.data(), entryBytes.size()) != 0 ||
-            std::memcmp(exit, exitBytes.data(), exitBytes.size()) != 0)
-        {
-            SPDLOG_ERROR("Camera instruction signatures do not match. No hooks installed.");
+            SPDLOG_ERROR("Camera code not identified. No hooks installed.");
             return false;
         }
 
@@ -275,7 +313,7 @@ namespace
         }
         propertiesExitHook = std::move(*exitResult);
         hooksReady.store(true);
-        SPDLOG_INFO("Camera hooks installed at GameAssembly+1A27630 and +1A27A9E.");
+        SPDLOG_INFO("Camera hooks installed.");
         return true;
     }
 

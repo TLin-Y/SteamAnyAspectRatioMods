@@ -725,7 +725,7 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual("Pentiment_ARFix.ini", mod.ini_file)
         self.assertEqual(("winhttp=n,b",), mod.wine_dll_overrides)
         self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
-        self.assertEqual("Pentiment/Pentiment-v0.1.0.zip", mod.source.path)
+        self.assertEqual("Pentiment/Pentiment-v0.2.0.zip", mod.source.path)
         self.assertEqual(1, len(mod.ini_resolution))
         pair = mod.ini_resolution[0]
         self.assertEqual(("Resolution", "Width", "Height", "pixels"),
@@ -754,7 +754,7 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual("SNB_ARFix.ini", mod.ini_file)
         self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
         self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
-        self.assertEqual("SANABI/SANABI-v1.0.0.zip", mod.source.path)
+        self.assertEqual("SANABI/SANABI-v1.1.0.zip", mod.source.path)
 
     def test_undertale_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "undertale")
