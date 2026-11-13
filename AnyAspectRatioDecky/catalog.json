@@ -6363,6 +6363,35 @@
           "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
         }
       ]
+    },
+    {
+      "id": "final-fantasy-resonance-ultrawide",
+      "name": "FINAL FANTASY RESONANCE - Ultrawide Mod",
+      "steam_app_id": "3259780",
+      "install_dir": "FINAL FANTASY RESONANCE",
+      "executable": "FFRS.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Refilo/FFResonance Ultrawide/FFResonance Ultrawide 2.6.3 29 2.6.3 2026-11-06T22-52Z ukvcoplGf.zip",
+        "sha256": "97ea5c76f481eba09e823a8c0929fc74580c3ee62959ef91f44495463fcc043a",
+        "destination": "FFRS/Binaries/Win64"
+      },
+      "files": [
+        "FFRS/Binaries/Win64/winmm.dll",
+        "FFRS/Binaries/Win64/refilomod/core/core_002_004.dll",
+        "FFRS/Binaries/Win64/refilomod/ultrawide/ultrawide.dll",
+        "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini"
+      ],
+      "ini_file": "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini",
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Refilo",
+          "url": "https://www.nexusmods.com/finalfantasyresonance/mods/29"
+        }
+      ]
     }
   ]
 }
