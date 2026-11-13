@@ -712,7 +712,7 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual("Dave_ARFix.ini", mod.ini_file)
         self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
         self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
-        self.assertEqual("DAVE THE DIVER/DAVE-THE-DIVER-v1.0.0.zip", mod.source.path)
+        self.assertEqual("DAVE THE DIVER/DAVE-THE-DIVER-v1.1.0.zip", mod.source.path)
 
     def test_pentiment_release_paths_and_defaults(self) -> None:
         import configparser

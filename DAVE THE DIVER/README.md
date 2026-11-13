@@ -28,4 +28,4 @@ Width = 1280
 Height = 800
 ```
 
-The fix checks the game build and instruction signatures before applying its hooks. An unsupported game update may require an updated fix; check `Dave_ARFix.log` if the fix does not load.
+The fix locates its hooks by instruction pattern, so it keeps working across game updates that leave that code unchanged. Check `Dave_ARFix.log` if the fix does not load.

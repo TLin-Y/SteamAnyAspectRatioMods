@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstring>
+#include <optional>
+#include <string_view>
 #include <inipp/inipp.h>
 #include <safetyhook.hpp>
 #include <spdlog/spdlog.h>
@@ -20,6 +22,70 @@ namespace
     bool enabled = true;
     int targetWidth = 0;
     int targetHeight = 0;
+
+    std::vector<std::optional<std::uint8_t>> ParsePattern(std::string_view text)
+    {
+        std::vector<std::optional<std::uint8_t>> bytes;
+        for (std::size_t i = 0; i < text.size();)
+        {
+            if (text[i] == ' ')
+            {
+                ++i;
+                continue;
+            }
+            if (text[i] == '?')
+            {
+                bytes.emplace_back(std::nullopt);
+                i += (i + 1 < text.size() && text[i + 1] == '?') ? 2 : 1;
+                continue;
+            }
+            bytes.emplace_back(static_cast<std::uint8_t>(std::stoul(std::string(text.substr(i, 2)), nullptr, 16)));
+            i += 2;
+        }
+        return bytes;
+    }
+
+    std::vector<std::uint8_t*> FindPattern(HMODULE module, std::string_view text)
+    {
+        const auto pattern = ParsePattern(text);
+        std::vector<std::uint8_t*> matches;
+        auto* base = reinterpret_cast<std::uint8_t*>(module);
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+        const auto* section = IMAGE_FIRST_SECTION(nt);
+        for (WORD index = 0; index < nt->FileHeader.NumberOfSections; ++index, ++section)
+        {
+            if (!(section->Characteristics & IMAGE_SCN_MEM_EXECUTE))
+                continue;
+            auto* start = base + section->VirtualAddress;
+            const std::size_t size = section->Misc.VirtualSize;
+            if (size < pattern.size())
+                continue;
+            for (std::size_t offset = 0; offset <= size - pattern.size(); ++offset)
+            {
+                std::size_t i = 0;
+                while (i < pattern.size() && (!pattern[i] || start[offset + i] == *pattern[i]))
+                    ++i;
+                if (i == pattern.size())
+                    matches.push_back(start + offset);
+            }
+        }
+        return matches;
+    }
+
+    std::uint8_t* FindUnique(HMODULE module, const char* name, std::string_view pattern, std::ptrdiff_t offset)
+    {
+        const auto matches = FindPattern(module, pattern);
+        if (matches.size() != 1)
+        {
+            SPDLOG_ERROR("{} pattern: expected 1 match, found {}.", name, matches.size());
+            return nullptr;
+        }
+        auto* address = matches.front() + offset;
+        SPDLOG_INFO("{} found at GameAssembly+{:X}.", name,
+            address - reinterpret_cast<std::uint8_t*>(module));
+        return address;
+    }
 
     bool ValidResolution(int width, int height)
     {
@@ -97,7 +163,7 @@ namespace
             MessageBoxA(nullptr, error.what(), "Dave ARFix: Logging failed", MB_OK | MB_ICONERROR);
             return false;
         }
-        SPDLOG_INFO("{} v{}: Dave the Diver aspect-ratio test implementation.", sFixName, sFixVersion);
+        SPDLOG_INFO("{} v{}: Dave the Diver aspect-ratio fix.", sFixName, sFixVersion);
 
         const auto configPath = directory / (sFixName + ".ini");
         std::error_code error;
@@ -168,36 +234,26 @@ namespace
             SPDLOG_ERROR("GameAssembly.dll did not load within 60 seconds. No hook installed.");
             return false;
         }
-        auto* base = reinterpret_cast<std::uint8_t*>(assembly);
-        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
-        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
-        SPDLOG_INFO("GameAssembly: timestamp 0x{:X}, image size 0x{:X}.",
-            nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage);
-        if (nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-            nt->FileHeader.TimeDateStamp != 0x6AEAF48E || nt->OptionalHeader.SizeOfImage != 0x868E000)
+        auto* target = FindUnique(assembly, "Viewport",
+            "89 47 58 33 C9 E8 ?? ?? ?? ?? 89 47 5C F3 44 0F 10 05 ?? ?? ?? ?? "
+            "45 0F 28 D8 F3 45 0F 5E D9 45 0F 2F C1", 13);
+        if (!target)
         {
-            SPDLOG_ERROR("Unsupported GameAssembly build. No hook installed.");
+            SPDLOG_ERROR("Viewport code not identified. No hooks installed.");
             return false;
         }
 
-        constexpr std::array<std::uint8_t, 13> signature{
-            0xF3, 0x44, 0x0F, 0x10, 0x05, 0xE2, 0x8E, 0xFD, 0x03,
-            0x45, 0x0F, 0x28, 0xD8 };
-        auto* target = base + 0x1D9FCD5;
-        if (std::memcmp(target, signature.data(), signature.size()) != 0)
+        std::uint8_t* resolutionTarget = nullptr;
+        if (targetWidth > 0)
         {
-            SPDLOG_ERROR("CoUpdateResolution instruction signature does not match. No hook installed.");
-            return false;
-        }
-        auto* resolutionTarget = base + 0x1D91FB0;
-        constexpr std::array<std::uint8_t, 15> resolutionSignature{
-            0x48, 0x8B, 0xC4, 0x48, 0x89, 0x58, 0x08, 0x57,
-            0x48, 0x81, 0xEC, 0xD0, 0x00, 0x00, 0x00 };
-        if (targetWidth > 0 &&
-            std::memcmp(resolutionTarget, resolutionSignature.data(), resolutionSignature.size()) != 0)
-        {
-            SPDLOG_ERROR("SetResolution instruction signature does not match. No hooks installed.");
-            return false;
+            resolutionTarget = FindUnique(assembly, "SetResolution",
+                "48 8B C4 48 89 58 08 57 48 81 EC D0 00 00 00 83 79 50 00 0F 57 C0 "
+                "0F 29 70 E8 41 8B F9 0F 29 78 D8 0F 28 F2 0F 28 F9", 0);
+            if (!resolutionTarget)
+            {
+                SPDLOG_ERROR("SetResolution code not identified. No hooks installed.");
+                return false;
+            }
         }
         auto result = SafetyHookMid::create(target, UnlockViewport);
         if (!result)
@@ -206,7 +262,7 @@ namespace
             return false;
         }
         viewportHook = std::move(*result);
-        SPDLOG_INFO("Viewport/bar factor hook installed at GameAssembly+1D9FCD5.");
+        SPDLOG_INFO("Viewport/bar factor hook installed.");
         if (targetWidth > 0)
         {
             auto resolutionResult = SafetyHookMid::create(resolutionTarget, OverrideResolution);
@@ -218,7 +274,7 @@ namespace
                 return false;
             }
             resolutionHook = std::move(*resolutionResult);
-            SPDLOG_INFO("Game resolution request hook installed at GameAssembly+1D91FB0.");
+            SPDLOG_INFO("Game resolution request hook installed.");
         }
         return true;
     }
