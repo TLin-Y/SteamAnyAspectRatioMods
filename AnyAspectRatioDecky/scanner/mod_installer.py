@@ -37,6 +37,7 @@ INI_ASSIGNMENT_PATTERN = re.compile(
     rb"([^;#\r\n]*?)([ \t]*(?:[;#].*)?)(\r?\n)?$"
 )
 INI_NUMBER_PATTERN = re.compile(rb"[0-9]+(?:\.[0-9]+)?")
+INI_RESOLUTION_STRING_PATTERN = re.compile(rb'(["\']?)[1-9][0-9]*x[1-9][0-9]*\1')
 SYSTEM_CA_BUNDLE_PATHS = (
     Path("/etc/ssl/certs/ca-certificates.crt"),
     Path("/etc/ssl/cert.pem"),
@@ -801,6 +802,22 @@ def _rewrite_ini_resolution(
     ratio_width, ratio_height = width // divisor, height // divisor
     for pair in pairs:
         values = sections.get(pair.section.lower().encode("ascii"), {})
+        if pair.kind == "pixels_string":
+            # Only a "WxH" value is rewritten; non-numeric values such as "auto" are left as chosen.
+            rows = values.get(pair.width.lower().encode("ascii"), [])
+            if len(rows) != 1:
+                continue
+            index, match, offset = rows[0]
+            current = INI_RESOLUTION_STRING_PATTERN.fullmatch(match.group(4))
+            if current is None:
+                continue
+            quote = current.group(1)
+            replacements[index] = (
+                match.start(4) + offset,
+                match.end(4) + offset,
+                quote + f"{width}x{height}".encode("ascii") + quote,
+            )
+            continue
         width_rows = values.get(pair.width.lower().encode("ascii"), [])
         height_rows = values.get(pair.height.lower().encode("ascii"), [])
         if len(width_rows) != 1 or len(height_rows) != 1:

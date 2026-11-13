@@ -280,6 +280,20 @@ class ModInstallerTests(unittest.TestCase):
         pair = IniResolutionPair("Custom Resolution", "Width", "Height", "pixels")
         self.assertEqual(content, _rewrite_ini_resolution(content, 1920, 1080, (pair,)))
 
+    def test_single_key_resolution_string_keeps_quotes_and_auto(self) -> None:
+        from scanner.mod_installer import _rewrite_ini_resolution
+        pair = IniResolutionPair("UserSettings", "Resolution", "Resolution", "pixels_string")
+        for before, after in (
+            (b'Resolution="1280x800" ; comment\r\n', b'Resolution="1920x1080" ; comment\r\n'),
+            (b"Resolution=1280x800\n", b"Resolution=1920x1080\n"),
+            (b'Resolution="auto"\n', b'Resolution="auto"\n'),
+            (b'Resolution="1280x800\n', b'Resolution="1280x800\n'),
+        ):
+            with self.subTest(before=before):
+                content = b"[UserSettings]\n" + before + b"[Patch:X]\nResolution=1x1\n"
+                expected = b"[UserSettings]\n" + after + b"[Patch:X]\nResolution=1x1\n"
+                self.assertEqual(expected, _rewrite_ini_resolution(content, 1920, 1080, (pair,)))
+
     def test_bulk_update_does_not_overwrite_concurrent_ini_edit(self) -> None:
         mod = self._mod("archive", ("fix.ini",), ini_file="fix.ini")
         path = self.game_path / "fix.ini"

@@ -241,6 +241,8 @@ class ModCatalogTests(unittest.TestCase):
             [{**original, "width": "TargetWidth\nOther"}],
             [{**original, "height": "targetwidth"}],
             [original, original],
+            [{"section": "UserSettings", "width": "Resolution", "height": "Size", "kind": "pixels_string"}],
+            [{"section": "UserSettings", "key": "Resolution", "kind": "pixels"}],
         )
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "catalog.json"
@@ -255,7 +257,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(59, len(configured))
+        self.assertEqual(61, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:

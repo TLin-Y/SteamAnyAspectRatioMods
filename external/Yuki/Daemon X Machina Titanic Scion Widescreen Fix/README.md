@@ -1,7 +1,7 @@
 # Daemon X Machina: Titanic Scion Widescreen Fix
 
 Author: [Yuki](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
-`patch.zip` holds the author's `patch.7z` contents unchanged, repacked as ZIP for the plugin.
+`patch.zip` holds the author's `patch.7z` contents repacked as ZIP for the plugin. The only change: `SUWSF.ini` defaults to `Resolution="1280x800"` (was `"auto"`) with a comment explaining the setting.
 
 Made for game version 1.2.2. A later game update may break it until the author updates the patch.
 
@@ -14,4 +14,4 @@ Made for game version 1.2.2. A later game update may break it until the author u
 
 ## Resolution
 
-`SUWSF.ini` uses `Resolution="auto"` (your screen resolution) by default. To force one, set e.g. `Resolution="1280x800"`.
+Edit `Resolution` under `[UserSettings]` in `SUWSF.ini`: `"WIDTHxHEIGHT"` (e.g. `"1920x1080"`) or `"auto"` for the desktop resolution. The AnyAspectRatio plugin's global resolution setting updates this value; `"auto"` is left unchanged.

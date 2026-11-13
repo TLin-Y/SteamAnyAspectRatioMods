@@ -367,21 +367,23 @@ def _parse_mod(
     resolution_pairs: list[IniResolutionPair] = []
     seen_resolution_keys: set[tuple[str, str]] = set()
     for pair in raw_resolution:
+        # "pixels_string" is one key holding "WIDTHxHEIGHT"; the other kinds use two keys.
+        names = ("key",) if isinstance(pair, dict) and pair.get("kind") == "pixels_string" else ("width", "height")
         if (
             not isinstance(pair, dict)
-            or set(pair) != {"section", "width", "height", "kind"}
+            or set(pair) != {"section", "kind", *names}
             or not all(isinstance(pair[key], str) for key in pair)
             or not re.fullmatch(r"[A-Za-z0-9 _.-]{1,80}", pair["section"], re.ASCII)
-            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair["width"], re.ASCII)
-            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair["height"], re.ASCII)
-            or pair["kind"] not in ("pixels", "ratio")
+            or not all(re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair[name], re.ASCII) for name in names)
+            or pair["kind"] not in ("pixels", "ratio", "pixels_string")
         ):
             raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
-        keys = {(pair["section"].casefold(), pair[key].casefold()) for key in ("width", "height")}
-        if len(keys) != 2 or keys & seen_resolution_keys:
+        keys = {(pair["section"].casefold(), pair[name].casefold()) for name in names}
+        if len(keys) != len(names) or keys & seen_resolution_keys:
             raise ValueError(f"Mod {mod_id} has duplicate ini_resolution keys")
         seen_resolution_keys.update(keys)
-        resolution_pairs.append(IniResolutionPair(**pair))
+        width, height = (pair["key"], pair["key"]) if names == ("key",) else (pair["width"], pair["height"])
+        resolution_pairs.append(IniResolutionPair(pair["section"], width, height, pair["kind"]))
 
     raw_files = entry.get(MOD_FILES_KEY)
     raw_overrides = entry.get(MOD_WINE_OVERRIDES_KEY)

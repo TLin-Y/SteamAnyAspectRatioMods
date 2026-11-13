@@ -6314,7 +6314,7 @@
       "source": {
         "kind": "archive",
         "path": "external/Yuki/Daemon X Machina Titanic Scion Widescreen Fix/patch.zip",
-        "sha256": "ca2ef016469ed3a54a84c5546c6190bd6c4aabd71dd0d14900f7dca4a988ac78",
+        "sha256": "da5f397a73272f9968fe8332f60c9137ae1548e43b355282c4077032afaedec6",
         "destination": "Game/Binaries/Win64"
       },
       "files": [
@@ -6323,6 +6323,7 @@
         "Game/Binaries/Win64/SUWSF.ini"
       ],
       "ini_file": "Game/Binaries/Win64/SUWSF.ini",
+      "ini_resolution": [{"section": "UserSettings", "key": "Resolution", "kind": "pixels_string"}],
       "wine_dll_overrides": [
         "dsound=n,b"
       ],
@@ -6330,6 +6331,36 @@
         {
           "name": "Yuki",
           "url": "https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/"
+        }
+      ]
+    },
+    {
+      "id": "final-fantasy-x-x2-hd-remaster-suwsf",
+      "name": "FINAL FANTASY X/X-2 HD Remaster - SUWSF Widescreen Patches",
+      "steam_app_id": "359870",
+      "install_dir": "FINAL FANTASY FFX&FFX-2 HD Remaster",
+      "executable": "FFX&X-2_LAUNCHER.exe",
+      "executable_alternatives": ["FFX.exe", "FFX-2.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "external/PhantomGamers/Final Fantasy X-X2 HD Remaster SUWSF/Final Fantasy XX-2 HD Remaster 2560x1080 64x27 SUWSF.zip",
+        "sha256": "2d93c08ba9a8ad8f591be8a471cd883a7c8e847f1a9874fba43cf5ae5388e680"
+      },
+      "files": [
+        "d3d11.dll",
+        "SUWSF.asi",
+        "SUWSF.ini",
+        "LICENSE"
+      ],
+      "ini_file": "SUWSF.ini",
+      "ini_resolution": [{"section": "UserSettings", "key": "Resolution", "kind": "pixels_string"}],
+      "wine_dll_overrides": [
+        "d3d11=n,b"
+      ],
+      "credits": [
+        {
+          "name": "PhantomGamers",
+          "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
         }
       ]
     }
