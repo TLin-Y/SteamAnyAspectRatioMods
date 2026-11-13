@@ -31,10 +31,74 @@ from scanner.mod_catalog import summarize_credits
 
 
 class ModCatalogTests(unittest.TestCase):
+    def test_ff13_combined_package_and_installation(self) -> None:
+        import configparser
+
+        from scanner.mod_installer import apply_mod_files, remove_mod_files
+
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "final-fantasy-xiii")
+        root = Path(__file__).resolve().parents[2]
+        external = root / "external/rebtd7/FF13Fix"
+        bundle = root / mod.source.path
+        destination = "white_data/prog/win/bin"
+        self.assertEqual(destination, mod.source.destination)
+        self.assertEqual(("TLin-Y", "rebtd7"), tuple(credit.name for credit in mod.credits))
+        self.assertEqual(("d3d9,dinput8=n,b",), mod.wine_dll_overrides)
+        self.assertEqual(f"{destination}/FF13_ARFix.ini", mod.ini_file)
+        self.assertEqual(
+            {f"{destination}/{name}" for name in (
+                "FF13_ARFix.asi", "FF13_ARFix.ini", "dinput8.dll",
+                "d3d9.dll", "FF13Fix.ini",
+            )},
+            set(mod.files),
+        )
+        with ZipFile(bundle) as archive, ZipFile(external / "FF13Fix_164_.zip") as upstream:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                {"FF13_ARFix.asi", "FF13_ARFix.ini", "dinput8.dll", "d3d9.dll",
+                 "FF13Fix.ini", "LICENSE-Ultimate-ASI-Loader.txt",
+                 "FF13Fix_Licences/FF13Fix_LICENSE.txt", "FF13Fix_Licences/MinHook_LICENSE.txt"},
+                set(archive.namelist()),
+            )
+            for name in (
+                "d3d9.dll", "FF13Fix.ini",
+                "FF13Fix_Licences/FF13Fix_LICENSE.txt", "FF13Fix_Licences/MinHook_LICENSE.txt",
+            ):
+                self.assertEqual(upstream.read(f"FF13Fix_164/{name}"), archive.read(name))
+            upstream_ini = archive.read("FF13Fix.ini")
+        with ZipFile(root / "Final Fantasy XIII/Final-Fantasy-XIII-v1.0.0.zip") as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                (root / "Final Fantasy XIII/README.md").read_bytes(), archive.read("README.md")
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            game = Path(directory)
+            target = game / destination
+            target.mkdir(parents=True)
+            (target / "d3d9.dll").write_bytes(b"existing proxy")
+            with patch("scanner.mod_installer._pack_file", return_value=bundle):
+                conflicts = apply_mod_files(mod, str(game), ini_resolution=(1920, 1080))
+                self.assertEqual([f"{destination}/d3d9.dll"], conflicts)
+                self.assertEqual(b"existing proxy", (target / "d3d9.dll").read_bytes())
+                self.assertFalse((target / "FF13_ARFix.asi").exists())
+                apply_mod_files(mod, str(game), replace_existing_files=True,
+                                ini_resolution=(1920, 1080))
+                self.assertEqual(upstream_ini, (target / "FF13Fix.ini").read_bytes())
+                config = configparser.ConfigParser()
+                config.read(target / "FF13_ARFix.ini", encoding="utf-8")
+                self.assertEqual(
+                    (1280, 720, 1920, 1080),
+                    tuple(config.getint("Resolution", name) for name in
+                          ("ReplaceWidth", "ReplaceHeight", "TargetWidth", "TargetHeight")),
+                )
+                remove_mod_files(mod, str(game), preserve_modified_ini=False)
+            self.assertEqual([], list(target.iterdir()) if target.exists() else [])
+
     def test_dragontweak_verified_paths_apply_and_remove(self) -> None:
         from scanner.mod_installer import apply_mod_files, read_mod_ini, remove_mod_files
 
         expected = (
+            ("3937550", "YakuzaKiwami3", "runtime/media/startup.exe"),
             ("3061810", "LikeADragonPirates", "runtime/media/startup.exe"),
             ("2072450", "LikeADragon8", "runtime/media/LikeADragon8.exe"),
             ("2375550", "LikeADragonGaiden", "runtime/media/startup.exe"),
@@ -95,7 +159,7 @@ class ModCatalogTests(unittest.TestCase):
                 remove_mod_files(mod, str(game))
                 self.assertEqual(b"game", exe.read_bytes())
                 self.assertEqual([exe], [path for path in game.rglob("*") if path.is_file()])
-        self.assertTrue(mods["3937550"].manual)
+        self.assertFalse(mods["3937550"].manual)
 
     def test_backups_array_validation_and_legacy_compatibility(self) -> None:
         document = json.loads(
@@ -292,7 +356,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([35, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([34, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")

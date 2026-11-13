@@ -195,18 +195,30 @@
       "executable": "white_data/prog/win/bin/ffxiiiimg.exe",
       "source": {
         "kind": "archive",
-        "path": "Final Fantasy XIII/Final-Fantasy-XIII-v1.0.0.zip",
-        "sha256": "8fd40f457680f4822e07dea29f492dd85fc8b8d006cc18884442983cbfc09c3e",
+        "path": "external/rebtd7/FF13Fix/FF13-ARFix-with-FF13Fix-v1.0.0.zip",
+        "sha256": "a7235e4110aeb7adbdc75d222edd2b2327756b086e2c474e235319ab2bd1e22e",
         "destination": "white_data/prog/win/bin"
       },
       "files": [
         "white_data/prog/win/bin/FF13_ARFix.asi",
         "white_data/prog/win/bin/FF13_ARFix.ini",
-        "white_data/prog/win/bin/dinput8.dll"
+        "white_data/prog/win/bin/dinput8.dll",
+        "white_data/prog/win/bin/d3d9.dll",
+        "white_data/prog/win/bin/FF13Fix.ini"
       ],
       "ini_file": "white_data/prog/win/bin/FF13_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "TargetWidth", "height": "TargetHeight", "kind": "pixels"}],
-      "wine_dll_overrides": ["d3d9,dinput8=n,b"]
+      "wine_dll_overrides": ["d3d9,dinput8=n,b"],
+      "credits": [
+        {
+          "name": "TLin-Y",
+          "support": [{"label": "Ko-fi", "url": "https://ko-fi.com/lin66961"}]
+        },
+        {
+          "name": "rebtd7",
+          "url": "https://github.com/rebtd7/FF13Fix"
+        }
+      ]
     },
     {
       "id": "ys-viii-lacrimosa-of-dana",
@@ -5483,17 +5495,18 @@
       "steam_app_id": "3937550",
       "install_dir": "YakuzaKiwami3",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],

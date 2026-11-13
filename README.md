@@ -30,6 +30,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
 - **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
+- **rebtd7** — [FF13Fix](https://github.com/rebtd7/FF13Fix), based on OneTweakNG by Nucleoprotein.
 - **MinuteReversal**, **Nicolas Busseneau** ([Hephaistos](https://github.com/nbusseneau/hephaistos)), **TEODORMAX**, **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
 
 ## In action
@@ -89,7 +90,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | FINAL FANTASY VII REBIRTH | Lyall | [2909400](https://store.steampowered.com/app/2909400) | [v0.0.13](./external/Lyall/FF7RebirthFix/FF7RebirthFix_0.0.13.zip) | 2026-06-04 | [FF7RebirthFix](https://codeberg.org/Lyall/FF7RebirthFix) |
 | FINAL FANTASY VII REMAKE INTERGRADE | Lyall | [1462040](https://store.steampowered.com/app/1462040) | [v0.0.2](./external/Lyall/FF7RemakeFix/FF7RemakeFix_0.0.2.zip) | 2026-01-30 | [FF7RemakeFix](https://codeberg.org/Lyall/FF7RemakeFix) |
 | FINAL FANTASY XII THE ZODIAC AGE | TLin-Y | [595520](https://store.steampowered.com/app/595520) | [v1.0.0](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.0.zip) | 2026-11-11 | [README](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/README.md) |
-| Final Fantasy XIII | TLin-Y | [292120](https://store.steampowered.com/app/292120) | [v1.0.0](./Final%20Fantasy%20XIII/Final-Fantasy-XIII-v1.0.0.zip) | 2026-11-02 | [README](./Final%20Fantasy%20XIII/README.md) |
+| Final Fantasy XIII | TLin-Y, rebtd7 | [292120](https://store.steampowered.com/app/292120) | [Combined package](./external/rebtd7/FF13Fix/FF13-ARFix-with-FF13Fix-v1.0.0.zip) | 2026-11-02 | [README](./Final%20Fantasy%20XIII/README.md) |
 | Final Fantasy XIII-2 | TEODORMAX | [292140](https://store.steampowered.com/app/292140) | [v1.4.0](./external/TEODORMAX/FFXIII2UW/FFXIII2UW_1.4.0.zip) | 2026-07-17 | [FFXIII2UW](https://www.nexusmods.com/finalfantasyxiii2/mods/42) |
 | FINAL FANTASY XVI | Lyall | [2515020](https://store.steampowered.com/app/2515020) | [v0.8.5](./external/Lyall/FFXVIFix/FFXVIFix_0.8.5.zip) | 2025-06-05 | [FFXVIFix](https://codeberg.org/Lyall/FFXVIFix) |
 | Granblue Fantasy: Relink | Lyall | [881020](https://store.steampowered.com/app/881020) | [v1.1.5](./external/Lyall/GBFRelinkFix/GBFRelinkFix_1.1.5.zip) | 2026-08-07 | [GBFRelinkFix](https://codeberg.org/Lyall/GBFRelinkFix) |
@@ -182,7 +183,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Yakuza Kiwami (Legacy) | Lyall | [834530](https://store.steampowered.com/app/834530) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Yakuza Kiwami 2 | Lyall | [3717340](https://store.steampowered.com/app/3717340) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Yakuza Kiwami 2 (Legacy) | Lyall | [927380](https://store.steampowered.com/app/927380) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
-| Yakuza Kiwami 3 & Dark Ties | Lyall | [3937550](https://store.steampowered.com/app/3937550) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) (manual install) |
+| Yakuza Kiwami 3 & Dark Ties | Lyall | [3937550](https://store.steampowered.com/app/3937550) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Yakuza: Like a Dragon | Lyall | [1235140](https://store.steampowered.com/app/1235140) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Ys VIII: Lacrimosa of DANA | TLin-Y | [579180](https://store.steampowered.com/app/579180) | [v1.0.0](./Ys%20VIII%20Lacrimosa%20of%20DANA/Ys-VIII-Lacrimosa-of-DANA-v1.0.0.zip) | 2026-11-07 | [README](./Ys%20VIII%20Lacrimosa%20of%20DANA/README.md) |
 
