@@ -15,6 +15,7 @@ Special thanks to:
 - [Twig](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517), for the Undertale Ultrawide Fix.
 - [TechieW](https://www.nexusmods.com/eldenring/mods/7870), for the Elden Ring Ultrawide Fix.
 - [m.vico](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230), for Keyblade Masters Ultrawide for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
+- [rebtd7](https://github.com/rebtd7/FF13Fix), for FF13Fix, and Nucleoprotein for OneTweakNG.
 - **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
 
 Thank you as well to every contributor and author credited in the individual
