@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 138 game mods](https://img.shields.io/badge/Game%20mods-138-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 139 game mods](https://img.shields.io/badge/Game%20mods-139-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -29,6 +29,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
+- **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
 - **PhantomGamers** — [SUWSF patches for Final Fantasy X/X-2 HD Remaster](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/).
 - **Yuki** — [Daemon X Machina: Titanic Scion Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
 - **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
@@ -90,6 +91,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Elden Ring (Offline) | TechieW | [1245620](https://store.steampowered.com/app/1245620) | [v1.0.1](./external/TechieW/ELDEN%20RING/Elden%20Ring%20Ultrawide%20Fix-7870-1-0-1-1746293446.zip) | 2025-05-03 | [README](./external/TechieW/ELDEN%20RING/README.md) |
 | FATAL FRAME II: Crimson Butterfly REMAKE | Lyall | [3920610](https://store.steampowered.com/app/3920610) | [v0.0.2](./external/Lyall/FF2RFix/FF2RFix_0.0.2.zip) | 2026-03-13 | [FF2RFix](https://codeberg.org/Lyall/FF2RFix) |
 | Fate/Samurai Remnant | Lyall | [1902690](https://store.steampowered.com/app/1902690) | [v0.0.2](./external/Lyall/FateSamuraiRemnantFix/FateSamuraiRemnantFix_0.0.2.zip) | 2025-06-01 | [FateSamuraiRemnantFix](https://codeberg.org/Lyall/FateSamuraiRemnantFix) |
+| FINAL FANTASY RESONANCE | Refilo | [3259780](https://store.steampowered.com/app/3259780) | [v2.6.3](./external/Refilo/FFResonance%20Ultrawide/FFResonance%20Ultrawide%202.6.3%2029%202.6.3%202026-11-06T22-52Z%20ukvcoplGf.zip) | 2026-11-06 | [Nexus Mods](https://www.nexusmods.com/finalfantasyresonance/mods/29) |
 | FINAL FANTASY VII REBIRTH | Lyall | [2909400](https://store.steampowered.com/app/2909400) | [v0.0.13](./external/Lyall/FF7RebirthFix/FF7RebirthFix_0.0.13.zip) | 2026-06-04 | [FF7RebirthFix](https://codeberg.org/Lyall/FF7RebirthFix) |
 | FINAL FANTASY VII REMAKE INTERGRADE | Lyall | [1462040](https://store.steampowered.com/app/1462040) | [v0.0.2](./external/Lyall/FF7RemakeFix/FF7RemakeFix_0.0.2.zip) | 2026-01-30 | [FF7RemakeFix](https://codeberg.org/Lyall/FF7RemakeFix) |
 | FINAL FANTASY X/X-2 HD Remaster | PhantomGamers | [359870](https://store.steampowered.com/app/359870) | [SUWSF](./external/PhantomGamers/Final%20Fantasy%20X-X2%20HD%20Remaster%20SUWSF/Final%20Fantasy%20XX-2%20HD%20Remaster%202560x1080%2064x27%20SUWSF.zip) | 2022-11-01 | [PCGamingWiki](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/) |
