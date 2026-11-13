@@ -31,6 +31,72 @@ from scanner.mod_catalog import summarize_credits
 
 
 class ModCatalogTests(unittest.TestCase):
+    def test_dragontweak_verified_paths_apply_and_remove(self) -> None:
+        from scanner.mod_installer import apply_mod_files, read_mod_ini, remove_mod_files
+
+        expected = (
+            ("3061810", "LikeADragonPirates", "runtime/media/startup.exe"),
+            ("2072450", "LikeADragon8", "runtime/media/LikeADragon8.exe"),
+            ("2375550", "LikeADragonGaiden", "runtime/media/startup.exe"),
+            ("2058190", "Lost Judgment", "runtime/media/startup.exe"),
+            ("1235140", "Yakuza Like a Dragon", "runtime/media/startup.exe"),
+            ("2058180", "Judgment", "runtime/media/startup.exe"),
+            ("3717340", "Yakuza Kiwami 2 R", "runtime/media/startup.exe"),
+            ("927380", "Yakuza Kiwami 2", "YakuzaKiwami2.exe"),
+            ("1388590", "Yakuza 6 - The Song of Life", "Yakuza6.exe"),
+            ("2988580", "Yakuza 0 Directors Cut", "runtime/media/startup.exe"),
+            ("638970", "Yakuza 0", "media/Yakuza0.exe"),
+            ("3717330", "Yakuza Kiwami R", "runtime/media/startup.exe"),
+            ("834530", "Yakuza Kiwami", "media/YakuzaKiwami.exe"),
+            ("1105510", "Yakuza 5", "main/Yakuza5.exe"),
+            ("1105500", "Yakuza 4", "Yakuza4.exe"),
+            ("1088710", "Yakuza 3", "Yakuza3.exe"),
+        )
+        mods = {
+            mod.steam_app_id: mod for mod in load_mod_catalog()
+            if mod.mod_id.startswith("dragontweak-")
+        }
+        root = Path(__file__).resolve().parents[2]
+        archive_path = root / "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip"
+        with ZipFile(archive_path) as archive:
+            self.assertIsNone(archive.testzip())
+            contents = {
+                name: archive.read(name)
+                for name in ("dinput8.dll", "DragonTweak.asi", "DragonTweak.ini")
+            }
+        for app_id, install_dir, executable in expected:
+            with self.subTest(app_id=app_id), tempfile.TemporaryDirectory() as directory:
+                mod = mods[app_id]
+                self.assertFalse(mod.manual)
+                self.assertEqual((install_dir, executable), (mod.install_dir, mod.executable))
+                destination = executable.rpartition("/")[0]
+                prefix = f"{destination}/" if destination else ""
+                self.assertEqual(destination, mod.source.destination)
+                self.assertEqual(tuple(f"{prefix}{name}" for name in contents), mod.files)
+                self.assertEqual(f"{prefix}DragonTweak.ini", mod.ini_file)
+                self.assertEqual(("dinput8=n,b",), mod.wine_dll_overrides)
+                game = Path(directory) / install_dir
+                exe = game / executable
+                exe.parent.mkdir(parents=True)
+                exe.write_bytes(b"game")
+                app = InstalledApp(app_id, install_dir, install_dir, directory, str(game))
+                report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+                (matched,) = report.supported_games
+                self.assertEqual(str(exe), matched.executable_path)
+                self.assertTrue(matched.executable_found)
+                self.assertFalse(matched.to_dict()["manual"])
+                with patch("scanner.mod_installer._pack_file", return_value=archive_path):
+                    apply_mod_files(mod, str(game))
+                for name, content in contents.items():
+                    self.assertEqual(content, (exe.parent / name).read_bytes())
+                ini, exists = read_mod_ini(mod, str(game))
+                self.assertEqual(contents["DragonTweak.ini"].decode("utf-8-sig"), ini)
+                self.assertTrue(exists)
+                remove_mod_files(mod, str(game))
+                self.assertEqual(b"game", exe.read_bytes())
+                self.assertEqual([exe], [path for path in game.rglob("*") if path.is_file()])
+        self.assertTrue(mods["3937550"].manual)
+
     def test_backups_array_validation_and_legacy_compatibility(self) -> None:
         document = json.loads(
             (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
