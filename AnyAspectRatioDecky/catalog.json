@@ -6264,6 +6264,45 @@
         }
       ],
       "ini_file": "KINGDOM HEARTS III/Binaries/Win64/KH3-UW-config.ini"
+    },
+    {
+      "id": "rofremasterfix",
+      "name": "RESONANCE OF FATE/END OF ETERNITY ENHANCED REMASTER - RoFRemasterFix",
+      "steam_app_id": "645730",
+      "install_dir": "Resonance of Fate",
+      "executable": "Resonance of Fate.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/RoFRemasterFix/RoFRemasterFix_0.0.1.zip",
+        "sha256": "3389736bd3490e16bf3cade56b159f1de84ebef90db79afd9c85eb927b9a9b87"
+      },
+      "files": [
+        "LICENSES.txt",
+        "RoFRemasterFix.asi",
+        "RoFRemasterFix.ini",
+        "winmm.dll"
+      ],
+      "wine_dll_overrides": [
+        "winmm=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ],
+      "ini_file": "RoFRemasterFix.ini",
+      "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}]
     }
   ]
 }

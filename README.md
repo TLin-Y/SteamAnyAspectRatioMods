@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 135 game mods](https://img.shields.io/badge/Game%20mods-135-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 136 game mods](https://img.shields.io/badge/Game%20mods-136-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -144,6 +144,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Resident Evil 5 | Lyall | [21690](https://store.steampowered.com/app/21690) | [v1.0.5](./external/Lyall/RE5Fix/RE5Fix_1.0.5.zip) | 2026-10-25 | [RE5Fix](https://codeberg.org/Lyall/RE5Fix) |
 | Resident Evil 7 | TLin-Y | [418370](https://store.steampowered.com/app/418370) | [v1.1.0](./Resident%20Evil%207/Resident-Evil-7-v1.1.0.zip) | 2026-11-03 | [README](./Resident%20Evil%207/README.md) |
 | Resident Evil Village | TLin-Y | [1196590](https://store.steampowered.com/app/1196590) | [v1.1.0](./Resident%20Evil%20Village/Resident-Evil-Village-v1.1.0.zip) | 2026-11-03 | [README](./Resident%20Evil%20Village/README.md) |
+| RESONANCE OF FATE/END OF ETERNITY ENHANCED REMASTER | Lyall | [645730](https://store.steampowered.com/app/645730) | [v0.0.1](./external/Lyall/RoFRemasterFix/RoFRemasterFix_0.0.1.zip) | 2026-11-13 | [RoFRemasterFix](https://codeberg.org/Lyall/RoFRemasterFix) |
 | Rise of the Ronin | Lyall | [1340990](https://store.steampowered.com/app/1340990) | [v0.0.4](./external/Lyall/RiseOfTheRoninFix/RiseOfTheRoninFix_0.0.4.zip) | 2025-05-30 | [RiseOfTheRoninFix](https://codeberg.org/Lyall/RiseOfTheRoninFix) |
 | SAMURAI WARRIORS: Spirit of Sanada | TLin-Y | [595740](https://store.steampowered.com/app/595740) | [v1.0.0](./Samurai%20Warriors%20Spirit%20of%20Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.0.0.zip) | 2026-11-04 | [README](./Samurai%20Warriors%20Spirit%20of%20Sanada/README.md) |
 | SANABI | TLin-Y | [1562700](https://store.steampowered.com/app/1562700) | [v1.0.0](./SANABI/SANABI-v1.0.0.zip) | 2026-11-07 | [README](./SANABI/README.md) |
