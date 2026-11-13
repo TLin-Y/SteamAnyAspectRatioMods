@@ -526,6 +526,32 @@
       "wine_dll_overrides": ["winhttp=n,b"]
     },
     {
+      "id": "phoenix-wright-ace-attorney-trilogy",
+      "name": "Phoenix Wright: Ace Attorney Trilogy - Custom Aspect Ratio",
+      "steam_app_id": "787480",
+      "install_dir": "Phoenix Wright Ace Attorney Trilogy",
+      "executable": "PWAAT.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Phoenix Wright Ace Attorney Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.0.zip",
+        "sha256": "b466779ea019acb4426937ef3167d88ac14257c617afc9bfdff2c6ec1f9e4ded"
+      },
+      "files": [
+        "PWAAT_Data/Managed/Assembly-CSharp.dll",
+        "PWAAT_Data/Managed/PWAATResolution.dll",
+        "PWAAT_ARFix.ini"
+      ],
+      "backups": [
+        {
+          "target": "PWAAT_Data/Managed/Assembly-CSharp.dll",
+          "backup": "PWAAT_Data/Managed/Assembly-CSharp.dll.pwaat-original.bak"
+        }
+      ],
+      "ini_file": "PWAAT_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": []
+    },
+    {
       "id": "rayman-legends",
       "name": "Rayman Legends - Custom Aspect Ratio",
       "steam_app_id": "242550",
