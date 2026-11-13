@@ -1,0 +1,34 @@
+{
+  "ai-the-somnium-files": {
+    "steam_launch": ["Launcher.exe"],
+    "reason": "Steam starts the settings launcher; the mod targets the game exe."
+  },
+  "dafix-origins": {
+    "steam_launch": ["DAOriginsLauncher.exe", "docs/EA Help/Electronic_Arts_Technical_Support.htm"],
+    "reason": "Steam starts the launcher; the fix sits beside bin_ship/DAOrigins.exe."
+  },
+  "dafix-2": {
+    "steam_launch": ["steam2ea://launchgame/1238040?platform=steam&theme=daII"],
+    "reason": "Steam hands off to the EA app; the fix sits beside bin_ship/DragonAge2.exe."
+  },
+  "dynasty-warriors-7-xtreme-legends-definitive-edition": {
+    "steam_launch": ["Launch.exe", "LaunchD.exe"],
+    "reason": "Steam starts the launcher; the game exe is per language (SM6EN/SM6JP/SM6TC)."
+  },
+  "ffxiii2uw": {
+    "steam_launch": ["FFXiii2Launcher.exe"],
+    "reason": "Steam starts the launcher; the fix targets alba_data/prog/win/bin/ffxiii2img.exe."
+  },
+  "final-fantasy-xiii": {
+    "steam_launch": ["FFXiiiLauncher.exe"],
+    "reason": "Steam starts the launcher; the fix targets white_data/prog/win/bin/ffxiiiimg.exe."
+  },
+  "palworld": {
+    "steam_launch": ["Palworld.exe"],
+    "reason": "Unreal bootstrap exe; the mod targets the Win64 Shipping exe."
+  },
+  "visions-of-mana": {
+    "steam_launch": ["VisionsofMana.exe"],
+    "reason": "Unreal bootstrap exe; the mod targets the Win64 Shipping exe."
+  }
+}
