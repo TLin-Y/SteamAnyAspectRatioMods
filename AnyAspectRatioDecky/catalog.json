@@ -361,6 +361,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "nioh-complete-edition",
+      "name": "Nioh: Complete Edition - Custom Aspect Ratio",
+      "steam_app_id": "485510",
+      "install_dir": "Nioh",
+      "executable": "nioh.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Nioh Complete Edition/Nioh-Complete-Edition-v1.0.0.zip",
+        "sha256": "e350cec61918e74da3bb9608c86c4d48446d070d03d8e8f82c5188b71fe9f913"
+      },
+      "files": ["dinput8.dll", "Nioh_ARFix.asi", "Nioh_ARFix.ini"],
+      "ini_file": "Nioh_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["launcher-1920x1080-high"],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "ori-and-the-blind-forest-definitive-edition",
       "name": "Ori and the Blind Forest: Definitive Edition - V2 Fix",
       "steam_app_id": "387290",
