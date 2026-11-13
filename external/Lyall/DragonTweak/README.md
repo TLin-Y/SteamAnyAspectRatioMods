@@ -36,6 +36,12 @@
 🚩**You do not need to do this if you are using Windows!**  
 - Open the game properties in Steam and add `WINEDLLOVERRIDES="dinput8=n,b" %command%` to the launch options.  
 
+### AnyAspectRatio catalog
+- Apply/Remove is enabled for the 16 entries with user-supplied Steam install-folder and executable metadata, including Yakuza 0 and Yakuza Kiwami (Legacy).
+- Files are installed beside the executable: `runtime\media` for the newer releases, `media` for Yakuza 0 and Yakuza Kiwami (Legacy), `main` for Yakuza 5 Remastered, and the install root for Yakuza 3/4 Remastered, Yakuza 6, and Yakuza Kiwami 2 (Legacy).
+- Edit `DragonTweak.ini` from the plugin after applying. Steam launch-option updates are separate from file Apply/Remove.
+- Yakuza Kiwami 3 & Dark Ties remains manual-only; its metadata is not verified by this update.
+
 ## Configuration
 - Open **`DragonTweak.ini`** to adjust settings.
 

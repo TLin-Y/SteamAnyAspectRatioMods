@@ -5520,17 +5520,18 @@
       "steam_app_id": "3061810",
       "install_dir": "LikeADragonPirates",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5557,17 +5558,18 @@
       "steam_app_id": "2072450",
       "install_dir": "LikeADragon8",
       "executable": "runtime/media/LikeADragon8.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5594,17 +5596,18 @@
       "steam_app_id": "2375550",
       "install_dir": "LikeADragonGaiden",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5631,17 +5634,18 @@
       "steam_app_id": "2058190",
       "install_dir": "Lost Judgment",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5668,17 +5672,18 @@
       "steam_app_id": "1235140",
       "install_dir": "Yakuza Like a Dragon",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5705,17 +5710,18 @@
       "steam_app_id": "2058180",
       "install_dir": "Judgment",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5742,17 +5748,18 @@
       "steam_app_id": "3717340",
       "install_dir": "Yakuza Kiwami 2 R",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5779,7 +5786,6 @@
       "steam_app_id": "927380",
       "install_dir": "Yakuza Kiwami 2",
       "executable": "YakuzaKiwami2.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
@@ -5790,6 +5796,7 @@
         "DragonTweak.asi",
         "DragonTweak.ini"
       ],
+      "ini_file": "DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5816,7 +5823,6 @@
       "steam_app_id": "1388590",
       "install_dir": "Yakuza 6 - The Song of Life",
       "executable": "Yakuza6.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
@@ -5827,6 +5833,45 @@
         "DragonTweak.asi",
         "DragonTweak.ini"
       ],
+      "ini_file": "DragonTweak.ini",
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-0",
+      "name": "Yakuza 0 - DragonTweak",
+      "steam_app_id": "638970",
+      "install_dir": "Yakuza 0",
+      "executable": "media/Yakuza0.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "media"
+      },
+      "files": [
+        "media/dinput8.dll",
+        "media/DragonTweak.asi",
+        "media/DragonTweak.ini"
+      ],
+      "ini_file": "media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5853,17 +5898,18 @@
       "steam_app_id": "2988580",
       "install_dir": "Yakuza 0 Directors Cut",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5890,17 +5936,56 @@
       "steam_app_id": "3717330",
       "install_dir": "Yakuza Kiwami R",
       "executable": "runtime/media/startup.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "runtime/media"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "runtime/media/dinput8.dll",
+        "runtime/media/DragonTweak.asi",
+        "runtime/media/DragonTweak.ini"
       ],
+      "ini_file": "runtime/media/DragonTweak.ini",
+      "wine_dll_overrides": [
+        "dinput8=n,b"
+      ],
+      "credits": [
+        {
+          "name": "Lyall",
+          "url": "https://codeberg.org/Lyall",
+          "support": [
+            {
+              "label": "Patreon",
+              "url": "https://www.patreon.com/Wintermance"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/W7W01UAI9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragontweak-yakuza-kiwami-legacy",
+      "name": "Yakuza Kiwami (Legacy) - DragonTweak",
+      "steam_app_id": "834530",
+      "install_dir": "Yakuza Kiwami",
+      "executable": "media/YakuzaKiwami.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "media"
+      },
+      "files": [
+        "media/dinput8.dll",
+        "media/DragonTweak.asi",
+        "media/DragonTweak.ini"
+      ],
+      "ini_file": "media/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5927,17 +6012,18 @@
       "steam_app_id": "1105510",
       "install_dir": "Yakuza 5",
       "executable": "main/Yakuza5.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
-        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047"
+        "sha256": "97a23c3f506f2748b27508412142d1341a56308c9b8882c18f97ffac2e485047",
+        "destination": "main"
       },
       "files": [
-        "dinput8.dll",
-        "DragonTweak.asi",
-        "DragonTweak.ini"
+        "main/dinput8.dll",
+        "main/DragonTweak.asi",
+        "main/DragonTweak.ini"
       ],
+      "ini_file": "main/DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -5964,7 +6050,6 @@
       "steam_app_id": "1105500",
       "install_dir": "Yakuza 4",
       "executable": "Yakuza4.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
@@ -5975,6 +6060,7 @@
         "DragonTweak.asi",
         "DragonTweak.ini"
       ],
+      "ini_file": "DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
@@ -6001,7 +6087,6 @@
       "steam_app_id": "1088710",
       "install_dir": "Yakuza 3",
       "executable": "Yakuza3.exe",
-      "manual": true,
       "source": {
         "kind": "archive",
         "path": "external/Lyall/DragonTweak/DragonTweak_0.0.6.zip",
@@ -6012,6 +6097,7 @@
         "DragonTweak.asi",
         "DragonTweak.ini"
       ],
+      "ini_file": "DragonTweak.ini",
       "wine_dll_overrides": [
         "dinput8=n,b"
       ],
