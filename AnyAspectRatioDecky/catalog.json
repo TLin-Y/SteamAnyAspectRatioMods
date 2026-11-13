@@ -9,6 +9,10 @@
       "name": "TLin-Y",
       "support": [
         {
+          "label": "Mod list",
+          "url": "https://github.com/TLin-Y/SteamAnyAspectRatioMods#game-mods"
+        },
+        {
           "label": "Ko-fi",
           "url": "https://ko-fi.com/lin66961"
         }
@@ -212,7 +216,7 @@
       "credits": [
         {
           "name": "TLin-Y",
-          "support": [{"label": "Ko-fi", "url": "https://ko-fi.com/lin66961"}]
+          "support": [{"label": "Mod list", "url": "https://github.com/TLin-Y/SteamAnyAspectRatioMods#game-mods"}, {"label": "Ko-fi", "url": "https://ko-fi.com/lin66961"}]
         },
         {
           "name": "rebtd7",
