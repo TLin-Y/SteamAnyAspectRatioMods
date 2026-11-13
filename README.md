@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 136 game mods](https://img.shields.io/badge/Game%20mods-136-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 137 game mods](https://img.shields.io/badge/Game%20mods-137-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -29,6 +29,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
+- **Yuki** — [Daemon X Machina: Titanic Scion Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
 - **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
 - **rebtd7** — [FF13Fix](https://github.com/rebtd7/FF13Fix), based on OneTweakNG by Nucleoprotein.
 - **MinuteReversal**, **Nicolas Busseneau** ([Hephaistos](https://github.com/nbusseneau/hephaistos)), **TEODORMAX**, **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
@@ -63,6 +64,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Bloodstained: Ritual of the Night | TLin-Y | [692850](https://store.steampowered.com/app/692850) | [v1.0.0](./Bloodstained%20Ritual%20of%20the%20Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip) | 2026-11-08 | [README](./Bloodstained%20Ritual%20of%20the%20Night/README.md) |
 | BRAVELY DEFAULT II | Lyall | [1446650](https://store.steampowered.com/app/1446650) | [v0.0.4](./external/Lyall/BravelyDefault2Fix/BravelyDefault2Fix_0.0.4.zip) | 2025-06-21 | [BravelyDefault2Fix](https://codeberg.org/Lyall/BravelyDefault2Fix) |
 | Clair Obscur: Expedition 33 | Lyall | [1903340](https://store.steampowered.com/app/1903340) | [v0.0.15](./external/Lyall/ClairObscurFix/ClairObscurFix_0.0.15.zip) | 2025-12-22 | [ClairObscurFix](https://codeberg.org/Lyall/ClairObscurFix) |
+| Daemon X Machina: Titanic Scion | Yuki | [1342490](https://store.steampowered.com/app/1342490) | [patch.zip](./external/Yuki/Daemon%20X%20Machina%20Titanic%20Scion%20Widescreen%20Fix/patch.zip) | 2026-10-05 | [Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/) |
 | Dark Souls III (Offline) | TLin-Y (fullscreen fix by ellekz) | [374320](https://store.steampowered.com/app/374320) | [v1.1.0](./Dark%20Souls%20III/Dark-Souls-III-v1.1.0.zip) | 2026-11-03 | [README](./Dark%20Souls%20III/README.md) |
 | DARK SOULS: REMASTERED | TLin-Y | [570940](https://store.steampowered.com/app/570940) | [v1.0.0](./DARK%20SOULS%20REMASTERED%20FOV/Dark-Souls-Remastered-FOV-v1.0.0.zip) | 2026-11-09 | [README](./DARK%20SOULS%20REMASTERED%20FOV/README.md) |
 | DAVE THE DIVER | TLin-Y | [1868140](https://store.steampowered.com/app/1868140) | [v1.0.0](./DAVE%20THE%20DIVER/DAVE-THE-DIVER-v1.0.0.zip) | 2026-11-07 | [README](./DAVE%20THE%20DIVER/README.md) |
