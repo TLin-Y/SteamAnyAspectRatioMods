@@ -1,4 +1,7 @@
-param([string]$Version = "")
+param(
+    [string]$Version = "",
+    [switch]$SkipSteamCheck
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -7,6 +10,23 @@ $repositoryRoot = (Resolve-Path (Join-Path $pluginRoot "..")).Path
 $distPath = Join-Path $pluginRoot "dist"
 if (-not (Test-Path (Join-Path $distPath "index.js"))) {
     throw "Frontend bundle not found. Run 'pnpm build' before packaging."
+}
+
+if ($SkipSteamCheck) {
+    if ($Version) {
+        throw "-SkipSteamCheck is not allowed for a release package (-Version $Version)."
+    }
+    Write-Warning "Skipping the Steam metadata check; catalog install_dir/executable are unverified."
+}
+else {
+    & python (Join-Path $PSScriptRoot "verify_catalog_steam.py")
+    $steamCheckExitCode = $LASTEXITCODE
+    if ($steamCheckExitCode -eq 2) {
+        throw "Steam metadata check could not reach Steam. Retry online, or pass -SkipSteamCheck for a local smoke build."
+    }
+    if ($steamCheckExitCode -ne 0) {
+        throw "Catalog does not match Steam metadata; fix catalog.json or scripts\steam_catalog_exceptions.json."
+    }
 }
 
 $requiredFiles = @(

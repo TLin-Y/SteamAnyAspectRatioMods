@@ -24,6 +24,7 @@ from scanner.mod_catalog import load_mod_catalog  # noqa: E402
 from store.pack import _wanted_paths  # noqa: E402
 from store.plugin_store import DEFAULT_CATALOG_PATH  # noqa: E402
 from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
+import verify_catalog_steam  # noqa: E402
 
 
 def _partition_paths(
@@ -61,6 +62,8 @@ def main() -> None:
     version = sys.argv[1] if len(sys.argv) > 1 else "dev"
     if VERSION_PATTERN.fullmatch(version) is None:
         raise SystemExit("Version must be 'dev' or a numeric version such as '1.8.0'.")
+    if verify_catalog_steam.main() != 0:
+        raise SystemExit("Catalog does not match Steam metadata (or Steam was unreachable); see above.")
     update_catalog_hashes()
     mods = load_mod_catalog(PLUGIN_ROOT / "catalog.json")
     required, optional = _wanted_paths(mods)

@@ -887,7 +887,7 @@ class ModCatalogTests(unittest.TestCase):
                 "StarOceanTheLastHope.exe", "SO4Fix.asi",
             ),
             (
-                "mdaraincodeplusfix", "2903950", "MDA - RAIN CODE Plus",
+                "mdaraincodeplusfix", "2903950", "Master Detective Archives RAIN CODE",
                 "RainCodePlus.exe", "RainCodePlus/Binaries/Win64/MDARainCodePlusFix.asi",
             ),
         ):

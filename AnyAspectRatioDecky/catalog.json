@@ -3046,7 +3046,7 @@
       "id": "mdaraincodeplusfix",
       "name": "Master Detective Archives: RAIN CODE Plus - MDARainCodePlusFix",
       "steam_app_id": "2903950",
-      "install_dir": "MDA - RAIN CODE Plus",
+      "install_dir": "Master Detective Archives RAIN CODE",
       "executable": "RainCodePlus.exe",
       "source": {
         "kind": "archive",
@@ -6244,17 +6244,17 @@
       "name": "KINGDOM HEARTS III - Keyblade Masters Ultrawide",
       "steam_app_id": "2552450",
       "install_dir": "KINGDOM HEARTS III",
-      "executable": "Binaries/Win64/KINGDOM HEARTS III.exe",
+      "executable": "KINGDOM HEARTS III/Binaries/Win64/KINGDOM HEARTS III.exe",
       "source": {
         "kind": "archive",
         "path": "external/mvico/Keyblade Masters Ultrawide - KH3/Keyblade Masters Ultrawide KH3 2553 1.0.1.zip",
         "sha256": "743090a3de0a71c5cd844ccf290da24044f15f7d81fa8fb259983987507d909f",
-        "destination": "Binaries/Win64"
+        "destination": "KINGDOM HEARTS III/Binaries/Win64"
       },
       "files": [
-        "Binaries/Win64/d3d11.dll",
-        "Binaries/Win64/KH3-UW.asi",
-        "Binaries/Win64/KH3-UW-config.ini"
+        "KINGDOM HEARTS III/Binaries/Win64/d3d11.dll",
+        "KINGDOM HEARTS III/Binaries/Win64/KH3-UW.asi",
+        "KINGDOM HEARTS III/Binaries/Win64/KH3-UW-config.ini"
       ],
       "wine_dll_overrides": ["d3d11=n,b"],
       "credits": [
@@ -6263,7 +6263,7 @@
           "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
         }
       ],
-      "ini_file": "Binaries/Win64/KH3-UW-config.ini"
+      "ini_file": "KINGDOM HEARTS III/Binaries/Win64/KH3-UW-config.ini"
     }
   ]
 }
