@@ -1,8 +1,10 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 139 game mods](https://img.shields.io/badge/Game%20mods-139-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 140 game mods](https://img.shields.io/badge/Game%20mods-140-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want, on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
+
+On Windows, just extract the mod's ZIP into the game folder beside the game's exe. That's it.
 
 On Steam Deck, the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
 
@@ -128,6 +130,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | NINJA GAIDEN 3: Razor's Edge | Lyall | [1369760](https://store.steampowered.com/app/1369760) | [v0.0.1](./external/Lyall/NinjaGaidenMCFix/NinjaGaidenMCFix_0.0.1.zip) | 2025-06-19 | [NinjaGaidenMCFix](https://codeberg.org/Lyall/NinjaGaidenMCFix) |
 | NINJA GAIDEN Sigma | Lyall | [1580780](https://store.steampowered.com/app/1580780) | [v0.0.1](./external/Lyall/NinjaGaidenMCFix/NinjaGaidenMCFix_0.0.1.zip) | 2025-06-19 | [NinjaGaidenMCFix](https://codeberg.org/Lyall/NinjaGaidenMCFix) |
 | Ninja Gaiden Sigma 2 | Nozomi Miyamori, Fiend Busa, Lyall | [1580790](https://store.steampowered.com/app/1580790) | [Black V18](./Ninja%20Gaiden%20Sigma%202) | 2026-11-02 | [README](./Ninja%20Gaiden%20Sigma%202/README.md) |
+| Nioh: Complete Edition | TLin-Y | [485510](https://store.steampowered.com/app/485510) | [v1.0.0](./Nioh%20Complete%20Edition/Nioh-Complete-Edition-v1.0.0.zip) | 2026-11-13 | [README](./Nioh%20Complete%20Edition/README.md) |
 | Nioh 2 – The Complete Edition | Lyall | [1325200](https://store.steampowered.com/app/1325200) | [v0.0.3](./external/Lyall/Nioh2Fix/Nioh2Fix_0.0.3.zip) | 2026-02-23 | [Nioh2Fix](https://codeberg.org/Lyall/Nioh2Fix) |
 | Nioh 3 | Lyall | [3681010](https://store.steampowered.com/app/3681010) | [v0.0.6](./external/Lyall/Nioh3Fix/Nioh3Fix_0.0.6.zip) | 2026-08-25 | [Nioh3Fix](https://codeberg.org/Lyall/Nioh3Fix) |
 | No Sleep For Kaname Date | Lyall | [2752180](https://store.steampowered.com/app/2752180) | [v0.0.1](./external/Lyall/NoSleepForKanameDateFix/NoSleepForKanameDateFix_0.0.1.zip) | 2026-06-12 | [NoSleepForKanameDateFix](https://codeberg.org/Lyall/NoSleepForKanameDateFix) |
