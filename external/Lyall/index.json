@@ -3020,5 +3020,20 @@
       "RE5Fix.ini",
       "dinput8.dll"
     ]
+  },
+  {
+    "repo": "RoFRemasterFix",
+    "description": "An ASI plugin for Resonance of Fate ENHANCED REMASTER that adds support for custom resolutions, ultrawide/narrower support and more.",
+    "html_url": "https://codeberg.org/Lyall/RoFRemasterFix",
+    "tag": "0.0.1",
+    "published": "2026-11-13",
+    "zip": "external/Lyall/RoFRemasterFix/RoFRemasterFix_0.0.1.zip",
+    "size": 1374870,
+    "files": [
+      "LICENSES.txt",
+      "RoFRemasterFix.asi",
+      "RoFRemasterFix.ini",
+      "winmm.dll"
+    ]
   }
 ]
