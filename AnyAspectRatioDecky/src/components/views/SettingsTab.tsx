@@ -444,6 +444,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </div>
         </PanelSectionRow>
       </PanelSection>
+      {info?.self_update_enabled && (
       <PanelSection title="Plugin update">
         <PanelSectionRow>
           <ButtonItem
@@ -472,6 +473,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </PanelSectionRow>
         )}
       </PanelSection>
+      )}
       <PanelSection title="Troubleshooting">
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={busy} onClick={viewLog}>
