@@ -2,13 +2,14 @@ import json
 import re
 from pathlib import Path
 
+from helper.errors import PluginError
 from utils import text_files
 
 _TOKEN_PATTERN = re.compile(r'"((?:\\.|[^"\\])*)"|(\{|\})|//[^\r\n]*|([^\s{}"]+)')
 
 
 
-class VdfParseError(ValueError):
+class VdfParseError(PluginError):
     pass
 
 

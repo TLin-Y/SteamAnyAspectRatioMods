@@ -64,7 +64,6 @@ export type PluginSettingsInfo = {
 };
 
 export type PluginUpdateInfo = {
-  error?: string;
   installed_version: string;
   latest_version: string;
   update_available: boolean;

@@ -42,7 +42,6 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
     setStatus("Checking for a newer plugin release...");
     try {
       const result = await checkForPluginUpdate();
-      if (result.error) throw new Error(result.error);
       setUpdate(result);
       setStatus(
         !result.update_available ? `${PLUGIN_NAME} ${PLUGIN_VERSION} is up to date.`
@@ -62,7 +61,6 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
     setStatus("Downloading and installing the update...");
     try {
       const result = await installPluginUpdateRequest();
-      if (result.error) throw new Error(result.error);
       if (result.installed) {
         setUpdate(null);
         setStatus(result.restarted

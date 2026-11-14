@@ -1,4 +1,7 @@
 """Size-limited reads and copies between open binary streams."""
+
+from helper.errors import PluginError
+
 CHUNK_BYTES = 1024 * 1024
 
 def size_label(size_bytes: int) -> str:
@@ -10,7 +13,7 @@ def size_label(size_bytes: int) -> str:
 def read_limited(stream, max_bytes: int, description: str) -> bytes:
     content = stream.read(max_bytes + 1)
     if len(content) > max_bytes:
-        raise ValueError(f"{description} exceeds the {size_label(max_bytes)} limit")
+        raise PluginError(f"{description} exceeds the {size_label(max_bytes)} limit")
     return content
 
 
@@ -22,5 +25,5 @@ def copy_limited(stream, target, max_bytes: int, description: str) -> int:
             return total_bytes
         total_bytes += len(chunk)
         if total_bytes > max_bytes:
-            raise ValueError(f"{description} exceeds the {size_label(max_bytes)} limit")
+            raise PluginError(f"{description} exceeds the {size_label(max_bytes)} limit")
         target.write(chunk)

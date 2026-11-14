@@ -10,6 +10,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from helper.errors import PluginError
 from utils import files, streams
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
@@ -19,7 +20,7 @@ SYSTEM_CA_BUNDLE_PATHS = (
 )
 
 
-class NetworkError(OSError):
+class NetworkError(PluginError, OSError):
     """Any failed internet access; the message is written for the user, not for developers."""
 
 

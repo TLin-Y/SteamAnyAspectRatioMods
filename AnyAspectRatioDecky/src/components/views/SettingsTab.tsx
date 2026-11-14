@@ -102,9 +102,6 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
 
   const runUpdate = async (syncResolution = false) => {
     const result = await updateDependencies();
-    if (result.error) {
-      throw new Error(result.error);
-    }
     setStatus(formatCatalogUpdate(result));
     await load(syncResolution);
     onDataChanged();
@@ -212,7 +209,6 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const viewLog = async () => {
     try {
       const log = await getLog(300);
-      if (log.error) throw new Error(log.error);
       showModal(
         <ConfirmModal
           bAlertDialog

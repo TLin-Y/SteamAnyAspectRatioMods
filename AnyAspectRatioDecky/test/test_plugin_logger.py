@@ -9,6 +9,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 
+from helper.errors import PluginError
 from logger.plugin_logger import PluginLogger
 from store.plugin_store import PluginStore
 
@@ -100,13 +101,16 @@ class PluginLoggerFileTests(unittest.TestCase):
             plugin_log.info("new log")
             self.assertIn("new log", store.log_path.read_text(encoding="utf-8"))
 
-    def test_error_result_reports_the_message_or_the_error_type(self) -> None:
-        fake_decky = types.ModuleType("decky")
-        fake_decky.logger = logging.getLogger("test.error_result")
-        with patch.dict(sys.modules, {"decky": fake_decky}):
-            main = importlib.import_module("main")
-        self.assertEqual({"error": "denied"}, main._error_result(PermissionError("denied")))
-        self.assertEqual({"error": "TimeoutError"}, main._error_result(TimeoutError()))
+    def test_on_error_logs_plugin_errors_as_one_warning_line(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
+            path = Path(directory) / "plugin.log"
+            plugin_log, _ = file_logger(stack, "test.on_error.expected", path)
+            with self.assertRaisesRegex(PluginError, "^Mod archive is invalid$"), plugin_log.on_error("Mod apply failed"):
+                raise PluginError("Mod archive is invalid")
+            plugin_log.close()
+            content = path.read_text(encoding="utf-8")
+            self.assertIn("WARNING Mod apply failed: Mod archive is invalid\n", content)
+            self.assertNotIn("Traceback", content)
 
 
 if __name__ == "__main__":

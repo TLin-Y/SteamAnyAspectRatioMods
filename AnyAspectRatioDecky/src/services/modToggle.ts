@@ -51,7 +51,6 @@ export async function setModFiles(
   applied: boolean,
 ): Promise<{ warning?: string; conflicts: string[]; iniWarning: string }> {
   const result = await setModApplied(game.mod_id, game.game_path, applied, null, null);
-  if (result.error) throw new Error(result.error);
   if (result.warning) return { warning: result.warning, conflicts: [], iniWarning: "" };
   const iniWarning = result.ini_adjustment_warning ?? "";
   if (result.conflicting_files.length === 0) return { conflicts: [], iniWarning };
@@ -65,7 +64,6 @@ export async function setModFiles(
         game.mod_id, game.game_path, false, null,
         await confirmModifiedIniRemoval(game.app_name, result.conflicting_files[0]),
       );
-  if (retry.error) throw new Error(retry.error);
   return {
     conflicts: retry.conflicting_files,
     iniWarning: (applied ? retry.ini_adjustment_warning : undefined) ?? iniWarning,

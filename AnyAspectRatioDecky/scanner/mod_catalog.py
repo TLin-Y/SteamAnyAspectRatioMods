@@ -1,14 +1,16 @@
 import json
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path, PurePosixPath
 from typing import Annotated
 from urllib.parse import urlparse
 
+from helper import errors
+from helper.errors import PluginError
 from helper.validator import Validator
 from utils import text_files
-from utils.json_codec import Check, DecodeError, decode, empty_or, exact_keys, json_field, one_of
+from utils.json_codec import Check, decode, empty_or, exact_keys, json_field, one_of
 
 CATALOG_SCHEMA_VERSION = 3
 REPOSITORY_OWNER = "TLin-Y"
@@ -203,63 +205,63 @@ def _reserved_paths(mod: ModDefinition) -> set[str]:
     return set(mod.files) | set(mod.executables)
 
 
-def _executable_problems(mod: ModDefinition) -> Iterator[str]:
+def _check_executable(mod: ModDefinition) -> None:
     if not mod.executable and not mod.manual:
-        yield "executable is missing"
+        raise PluginError("executable is missing")
     if repeat := _first_repeat(mod.executables):
-        yield f"executable_alternatives repeats {repeat}"
+        raise PluginError(f"executable_alternatives repeats {repeat}")
 
 
-def _file_problems(mod: ModDefinition) -> Iterator[str]:
+def _check_files(mod: ModDefinition) -> None:
     if not mod.files:
-        yield "files is empty"
+        raise PluginError("files is empty")
     if repeat := _first_repeat(mod.files):
-        yield f"files repeats {repeat}"
+        raise PluginError(f"files repeats {repeat}")
     if mod.ini_file is not None and mod.ini_file not in mod.files:
-        yield "ini_file must be listed in files"
+        raise PluginError("ini_file must be listed in files")
 
 
-def _source_problems(mod: ModDefinition) -> Iterator[str]:
+def _check_source(mod: ModDefinition) -> None:
     source = mod.source
     is_file_list = source.kind == SourceKind.FILES
     if is_file_list:
         if source.path is not None:
-            yield "source.path is only for archive and directory sources"
+            raise PluginError("source.path is only for archive and directory sources")
         if {item.destination for item in source.files} != set(mod.files):
-            yield "source.files destinations must match files"
+            raise PluginError("source.files destinations must match files")
     else:
         if source.path is None:
-            yield "source.path is missing"
+            raise PluginError("source.path is missing")
         if source.files:
-            yield "source.files is only for files sources"
+            raise PluginError("source.files is only for files sources")
     if source.file_hashes and source.kind not in _HASHED_SOURCE_KINDS:
-        yield "source.file_hashes is only for files and directory sources"
+        raise PluginError("source.file_hashes is only for files and directory sources")
     if unlisted := sorted({path for path, _ in source.file_hashes} - set(mod.files)):
-        yield f"source.file_hashes names {unlisted[0]}, which is not in files"
+        raise PluginError(f"source.file_hashes names {unlisted[0]}, which is not in files")
 
 
-def _ini_problems(mod: ModDefinition) -> Iterator[str]:
+def _check_ini(mod: ModDefinition) -> None:
     if mod.ini_resolution and (mod.ini_file is None or mod.manual):
-        yield "ini_resolution needs an ini_file and a mod that is not manual"
+        raise PluginError("ini_resolution needs an ini_file and a mod that is not manual")
     seen: set[tuple[str, str]] = set()
     for pair in mod.ini_resolution:
         keys = {(pair.section.casefold(), name.casefold()) for name in (pair.width, pair.height)}
         expected = 1 if pair.kind == IniValueKind.PIXELS_STRING else 2
         if len(keys) != expected or keys & seen:
-            yield f"ini_resolution repeats a key in [{pair.section}]"
+            raise PluginError(f"ini_resolution repeats a key in [{pair.section}]")
         seen |= keys
 
 
-def _backup_problems(mod: ModDefinition) -> Iterator[str]:
+def _check_backup(mod: ModDefinition) -> None:
     reserved = _folded(_reserved_paths(mod))
     if mod.backup_file is not None and (
         len(mod.files) != 1
         or _folder(mod.files[0]) != _folder(mod.backup_file)
         or mod.backup_file.casefold() in reserved
     ):
-        yield "backup_file must sit beside the mod's only file under a free name"
+        raise PluginError("backup_file must sit beside the mod's only file under a free name")
     if mod.backups and (mod.backup_file is not None or mod.manual):
-        yield "backups cannot be combined with backup_file or a manual mod"
+        raise PluginError("backups cannot be combined with backup_file or a manual mod")
     taken = reserved | _folded(mod_log_names(mod.files))
     targets: set[str] = set()
     for item in mod.backups:
@@ -270,18 +272,20 @@ def _backup_problems(mod: ModDefinition) -> Iterator[str]:
             or item.backup.casefold() in taken
             or _folder(item.target) != _folder(item.backup)
         ):
-            yield f"backups: {item.target} must be a mod file, not the INI, backed up once beside itself under a free name"
+            raise PluginError(
+                f"backups: {item.target} must be a mod file, not the INI, backed up once beside itself under a free name"
+            )
         targets.add(item.target.casefold())
         taken.add(item.backup.casefold())
 
 
-def _launcher_problems(mod: ModDefinition) -> Iterator[str]:
+def _check_launcher(mod: ModDefinition) -> None:
     """An offline-only mod without other backups may swap the game's launcher for one of its files."""
     launcher = mod.launcher_replacement
     if launcher is None:
         return
     if not mod.offline_only or mod.manual or mod.backup_file is not None or mod.backups:
-        yield "launcher_replacement is only for offline_only mods without backups"
+        raise PluginError("launcher_replacement is only for offline_only mods without backups")
     reserved = _reserved_paths(mod)
     if (
         len({launcher.source, launcher.target, launcher.backup}) != 3
@@ -291,18 +295,19 @@ def _launcher_problems(mod: ModDefinition) -> Iterator[str]:
         or launcher.backup in reserved
         or _folder(launcher.target) != _folder(launcher.backup)
     ):
-        yield "launcher_replacement must copy a mod file over another launcher, backed up beside it"
+        raise PluginError("launcher_replacement must copy a mod file over another launcher, backed up beside it")
 
 
-def _mod_problems(mod: ModDefinition) -> Iterator[str]:
-    yield from _executable_problems(mod)
-    yield from _file_problems(mod)
-    yield from _source_problems(mod)
-    yield from _ini_problems(mod)
-    yield from _backup_problems(mod)
-    yield from _launcher_problems(mod)
+def _check_mod(mod: ModDefinition) -> None:
+    _check_executable(mod)
+    _check_files(mod)
+    _check_source(mod)
+    _check_ini(mod)
+    _check_backup(mod)
+    _check_launcher(mod)
     if repeat := _first_repeat(mod.display_tags):
-        yield f"display_tags repeats {repeat}"
+        raise PluginError(f"display_tags repeats {repeat}")
+
 
 def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
     """The <name>.log an ASI loader writes beside each .asi plugin."""
@@ -347,19 +352,16 @@ def _parse_mod(
     repository: SourceRepository,
     default_credits: tuple[ModCredit, ...],
 ) -> ModDefinition:
-    try:
+    with errors.context(f"Mod catalog entry {_entry_label(entry, index)}"):
         mod = decode(entry, ModDefinition)
         extras = decode(entry, _EntryExtras)
-    except DecodeError as error:
-        raise ValueError(f"Mod catalog entry {_entry_label(entry, index)}: {error}") from None
-    mod = replace(
-        mod,
-        source=replace(mod.source, repository_url=repository.url, repository_ref=repository.ref),
-        credits=mod.credits or default_credits,
-        ini_resolution=mod.ini_resolution + tuple(item.as_pair() for item in extras.ini_resolution_strings),
-    )
-    if problem := next(_mod_problems(mod), None):
-        raise ValueError(f"Mod catalog entry {mod.mod_id}: {problem}")
+        mod = replace(
+            mod,
+            source=replace(mod.source, repository_url=repository.url, repository_ref=repository.ref),
+            credits=mod.credits or default_credits,
+            ini_resolution=mod.ini_resolution + tuple(item.as_pair() for item in extras.ini_resolution_strings),
+        )
+        _check_mod(mod)
     return mod
 
 
@@ -367,14 +369,12 @@ def _read_catalog_document(path: Path, content: bytes | None = None) -> _Catalog
     try:
         document = text_files.load_json(path) if content is None else json.loads(content.decode(text_files.TEXT_ENCODING))
     except json.JSONDecodeError as error:
-        raise ValueError(f"Mod catalog is not valid JSON: {error}") from error
+        raise PluginError(f"Mod catalog is not valid JSON: {error}") from error
     version = document.get("schema_version") if isinstance(document, dict) else None
     if type(version) is not int or version != CATALOG_SCHEMA_VERSION:
-        raise ValueError(f"Unsupported mod catalog schema version: {version}")
-    try:
+        raise PluginError(f"Unsupported mod catalog schema version: {version}")
+    with errors.context("Mod catalog"):
         return decode(document, _CatalogDocument)
-    except DecodeError as error:
-        raise ValueError(f"Mod catalog: {error}") from None
 
 
 def bundled_catalog_path() -> Path:
@@ -410,5 +410,5 @@ def load_mod_catalog(
         for index, entry in enumerate(document.mods)
     )
     if repeat := _first_repeat(mod.mod_id for mod in mods):
-        raise ValueError(f"Duplicate mod ID in catalog: {repeat}")
+        raise PluginError(f"Duplicate mod ID in catalog: {repeat}")
     return mods

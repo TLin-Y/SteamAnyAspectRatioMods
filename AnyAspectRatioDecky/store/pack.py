@@ -5,6 +5,7 @@ from functools import wraps
 from pathlib import Path
 
 from helper import PLUGIN_NAME
+from helper.errors import PluginError
 from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
 from scanner.mod_installer import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from scanner.plugin_updater import latest_release
@@ -30,7 +31,7 @@ _pack_lock = threading.RLock()
 @contextmanager
 def pack_operation():
     if not _pack_lock.acquire(blocking=False):
-        raise ValueError("Another offline pack operation is in progress. Try again when it finishes.")
+        raise PluginError("Another offline pack operation is in progress. Try again when it finishes.")
     try:
         yield
     finally:
@@ -69,7 +70,7 @@ def _release_pack_assets(
     expected_url = f"https://github.com/{repository}/releases/download/{tag}"
     assets = release.get("assets")
     if not isinstance(assets, list):
-        raise ValueError(f"Latest release {tag} has no offline pack assets.")
+        raise PluginError(f"Latest release {tag} has no offline pack assets.")
 
     asset_urls = {
         asset["name"]: asset["browser_download_url"]
@@ -95,11 +96,11 @@ def _release_pack_assets(
             or url != f"{expected_url}/{name}"
             or index in parts
         ):
-            raise ValueError(f"Latest release {tag} has invalid offline pack parts.")
+            raise PluginError(f"Latest release {tag} has invalid offline pack parts.")
         parts[index] = (count, name, url)
 
     if not parts:
-        raise ValueError(
+        raise PluginError(
             f"Latest release {tag} does not contain {single_name} or a complete set of parts."
         )
     count = next(iter(parts.values()))[0]
@@ -107,7 +108,7 @@ def _release_pack_assets(
         index not in parts or parts[index][0] != count
         for index in range(1, count + 1)
     ):
-        raise ValueError(f"Latest release {tag} has an incomplete offline pack part set.")
+        raise PluginError(f"Latest release {tag} has an incomplete offline pack part set.")
     return [(parts[index][1], parts[index][2]) for index in range(1, count + 1)]
 
 
@@ -121,7 +122,7 @@ def _resolve_pack_paths(archive_path: Path | tuple[Path, ...]) -> tuple[Path, ..
         else:
             version, count = match["version"], int(match["count"])
             if count < 2 or int(match["index"]) > count:
-                raise ValueError("The selected offline pack part has an invalid filename.")
+                raise PluginError("The selected offline pack part has an invalid filename.")
             prefix = f"{OFFLINE_PACK_NAME}-{version}-part"
             candidates = [
                 candidate
@@ -132,7 +133,7 @@ def _resolve_pack_paths(archive_path: Path | tuple[Path, ...]) -> tuple[Path, ..
                 f"{prefix}{index}-of-{count}.zip" for index in range(1, count + 1)
             }
             if {candidate.name for candidate in candidates} != expected_names:
-                raise ValueError(
+                raise PluginError(
                     f"Keep all {count} offline pack parts in the same folder and select one part."
                 )
             paths = tuple(
@@ -145,7 +146,7 @@ def _resolve_pack_paths(archive_path: Path | tuple[Path, ...]) -> tuple[Path, ..
                 )
             )
     if not paths or any(not path.is_file() for path in paths):
-        raise ValueError("An offline pack file is missing.")
+        raise PluginError("An offline pack file is missing.")
     return paths
 
 
@@ -170,7 +171,7 @@ def download_release_pack(store: PluginStore, settings: Settings) -> dict[str, o
             archives.append(archive)
         current_settings = store.load_settings()
         if current_settings.offline_mode or current_settings.source_key() != settings.source_key():
-            raise ValueError("Offline mode or catalog source changed during the download; try again.")
+            raise PluginError("Offline mode or catalog source changed during the download; try again.")
         result = install_pack(store, settings, tuple(archives))
     return {**result, "version": version}
 
@@ -183,7 +184,7 @@ def _pack_root(names: set[str], catalog_path: str) -> str:
         if name.endswith("/" + catalog_path) and name.count("/") == catalog_path.count("/") + 1
     }
     if len(roots) != 1:
-        raise ValueError(f"The archive must contain exactly one {catalog_path}")
+        raise PluginError(f"The archive must contain exactly one {catalog_path}")
     return roots.pop()
 
 
@@ -194,7 +195,7 @@ def install_pack(
     """Extract needed files from one repository-layout zip or a complete part set."""
     archive_paths = _resolve_pack_paths(archive_path)
     if any(not zips.is_zip(path) for path in archive_paths):
-        raise ValueError("The selected file is not a zip archive")
+        raise PluginError("The selected file is not a zip archive")
     catalog_path = settings.catalog_path or DEFAULT_CATALOG_PATH
     staging = (store.data_dir / "pack.tmp").resolve()
     folders.remove_tree(staging)
@@ -210,7 +211,7 @@ def install_pack(
                 root = _pack_root(names, catalog_path)
                 catalog_info = archive.getinfo(root + catalog_path)
                 if catalog_info.file_size > MAX_CATALOG_SIZE_BYTES:
-                    raise ValueError(
+                    raise PluginError(
                         f"Catalog exceeds the {MAX_CATALOG_SIZE_BYTES // 1024 // 1024} MiB limit"
                     )
                 part_catalog = zips.read_member(archive, catalog_info, MAX_CATALOG_SIZE_BYTES, "Catalog")
@@ -221,20 +222,20 @@ def install_pack(
                     files.write_bytes_atomic(folders.resolve_inside(staging, catalog_path), catalog_bytes)
                     total += len(catalog_bytes)
                 elif part_catalog != catalog_bytes:
-                    raise ValueError("Offline pack parts contain different catalogs.")
+                    raise PluginError("Offline pack parts contain different catalogs.")
 
                 for path in sorted(required | optional):
                     member = root + path
                     if member not in names:
                         continue
                     if path in found:
-                        raise ValueError(f"Offline pack parts contain duplicate file {path}.")
+                        raise PluginError(f"Offline pack parts contain duplicate file {path}.")
                     info = archive.getinfo(member)
                     if info.is_dir() or info.file_size > MAX_MOD_FILE_SIZE_BYTES:
-                        raise ValueError(f"Unusable archive entry: {path}")
+                        raise PluginError(f"Unusable archive entry: {path}")
                     total += info.file_size
                     if total > MAX_PACK_TOTAL_BYTES:
-                        raise ValueError(f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB")
+                        raise PluginError(f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB")
                     zips.extract_member(
                         archive, info, folders.resolve_inside(staging, path), MAX_MOD_FILE_SIZE_BYTES, "Offline pack file"
                     )
@@ -242,9 +243,9 @@ def install_pack(
 
         missing = required - found
         if missing:
-            raise ValueError(f"The archive set is missing {sorted(missing)[0]}")
+            raise PluginError(f"The archive set is missing {sorted(missing)[0]}")
         if catalog_bytes is None:
-            raise ValueError(f"The archive does not contain {catalog_path}")
+            raise PluginError(f"The archive does not contain {catalog_path}")
         store.clear_pack()
         files.move(staging, store.pack_dir)
     finally:

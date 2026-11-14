@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from helper.errors import PluginError
 from helper.validator import Charset, Validator
 from scanner.mod_catalog import ModDefinition, ModSource, SourceKind
 from scanner.steam_library_scanner import InstalledApp
@@ -29,27 +30,25 @@ class LocalArchive:
     files: tuple[str, ...]
 
 
-def _list_archive_files(path: Path) -> tuple[list[str], str | None]:
-    """The mod files in a local zip, or ([], why the zip can't be used)."""
+def _list_archive_files(path: Path) -> list[str]:
     try:
         files = zips.member_names(path)
     except (zips.BadZipFile, OSError) as error:
-        return [], f"not a readable zip file ({error})"
-    problem = _archive_problem(files)
-    return ([], problem) if problem else (files, None)
+        raise PluginError(f"not a readable zip file ({error})") from error
+    _check_archive_files(files)
+    return files
 
 
-def _archive_problem(files: list[str]) -> str | None:
+def _check_archive_files(files: list[str]) -> None:
     unsafe = next((name for name in files if not Validator.Paths.is_relative(name)), None)
     if unsafe is not None:
-        return f"unsafe entry name {unsafe!r}"
+        raise PluginError(f"unsafe entry name {unsafe!r}")
     if not files:
-        return "archive contains no files"
+        raise PluginError("archive contains no files")
     if len(files) > MAX_LOCAL_ARCHIVE_FILES:
-        return f"more than {MAX_LOCAL_ARCHIVE_FILES} files"
+        raise PluginError(f"more than {MAX_LOCAL_ARCHIVE_FILES} files")
     if len({name.lower() for name in files}) != len(files):
-        return "entry names collide on case-insensitive file systems"
-    return None
+        raise PluginError("entry names collide on case-insensitive file systems")
 
 
 def _find_archives(directory: Path) -> list[Path]:
@@ -108,7 +107,11 @@ def scan_local_archives(
             or entry.get("size") != stat_result.st_size
             or entry.get("mtime_ns") != stat_result.st_mtime_ns
         ):
-            files, error = _list_archive_files(path)
+            try:
+                files, error = _list_archive_files(path), None
+            except PluginError as failure:
+                # Cached with the entry, so an unusable zip is not reopened until it changes.
+                files, error = [], str(failure)
             entry = {
                 "size": stat_result.st_size,
                 "mtime_ns": stat_result.st_mtime_ns,

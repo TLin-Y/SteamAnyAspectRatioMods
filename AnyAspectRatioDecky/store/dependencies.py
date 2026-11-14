@@ -1,6 +1,7 @@
 import hashlib
 from dataclasses import dataclass, replace
 
+from helper import errors
 from scanner.mod_catalog import (
     ModDefinition,
     SourceKind,
@@ -71,11 +72,9 @@ def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource
     overrides = repository_overrides(settings)
     pack_catalog = store.pack_dir / (settings.catalog_path or DEFAULT_CATALOG_PATH)
     if settings.offline_mode and pack_catalog.is_file():
-        try:
+        with errors.context("Offline pack catalog is unusable"):
             mods = load_mod_catalog(pack_catalog, **overrides)
             return CatalogSource("cache", _with_bundled_resolution_metadata(mods, settings))
-        except (OSError, ValueError) as error:
-            raise ValueError(f"Offline pack catalog is unusable: {error}") from error
     meta = store.catalog_meta()
     warning = None
     if (

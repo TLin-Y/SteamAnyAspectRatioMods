@@ -33,7 +33,6 @@ export const checkForPluginUpdate = callable<[], PluginUpdateInfo>("check_plugin
 export const installPluginUpdateRequest = callable<
   [],
   {
-    error?: string;
     installed?: boolean;
     version?: string;
     restarted?: boolean;
@@ -46,7 +45,6 @@ export const installPluginUpdateRequest = callable<
 export const updateDependencies = callable<
   [],
   {
-    error?: string;
     catalog_changed: boolean;
     mod_count: number;
     fetched_at: string;
@@ -57,11 +55,11 @@ export const updateDependencies = callable<
 
 export const getCredits = callable<[], CreditsInfo>("get_credits");
 
-export const importOfflinePack = callable<[string], { error?: string; warning?: string | null }>("import_offline_pack");
+export const importOfflinePack = callable<[string], { warning?: string | null }>("import_offline_pack");
 
-export const downloadOfflinePack = callable<[], { error?: string; version?: string; warning?: string | null }>("download_offline_pack");
+export const downloadOfflinePack = callable<[], { version?: string; warning?: string | null }>("download_offline_pack");
 
-export const clearLocalData = callable<[], { error?: string }>("clear_local_data");
+export const clearLocalData = callable<[], Record<string, never>>("clear_local_data");
 
 export const setModApplied = callable<
   [string, string, boolean, boolean | null, boolean | null],
@@ -71,7 +69,6 @@ export const setModApplied = callable<
     conflicting_files: string[];
     ini_adjustment_warning?: string;
     warning?: string;
-    error?: string;
   }
 >("set_mod_applied");
 
@@ -92,7 +89,7 @@ export const getOfflineMode = callable<[], boolean>("get_offline_mode");
 
 export const getDiskUsage = callable<[], number>("get_disk_usage");
 
-export const getLog = callable<[number], { content?: string; path?: string; error?: string }>(
+export const getLog = callable<[number], { content: string; path: string }>(
   "get_log",
 );
 

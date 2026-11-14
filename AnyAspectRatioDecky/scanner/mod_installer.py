@@ -6,6 +6,7 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlparse
 
+from helper.errors import PluginError
 from helper.validator import Validator
 from scanner.mod_catalog import (
     ZIP_SOURCE_KINDS,
@@ -34,7 +35,7 @@ INI_RESOLUTION_STRING_PATTERN = re.compile(rb'(["\']?)[1-9][0-9]*x[1-9][0-9]*\1'
 
 def _repository_parts(repository_url: str) -> str:
     if not Validator.GitHub.repository(repository_url):
-        raise ValueError("Mod source repository must look like https://github.com/<owner>/<repo>")
+        raise PluginError("Mod source repository must look like https://github.com/<owner>/<repo>")
     return urlparse(repository_url).path.strip("/")
 
 
@@ -45,7 +46,7 @@ def repository_file_url(repository_url: str, repository_ref: str, path: str) -> 
     )
 
 
-class MissingModBackupError(ValueError):
+class MissingModBackupError(PluginError):
     """A replacement file cannot be safely restored because its original backup is missing."""
 
 
@@ -93,7 +94,7 @@ def _mib(size: int) -> int:
 
 def _check_total_size(total: int) -> None:
     if total > MAX_MOD_TOTAL_SIZE_BYTES:
-        raise ValueError(
+        raise PluginError(
             f"Mod files exceed the {_mib(MAX_MOD_TOTAL_SIZE_BYTES)} MiB total limit"
         )
 
@@ -130,11 +131,11 @@ def _open_archive(source: ModSource) -> Generator[Path, None, None]:
     when the network fails, and the only source in offline mode.
     """
     if source.path is None:
-        raise ValueError("Archive source path is missing")
+        raise PluginError("Archive source path is missing")
     if source.kind == SourceKind.LOCAL_ARCHIVE:
         local_path = Path(source.path)
         if not local_path.is_file():
-            raise ValueError("Local mod archive is unavailable")
+            raise PluginError("Local mod archive is unavailable")
         yield local_path
         return
     packed = _pack_file(source.path)
@@ -191,7 +192,7 @@ def _open_downloaded_archive(source: ModSource) -> Generator[Path, None, None]:
     )
     try:
         if source.sha256 and files.sha256(archive_path) != source.sha256:
-            raise ValueError(
+            raise PluginError(
                 "The downloaded mod archive does not match the catalog checksum. "
                 "Update the catalog and try again."
             )
@@ -212,7 +213,7 @@ def mod_readme_path(mod: ModDefinition) -> str:
     elif mod.source.path is not None:
         source_path = mod.source.path
     else:
-        raise ValueError(f"Mod {mod.mod_id} has no source path for its README")
+        raise PluginError(f"Mod {mod.mod_id} has no source path for its README")
     parts = PurePosixPath(source_path).parts
     folder = (
         parts[:1]
@@ -238,7 +239,7 @@ def _read_local_archive_readme(mod: ModDefinition) -> str:
                 content = zips.read_member(archive, readme, MAX_README_SIZE_BYTES, "Mod README")
                 return content.decode(text_files.BOM_TEXT_ENCODING, errors="replace")
     except OSError as error:
-        raise ValueError("Local mod archive is unavailable") from error
+        raise PluginError("Local mod archive is unavailable") from error
     return (
         f"Local archive: `{local_path}`\n\n"
         "No README was found in the archive. Its files are extracted next to the "
@@ -254,13 +255,13 @@ def fetch_mod_readme(mod: ModDefinition) -> str:
     try:
         return content.decode(text_files.BOM_TEXT_ENCODING)
     except UnicodeDecodeError as error:
-        raise ValueError("Mod README is not valid UTF-8 text") from error
+        raise PluginError("Mod README is not valid UTF-8 text") from error
 
 
 def _game_root(game_path: str) -> Path:
     root = Path(game_path).resolve(strict=True)
     if not root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+        raise PluginError("Game installation directory is unavailable")
     return root
 
 
@@ -275,12 +276,12 @@ def _source_file_map(mod: ModDefinition) -> dict[str, str]:
         result = {}
         for path in mod.files:
             if prefix and not path.startswith(prefix):
-                raise ValueError(
+                raise PluginError(
                     f"Mod file {path} is outside archive destination {source.destination}"
                 )
             result[path] = path[len(prefix) :] if prefix else path
         return result
-    raise ValueError(f"Unsupported mod source kind: {source.kind}")
+    raise PluginError(f"Unsupported mod source kind: {source.kind}")
 
 
 def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
@@ -298,9 +299,9 @@ def _archive_member(archive: zips.ZipFile, name: str) -> zips.ZipInfo:
     try:
         info = archive.getinfo(name)
     except KeyError as error:
-        raise ValueError(f"Mod archive is missing {name}") from error
+        raise PluginError(f"Mod archive is missing {name}") from error
     if info.is_dir():
-        raise ValueError(f"Mod archive entry is not a file: {name}")
+        raise PluginError(f"Mod archive entry is not a file: {name}")
     return info
 
 
@@ -328,7 +329,7 @@ def _stage_archive_files(
         total_size = 0
         for info in members.values():
             if info.file_size > MAX_MOD_FILE_SIZE_BYTES:
-                raise ValueError(f"Mod file exceeds the {_mib(MAX_MOD_FILE_SIZE_BYTES)} MiB limit")
+                raise PluginError(f"Mod file exceeds the {_mib(MAX_MOD_FILE_SIZE_BYTES)} MiB limit")
             total_size += info.file_size
             _check_total_size(total_size)
         for relative_path, info in members.items():
@@ -353,7 +354,7 @@ def _stage_downloads(
         staged_files.append((staged, targets[relative_path]))
         expected = expected_hashes.get(relative_path)
         if expected and files.sha256(staged) != expected:
-            raise ValueError(f"Mod file {relative_path} does not match the catalog checksum")
+            raise PluginError(f"Mod file {relative_path} does not match the catalog checksum")
         total_size += size
         _check_total_size(total_size)
 
@@ -386,25 +387,25 @@ def apply_mod_files(
     nothing is written if there are any; False keeps them and True overwrites them.
     """
     if mod.manual:
-        raise ValueError(f"Mod {mod.mod_id} must be installed manually; follow its ReadMe")
+        raise PluginError(f"Mod {mod.mod_id} must be installed manually; follow its ReadMe")
     game_root = _game_root(game_path)
     source_files = _source_file_map(mod)
     targets = {relative_path: folders.resolve_inside(game_root, relative_path) for relative_path in mod.files}
     backups = {targets[item.target]: folders.resolve_inside(game_root, item.backup) for item in mod.file_backups}
     for backup_target, backup in backups.items():
         if backup.exists() and not backup.is_file():
-            raise ValueError(f"Mod backup path is not a regular file: {backup.name}")
+            raise PluginError(f"Mod backup path is not a regular file: {backup.name}")
         if not backup.is_file() and not backup_target.is_file():
-            raise ValueError("Original mod target and its backup are missing; verify game files first")
+            raise PluginError("Original mod target and its backup are missing; verify game files first")
     launcher = mod.launcher_replacement
     if launcher is not None:
         launcher_target = folders.resolve_inside(game_root, launcher.target)
         launcher_backup = folders.resolve_inside(game_root, launcher.backup)
         for path in (launcher_target, launcher_backup):
             if path.exists() and not path.is_file():
-                raise ValueError(f"Launcher path is not a regular file: {path.name}")
+                raise PluginError(f"Launcher path is not a regular file: {path.name}")
         if not launcher_target.is_file() and not launcher_backup.is_file():
-            raise ValueError("Original launcher and its backup are missing; verify game files first")
+            raise PluginError("Original launcher and its backup are missing; verify game files first")
 
     staged_files: list[tuple[Path, Path]] = []
     staged_launcher = None
@@ -423,7 +424,7 @@ def apply_mod_files(
         installed_without_backup: set[Path] = set()
         for relative_path, target in targets.items():
             if target.is_dir():
-                raise ValueError(f"Mod target is a directory: {relative_path}")
+                raise PluginError(f"Mod target is a directory: {relative_path}")
             if not target.is_file():
                 continue
             if not files.equal(target, staged_by_target[target]):
@@ -434,13 +435,13 @@ def apply_mod_files(
             source = folders.resolve_inside(game_root, launcher.source)
             source = staged_by_target.get(source, source)
             if not source.is_file():
-                raise ValueError(f"Launcher copy source is missing: {launcher.source}")
+                raise PluginError(f"Launcher copy source is missing: {launcher.source}")
             staged_launcher = files.stage_file(source, launcher_target.parent)
             if launcher_target.is_file():
                 if not files.equal(launcher_target, staged_launcher):
                     conflicts.append(launcher.target)
                 elif not launcher_backup.is_file():
-                    raise ValueError(
+                    raise PluginError(
                         "Launcher is already replaced but its original backup is missing; "
                         "verify game files before applying"
                     )
@@ -465,19 +466,19 @@ def apply_mod_files(
 
 def read_mod_ini(mod: ModDefinition, game_path: str) -> tuple[str, bool]:
     if mod.ini_file is None:
-        raise ValueError("This mod does not define an INI configuration file")
+        raise PluginError("This mod does not define an INI configuration file")
 
     game_root = _game_root(game_path)
     ini_path = folders.resolve_inside(game_root, mod.ini_file)
     if not ini_path.exists():
         return "", False
     if not ini_path.is_file():
-        raise ValueError("Mod INI path is not a regular file")
+        raise PluginError("Mod INI path is not a regular file")
     content = files.read_limited(ini_path, MAX_INI_SIZE_BYTES, "Mod INI file")
     try:
         return content.decode(text_files.TEXT_ENCODING), True
     except UnicodeDecodeError as error:
-        raise ValueError("Mod INI file is not valid UTF-8 text") from error
+        raise PluginError("Mod INI file is not valid UTF-8 text") from error
 
 
 def existing_mod_logs(mod_files: tuple[str, ...] | list[str], game_path: str) -> list[str]:
@@ -487,11 +488,11 @@ def existing_mod_logs(mod_files: tuple[str, ...] | list[str], game_path: str) ->
 
 def read_mod_log(mod: ModDefinition, game_path: str, name: str) -> tuple[str, bool]:
     if name not in mod_log_names(mod.files):
-        raise ValueError("Log is not associated with this mod")
+        raise PluginError("Log is not associated with this mod")
     root = _game_root(game_path)
     path = folders.resolve_inside(root, name)
     if not path.is_file():
-        raise ValueError("Mod log is no longer available")
+        raise PluginError("Mod log is no longer available")
     return text_files.read_tail(path, MAX_MOD_LOG_SIZE_BYTES)
 
 
@@ -571,26 +572,26 @@ def write_mod_ini(
     mod: ModDefinition, game_path: str, content: str, *, expected_content: bytes | None = None
 ) -> bool:
     if mod.ini_file is None:
-        raise ValueError("This mod does not define an INI configuration file")
+        raise PluginError("This mod does not define an INI configuration file")
     if not isinstance(content, str):
-        raise ValueError("Mod INI content must be text")
+        raise PluginError("Mod INI content must be text")
 
     encoded_content = content.encode(text_files.TEXT_ENCODING)
     if len(encoded_content) > MAX_INI_SIZE_BYTES:
-        raise ValueError("Mod INI content exceeds the 256 KiB editor limit")
+        raise PluginError("Mod INI content exceeds the 256 KiB editor limit")
 
     game_root = _game_root(game_path)
     ini_path = folders.resolve_inside(game_root, mod.ini_file)
     if ini_path.exists() and not ini_path.is_file():
-        raise ValueError("Mod INI path is not a regular file")
+        raise PluginError("Mod INI path is not a regular file")
 
     def unchanged_since_read() -> None:
         if expected_content is None:
             return
         if not ini_path.is_file():
-            raise ValueError("Mod INI no longer exists")
+            raise PluginError("Mod INI no longer exists")
         if files.read_limited(ini_path, MAX_INI_SIZE_BYTES + 1, "Mod INI file") != expected_content:
-            raise ValueError("Mod INI changed during the update; try again")
+            raise PluginError("Mod INI changed during the update; try again")
 
     return files.write_bytes_atomic(ini_path, encoded_content, keep_mode=True, before_replace=unchanged_since_read)
 
@@ -599,10 +600,10 @@ def update_existing_ini_resolution(
     mod: ModDefinition, game_path: str, width: int, height: int
 ) -> tuple[bool, bool]:
     if not mod.ini_resolution:
-        raise ValueError("This mod has no catalogued resolution fields")
+        raise PluginError("This mod has no catalogued resolution fields")
     content, exists = read_mod_ini(mod, game_path)
     if not exists:
-        raise ValueError("Mod INI no longer exists")
+        raise PluginError("Mod INI no longer exists")
     original = content.encode(text_files.TEXT_ENCODING)
     adjusted = _rewrite_ini_resolution(original, width, height, mod.ini_resolution)
     if adjusted == original:
@@ -651,7 +652,7 @@ def remove_mod_files(
     True keeps it, False deletes it too.
     """
     if mod.manual:
-        raise ValueError(f"Mod {mod.mod_id} must be installed manually; follow its ReadMe")
+        raise PluginError(f"Mod {mod.mod_id} must be installed manually; follow its ReadMe")
     game_root = _game_root(game_path)
     backups = {
         folders.resolve_inside(game_root, item.target): folders.resolve_inside(game_root, item.backup)
@@ -659,9 +660,9 @@ def remove_mod_files(
     }
     for backup_target, backup in backups.items():
         if backup.exists() and not backup.is_file():
-            raise ValueError(f"Mod backup path is not a regular file: {backup.name}")
+            raise PluginError(f"Mod backup path is not a regular file: {backup.name}")
         if backup_target.exists() and not backup_target.is_file():
-            raise ValueError(f"Mod target is not a regular file: {backup_target.name}")
+            raise PluginError(f"Mod target is not a regular file: {backup_target.name}")
         if not backup.is_file() and backup_target.exists():
             raise MissingModBackupError(
                 f"Cannot safely remove {backup_target.name} because its original backup "
@@ -675,14 +676,14 @@ def remove_mod_files(
         launcher_backup = folders.resolve_inside(game_root, launcher.backup)
         for path in (launcher_target, launcher_backup):
             if path.exists() and not path.is_file():
-                raise ValueError(f"Launcher path is not a regular file: {path.name}")
+                raise PluginError(f"Launcher path is not a regular file: {path.name}")
         if not launcher_backup.is_file():
             launcher_source = folders.resolve_inside(game_root, launcher.source)
             if (
                 launcher_source.is_file() and launcher_target.is_file()
                 and files.equal(launcher_source, launcher_target)
             ):
-                raise ValueError("Original launcher backup is missing; verify game files before removing the mod")
+                raise PluginError("Original launcher backup is missing; verify game files before removing the mod")
 
     kept_ini = None
     if mod.ini_file is not None:

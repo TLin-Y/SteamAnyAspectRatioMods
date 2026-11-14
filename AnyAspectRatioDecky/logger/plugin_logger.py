@@ -5,6 +5,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from helper import PLUGIN_NAME
+from helper.errors import FAILURES, PluginError
 from utils import text_files
 
 # Must be bounded, the log I/O will cause performance issues if too large in DroidDeck
@@ -31,7 +32,10 @@ class PluginLogger:
     def on_error(self, message: str) -> Generator[None, None, None]:
         try:
             yield
-        except (OSError, ValueError) as error:
+        except PluginError as error:
+            self.warning("%s: %s", message, error)
+            raise
+        except FAILURES as error:
             self.error(message, error)
             raise
 
@@ -72,7 +76,7 @@ class PluginLogger:
 
     def _file(self) -> RotatingFileHandler:
         if self._handler is None:
-            raise ValueError("Plugin log file is not open")
+            raise PluginError("Plugin log file is not open")
         return self._handler
 
 
