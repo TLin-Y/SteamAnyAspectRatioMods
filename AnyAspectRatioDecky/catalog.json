@@ -526,6 +526,22 @@
       "wine_dll_overrides": ["winhttp=n,b"]
     },
     {
+      "id": "apollo-justice-ace-attorney-trilogy",
+      "name": "Apollo Justice: Ace Attorney Trilogy - Custom Aspect Ratio",
+      "steam_app_id": "2187220",
+      "install_dir": "Apollo Justice Ace Attorney Trilogy",
+      "executable": "GS456.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Apollo Justice Ace Attorney Trilogy/Apollo-Justice-Ace-Attorney-Trilogy-v1.0.0.zip",
+        "sha256": "8938516f49a7b659eb46dccaa4a198edf8057f4f11c920a612add91b36ed1fdf"
+      },
+      "files": ["dinput8.dll", "GS456_ARFix.asi", "GS456_ARFix.ini"],
+      "ini_file": "GS456_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "phoenix-wright-ace-attorney-trilogy",
       "name": "Phoenix Wright: Ace Attorney Trilogy - Custom Aspect Ratio",
       "steam_app_id": "787480",
@@ -643,7 +659,7 @@
       "source": {
         "kind": "archive",
         "path": "PRAGMATA/PRAGMATA-v1.0.0.zip",
-        "sha256": "17bf54e66e2b7c4334537819e56120be8a2007ebe73357cbedf30bce56447966"
+        "sha256": "0ca4c539bc1aa2241810346e14120b818f08903126a581bb3f73fb70159b57b5"
       },
       "files": ["dinput8.dll", "PRAGMATA_ARFix.asi", "PRAGMATA_ARFix.ini"],
       "ini_file": "PRAGMATA_ARFix.ini",
