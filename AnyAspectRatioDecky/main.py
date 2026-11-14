@@ -19,6 +19,7 @@ from logger.plugin_logger import log
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import (
     ModDefinition,
+    SourceKind,
     mod_log_names,
     read_catalog_repository,
     summarize_credits,
@@ -86,7 +87,7 @@ def _update_available(game: SupportedGame, mod: ModDefinition, hashes: dict[str,
     applied_hash = hashes.get(game.game_path, {}).get(mod.mod_id) if game.game_path else None
     return bool(
         game.files_present
-        and mod.source.kind == "archive"
+        and mod.source.kind == SourceKind.ARCHIVE
         and mod.source.sha256
         and applied_hash
         and applied_hash != mod.source.sha256
@@ -142,7 +143,7 @@ def _record_outcome(
     action = "applied" if applied else "removed"
     complete = not conflicts
     try:
-        if mod.source.kind == "archive" and complete:
+        if mod.source.kind == SourceKind.ARCHIVE and complete:
             step = "the applied version could not be saved"
             store.set_applied_hash(game_path, mod.mod_id, (mod.source.sha256 or None) if applied else None)
         if not awaiting:

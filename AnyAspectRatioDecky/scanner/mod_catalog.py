@@ -1,82 +1,155 @@
 import json
-from dataclasses import dataclass
+from collections.abc import Iterable, Iterator
+from dataclasses import dataclass, replace
+from enum import StrEnum
 from pathlib import Path, PurePosixPath
+from typing import Annotated
 from urllib.parse import urlparse
 
 from helper.validator import Validator
 from utils import text_files
+from utils.json_codec import Check, DecodeError, decode, empty_or, exact_keys, json_field, one_of
 
 CATALOG_SCHEMA_VERSION = 3
-_REQUIRED_FIELDS = ("id", "name", "steam_app_id", "install_dir")
-_SOURCE_KINDS = ("archive", "directory", "files")
+REPOSITORY_OWNER = "TLin-Y"
 
 
+class SourceKind(StrEnum):
+    ARCHIVE = "archive"
+    DIRECTORY = "directory"
+    FILES = "files"
+    LOCAL_ARCHIVE = "local_archive"
 
-@dataclass(frozen=True)
+ZIP_SOURCE_KINDS = frozenset((SourceKind.ARCHIVE, SourceKind.LOCAL_ARCHIVE))
+_HASHED_SOURCE_KINDS = frozenset((SourceKind.DIRECTORY, SourceKind.FILES))
+
+
+class IniValueKind(StrEnum):
+    # Width and height keys hold pixels, e.g. Width=1280 and Height=800.
+    PIXELS = "pixels"
+    # Aspect ratio, e.g. 8 and 5.
+    RATIO = "ratio"
+    # One key holds both as text, e.g. Resolution="1280x800"
+    PIXELS_STRING = "pixels_string"
+
+def _is_https(value: str) -> bool:
+    return urlparse(value).scheme == "https"
+
+
+_SAFE_PATH = Check(Validator.Paths.is_relative, "a safe relative path")
+_HTTPS_URL = Check(_is_https, "an https URL")
+_SHA256 = Check(Validator.Hash.sha256, "a SHA-256 hex digest")
+
+NonEmpty = Annotated[str, Check(bool, "a non-empty string")]
+NonBlank = Annotated[str, Check(lambda value: bool(value.strip()), "a non-blank string")]
+RelativePath = Annotated[str, _SAFE_PATH]
+RelativePathOrEmpty = Annotated[str, empty_or(_SAFE_PATH)]
+HttpsUrl = Annotated[str, _HTTPS_URL]
+HttpsUrlOrEmpty = Annotated[str, empty_or(_HTTPS_URL)]
+Sha256 = Annotated[str, _SHA256]
+Sha256OrEmpty = Annotated[str, empty_or(_SHA256)]
+ModId = Annotated[str, Check(Validator.Catalog.mod_id, "lowercase letters, digits and -")]
+SteamAppId = Annotated[str, Check(Validator.Catalog.steam_app_id, "a numeric Steam app ID")]
+DisplayTag = Annotated[str, Check(Validator.Catalog.display_tag, "lowercase letters, digits, _ and -")]
+WineOverride = Annotated[str, Check(Validator.Wine.override, "a Wine DLL override like dinput8=n,b")]
+IniSection = Annotated[str, Check(Validator.Ini.section, "an INI section name")]
+IniKey = Annotated[str, Check(Validator.Ini.key, "an INI key name")]
+GitHubRepository = Annotated[str, Check(Validator.GitHub.repository, "https://github.com/<owner>/<repo>")]
+GitRef = Annotated[str, Check(Validator.GitHub.ref, "a git branch, tag or commit")]
+
+def _sorted_items(mapping: dict[str, str]) -> tuple[tuple[str, str], ...]:
+    return tuple(sorted(mapping.items()))
+
+
+@dataclass(frozen=True, slots=True)
 class ModSourceFile:
-    path: str
-    destination: str
+    path: RelativePath
+    destination: RelativePath
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ModSource:
-    kind: str
-    path: str | None
-    destination: str
-    files: tuple[ModSourceFile, ...]
-    repository_url: str
-    repository_ref: str
-    sha256: str = ""
+    kind: Annotated[SourceKind, one_of(SourceKind.ARCHIVE, SourceKind.DIRECTORY, SourceKind.FILES)]
+    path: RelativePath | None = None
+    destination: RelativePathOrEmpty = ""
+    files: tuple[ModSourceFile, ...] = ()
+    repository_url: str = json_field(default="", skip=True)
+    repository_ref: str = json_field(default="", skip=True)
+    sha256: Sha256OrEmpty = ""
     # files/directory sources: SHA-256 per installed path, checked after each download.
-    file_hashes: tuple[tuple[str, str], ...] = ()
+    file_hashes: tuple[tuple[str, str], ...] = json_field(
+        default=(), wire=dict[RelativePath, Sha256], convert=_sorted_items,
+    )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
+class SupportLink:
+    label: NonBlank
+    url: HttpsUrl
+
+
+@dataclass(frozen=True, slots=True)
 class ModCredit:
-    name: str
-    url: str
-    support: tuple[tuple[str, str], ...] = ()
+    name: NonBlank
+    url: HttpsUrlOrEmpty = ""
+    support: tuple[SupportLink, ...] = ()
 
 
-@dataclass(frozen=True)
+@exact_keys
+@dataclass(frozen=True, slots=True)
 class LauncherReplacement:
-    source: str
-    target: str
-    backup: str
+    source: RelativePath
+    target: RelativePath
+    backup: RelativePath
 
 
-@dataclass(frozen=True)
+@exact_keys
+@dataclass(frozen=True, slots=True)
 class IniResolutionPair:
-    section: str
-    width: str
-    height: str
-    kind: str
+    section: IniSection
+    width: IniKey
+    height: IniKey
+    kind: Annotated[IniValueKind, one_of(IniValueKind.PIXELS, IniValueKind.RATIO)]
 
 
-@dataclass(frozen=True)
+@exact_keys
+@dataclass(frozen=True, slots=True)
+class IniResolutionString:
+    """One "WIDTHxHEIGHT" key."""
+
+    section: IniSection
+    key: IniKey
+
+    def as_pair(self) -> IniResolutionPair:
+        return IniResolutionPair(self.section, self.key, self.key, IniValueKind.PIXELS_STRING)
+
+
+@exact_keys
+@dataclass(frozen=True, slots=True)
 class ModBackup:
-    target: str
-    backup: str
+    target: RelativePath
+    backup: RelativePath
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ModDefinition:
-    mod_id: str
-    name: str
-    steam_app_id: str
-    install_dir: str
-    executable: str
+    mod_id: ModId = json_field("id")
+    name: NonEmpty
+    steam_app_id: SteamAppId
+    install_dir: RelativePath
     source: ModSource
-    files: tuple[str, ...]
-    ini_file: str | None
-    wine_dll_overrides: tuple[str, ...]
+    files: tuple[RelativePath, ...]
+    wine_dll_overrides: tuple[WineOverride, ...]
+    # A manual mod is only listed and explained, so its executable may be unknown ("").
+    executable: RelativePathOrEmpty = ""
+    ini_file: RelativePath | None = None
     credits: tuple[ModCredit, ...] = ()
     manual: bool = False
-    executable_alternatives: tuple[str, ...] = ()
-    backup_file: str | None = None
+    executable_alternatives: tuple[RelativePath, ...] = ()
+    backup_file: RelativePath | None = None
     offline_only: bool = False
     launcher_replacement: LauncherReplacement | None = None
-    display_tags: tuple[str, ...] = ()
+    display_tags: tuple[DisplayTag, ...] = ()
     ini_resolution: tuple[IniResolutionPair, ...] = ()
     backups: tuple[ModBackup, ...] = ()
 
@@ -86,50 +159,158 @@ class ModDefinition:
             return (ModBackup(self.files[0], self.backup_file),)
         return self.backups
 
-
-def _https_url(value: object) -> bool:
-    return isinstance(value, str) and urlparse(value).scheme == "https"
-
-
-_INVALID_CREDITS = (
-    "Catalog credits must be a list of objects with a name, an optional https url, "
-    "and optional support links (label and https url)"
-)
+    @property
+    def executables(self) -> tuple[str, ...]:
+        return (self.executable, *self.executable_alternatives) if self.executable else self.executable_alternatives
 
 
-def _parse_credits(raw: object) -> tuple[ModCredit, ...]:
-    if raw is None:
-        return ()
-    if not isinstance(raw, list):
-        raise ValueError(_INVALID_CREDITS)
-    credits = []
-    for item in raw:
-        item = item if isinstance(item, dict) else {}
-        name = item.get("name")
-        url = item.get("url")
-        support = item.get("support", [])
+@dataclass(frozen=True, slots=True)
+class _EntryExtras:
+    ini_resolution_strings: tuple[IniResolutionString, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SourceRepository:
+    url: GitHubRepository
+    ref: GitRef
+
+
+@dataclass(frozen=True, slots=True)
+class _CatalogDocument:
+    source_repository: SourceRepository
+    mods: tuple[object, ...]
+    default_credits: tuple[ModCredit, ...] = ()
+
+def _first_repeat(values: Iterable[str]) -> str | None:
+    seen: set[str] = set()
+    for value in values:
+        if value in seen:
+            return value
+        seen.add(value)
+    return None
+
+
+def _folder(path: str) -> PurePosixPath:
+    return PurePosixPath(path).parent
+
+
+def _folded(paths: Iterable[str]) -> set[str]:
+    return {path.casefold() for path in paths}
+
+
+def _reserved_paths(mod: ModDefinition) -> set[str]:
+    """Paths a backup may not take over: the mod's files and the game's executables."""
+    return set(mod.files) | set(mod.executables)
+
+
+def _executable_problems(mod: ModDefinition) -> Iterator[str]:
+    if not mod.executable and not mod.manual:
+        yield "executable is missing"
+    if repeat := _first_repeat(mod.executables):
+        yield f"executable_alternatives repeats {repeat}"
+
+
+def _file_problems(mod: ModDefinition) -> Iterator[str]:
+    if not mod.files:
+        yield "files is empty"
+    if repeat := _first_repeat(mod.files):
+        yield f"files repeats {repeat}"
+    if mod.ini_file is not None and mod.ini_file not in mod.files:
+        yield "ini_file must be listed in files"
+
+
+def _source_problems(mod: ModDefinition) -> Iterator[str]:
+    source = mod.source
+    is_file_list = source.kind == SourceKind.FILES
+    if is_file_list:
+        if source.path is not None:
+            yield "source.path is only for archive and directory sources"
+        if {item.destination for item in source.files} != set(mod.files):
+            yield "source.files destinations must match files"
+    else:
+        if source.path is None:
+            yield "source.path is missing"
+        if source.files:
+            yield "source.files is only for files sources"
+    if source.file_hashes and source.kind not in _HASHED_SOURCE_KINDS:
+        yield "source.file_hashes is only for files and directory sources"
+    if unlisted := sorted({path for path, _ in source.file_hashes} - set(mod.files)):
+        yield f"source.file_hashes names {unlisted[0]}, which is not in files"
+
+
+def _ini_problems(mod: ModDefinition) -> Iterator[str]:
+    if mod.ini_resolution and (mod.ini_file is None or mod.manual):
+        yield "ini_resolution needs an ini_file and a mod that is not manual"
+    seen: set[tuple[str, str]] = set()
+    for pair in mod.ini_resolution:
+        keys = {(pair.section.casefold(), name.casefold()) for name in (pair.width, pair.height)}
+        expected = 1 if pair.kind == IniValueKind.PIXELS_STRING else 2
+        if len(keys) != expected or keys & seen:
+            yield f"ini_resolution repeats a key in [{pair.section}]"
+        seen |= keys
+
+
+def _backup_problems(mod: ModDefinition) -> Iterator[str]:
+    reserved = _folded(_reserved_paths(mod))
+    if mod.backup_file is not None and (
+        len(mod.files) != 1
+        or _folder(mod.files[0]) != _folder(mod.backup_file)
+        or mod.backup_file.casefold() in reserved
+    ):
+        yield "backup_file must sit beside the mod's only file under a free name"
+    if mod.backups and (mod.backup_file is not None or mod.manual):
+        yield "backups cannot be combined with backup_file or a manual mod"
+    taken = reserved | _folded(mod_log_names(mod.files))
+    targets: set[str] = set()
+    for item in mod.backups:
         if (
-            not isinstance(name, str)
-            or not name.strip()
-            or (url is not None and not _https_url(url))
-            or not isinstance(support, list)
-            or not all(
-                isinstance(link, dict)
-                and isinstance(link.get("label"), str)
-                and link["label"].strip()
-                and _https_url(link.get("url"))
-                for link in support
-            )
+            item.target not in mod.files
+            or item.target == mod.ini_file
+            or item.target.casefold() in targets
+            or item.backup.casefold() in taken
+            or _folder(item.target) != _folder(item.backup)
         ):
-            raise ValueError(_INVALID_CREDITS)
-        credits.append(
-            ModCredit(
-                name.strip(),
-                url or "",
-                tuple((link["label"].strip(), link["url"]) for link in support),
-            )
-        )
-    return tuple(credits)
+            yield f"backups: {item.target} must be a mod file, not the INI, backed up once beside itself under a free name"
+        targets.add(item.target.casefold())
+        taken.add(item.backup.casefold())
+
+
+def _launcher_problems(mod: ModDefinition) -> Iterator[str]:
+    """An offline-only mod without other backups may swap the game's launcher for one of its files."""
+    launcher = mod.launcher_replacement
+    if launcher is None:
+        return
+    if not mod.offline_only or mod.manual or mod.backup_file is not None or mod.backups:
+        yield "launcher_replacement is only for offline_only mods without backups"
+    reserved = _reserved_paths(mod)
+    if (
+        len({launcher.source, launcher.target, launcher.backup}) != 3
+        or launcher.source not in reserved
+        or launcher.target in mod.files
+        or launcher.target == mod.executable
+        or launcher.backup in reserved
+        or _folder(launcher.target) != _folder(launcher.backup)
+    ):
+        yield "launcher_replacement must copy a mod file over another launcher, backed up beside it"
+
+
+def _mod_problems(mod: ModDefinition) -> Iterator[str]:
+    yield from _executable_problems(mod)
+    yield from _file_problems(mod)
+    yield from _source_problems(mod)
+    yield from _ini_problems(mod)
+    yield from _backup_problems(mod)
+    yield from _launcher_problems(mod)
+    if repeat := _first_repeat(mod.display_tags):
+        yield f"display_tags repeats {repeat}"
+
+def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
+    """The <name>.log an ASI loader writes beside each .asi plugin."""
+    return list(dict.fromkeys(
+        str(PurePosixPath(path).with_suffix(".log"))
+        for path in files
+        if Validator.Files.has_extension(path, ".asi")
+    ))
 
 
 def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]]:
@@ -142,12 +323,12 @@ def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]
         {
             "name": credit.name,
             "url": credit.url,
-            "support": [{"label": label, "url": url} for label, url in credit.support],
+            "support": [{"label": link.label, "url": link.url} for link in credit.support],
             "mod_count": count,
         }
         for credit, count in sorted(
             authors.items(), key=lambda item: (
-                item[0].name != "TLin-Y",
+                item[0].name != REPOSITORY_OWNER,
                 -item[1],
                 item[0].name.lower(),
             )
@@ -155,358 +336,45 @@ def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]
     ]
 
 
-def _require_string(entry: dict[str, object], key: str, mod_id: str) -> str:
-    value = entry.get(key)
-    if not isinstance(value, str) or not value:
-        raise ValueError(
-            f'Mod catalog entry {mod_id or "unknown"} is missing {key}'
-        )
-    return value
-
-
-def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
-    """The <name>.log an ASI loader writes beside each .asi plugin."""
-    return list(dict.fromkeys(
-        str(PurePosixPath(path).with_suffix(".log"))
-        for path in files
-        if Validator.Files.has_extension(path, ".asi")
-    ))
-
-
-def _validate_relative_path(path: str, mod_id: str) -> None:
-    if not Validator.Paths.is_relative(path):
-        raise ValueError(
-            f"Mod catalog entry {mod_id} has an unsafe relative path: {path}"
-        )
-
-
-def _parse_source(
-    entry: dict[str, object],
-    mod_id: str,
-    repository_url: str,
-    repository_ref: str,
-) -> ModSource:
-    raw_source = entry.get("source")
-    if not isinstance(raw_source, dict):
-        raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-
-    kind = raw_source.get("kind")
-    if not isinstance(kind, str) or kind not in _SOURCE_KINDS:
-        raise ValueError(f"Mod catalog entry {mod_id} has an unsupported source kind")
-
-    path = None
-    destination = raw_source.get("destination", "")
-    if not isinstance(destination, str):
-        raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-    if destination:
-        _validate_relative_path(destination, mod_id)
-
-    sha256 = raw_source.get("sha256", "")
-    if not isinstance(sha256, str) or (sha256 and not Validator.Hash.sha256(sha256)):
-        raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-
-    source_files: tuple[ModSourceFile, ...] = ()
-    if kind in ("archive", "directory"):
-        path = _require_string(raw_source, "path", mod_id)
-        _validate_relative_path(path, mod_id)
-    else:
-        raw_files = raw_source.get("files")
-        if not isinstance(raw_files, list) or not raw_files:
-            raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-        parsed_files = []
-        for source_file in raw_files:
-            if not isinstance(source_file, dict):
-                raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-            source_path = _require_string(source_file, "path", mod_id)
-            target_path = _require_string(
-                source_file,
-                "destination",
-                mod_id,
-            )
-            _validate_relative_path(source_path, mod_id)
-            _validate_relative_path(target_path, mod_id)
-            parsed_files.append(ModSourceFile(source_path, target_path))
-        source_files = tuple(parsed_files)
-
-    raw_hashes = raw_source.get("file_hashes", {})
-    if (
-        not isinstance(raw_hashes, dict)
-        or (raw_hashes and kind not in ("files", "directory"))
-        or not all(Validator.Hash.sha256(value) for value in raw_hashes.values())
-    ):
-        raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-
-    return ModSource(
-        kind=kind,
-        path=path,
-        destination=destination,
-        files=source_files,
-        repository_url=repository_url,
-        repository_ref=repository_ref,
-        sha256=sha256,
-        file_hashes=tuple(sorted(raw_hashes.items())),
-    )
-
-
-def _unique_paths(paths: list[str], mod_id: str, seen: set[str]) -> None:
-    """Validate relative paths and add them to seen; a repeat is a catalog error."""
-    for path in paths:
-        _validate_relative_path(path, mod_id)
-        if path in seen:
-            raise ValueError(f"Mod catalog entry {mod_id} has duplicate file: {path}")
-        seen.add(path)
-
-
-def _parse_executables(entry: dict, mod_id: str, manual: bool) -> tuple[str, tuple[str, ...], set[str]]:
-    # A manual mod is only listed and explained, so its executable may be unknown.
-    executable = entry.get("executable", "") if manual else _require_string(entry, "executable", mod_id)
-    if not isinstance(executable, str):
-        raise ValueError(f"Mod catalog entry {mod_id} is missing executable")
-    _validate_relative_path(entry["install_dir"], mod_id)
-    if executable:
-        _validate_relative_path(executable, mod_id)
-    alternatives = entry.get("executable_alternatives", [])
-    if not isinstance(alternatives, list) or not all(isinstance(path, str) and path for path in alternatives):
-        raise ValueError(f"Mod catalog entry {mod_id} is missing executable_alternatives")
-    seen = {executable} if executable else set()
-    _unique_paths(alternatives, mod_id, seen)
-    return executable, tuple(alternatives), seen
-
-
-def _parse_ini_resolution(
-    entry: dict, mod_id: str, ini_file: str | None, manual: bool,
-) -> tuple[IniResolutionPair, ...]:
-    # Single "WIDTHxHEIGHT" keys have their own list: plugins up to 1.8.0 reject an unknown
-    # ini_resolution kind (refusing the whole catalog) but ignore unknown entry keys.
-    raw_pairs = entry.get("ini_resolution", [])
-    raw_strings = entry.get("ini_resolution_strings", [])
-    for raw in (raw_pairs, raw_strings):
-        if not isinstance(raw, list) or (raw and (not ini_file or manual)):
-            raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
-    pairs: list[IniResolutionPair] = []
-    seen_keys: set[tuple[str, str]] = set()
-    candidates = [(pair, ("width", "height")) for pair in raw_pairs]
-    candidates += [(pair, ("key",)) for pair in raw_strings]
-    for pair, names in candidates:
-        fields = {"section", *names} | ({"kind"} if len(names) == 2 else set())
-        if (
-            not isinstance(pair, dict)
-            or set(pair) != fields
-            or not all(isinstance(pair[key], str) for key in pair)
-            or not Validator.Ini.section(pair["section"])
-            or not all(Validator.Ini.key(pair[name]) for name in names)
-            or pair.get("kind", "pixels") not in ("pixels", "ratio")
-        ):
-            raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
-        keys = {(pair["section"].casefold(), pair[name].casefold()) for name in names}
-        if len(keys) != len(names) or keys & seen_keys:
-            raise ValueError(f"Mod {mod_id} has duplicate ini_resolution keys")
-        seen_keys.update(keys)
-        if len(names) == 1:
-            pairs.append(IniResolutionPair(pair["section"], pair["key"], pair["key"], "pixels_string"))
-        else:
-            pairs.append(IniResolutionPair(pair["section"], pair["width"], pair["height"], pair["kind"]))
-    return tuple(pairs)
-
-
-def _parse_backup_file(entry: dict, mod_id: str, files: tuple[str, ...], reserved: set[str]) -> str | None:
-    """One-file replacement: the original is renamed to backup_file beside it."""
-    backup_file = entry.get("backup_file")
-    if backup_file is None:
-        return None
-    if not isinstance(backup_file, str) or len(files) != 1:
-        raise ValueError(f"Mod catalog entry {mod_id} has an invalid backup_file")
-    _validate_relative_path(backup_file, mod_id)
-    if (
-        PurePosixPath(files[0]).parent != PurePosixPath(backup_file).parent
-        or backup_file.casefold() in {path.casefold() for path in reserved}
-    ):
-        raise ValueError(f"Mod catalog entry {mod_id} has an invalid backup_file")
-    return backup_file
-
-
-def _parse_backups(
-    entry: dict, mod_id: str, files: tuple[str, ...], reserved: set[str],
-    ini_file: str | None, has_backup_file: bool, manual: bool,
-) -> tuple[ModBackup, ...]:
-    """Several replaced originals, each renamed to its backup beside the target."""
-    raw_backups = entry.get("backups", [])
-    if not isinstance(raw_backups, list) or (raw_backups and (has_backup_file or manual)):
-        raise ValueError(f"Mod {mod_id} has invalid backups metadata")
-    taken = {path.casefold() for path in reserved}
-    taken.update(name.casefold() for name in mod_log_names(files))
-    backups = []
-    seen_targets: set[str] = set()
-    for item in raw_backups:
-        if (
-            not isinstance(item, dict)
-            or set(item) != {"target", "backup"}
-            or not all(isinstance(value, str) for value in item.values())
-        ):
-            raise ValueError(f"Mod {mod_id} has invalid backups metadata")
-        target, backup = item["target"], item["backup"]
-        _validate_relative_path(target, mod_id)
-        _validate_relative_path(backup, mod_id)
-        if (
-            target not in files
-            or target == ini_file
-            or target.casefold() in seen_targets
-            or backup.casefold() in taken
-            or PurePosixPath(target).parent != PurePosixPath(backup).parent
-        ):
-            raise ValueError(f"Mod {mod_id} has invalid backups paths")
-        seen_targets.add(target.casefold())
-        taken.add(backup.casefold())
-        backups.append(ModBackup(target, backup))
-    return tuple(backups)
-
-
-def _parse_display_tags(entry: dict, mod_id: str) -> tuple[str, ...]:
-    tags = entry.get("display_tags", [])
-    if (
-        not isinstance(tags, list)
-        or not all(Validator.Catalog.display_tag(tag) for tag in tags)
-        or len(set(tags)) != len(tags)
-    ):
-        raise ValueError(f"Mod {mod_id} has invalid display_tags")
-    return tuple(tags)
-
-
-def _parse_launcher(
-    entry: dict, mod_id: str, files: set[str], reserved: set[str], executable: str,
-    *, allowed: bool,
-) -> LauncherReplacement | None:
-    """An offline-only mod without other backups may swap the game's launcher for one of its files."""
-    raw = entry.get("launcher_replacement")
-    if raw is None:
-        return None
-    if not isinstance(raw, dict) or set(raw) != {"source", "target", "backup"}:
-        raise ValueError(f"Mod {mod_id} has invalid launcher_replacement metadata")
-    for key in ("source", "target", "backup"):
-        _validate_relative_path(_require_string(raw, key, mod_id), mod_id)
-    launcher = LauncherReplacement(**raw)
-    if (
-        not allowed
-        or len({launcher.source, launcher.target, launcher.backup}) != 3
-        or launcher.source not in reserved
-        or launcher.target in files
-        or launcher.target == executable
-        or launcher.backup in reserved
-        or PurePosixPath(launcher.target).parent != PurePosixPath(launcher.backup).parent
-    ):
-        raise ValueError(f"Mod {mod_id} has invalid launcher_replacement paths")
-    return launcher
+def _entry_label(entry: object, index: int) -> str:
+    mod_id = entry.get("id") if isinstance(entry, dict) else None
+    return mod_id if isinstance(mod_id, str) and mod_id else str(index)
 
 
 def _parse_mod(
     entry: object,
     index: int,
-    repository_url: str,
-    repository_ref: str,
-    default_credits: tuple[ModCredit, ...] = (),
+    repository: SourceRepository,
+    default_credits: tuple[ModCredit, ...],
 ) -> ModDefinition:
-    if not isinstance(entry, dict):
-        raise ValueError(f"Mod catalog entry {index} must be an object")
-    mod_id = entry.get("id")
-    mod_id = mod_id if isinstance(mod_id, str) else "unknown"
-    if not Validator.Catalog.mod_id(mod_id):
-        raise ValueError(f"Mod catalog entry {index} must be an object")
-    for key in _REQUIRED_FIELDS:
-        _require_string(entry, key, mod_id)
-    if not Validator.Catalog.steam_app_id(entry["steam_app_id"]):
-        raise ValueError(f"Mod catalog entry {mod_id} has an invalid Steam app ID")
-    manual = entry.get("manual", False)
-    if not isinstance(manual, bool):
-        raise ValueError(f"Mod catalog entry {mod_id} is missing manual")
-
-    executable, alternatives, executables = _parse_executables(entry, mod_id, manual)
-    source = _parse_source(entry, mod_id, repository_url, repository_ref)
-    ini_file = entry.get("ini_file")
-    if ini_file is not None:
-        if not isinstance(ini_file, str) or not ini_file:
-            raise ValueError(f"Mod catalog entry {mod_id} is missing ini_file")
-        _validate_relative_path(ini_file, mod_id)
-    ini_resolution = _parse_ini_resolution(entry, mod_id, ini_file, manual)
-
-    raw_files = entry.get("files")
-    if not isinstance(raw_files, list) or not raw_files or not all(isinstance(p, str) and p for p in raw_files):
-        raise ValueError(f"Mod catalog entry {mod_id} has an invalid files list")
-    files = tuple(raw_files)
-    file_set: set[str] = set()
-    _unique_paths(raw_files, mod_id, file_set)
-    reserved = file_set | executables
-    backup_file = _parse_backup_file(entry, mod_id, files, reserved)
-    backups = _parse_backups(entry, mod_id, files, reserved, ini_file, backup_file is not None, manual)
-    if ini_file is not None and ini_file not in file_set:
-        raise ValueError(f"Mod catalog entry {mod_id} INI file must be included in files")
-    if source.kind == "files" and {item.destination for item in source.files} != file_set:
-        raise ValueError(f"Mod catalog entry {mod_id} source files do not match its installed file list")
-    if not {path for path, _ in source.file_hashes} <= file_set:
-        raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
-    offline_only = entry.get("offline_only", False)
-    if not isinstance(offline_only, bool):
-        raise ValueError(f"Mod {mod_id} offline_only must be a boolean")
-    display_tags = _parse_display_tags(entry, mod_id)
-    launcher = _parse_launcher(
-        entry, mod_id, file_set, reserved, executable,
-        allowed=offline_only and not manual and backup_file is None and not backups,
+    try:
+        mod = decode(entry, ModDefinition)
+        extras = decode(entry, _EntryExtras)
+    except DecodeError as error:
+        raise ValueError(f"Mod catalog entry {_entry_label(entry, index)}: {error}") from None
+    mod = replace(
+        mod,
+        source=replace(mod.source, repository_url=repository.url, repository_ref=repository.ref),
+        credits=mod.credits or default_credits,
+        ini_resolution=mod.ini_resolution + tuple(item.as_pair() for item in extras.ini_resolution_strings),
     )
-    overrides = entry.get("wine_dll_overrides")
-    if not isinstance(overrides, list) or not all(Validator.Wine.override(value) for value in overrides):
-        raise ValueError(f"Mod catalog entry {mod_id} has an invalid Wine DLL overrides list")
-
-    return ModDefinition(
-        mod_id=mod_id,
-        name=entry["name"],
-        steam_app_id=entry["steam_app_id"],
-        install_dir=entry["install_dir"],
-        executable=executable,
-        source=source,
-        files=files,
-        ini_file=ini_file,
-        wine_dll_overrides=tuple(overrides),
-        credits=_parse_credits(entry.get("credits")) or default_credits,
-        manual=manual,
-        executable_alternatives=alternatives,
-        backup_file=backup_file,
-        offline_only=offline_only,
-        launcher_replacement=launcher,
-        display_tags=display_tags,
-        ini_resolution=ini_resolution,
-        backups=backups,
-    )
+    if problem := next(_mod_problems(mod), None):
+        raise ValueError(f"Mod catalog entry {mod.mod_id}: {problem}")
+    return mod
 
 
-def _read_catalog_document(path: Path, content: bytes | None = None) -> tuple[dict[str, object], str, str]:
+def _read_catalog_document(path: Path, content: bytes | None = None) -> _CatalogDocument:
     try:
         document = text_files.load_json(path) if content is None else json.loads(content.decode(text_files.TEXT_ENCODING))
     except json.JSONDecodeError as error:
         raise ValueError(f"Mod catalog is not valid JSON: {error}") from error
-
-    if not isinstance(document, dict) or not isinstance(
-        document.get("mods"),
-        list,
-    ):
-        raise ValueError("Mod catalog must contain schema_version, source_repository, and mods")
-    schema_version = document.get("schema_version")
-    if type(schema_version) is not int or schema_version != CATALOG_SCHEMA_VERSION:
-        raise ValueError(
-            f"Unsupported mod catalog schema version: {schema_version}"
-        )
-
-    repository = document.get("source_repository")
-    if not isinstance(repository, dict):
-        raise ValueError("Mod catalog has invalid source repository metadata")
-    repository_url = repository.get("url")
-    repository_ref = repository.get("ref")
-    if (
-        not isinstance(repository_url, str)
-        or not Validator.GitHub.repository(repository_url)
-        or not isinstance(repository_ref, str)
-        or not Validator.GitHub.ref(repository_ref)
-    ):
-        raise ValueError("Mod catalog has invalid source repository metadata")
-    return document, repository_url, repository_ref
+    version = document.get("schema_version") if isinstance(document, dict) else None
+    if type(version) is not int or version != CATALOG_SCHEMA_VERSION:
+        raise ValueError(f"Unsupported mod catalog schema version: {version}")
+    try:
+        return decode(document, _CatalogDocument)
+    except DecodeError as error:
+        raise ValueError(f"Mod catalog: {error}") from None
 
 
 def bundled_catalog_path() -> Path:
@@ -517,10 +385,8 @@ def bundled_catalog_path() -> Path:
 
 
 def read_catalog_repository(path: Path | None = None) -> tuple[str, str]:
-    _, repository_url, repository_ref = _read_catalog_document(
-        bundled_catalog_path() if path is None else path
-    )
-    return repository_url, repository_ref
+    repository = _read_catalog_document(bundled_catalog_path() if path is None else path).source_repository
+    return repository.url, repository.ref
 
 
 def load_mod_catalog(
@@ -534,21 +400,15 @@ def load_mod_catalog(
 
     The optional repository values override its source_repository.
     """
-    document, catalog_url, catalog_ref = _read_catalog_document(
-        bundled_catalog_path() if path is None else path, content
+    document = _read_catalog_document(bundled_catalog_path() if path is None else path, content)
+    repository = SourceRepository(
+        repository_url or document.source_repository.url,
+        repository_ref or document.source_repository.ref,
     )
-    repository_url = repository_url or catalog_url
-    repository_ref = repository_ref or catalog_ref
-
-    default_credits = _parse_credits(document.get("default_credits"))
-
     mods = tuple(
-        _parse_mod(entry, index, repository_url, repository_ref, default_credits)
-        for index, entry in enumerate(document["mods"])
+        _parse_mod(entry, index, repository, document.default_credits)
+        for index, entry in enumerate(document.mods)
     )
-    ids: set[str] = set()
-    for mod in mods:
-        if mod.mod_id in ids:
-            raise ValueError(f"Duplicate mod ID in catalog: {mod.mod_id}")
-        ids.add(mod.mod_id)
+    if repeat := _first_repeat(mod.mod_id for mod in mods):
+        raise ValueError(f"Duplicate mod ID in catalog: {repeat}")
     return mods

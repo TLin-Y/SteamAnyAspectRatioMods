@@ -7,7 +7,15 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlparse
 
 from helper.validator import Validator
-from scanner.mod_catalog import IniResolutionPair, ModDefinition, ModSource, mod_log_names
+from scanner.mod_catalog import (
+    ZIP_SOURCE_KINDS,
+    IniResolutionPair,
+    IniValueKind,
+    ModDefinition,
+    ModSource,
+    SourceKind,
+    mod_log_names,
+)
 from utils import files, folders, streams, text_files, zips
 from utils.network import NetworkError, OfflineModeError, download_buffered, download_staged, is_offline_mode
 
@@ -123,7 +131,7 @@ def _open_archive(source: ModSource) -> Generator[Path, None, None]:
     """
     if source.path is None:
         raise ValueError("Archive source path is missing")
-    if source.kind == "local_archive":
+    if source.kind == SourceKind.LOCAL_ARCHIVE:
         local_path = Path(source.path)
         if not local_path.is_file():
             raise ValueError("Local mod archive is unavailable")
@@ -199,7 +207,7 @@ def _open_downloaded_archive(source: ModSource) -> Generator[Path, None, None]:
 
 def mod_readme_path(mod: ModDefinition) -> str:
     """README location: beside an archive mod's zip, else in the mod's top-level folder."""
-    if mod.source.kind == "files":
+    if mod.source.kind == SourceKind.FILES:
         source_path = mod.source.files[0].path
     elif mod.source.path is not None:
         source_path = mod.source.path
@@ -208,7 +216,7 @@ def mod_readme_path(mod: ModDefinition) -> str:
     parts = PurePosixPath(source_path).parts
     folder = (
         parts[:1]
-        if mod.source.kind == "directory"
+        if mod.source.kind == SourceKind.DIRECTORY
         else parts[:-1]
     )
     return "/".join((*folder, "README.md"))
@@ -239,7 +247,7 @@ def _read_local_archive_readme(mod: ModDefinition) -> str:
 
 
 def fetch_mod_readme(mod: ModDefinition) -> str:
-    if mod.source.kind == "local_archive":
+    if mod.source.kind == SourceKind.LOCAL_ARCHIVE:
         return _read_local_archive_readme(mod)
     with open_repository_file(mod.source, mod_readme_path(mod)) as stream:
         content = streams.read_limited(stream, MAX_README_SIZE_BYTES, "Mod README")
@@ -258,11 +266,11 @@ def _game_root(game_path: str) -> Path:
 
 def _source_file_map(mod: ModDefinition) -> dict[str, str]:
     source = mod.source
-    if source.kind == "files":
+    if source.kind == SourceKind.FILES:
         return {source_file.destination: source_file.path for source_file in source.files}
-    if source.kind == "directory":
+    if source.kind == SourceKind.DIRECTORY:
         return {path: f"{source.path}/{path}" for path in mod.files}
-    if source.kind in ("archive", "local_archive"):
+    if source.kind in ZIP_SOURCE_KINDS:
         prefix = f"{source.destination}/" if source.destination else ""
         result = {}
         for path in mod.files:
@@ -278,7 +286,7 @@ def _source_file_map(mod: ModDefinition) -> dict[str, str]:
 def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
     source_path = _source_file_map(mod)[relative_path]
     source = mod.source
-    if source.kind in ("archive", "local_archive"):
+    if source.kind in ZIP_SOURCE_KINDS:
         with _open_archive(source) as archive_path, zips.open_zip(archive_path, "Mod archive is invalid") as archive:
             info = _archive_member(archive, source_path)
             return zips.read_member(archive, info, MAX_INI_SIZE_BYTES, "Mod INI source")
@@ -401,7 +409,7 @@ def apply_mod_files(
     staged_files: list[tuple[Path, Path]] = []
     staged_launcher = None
     try:
-        if mod.source.kind in ("archive", "local_archive"):
+        if mod.source.kind in ZIP_SOURCE_KINDS:
             _stage_archive_files(mod, source_files, targets, staged_files)
         else:
             _stage_downloads(mod, source_files, targets, staged_files)
@@ -514,7 +522,7 @@ def _rewrite_ini_resolution(
     ratio_width, ratio_height = width // divisor, height // divisor
     for pair in pairs:
         values = sections.get(pair.section.lower().encode("ascii"), {})
-        if pair.kind == "pixels_string":
+        if pair.kind == IniValueKind.PIXELS_STRING:
             # Only a "WxH" value is rewritten; non-numeric values such as "auto" are left as chosen.
             rows = values.get(pair.width.lower().encode("ascii"), [])
             if len(rows) != 1:
@@ -538,11 +546,11 @@ def _rewrite_ini_resolution(
         width_value, height_value = width_row[1].group(4), height_row[1].group(4)
         if not all(INI_NUMBER_PATTERN.fullmatch(value) for value in (width_value, height_value)):
             continue
-        if pair.kind == "pixels" and (not width_value.isdigit() or not height_value.isdigit()):
+        if pair.kind == IniValueKind.PIXELS and (not width_value.isdigit() or not height_value.isdigit()):
             continue
         if float(width_value) <= 0 or float(height_value) <= 0:
             continue
-        dimensions = (ratio_width, ratio_height) if pair.kind == "ratio" else (width, height)
+        dimensions = (ratio_width, ratio_height) if pair.kind == IniValueKind.RATIO else (width, height)
         for row, dimension in zip((width_row, height_row), dimensions):
             old_value = row[1].group(4)
             value = str(dimension).encode("ascii")

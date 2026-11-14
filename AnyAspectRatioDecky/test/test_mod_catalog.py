@@ -1041,7 +1041,7 @@ class ModCatalogTests(unittest.TestCase):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as temporary_directory:
                 path = Path(temporary_directory) / "catalog.json"
                 path.write_text(json.dumps(broken), encoding="utf-8")
-                with self.assertRaisesRegex(ValueError, "invalid source metadata"):
+                with self.assertRaisesRegex(ValueError, "source.file_hashes"):
                     load_mod_catalog(path)
 
     def test_rejects_unsafe_repository_source_path(self) -> None:
@@ -1055,7 +1055,7 @@ class ModCatalogTests(unittest.TestCase):
             path = Path(temporary_directory) / "catalog.json"
             path.write_text(json.dumps(document), encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "unsafe relative path"):
+            with self.assertRaisesRegex(ValueError, "must be a safe relative path"):
                 load_mod_catalog(path)
 
     def test_rejects_unsafe_mod_file_path(self) -> None:
@@ -1067,7 +1067,7 @@ class ModCatalogTests(unittest.TestCase):
             path = Path(temporary_directory) / "catalog.json"
             path.write_text(json.dumps(document), encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "unsafe relative path"):
+            with self.assertRaisesRegex(ValueError, "must be a safe relative path"):
                 load_mod_catalog(path)
 
     def test_executable_alternatives_are_validated(self) -> None:

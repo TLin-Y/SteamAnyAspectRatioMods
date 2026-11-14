@@ -3,6 +3,7 @@ from dataclasses import dataclass, replace
 
 from scanner.mod_catalog import (
     ModDefinition,
+    SourceKind,
     bundled_catalog_path,
     load_mod_catalog,
     read_catalog_repository,
@@ -44,7 +45,7 @@ def _with_bundled_resolution_metadata(
         original = bundled.get(mod.mod_id)
         if (
             original is not None
-            and mod.source.kind == "archive"
+            and mod.source.kind == SourceKind.ARCHIVE
             and mod.source.sha256
             and mod.source.sha256 == original.source.sha256
             and mod.source.path == original.source.path

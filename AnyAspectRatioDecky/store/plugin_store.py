@@ -1,6 +1,6 @@
 import os
 from dataclasses import asdict, dataclass, fields, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from helper.validator import Validator
@@ -74,7 +74,7 @@ def read_json(path: Path) -> object | None:
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 class PluginStore:
