@@ -764,6 +764,22 @@
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
+      "id": "dead-cells",
+      "name": "Dead Cells - Custom Aspect Ratio",
+      "steam_app_id": "588650",
+      "install_dir": "Dead Cells",
+      "executable": "deadcells.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Dead Cells/Dead-Cells-v1.0.0.zip",
+        "sha256": "a8d670ce41e3e8b0f33c1df1157409bb6e5d5c656eac1d0d065117c8b8bb5ea9"
+      },
+      "files": ["dinput8.dll", "deadcells_ARFix.asi", "deadcells_ARFix.ini"],
+      "ini_file": "deadcells_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "sanabi",
       "name": "SANABI - Custom Aspect Ratio",
       "steam_app_id": "1562700",
