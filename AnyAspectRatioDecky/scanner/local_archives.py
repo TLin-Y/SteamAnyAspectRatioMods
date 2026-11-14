@@ -32,25 +32,31 @@ class LocalArchive:
 
 
 def _list_archive_files(path: Path) -> tuple[list[str], str | None]:
+    """The mod files in a local zip, or ([], why the zip can't be used)."""
     try:
         with ZipFile(path) as archive:
-            files: list[str] = []
-            for info in archive.infolist():
-                name = info.filename
-                if info.is_dir() or Validator.Files.is_os_junk(name):
-                    continue
-                if not Validator.Paths.is_relative(name):
-                    return [], f"unsafe entry name {name!r}"
-                files.append(name)
-                if len(files) > MAX_LOCAL_ARCHIVE_FILES:
-                    return [], f"more than {MAX_LOCAL_ARCHIVE_FILES} files"
+            files = [
+                info.filename
+                for info in archive.infolist()
+                if not info.is_dir() and not Validator.Files.is_os_junk(info.filename)
+            ]
     except (BadZipFile, OSError) as error:
         return [], f"not a readable zip file ({error})"
+    problem = _archive_problem(files)
+    return ([], problem) if problem else (files, None)
+
+
+def _archive_problem(files: list[str]) -> str | None:
+    unsafe = next((name for name in files if not Validator.Paths.is_relative(name)), None)
+    if unsafe is not None:
+        return f"unsafe entry name {unsafe!r}"
     if not files:
-        return [], "archive contains no files"
+        return "archive contains no files"
+    if len(files) > MAX_LOCAL_ARCHIVE_FILES:
+        return f"more than {MAX_LOCAL_ARCHIVE_FILES} files"
     if len({name.lower() for name in files}) != len(files):
-        return [], "entry names collide on case-insensitive file systems"
-    return files, None
+        return "entry names collide on case-insensitive file systems"
+    return None
 
 
 def _find_archives(directory: Path) -> list[Path]:
@@ -74,14 +80,13 @@ def _load_index(index_path: Path | None, directory: Path) -> dict[str, dict]:
         document = load_json(index_path)
     except (OSError, ValueError):
         return {}
-    if (
-        not isinstance(document, dict)
-        or document.get("version") != INDEX_VERSION
-        or document.get("directory") != str(directory)
-        or not isinstance(document.get("archives"), dict)
-    ):
-        return {}
-    return document["archives"]
+    match document:
+        case {"version": version, "directory": stored, "archives": dict() as archives} if (
+            version == INDEX_VERSION and stored == str(directory)
+        ):
+            return archives
+        case _:
+            return {}
 
 
 def _save_index(index_path: Path, directory: Path, archives: dict[str, dict]) -> None:
