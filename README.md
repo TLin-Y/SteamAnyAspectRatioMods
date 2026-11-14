@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 144 game mods](https://img.shields.io/badge/Game%20mods-144-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 145 game mods](https://img.shields.io/badge/Game%20mods-145-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (48:9 / 32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -82,6 +82,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | DEATH STRANDING 2: ON THE BEACH | Lyall | [3280350](https://store.steampowered.com/app/3280350) | [v0.0.5](./external/Lyall/DeathStranding2Fix/DeathStranding2Fix_0.0.5.zip) | 2026-06-12 | [DeathStranding2Fix](https://codeberg.org/Lyall/DeathStranding2Fix) |
 | DEATH STRANDING DIRECTOR'S CUT | Lyall | [1850570](https://store.steampowered.com/app/1850570) | [v0.0.2](./external/Lyall/DeathStrandingDCFix/DeathStrandingDCFix_0.0.2.zip) | 2025-07-04 | [DeathStrandingDCFix](https://codeberg.org/Lyall/DeathStrandingDCFix) |
 | Deus Ex: Mankind Divided | Lyall | [337000](https://store.steampowered.com/app/337000) | [v0.0.4](./external/Lyall/DeusExMDFix/DeusExMDFix_0.0.4.zip) | 2025-06-02 | [DeusExMDFix](https://codeberg.org/Lyall/DeusExMDFix) |
+| Devil May Cry 5 | TLin-Y | [601150](https://store.steampowered.com/app/601150) | [v1.0.0](./Devil%20May%20Cry%205/Devil-May-Cry-5-v1.0.0.zip) | 2026-11-14 | [README](./Devil%20May%20Cry%205/README.md) |
 | Dragon Age II | Lyall | [1238040](https://store.steampowered.com/app/1238040) | [v0.0.3](./external/Lyall/DAFix/DAFix_0.0.3.zip) | 2025-06-04 | [DAFix](https://codeberg.org/Lyall/DAFix) |
 | Dragon Age: Origins | Lyall | [47810](https://store.steampowered.com/app/47810) | [v0.0.3](./external/Lyall/DAFix/DAFix_0.0.3.zip) | 2025-06-04 | [DAFix](https://codeberg.org/Lyall/DAFix) |
 | DRAGON BALL XENOVERSE 2 | Lyall | [454650](https://store.steampowered.com/app/454650) | [v0.0.2](./external/Lyall/DBXV2Fix/DBXV2Fix_0.0.2.zip) | 2026-01-23 | [DBXV2Fix](https://codeberg.org/Lyall/DBXV2Fix) (manual install) |

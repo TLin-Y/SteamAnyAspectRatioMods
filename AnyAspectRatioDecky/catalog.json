@@ -780,6 +780,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "devil-may-cry-5",
+      "name": "Devil May Cry 5 - Custom Aspect Ratio",
+      "steam_app_id": "601150",
+      "install_dir": "Devil May Cry 5",
+      "executable": "DevilMayCry5.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Devil May Cry 5/Devil-May-Cry-5-v1.0.0.zip",
+        "sha256": "2c9b9168573ed117dea18f27689f5c81a62cf965227ec9eda25acf8fba9e25c9"
+      },
+      "files": ["dinput8.dll", "DevilMayCry5_ARFix.asi", "DevilMayCry5_ARFix.ini"],
+      "ini_file": "DevilMayCry5_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "sanabi",
       "name": "SANABI - Custom Aspect Ratio",
       "steam_app_id": "1562700",
