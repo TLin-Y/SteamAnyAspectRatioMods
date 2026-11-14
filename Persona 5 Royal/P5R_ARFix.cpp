@@ -477,6 +477,9 @@ namespace
         pResolution = Rip<int>(res[0] + 12, 4);
 
         auto fits = ScanCount("Fit", "8B C8 89 15 ? ? ? ? 89 0D ? ? ? ? 89 15 ? ? ? ? 89 0D", 2);
+        if (fits.empty()) return;
+        auto out = Rip<int>(fits[0] + 4, 4);
+        spdlog::info("Fit output: {:X}", reinterpret_cast<uintptr_t>(out));
         for (auto f : fits) {
             Mid(f + 2, [](safetyhook::Context& ctx) {
                 if (static_cast<int32_t>(ctx.rdx) <= 0 || static_cast<int32_t>(ctx.rcx) <= 0) return;
@@ -489,9 +492,7 @@ namespace
                 ctx.rcx = static_cast<uint32_t>(h);
             });
         }
-        if (fits.empty()) return;
 
-        auto out = Rip<int>(fits[0] + 4, 4);
         auto counter = ScanCount("Refresh", "8B 05 ? ? ? ? 32 DB 39 05 ? ? ? ? 74", 1);
         if (counter.empty()) return;
         pFitOut = out;
