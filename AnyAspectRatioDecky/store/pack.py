@@ -6,7 +6,7 @@ import threading
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
-from zipfile import BadZipFile, ZipFile, is_zipfile
+from zipfile import BadZipFile, ZipFile, ZipInfo, is_zipfile
 
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
 from scanner.mod_installer import (
@@ -17,7 +17,6 @@ from scanner.mod_installer import (
     open_url,
 )
 from scanner.plugin_updater import latest_release
-from helper.constants import MOD_SOURCE_DIRECTORY, MOD_SOURCE_FILES
 from store.dependencies import (
     MAX_CATALOG_SIZE_BYTES,
     repository_for,
@@ -58,9 +57,9 @@ def _wanted_paths(mods: tuple[ModDefinition, ...]) -> tuple[set[str], set[str]]:
     optional: set[str] = set()
     for mod in mods:
         source = mod.source
-        if source.kind == MOD_SOURCE_FILES:
+        if source.kind == "files":
             required.update(item.path for item in source.files)
-        elif source.kind == MOD_SOURCE_DIRECTORY:
+        elif source.kind == "directory":
             required.update(f"{source.path}/{path}" for path in mod.files)
         elif source.path is not None:
             required.add(source.path)
@@ -186,6 +185,27 @@ def download_release_pack(store: PluginStore, settings: Settings) -> dict[str, o
     return {**result, "version": version}
 
 
+def _pack_root(names: set[str], catalog_path: str) -> str:
+    """The repository folder in a release zip: the one prefix that holds the catalog."""
+    roots = {
+        name[: -len(catalog_path)]
+        for name in names
+        if name.endswith("/" + catalog_path) and name.count("/") == catalog_path.count("/") + 1
+    }
+    if len(roots) != 1:
+        raise ValueError(f"The archive must contain exactly one {catalog_path}")
+    return roots.pop()
+
+
+def _extract_member(archive: ZipFile, info: ZipInfo, staging: Path, path: str) -> None:
+    destination = staging / path
+    if not destination.resolve().is_relative_to(staging.resolve()):
+        raise ValueError(f"Unsafe path in catalog: {path}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with archive.open(info) as source, destination.open("wb") as target:
+        shutil.copyfileobj(source, target)
+
+
 @_exclusive_pack_operation
 def install_pack(
     store: PluginStore, settings: Settings, archive_path: Path | tuple[Path, ...]
@@ -206,15 +226,7 @@ def install_pack(
         for archive_path in archive_paths:
             with ZipFile(archive_path) as archive:
                 names = set(archive.namelist())
-                roots = {
-                    name[: -len(catalog_path)]
-                    for name in names
-                    if name.endswith("/" + catalog_path)
-                    and name.count("/") == catalog_path.count("/") + 1
-                }
-                if len(roots) != 1:
-                    raise ValueError(f"The archive must contain exactly one {catalog_path}")
-                root = roots.pop()
+                root = _pack_root(names, catalog_path)
                 catalog_info = archive.getinfo(root + catalog_path)
                 if catalog_info.file_size > MAX_CATALOG_SIZE_BYTES:
                     raise ValueError(
@@ -250,15 +262,8 @@ def install_pack(
                         raise ValueError(f"Unusable archive entry: {path}")
                     total += info.file_size
                     if total > MAX_PACK_TOTAL_BYTES:
-                        raise ValueError(
-                            f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB"
-                        )
-                    destination = staging / path
-                    if not destination.resolve().is_relative_to(staging.resolve()):
-                        raise ValueError(f"Unsafe path in catalog: {path}")
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    with archive.open(info) as source, destination.open("wb") as target:
-                        shutil.copyfileobj(source, target)
+                        raise ValueError(f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB")
+                    _extract_member(archive, info, staging, path)
                     found.add(path)
 
         missing = required - found

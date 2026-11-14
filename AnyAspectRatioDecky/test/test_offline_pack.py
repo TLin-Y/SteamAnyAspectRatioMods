@@ -17,9 +17,16 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 from scanner.mod_catalog import load_mod_catalog
-from scanner.mod_installer import apply_mod_files, fetch_mod_readme, set_offline_mode, set_pack_dir
-from store import PluginStore, Settings, download_release_pack, install_pack, load_active_catalog, update_dependencies
-from scanner.mod_installer import OfflineModeError
+from scanner.mod_installer import (
+    OfflineModeError,
+    apply_mod_files,
+    fetch_mod_readme,
+    set_offline_mode,
+    set_pack_dir,
+)
+from store.dependencies import load_active_catalog, update_dependencies
+from store.pack import download_release_pack, install_pack
+from store.plugin_store import PluginStore, Settings
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 

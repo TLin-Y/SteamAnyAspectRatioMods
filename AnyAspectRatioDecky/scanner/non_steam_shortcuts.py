@@ -46,7 +46,7 @@ def _shortcut_app_id(fields: dict[str, object], exe: str, name: str) -> int:
     stored = fields.get("appid")
     if isinstance(stored, int):
         return stored
-    return zlib.crc32(f"{exe}{name}".encode("utf-8")) | 0x80000000
+    return zlib.crc32(f"{exe}{name}".encode()) | 0x80000000
 
 
 def parse_shortcuts(data: bytes) -> list[InstalledApp]:

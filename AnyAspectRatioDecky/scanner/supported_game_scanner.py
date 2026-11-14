@@ -1,38 +1,7 @@
 import os
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
-from helper.constants import (
-    MOD_CATALOG_EXECUTABLE_FOUND_FIELD,
-    MOD_CATALOG_APP_NAME_FIELD,
-    MOD_CATALOG_FILE_STATUS_FIELD,
-    MOD_CATALOG_FILES_MISSING_FIELD,
-    MOD_CATALOG_FILES_PRESENT_FIELD,
-    MOD_CATALOG_FILE_STATUS_COMPLETE,
-    MOD_CATALOG_FILE_STATUS_NONE,
-    MOD_CATALOG_FILE_STATUS_PARTIAL,
-    MOD_CATALOG_INI_PATH_FIELD,
-    MOD_CATALOG_INI_FILE_FIELD,
-    MOD_CATALOG_MOD_FILES_FIELD,
-    MOD_CATALOG_GAME_PATH_FIELD,
-    MOD_CATALOG_DESTINATION_MISSING_WARNING,
-    MOD_CATALOG_EXECUTABLE_MISSING_WARNING,
-    MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING,
-    MOD_CATALOG_MOD_ID_FIELD,
-    MOD_CATALOG_MOD_NAME_FIELD,
-    MOD_DISPLAY_TAGS_KEY,
-    MOD_CATALOG_SOURCE_KIND_FIELD,
-    MOD_MANUAL_KEY,
-    MOD_WINE_OVERRIDES_KEY,
-    MOD_CATALOG_COUNT_FIELD,
-    MOD_CATALOG_SCAN_REPORT_FIELD,
-    MOD_CATALOG_GAMES_FIELD,
-    MOD_CATALOG_EXECUTABLE_PATH_FIELD,
-    MOD_STEAM_APP_ID_KEY,
-    SCAN_REPORT_APPS_KEY,
-    SCAN_REPORT_LIBRARIES_KEY,
-    SCAN_REPORT_WARNINGS_KEY,
-)
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
 from scanner.mod_installer import launcher_setup_complete
@@ -73,32 +42,16 @@ class SupportedGame:
     backup_files: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            MOD_MANUAL_KEY: self.manual,
-            MOD_CATALOG_MOD_ID_FIELD: self.mod_id,
-            MOD_CATALOG_MOD_NAME_FIELD: self.mod_name,
-            MOD_STEAM_APP_ID_KEY: self.steam_app_id,
-            MOD_CATALOG_APP_NAME_FIELD: self.app_name,
-            MOD_CATALOG_GAME_PATH_FIELD: self.game_path,
-            MOD_CATALOG_EXECUTABLE_PATH_FIELD: self.executable_path,
-            MOD_CATALOG_EXECUTABLE_FOUND_FIELD: self.executable_found,
-            MOD_CATALOG_FILE_STATUS_FIELD: self.file_status,
-            MOD_CATALOG_FILES_PRESENT_FIELD: self.files_present,
-            MOD_CATALOG_FILES_MISSING_FIELD: self.files_missing,
-            MOD_CATALOG_INI_PATH_FIELD: self.ini_path,
-            MOD_CATALOG_INI_FILE_FIELD: self.ini_file,
-            MOD_CATALOG_MOD_FILES_FIELD: self.mod_files,
-            MOD_CATALOG_SOURCE_KIND_FIELD: self.source_kind,
-            MOD_WINE_OVERRIDES_KEY: self.wine_dll_overrides,
-            "matched_by_executable": self.matched_by_executable,
-            "update_available": self.update_available,
-            "ambiguity_group": self.ambiguity_group,
-            "match_locked": self.match_locked,
-            "log_files": self.log_files,
-            "offline_only": self.offline_only,
-            MOD_DISPLAY_TAGS_KEY: self.display_tags,
-            "backup_files": self.backup_files,
-        }
+        data = asdict(self)
+        data["kind"] = data.pop("source_kind")
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> "SupportedGame":
+        """Inverse of to_dict; raises TypeError/KeyError for data in another shape."""
+        fields = dict(data)
+        fields["source_kind"] = fields.pop("kind")
+        return cls(**fields)
 
 
 @dataclass
@@ -112,16 +65,16 @@ class SupportedGameScanReport:
 
     def to_dict(self) -> dict[str, object]:
         return {
-            MOD_CATALOG_SCAN_REPORT_FIELD: {
-                SCAN_REPORT_LIBRARIES_KEY: self.steam_scan.libraries_scanned,
-                SCAN_REPORT_APPS_KEY: self.steam_scan.apps_scanned,
+            "steam_scan": {
+                "libraries_scanned": self.steam_scan.libraries_scanned,
+                "apps_scanned": self.steam_scan.apps_scanned,
             },
-            MOD_CATALOG_COUNT_FIELD: self.catalogued_mods,
+            "catalogued_mods": self.catalogued_mods,
             "local_archive_count": self.local_mods,
-            MOD_CATALOG_GAMES_FIELD: [
+            "supported_games": [
                 game.to_dict() for game in self.supported_games
             ],
-            SCAN_REPORT_WARNINGS_KEY: self.warnings,
+            "warnings": self.warnings,
         }
 
 
@@ -178,11 +131,11 @@ def _build_game(
         else:
             missing_files.append(launcher.target)
     if not present_files and not launcher_backup_present:
-        file_status = MOD_CATALOG_FILE_STATUS_NONE
+        file_status = "not_detected"
     elif missing_files:
-        file_status = MOD_CATALOG_FILE_STATUS_PARTIAL
+        file_status = "partial"
     else:
-        file_status = MOD_CATALOG_FILE_STATUS_COMPLETE
+        file_status = "complete"
 
     ini_path = (
         str(game_path / mod.ini_file)
@@ -217,149 +170,168 @@ def _build_game(
     )
 
 
+@dataclass
+class _ExecutableIndex:
+    """Catalogued executables by file name (shortcuts) and by first path part (directory probes)."""
+    owners: dict[str, set[str]] = field(default_factory=dict)
+    by_name: dict[str, list[tuple[ModDefinition, str]]] = field(default_factory=dict)
+    by_root: dict[str, list[tuple[ModDefinition, str]]] = field(default_factory=dict)
+
+    @classmethod
+    def build(cls, catalog: tuple[ModDefinition, ...]) -> "_ExecutableIndex":
+        index = cls()
+        for mod in catalog:
+            for executable in _executable_paths(mod):
+                path = Path(executable)
+                name = path.name.casefold()
+                index.owners.setdefault(name, set()).add(mod.mod_id)
+                index.by_name.setdefault(name, []).append((mod, executable))
+                index.by_root.setdefault(os.path.normcase(path.parts[0]), []).append((mod, executable))
+        return index
+
+
+def _match_by_executable(
+    app: InstalledApp,
+    catalog: tuple[ModDefinition, ...],
+    index: _ExecutableIndex,
+    file_cache: dict[Path, bool],
+    warnings: list[str],
+    allowed: set[str] | None = None,
+) -> list[tuple[ModDefinition, bool]]:
+    """Mods whose executable exists in the app's folder, each with whether the match is ambiguous."""
+    if app.game_path is None:
+        return []
+    root = Path(app.game_path)
+    try:
+        with os.scandir(root) as entries:
+            root_entries = {
+                os.path.normcase(entry.name) for entry in entries
+                if os.path.normcase(entry.name) in index.by_root
+            }
+    except OSError as error:
+        warnings.append(f"Could not scan game directory {root}: {error}")
+        return []
+    probes: dict[Path, bool] = {}
+    matched_ids: set[str] = set()
+    matching_names: set[str] = set()
+    for root_name in root_entries:
+        for mod, path in index.by_root[root_name]:
+            if _is_file(root / path, probes):
+                matched_ids.add(mod.mod_id)
+                matching_names.add(Path(path).name.casefold())
+    if not matched_ids:
+        return []
+    file_cache.update((path, True) for path, exists in probes.items() if exists)
+    ambiguous = len(matched_ids) > 1 or any(len(index.owners[name]) > 1 for name in matching_names)
+    return [
+        (mod, ambiguous) for mod in catalog
+        if mod.mod_id in matched_ids and (allowed is None or mod.mod_id in allowed)
+    ]
+
+
+def _shortcut_roots(
+    executable: Path, candidates: list[tuple[ModDefinition, str]], file_cache: dict[Path, bool],
+) -> list[tuple[ModDefinition, Path]]:
+    """Game folders implied by a shortcut's executable for each mod that catalogues that file."""
+    roots = []
+    for mod, relative in candidates:
+        parts = Path(relative).parts
+        if len(executable.parts) <= len(parts):
+            continue
+        root = executable
+        for _ in parts:
+            root = root.parent
+        if root / relative != executable:
+            continue
+        if (
+            mod.launcher_replacement is not None
+            and relative != mod.executable
+            and not _is_file(root / mod.executable, file_cache)
+        ):
+            continue
+        roots.append((mod, root))
+    return roots
+
+
+def _layout_warnings(
+    mod: ModDefinition, app: InstalledApp, game: SupportedGame, directory_cache: dict[Path, bool],
+) -> list[str]:
+    if app.game_path is None:
+        return []
+    warnings = []
+    if _executable_paths(mod) and not game.executable_found:
+        expected = ", ".join(_executable_paths(mod))
+        warnings.append(
+            f"Mod {mod.mod_id} for app {app.app_id}: no catalogued executable found in "
+            f"{app.game_path}; expected {expected}. The game layout or catalog may have changed."
+        )
+    if mod.source.destination and not mod.manual:
+        destination = Path(app.game_path) / mod.source.destination
+        if destination not in directory_cache:
+            directory_cache[destination] = destination.is_dir()
+        if not directory_cache[destination]:
+            warnings.append(
+                f"Mod {mod.mod_id} for app {app.app_id}: catalog destination {destination} "
+                "does not exist. Applying the mod may create this directory; verify the game layout first."
+            )
+    return warnings
+
+
 def match_supported_games(
     steam_scan: SteamScanReport,
     catalog: tuple[ModDefinition, ...],
     local_mods: tuple[ModDefinition, ...] = (),
 ) -> SupportedGameScanReport:
+    """Match installed apps (by app ID, else by executable) and non-Steam shortcuts to mods."""
     mods_by_app_id: dict[str, list[ModDefinition]] = {}
     for mod in (*local_mods, *catalog):
         mods_by_app_id.setdefault(mod.steam_app_id, []).append(mod)
+    index = _ExecutableIndex.build(catalog)
     games: list[SupportedGame] = []
     warnings = list(steam_scan.warnings)
     file_cache: dict[Path, bool] = {}
     directory_cache: dict[Path, bool] = {}
+    known: set[tuple[str | None, str]] = set()
 
-    executable_owners: dict[str, set[str]] = {}
-    executables_by_name: dict[str, list[tuple[ModDefinition, str]]] = {}
-    executables_by_root: dict[str, list[tuple[ModDefinition, str]]] = {}
-    for mod in catalog:
-        for executable in _executable_paths(mod):
-            path = Path(executable)
-            name = path.name.casefold()
-            executable_owners.setdefault(name, set()).add(mod.mod_id)
-            executables_by_name.setdefault(name, []).append((mod, executable))
-            executables_by_root.setdefault(os.path.normcase(path.parts[0]), []).append(
-                (mod, executable)
-            )
-
-    def fallback(app: InstalledApp, allowed: set[str] | None = None) -> list[tuple[ModDefinition, bool]]:
-        if app.game_path is None:
-            return []
-        root = Path(app.game_path)
-        try:
-            with os.scandir(root) as entries:
-                root_entries = {
-                    os.path.normcase(entry.name)
-                    for entry in entries
-                    if os.path.normcase(entry.name) in executables_by_root
-                }
-        except OSError as error:
-            warnings.append(f"Could not scan game directory {root}: {error}")
-            return []
-        probes: dict[Path, bool] = {}
-        matched_ids: set[str] = set()
-        matching_names: set[str] = set()
-        for root_name in root_entries:
-            for mod, path in executables_by_root[root_name]:
-                if _is_file(root / path, probes):
-                    matched_ids.add(mod.mod_id)
-                    matching_names.add(Path(path).name.casefold())
-        if not matched_ids:
-            return []
-        file_cache.update((path, True) for path, exists in probes.items() if exists)
-        ambiguous = len(matched_ids) > 1 or any(
-            len(executable_owners[name]) > 1 for name in matching_names
-        )
-        return [
-            (mod, ambiguous) for mod in catalog
-            if mod.mod_id in matched_ids and (allowed is None or mod.mod_id in allowed)
-        ]
-
-    def add_game(
-        mod: ModDefinition, app: InstalledApp, *, by_executable: bool = False,
-        ambiguity_group: str | None = None,
-    ) -> None:
+    def add_game(mod: ModDefinition, app: InstalledApp, by_executable: bool, ambiguity_group: str | None) -> None:
         game = _build_game(mod, app, file_cache)
         if by_executable or ambiguity_group is not None:
             game = replace(game, matched_by_executable=by_executable, ambiguity_group=ambiguity_group)
         games.append(game)
-        if app.game_path is None:
-            return
-        if _executable_paths(mod) and not game.executable_found:
-            warnings.append(
-                MOD_CATALOG_EXECUTABLE_MISSING_WARNING.format(
-                    mod_id=mod.mod_id, app_id=app.app_id, path=app.game_path,
-                    executables=", ".join(_executable_paths(mod)),
-                )
-            )
-        if mod.source.destination and not mod.manual:
-            destination = Path(app.game_path) / mod.source.destination
-            if destination not in directory_cache:
-                directory_cache[destination] = destination.is_dir()
-            if not directory_cache[destination]:
-                warnings.append(
-                    MOD_CATALOG_DESTINATION_MISSING_WARNING.format(
-                        mod_id=mod.mod_id, app_id=app.app_id, path=destination,
-                    )
-                )
+        warnings.extend(_layout_warnings(mod, app, game, directory_cache))
+        known.add((app.game_path, mod.mod_id))
 
-    known: set[tuple[str | None, str]] = set()
     for app in steam_scan.apps:
         app_mods = mods_by_app_id.get(app.app_id, [])
         matched = [(mod, False, False) for mod in app_mods if app.install_dir == mod.install_dir]
         mismatched = [mod for mod in app_mods if app.install_dir != mod.install_dir]
         for mod in mismatched:
             warnings.append(
-                MOD_CATALOG_INSTALL_DIRECTORY_MISMATCH_WARNING.format(
-                    app_id=app.app_id, actual=app.install_dir, expected=mod.install_dir,
-                )
+                f"Installed app {app.app_id} directory {app.install_dir} "
+                f"does not match catalog directory {mod.install_dir}"
             )
-        if mismatched:
-            matched.extend((mod, True, ambiguous) for mod, ambiguous in fallback(app, {mod.mod_id for mod in mismatched}))
-        elif not app_mods:
-            matched.extend((mod, True, ambiguous) for mod, ambiguous in fallback(app))
+        if mismatched or not app_mods:
+            allowed = {mod.mod_id for mod in mismatched} if mismatched else None
+            matched += [
+                (mod, True, ambiguous)
+                for mod, ambiguous in _match_by_executable(app, catalog, index, file_cache, warnings, allowed)
+            ]
         for mod, by_executable, ambiguous in matched:
-            add_game(
-                mod, app, by_executable=by_executable,
-                ambiguity_group=f"{app.app_id}:{app.game_path}" if ambiguous else None,
-            )
-            known.add((app.game_path, mod.mod_id))
+            add_game(mod, app, by_executable, f"{app.app_id}:{app.game_path}" if ambiguous else None)
 
     for shortcut in steam_scan.shortcuts:
         if not shortcut.shortcut_executable:
             continue
         executable = Path(shortcut.shortcut_executable)
-        candidates = executables_by_name.get(executable.name.casefold(), [])
+        candidates = index.by_name.get(executable.name.casefold(), [])
         if not candidates or not executable.is_file():
             continue
-        owners = executable_owners[executable.name.casefold()]
-        matched_roots: list[tuple[ModDefinition, Path]] = []
-        for mod, relative in candidates:
-            parts = Path(relative).parts
-            if len(executable.parts) <= len(parts):
-                continue
-            root = executable
-            for _ in parts:
-                root = root.parent
-            if root / relative != executable:
-                continue
-            if (
-                mod.launcher_replacement is not None
-                and relative != mod.executable
-                and not _is_file(root / mod.executable, file_cache)
-            ):
-                continue
-            matched_roots.append((mod, root))
-        ambiguous = len(owners) > 1 or len(matched_roots) > 1
-        for mod, root in matched_roots:
+        roots = _shortcut_roots(executable, candidates, file_cache)
+        ambiguous = len(index.owners[executable.name.casefold()]) > 1 or len(roots) > 1
+        for mod, root in roots:
             game = replace(shortcut, game_path=str(root))
             if (game.game_path, mod.mod_id) not in known:
-                add_game(
-                    mod, game, by_executable=True,
-                    ambiguity_group=f"{shortcut.app_id}:{executable}" if ambiguous else None,
-                )
-                known.add((game.game_path, mod.mod_id))
+                add_game(mod, game, True, f"{shortcut.app_id}:{executable}" if ambiguous else None)
 
     return SupportedGameScanReport(
         steam_scan=steam_scan,

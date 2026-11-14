@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from zipfile import BadZipFile, ZipFile
 
-from helper.constants import MOD_CATALOG_UNSAFE_PATH_CHARACTERS, MOD_SOURCE_LOCAL_ARCHIVE
-from scanner.mod_catalog import ModDefinition, ModSource
+from scanner.mod_catalog import UNSAFE_PATH_CHARACTERS, ModDefinition, ModSource
 from scanner.steam_library_scanner import InstalledApp
 
 MAX_LOCAL_ARCHIVES = 500
@@ -52,7 +51,7 @@ def _safe_member(name: str) -> bool:
     return (
         bool(name)
         and not name.startswith("/")
-        and not any(character in name for character in MOD_CATALOG_UNSAFE_PATH_CHARACTERS)
+        and not any(character in name for character in UNSAFE_PATH_CHARACTERS)
         and not any(part in ("", ".", "..") for part in name.split("/"))
     )
 
@@ -274,7 +273,7 @@ def build_local_mods(
             install_dir=app.install_dir,
             executable="",
             source=ModSource(
-                kind=MOD_SOURCE_LOCAL_ARCHIVE,
+                kind="local_archive",
                 path=archive.path,
                 destination=destination,
                 files=(),

@@ -39,6 +39,7 @@ ROOT_PATHS = (
     "plugin.json",
     "pnpm-lock.yaml",
     "rollup.config.js",
+    "ruff.toml",
     "tsconfig.json",
     "src",
 )
@@ -46,6 +47,7 @@ PY_PACKAGES = ("helper", "logger", "scanner", "store", "utils")
 DEFAULTS_FILES = (
     "LICENSE-Decky-Plugin-Template.txt",
     "LICENSE-LGPL-2.1.txt",
+    "THIRD_PARTY_LICENSES.txt",
     "THIRD_PARTY_NOTICES.md",
     "catalog.json",
 )

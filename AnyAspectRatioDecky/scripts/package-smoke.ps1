@@ -36,13 +36,13 @@ $requiredFiles = @(
     "catalog.json",
     "README.md",
     "THIRD_PARTY_NOTICES.md",
+    "THIRD_PARTY_LICENSES.txt",
     "LICENSE-Decky-Plugin-Template.txt",
     "LICENSE-LGPL-2.1.txt"
 )
 $runtimeFiles = @(
     "helper\__init__.py",
     "helper\build_flavor.py",
-    "helper\constants.py",
     "logger\__init__.py",
     "logger\plugin_logger.py",
     "scanner\__init__.py",

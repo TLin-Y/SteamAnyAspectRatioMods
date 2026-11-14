@@ -1,44 +1,13 @@
 import os
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Mapping, Sequence
 
-from helper.constants import (
-    SCAN_REPORT_APP_LIST_KEY,
-    SCAN_REPORT_APPS_KEY,
-    SCAN_REPORT_LIBRARIES_KEY,
-    SCAN_REPORT_WARNINGS_KEY,
-    STEAM_APP_ID_KEY,
-    STEAM_APP_INSTALL_DIRECTORY_KEY,
-    STEAM_APP_MANIFEST_GLOB,
-    STEAM_APP_MANIFEST_PATTERN,
-    STEAM_APP_NAME_KEY,
-    STEAM_APP_STATE_KEY,
-    STEAMAPPS_DIRECTORY,
-    STEAM_COMMON_DIRECTORY,
-    STEAM_GAME_DIRECTORY_UNAVAILABLE_WARNING,
-    STEAM_LIBRARY_CONFIG_FILE,
-    STEAM_LIBRARY_CONFIG_MISSING_OBJECT_WARNING,
-    STEAM_LIBRARY_CONFIG_NOT_FOUND_WARNING,
-    STEAM_LIBRARY_CONFIG_READ_WARNING,
-    STEAM_LIBRARY_NO_STEAMAPPS_WARNING,
-    STEAM_LIBRARY_PATH_MISSING_WARNING,
-    STEAM_LIBRARY_PATH_NOT_ABSOLUTE_WARNING,
-    STEAM_LIBRARY_UNAVAILABLE_WARNING,
-    STEAM_MANIFEST_APP_ID_MISMATCH_WARNING,
-    STEAM_MANIFEST_APP_STATE_MISSING_WARNING,
-    STEAM_MANIFEST_FIELDS_MISSING_WARNING,
-    STEAM_MANIFEST_INSTALL_DIRECTORY_ESCAPE_WARNING,
-    STEAM_MANIFEST_INSTALL_DIRECTORY_UNSAFE_WARNING,
-    STEAM_MANIFEST_READ_WARNING,
-    STEAM_MANIFEST_ENUMERATION_WARNING,
-    STEAM_NOT_FOUND_WARNING,
-    STEAM_ROOT_ENVIRONMENT_VARIABLE,
-    STEAM_ROOT_RELATIVE_PATHS,
-    VDF_PATH_KEY,
-    STEAM_LIBRARY_FOLDERS_KEY,
-)
 from utils.steam_vdf import VdfParseError, read_vdf
+
+_MANIFEST_PATTERN = re.compile(r"appmanifest_(\d+)\.acf\Z")
+_STEAM_ROOT_PATHS = (".local/share/Steam", ".steam/steam", "Steam")
 
 
 def _add_unique_path(paths: list[Path], seen: set[str], path: Path) -> None:
@@ -68,10 +37,10 @@ class SteamScanReport:
 
     def to_dict(self) -> dict[str, object]:
         return {
-            SCAN_REPORT_LIBRARIES_KEY: self.libraries_scanned,
-            SCAN_REPORT_APPS_KEY: self.apps_scanned,
-            SCAN_REPORT_APP_LIST_KEY: [asdict(app) for app in self.apps],
-            SCAN_REPORT_WARNINGS_KEY: self.warnings,
+            "libraries_scanned": self.libraries_scanned,
+            "apps_scanned": self.apps_scanned,
+            "apps": [asdict(app) for app in self.apps],
+            "warnings": self.warnings,
         }
 
 
@@ -82,10 +51,10 @@ def find_steam_roots(
     env = os.environ if environment is None else environment
     user_home = Path.home() if home is None else home
     candidates: list[Path] = []
-    configured_root = env.get(STEAM_ROOT_ENVIRONMENT_VARIABLE)
+    configured_root = env.get("STEAM_COMPAT_CLIENT_INSTALL_PATH")
     if configured_root:
         candidates.append(Path(configured_root).expanduser())
-    candidates.extend(user_home / relative_path for relative_path in STEAM_ROOT_RELATIVE_PATHS)
+    candidates.extend(user_home / relative_path for relative_path in _STEAM_ROOT_PATHS)
 
     roots: list[Path] = []
     seen: set[str] = set()
@@ -99,21 +68,21 @@ def find_steam_roots(
 def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
     roots = [steam_root.resolve(strict=False)]
     warnings: list[str] = []
-    config_path = steam_root / STEAMAPPS_DIRECTORY / STEAM_LIBRARY_CONFIG_FILE
+    config_path = steam_root / "steamapps" / "libraryfolders.vdf"
     if not config_path.exists():
-        return roots, [STEAM_LIBRARY_CONFIG_NOT_FOUND_WARNING.format(path=config_path)]
+        return roots, [f"Library configuration not found: {config_path}"]
 
     try:
         document = read_vdf(config_path)
     except (OSError, UnicodeError, VdfParseError) as error:
         return roots, [
-            STEAM_LIBRARY_CONFIG_READ_WARNING.format(path=config_path, error=error)
+            f"Could not read library configuration {config_path}: {error}"
         ]
 
-    library_folders = document.get(STEAM_LIBRARY_FOLDERS_KEY)
+    library_folders = document.get("libraryfolders")
     if not isinstance(library_folders, dict):
         return roots, [
-            STEAM_LIBRARY_CONFIG_MISSING_OBJECT_WARNING.format(path=config_path)
+            f"Library configuration has no libraryfolders object: {config_path}"
         ]
 
     seen: set[str] = set()
@@ -121,16 +90,16 @@ def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
     for index, value in library_folders.items():
         if not index.isdigit():
             continue
-        raw_path = value.get(VDF_PATH_KEY) if isinstance(value, dict) else value
+        raw_path = value.get("path") if isinstance(value, dict) else value
         if not isinstance(raw_path, str) or not raw_path:
             warnings.append(
-                STEAM_LIBRARY_PATH_MISSING_WARNING.format(index=index, path=config_path)
+                f"Library {index} has no valid path in {config_path}"
             )
             continue
         library_path = Path(raw_path).expanduser()
         if not library_path.is_absolute():
             warnings.append(
-                STEAM_LIBRARY_PATH_NOT_ABSOLUTE_WARNING.format(index=index, path=config_path)
+                f"Library {index} path is not absolute in {config_path}"
             )
             continue
         resolved = library_path.resolve(strict=False)
@@ -173,6 +142,46 @@ def _keep_largest_installs(apps: list[InstalledApp]) -> list[InstalledApp]:
     return [app for app in apps if winners[app.app_id] is app]
 
 
+def _read_manifest(
+    manifest_path: Path, library: Path, common_dir: Path, warnings: list[str],
+) -> InstalledApp | None:
+    """Parse appmanifest_<id>.acf; an unusable manifest adds a warning and returns None."""
+    filename_match = _MANIFEST_PATTERN.fullmatch(manifest_path.name)
+    if filename_match is None:
+        return None
+    try:
+        document = read_vdf(manifest_path)
+    except (OSError, UnicodeError, VdfParseError) as error:
+        warnings.append(f"Could not read app manifest {manifest_path}: {error}")
+        return None
+    app_state = document.get("AppState")
+    if not isinstance(app_state, dict):
+        warnings.append(f"App manifest has no AppState object: {manifest_path}")
+        return None
+    app_id, name, install_dir = (app_state.get(key) for key in ("appid", "name", "installdir"))
+    if not all(isinstance(value, str) and value for value in (app_id, name, install_dir)):
+        warnings.append(f"App manifest is missing appid, name, or installdir: {manifest_path}")
+        return None
+    if app_id != filename_match.group(1):
+        warnings.append(f"App ID does not match manifest filename: {manifest_path}")
+        return None
+    if not _safe_install_directory(install_dir):
+        warnings.append(f"Unsafe install directory in app manifest: {manifest_path}")
+        return None
+    candidate_path = (common_dir / install_dir).resolve(strict=False)
+    try:
+        candidate_path.relative_to(common_dir)
+    except ValueError:
+        warnings.append(f"Install directory escapes the Steam common folder: {manifest_path}")
+        return None
+    game_path = str(candidate_path) if candidate_path.is_dir() else None
+    if game_path is None:
+        warnings.append(f"Installed game directory is unavailable: {candidate_path}")
+    return InstalledApp(
+        app_id=app_id, name=name, install_dir=install_dir, library_path=str(library), game_path=game_path,
+    )
+
+
 def scan_steam_libraries(steam_roots: Sequence[Path]) -> SteamScanReport:
     libraries: list[Path] = []
     warnings: list[str] = []
@@ -186,74 +195,26 @@ def scan_steam_libraries(steam_roots: Sequence[Path]) -> SteamScanReport:
     apps: list[InstalledApp] = []
     for library in libraries:
         if not library.is_dir():
-            warnings.append(STEAM_LIBRARY_UNAVAILABLE_WARNING.format(path=library))
+            warnings.append(f"Steam library is unavailable: {library}")
             continue
-        steamapps = library / STEAMAPPS_DIRECTORY
+        steamapps = library / "steamapps"
         if not steamapps.is_dir():
-            warnings.append(STEAM_LIBRARY_NO_STEAMAPPS_WARNING.format(path=library))
+            warnings.append(f"Steam library has no steamapps directory: {library}")
             continue
 
-        common_dir = (steamapps / STEAM_COMMON_DIRECTORY).resolve(strict=False)
+        common_dir = (steamapps / "common").resolve(strict=False)
         try:
-            manifests = sorted(steamapps.glob(STEAM_APP_MANIFEST_GLOB))
+            manifests = sorted(steamapps.glob("appmanifest_*.acf"))
         except OSError as error:
             warnings.append(
-                STEAM_MANIFEST_ENUMERATION_WARNING.format(path=steamapps, error=error)
+                f"Could not enumerate manifests in {steamapps}: {error}"
             )
             continue
 
         for manifest_path in manifests:
-            filename_match = STEAM_APP_MANIFEST_PATTERN.fullmatch(manifest_path.name)
-            if filename_match is None:
-                continue
-            try:
-                document = read_vdf(manifest_path)
-            except (OSError, UnicodeError, VdfParseError) as error:
-                warnings.append(STEAM_MANIFEST_READ_WARNING.format(path=manifest_path, error=error))
-                continue
-
-            app_state = document.get(STEAM_APP_STATE_KEY)
-            if not isinstance(app_state, dict):
-                warnings.append(STEAM_MANIFEST_APP_STATE_MISSING_WARNING.format(path=manifest_path))
-                continue
-            app_id = app_state.get(STEAM_APP_ID_KEY)
-            name = app_state.get(STEAM_APP_NAME_KEY)
-            install_dir = app_state.get(STEAM_APP_INSTALL_DIRECTORY_KEY)
-            if not all(isinstance(value, str) and value for value in (app_id, name, install_dir)):
-                warnings.append(STEAM_MANIFEST_FIELDS_MISSING_WARNING.format(path=manifest_path))
-                continue
-            if app_id != filename_match.group(1):
-                warnings.append(STEAM_MANIFEST_APP_ID_MISMATCH_WARNING.format(path=manifest_path))
-                continue
-            if not _safe_install_directory(install_dir):
-                warnings.append(
-                    STEAM_MANIFEST_INSTALL_DIRECTORY_UNSAFE_WARNING.format(path=manifest_path)
-                )
-                continue
-
-            candidate_path = (common_dir / install_dir).resolve(strict=False)
-            try:
-                candidate_path.relative_to(common_dir)
-            except ValueError:
-                warnings.append(
-                    STEAM_MANIFEST_INSTALL_DIRECTORY_ESCAPE_WARNING.format(path=manifest_path)
-                )
-                continue
-            game_path = str(candidate_path) if candidate_path.is_dir() else None
-            if game_path is None:
-                warnings.append(
-                    STEAM_GAME_DIRECTORY_UNAVAILABLE_WARNING.format(path=candidate_path)
-                )
-
-            apps.append(
-                InstalledApp(
-                    app_id=app_id,
-                    name=name,
-                    install_dir=install_dir,
-                    library_path=str(library),
-                    game_path=game_path,
-                )
-            )
+            app = _read_manifest(manifest_path, library, common_dir, warnings)
+            if app is not None:
+                apps.append(app)
 
     apps = _keep_largest_installs(apps)
     return SteamScanReport(
@@ -271,6 +232,6 @@ def discover_steam_apps() -> SteamScanReport:
             libraries_scanned=0,
             apps_scanned=0,
             apps=[],
-            warnings=[STEAM_NOT_FOUND_WARNING],
+            warnings=["No Steam installation was found in the current user's standard locations."],
         )
     return scan_steam_libraries(roots)

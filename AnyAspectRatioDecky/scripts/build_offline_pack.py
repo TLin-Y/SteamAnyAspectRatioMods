@@ -20,11 +20,12 @@ ZIP_OVERHEAD_RESERVE_BYTES = 16 * 1024 * 1024
 VERSION_PATTERN = re.compile(r"(?:dev|v?\d+(?:\.\d+)*)")
 sys.path.insert(0, str(PLUGIN_ROOT))
 
+import verify_catalog_steam  # noqa: E402
+from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
+
 from scanner.mod_catalog import load_mod_catalog  # noqa: E402
 from store.pack import _wanted_paths  # noqa: E402
 from store.plugin_store import DEFAULT_CATALOG_PATH  # noqa: E402
-from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
-import verify_catalog_steam  # noqa: E402
 
 
 def _partition_paths(

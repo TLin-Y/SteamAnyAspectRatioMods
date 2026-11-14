@@ -12,6 +12,7 @@ from export_store_repo import (  # noqa: E402
     SELF_UPDATE_ON,
     store_path,
 )
+
 from scanner import mod_catalog  # noqa: E402
 
 

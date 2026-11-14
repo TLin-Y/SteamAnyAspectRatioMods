@@ -6,35 +6,36 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { GameDetails } from "./GameDetails";
 import { GameCard } from "./GameCard";
+import { useIniEditor } from "./useIniEditor";
 
 import {
   scanSupportedGames,
   getCachedScan,
-  setModApplied,
   clearMatchedGame,
   getModLog,
-  getModIni,
-  saveModIni,
   getModReadme,
   selectMatchedGame,
   getDiskUsage,
 } from "../../services/callables";
 import {
-  confirmFileReplacement,
   confirmOfflineMod,
-  confirmModifiedIniRemoval,
   showErrorModal,
   showLaunchOptionsInfo,
   chooseGame,
 } from "../../services/modals";
 import { formatBytes, formatRelativeTime } from "../../services/formatters";
 import type { SupportedGameReport, SupportedGame, ModLogResult } from "../../services/types";
+import { applyLaunchOptions } from "../../launch_options/steamLaunchOptions";
 import {
-  prepareLaunchOptions,
-  readCurrentLaunchOptions,
-  applyLaunchOptions,
-  removeLaunchOptions,
-} from "../../launch_options/steamLaunchOptions";
+  planLaunchOptions,
+  removeModLaunchOptions,
+  requiredLaunchOption,
+  setModFiles,
+  showRemovalFailure,
+  withRefreshError,
+} from "../../services/modToggle";
+
+const gameKey = (game: SupportedGame) => `${game.steam_app_id}-${game.game_path}-${game.mod_id}`;
 
 function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [report, setReport] = useState<SupportedGameReport | null>(null);
@@ -47,22 +48,12 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [toggleRevision, setToggleRevision] = useState(0);
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
   const [ambiguitySelections, setAmbiguitySelections] = useState<Record<string, string>>({});
-  const [iniGameKey, setIniGameKey] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<"manage" | "readme" | "log">("manage");
   const [readmeTitle, setReadmeTitle] = useState("");
   const [readmeContent, setReadmeContent] = useState("");
   const [readmeLoading, setReadmeLoading] = useState(false);
   const [modLogs, setModLogs] = useState<ModLogResult[] | null>(null);
-  const [iniLines, setIniLines] = useState<string[]>([]);
-  const [savedIniContent, setSavedIniContent] = useState("");
-  const [iniExists, setIniExists] = useState(false);
-  const [iniLoaded, setIniLoaded] = useState(false);
-  const [iniSaving, setIniSaving] = useState(false);
-  const [iniStatus, setIniStatus] = useState("");
   const detailRequestId = useRef(0);
-  const iniSavingRef = useRef(false);
-  const pendingIniSave = useRef(false);
-  const saveIniRef = useRef<() => Promise<void>>(async () => {});
   const initialRevision = useRef(dataRevision);
   const scanStarted = useRef(false);
 
@@ -129,272 +120,109 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     }
   };
 
-  const changeModApplied = async (
-    game: SupportedGameReport["supported_games"][number],
-    applied: boolean,
-  ) => {
+  /** Rescan to refresh the game list; returns the error text instead of throwing. */
+  const refresh = async (): Promise<string | null> => {
+    try {
+      setReport(await scanSupportedGames());
+      setCachedScanTime(new Date().toISOString());
+      return null;
+    } catch (error) {
+      return String(error);
+    }
+  };
+
+  const markUpToDate = (game: SupportedGame) =>
+    setReport((current) => current && {
+      ...current,
+      supported_games: current.supported_games.map((candidate) =>
+        candidate.mod_id === game.mod_id && candidate.game_path === game.game_path
+          ? { ...candidate, update_available: false }
+          : candidate,
+      ),
+    });
+
+  /** Forget the user's pick in every ambiguity group that pointed at this game. */
+  const forgetChoice = (game: SupportedGame) =>
+    setAmbiguitySelections((current) => {
+      const updated = { ...current };
+      if (game.ambiguity_group) delete updated[game.ambiguity_group];
+      for (const candidate of report?.supported_games ?? []) {
+        const group = candidate.ambiguity_group;
+        if (
+          group && candidate.mod_id === game.mod_id &&
+          candidate.game_path === game.game_path &&
+          current[group] === gameKey(candidate)
+        ) delete updated[group];
+      }
+      return updated;
+    });
+
+  /** Apply or remove a mod: files first, then the Steam launch options it needs. */
+  const changeModApplied = async (game: SupportedGame, applied: boolean) => {
     if (!game.game_path) return;
+    const target = { ...game, game_path: game.game_path };
+    const hasOverrides = game.wine_dll_overrides.length > 0;
     setUpdatingMod(true);
     setErrorMessage("");
-    const refreshReport = async () => {
-      try {
-        setReport(await scanSupportedGames());
-        setCachedScanTime(new Date().toISOString());
-        return null;
-      } catch (error) {
-        return String(error);
-      }
-    };
-
     try {
-      if (applied && game.offline_only && !await confirmOfflineMod(game.app_name)) {
-        return;
-      }
-      let launchPlan: Awaited<ReturnType<typeof prepareLaunchOptions>> | null =
-        null;
-      let launchOptionsNotice = "";
-      let manualLaunchOptions = "";
-      if (applied && game.wine_dll_overrides.length > 0) {
-        try {
-          launchPlan = await prepareLaunchOptions(
-            Number(game.steam_app_id),
-            game.mod_id,
-            game.wine_dll_overrides,
-          );
-        } catch (error) {
-          manualLaunchOptions =
-            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
-          launchOptionsNotice =
-            `${String(error)}\n\nRequired setting: ${manualLaunchOptions}`;
-        }
-        if (
-          launchPlan &&
-          !launchPlan.canWrite &&
-          launchPlan.proposedOptions !== launchPlan.currentOptions
-        ) {
-          launchOptionsNotice =
-            "Steam's launch-options write API is unavailable. Mod files will still be applied.";
-          manualLaunchOptions =
-            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
-          launchPlan = null;
-        }
-      }
+      if (applied && game.offline_only && !await confirmOfflineMod(game.app_name)) return;
+      const launch = applied && hasOverrides ? await planLaunchOptions(game) : { plan: null, notice: "" };
 
+      let outcome: Awaited<ReturnType<typeof setModFiles>>;
       try {
-        const result = await setModApplied(
-          game.mod_id,
-          game.game_path,
-          applied,
-          null,
-          null,
-        );
-        if (result.error) throw new Error(result.error);
-        if (result.warning) {
-          showErrorModal("Mod removal needs attention", result.warning);
-          await refreshReport();
-          return;
-        }
-        let iniAdjustmentWarning = result.ini_adjustment_warning ?? "";
-        let remainingConflicts = result.conflicting_files;
-        if (result.conflicting_files.length > 0) {
-          if (applied) {
-            const replaceFiles = await confirmFileReplacement(
-              game.app_name,
-              result.conflicting_files,
-              game.backup_files ?? [],
-            );
-            const retry = await setModApplied(
-              game.mod_id,
-              game.game_path,
-              true,
-              replaceFiles,
-              null,
-            );
-            if (retry.error) throw new Error(retry.error);
-            iniAdjustmentWarning = retry.ini_adjustment_warning ?? iniAdjustmentWarning;
-            remainingConflicts = retry.conflicting_files;
-          } else {
-            const keepIni = await confirmModifiedIniRemoval(
-              game.app_name,
-              result.conflicting_files[0],
-            );
-            const retry = await setModApplied(
-              game.mod_id,
-              game.game_path,
-              false,
-              null,
-              keepIni,
-            );
-            if (retry.error) throw new Error(retry.error);
-            remainingConflicts = retry.conflicting_files;
-          }
-        }
-        if (applied && remainingConflicts.length === 0) {
-          setReport((current) => current && {
-            ...current,
-            supported_games: current.supported_games.map((candidate) =>
-              candidate.mod_id === game.mod_id && candidate.game_path === game.game_path
-                ? { ...candidate, update_available: false }
-                : candidate,
-            ),
-          });
-        }
-        if (iniAdjustmentWarning) {
-          setErrorMessage(iniAdjustmentWarning);
-        }
-        const ambiguityGroup = game.ambiguity_group;
-        if (!applied && remainingConflicts.length === 0) {
-          setAmbiguitySelections((current) => {
-            const updated = { ...current };
-            if (ambiguityGroup) delete updated[ambiguityGroup];
-            for (const candidate of report?.supported_games ?? []) {
-              const group = candidate.ambiguity_group;
-              if (
-                group && candidate.mod_id === game.mod_id &&
-                candidate.game_path === game.game_path &&
-                current[group] === gameKey(candidate)
-              ) delete updated[group];
-            }
-            return updated;
-          });
-        }
+        outcome = await setModFiles(target, applied);
       } catch (error) {
-        const refreshError = await refreshReport();
-        if (!applied && game.wine_dll_overrides.length > 0) {
-          let currentOptions = "";
-          let currentOptionsMessage = "";
-          try {
-            currentOptions = await readCurrentLaunchOptions(
-              Number(game.steam_app_id),
-            );
-          } catch (readError) {
-            currentOptionsMessage = `Steam's current launch options could not be read: ${String(readError)}`;
-          }
-          showLaunchOptionsInfo(
-            "Mod removal failed",
-            `Could not remove ${game.mod_name}: ${String(error)}` +
-              (currentOptionsMessage ? `\n\n${currentOptionsMessage}` : "") +
-              (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
-            [
-              {
-                label: "Current Steam launch options",
-                value: currentOptions,
-              },
-            ],
+        const refreshError = await refresh();
+        if (!applied && hasOverrides) {
+          await showRemovalFailure(game, error, refreshError);
+        } else {
+          const action = applied ? "apply" : "remove";
+          notifyError(
+            `${applied ? "Apply" : "Remove"} failed`,
+            withRefreshError(`Could not ${action} ${game.mod_name}: ${String(error)}`, refreshError),
           );
-          return;
         }
-        notifyError(
-          `${applied ? "Apply" : "Remove"} failed`,
-          `Could not ${applied ? "apply" : "remove"} ${game.mod_name}: ${String(error)}` +
-            (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
-        );
         return;
       }
+      if (outcome.warning) {
+        showErrorModal("Mod removal needs attention", outcome.warning);
+        await refresh();
+        return;
+      }
+      if (outcome.conflicts.length === 0) {
+        if (applied) markUpToDate(game);
+        else forgetChoice(game);
+      }
+      if (outcome.iniWarning) setErrorMessage(outcome.iniWarning);
 
-      if (applied && launchPlan) {
-        try {
-          await applyLaunchOptions(
-            launchPlan,
-            game.wine_dll_overrides,
-          );
-        } catch (error) {
-          launchOptionsNotice =
-            `Steam launch options could not be updated: ${String(error)}. Mod files were still applied.`;
-          manualLaunchOptions =
-            `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
+      if (!applied) {
+        const refreshError = hasOverrides ? await removeModLaunchOptions(game, refresh) : await refresh();
+        if (refreshError && hasOverrides) setErrorMessage(`Status refresh failed: ${refreshError}`);
+        else if (refreshError) {
+          notifyError("Status refresh failed", `Operation completed, but refreshing status failed: ${refreshError}`);
         }
-      } else if (!applied && game.wine_dll_overrides.length > 0) {
+        return;
+      }
+      let notice = launch.notice;
+      if (launch.plan) {
         try {
-          const removal = await removeLaunchOptions(
-            Number(game.steam_app_id),
-            game.mod_id,
-          );
-          if (!removal.hadRecord) {
-            const refreshError = await refreshReport();
-            showLaunchOptionsInfo(
-              "Mod files deleted successfully",
-              "",
-              [
-                {
-                  label: "Current Steam options",
-                  value: removal.currentOptions,
-                },
-              ],
-            );
-            if (refreshError) {
-              setErrorMessage(`Status refresh failed: ${refreshError}`);
-            }
-            return;
-          }
-          const refreshError = await refreshReport();
-          showLaunchOptionsInfo(
-            "Mod files removed",
-            removal.changed
-              ? `Removed ${game.mod_name} files and the plugin-owned override group(s). Other current launch-option arguments were preserved.`
-              : `Removed ${game.mod_name} files. None of the recorded plugin-owned override groups were present, so Steam launch options were left unchanged.`,
-            [
-              {
-                label: "Current launch options before unApply",
-                value: removal.currentOptions,
-              },
-              {
-                label: "Launch options after unApply",
-                value: removal.updatedOptions,
-              },
-            ],
-          );
-          if (refreshError) {
-            setErrorMessage(`Status refresh failed: ${refreshError}`);
-          }
-          return;
+          await applyLaunchOptions(launch.plan, game.wine_dll_overrides);
         } catch (error) {
-          const refreshError = await refreshReport();
-          let currentOptions = "";
-          let currentOptionsMessage = "";
-          try {
-            currentOptions = await readCurrentLaunchOptions(
-              Number(game.steam_app_id),
-            );
-          } catch (readError) {
-            currentOptionsMessage = `Steam's current launch options could not be read: ${String(readError)}`;
-          }
-          showLaunchOptionsInfo(
-            "Launch options removal failed",
-            `${game.mod_name} files were removed, but Steam's launch options could not be updated: ${String(error)}` +
-              (currentOptionsMessage ? `\n\n${currentOptionsMessage}` : "") +
-              (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
-            [
-              {
-                label: "Current Steam launch options",
-                value: currentOptions,
-              },
-            ],
-          );
-          return;
+          notice = `Steam launch options could not be updated: ${String(error)}. Mod files were still applied.`;
         }
       }
-
-      const refreshError = await refreshReport();
-      if (applied && launchOptionsNotice) {
+      const refreshError = await refresh();
+      if (notice) {
+        const setting = requiredLaunchOption(game);
         showLaunchOptionsInfo(
           "Launch options not updated",
-          launchOptionsNotice +
-            (manualLaunchOptions
-              ? `\n\nRequired setting: ${manualLaunchOptions}`
-              : "") +
-            (refreshError ? ` Status refresh failed: ${refreshError}` : ""),
-          manualLaunchOptions
-            ? [{ label: "Required Steam launch option", value: manualLaunchOptions }]
-            : [],
+          withRefreshError(`${notice}
+
+Required setting: ${setting}`, refreshError),
+          [{ label: "Required Steam launch option", value: setting }],
         );
-        return;
-      }
-      if (refreshError) {
-        notifyError(
-          "Status refresh failed",
-          `Operation completed, but refreshing status failed: ${refreshError}`,
-        );
+      } else if (refreshError) {
+        notifyError("Status refresh failed", `Operation completed, but refreshing status failed: ${refreshError}`);
       }
     } finally {
       setToggleRevision((revision) => revision + 1);
@@ -402,11 +230,13 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     }
   };
 
-  const gameKey = (game: SupportedGameReport["supported_games"][number]) =>
-    `${game.steam_app_id}-${game.game_path}-${game.mod_id}`;
   const selectedGame = report?.supported_games.find(
     (game) => gameKey(game) === selectedGameKey,
   );
+  const ini = useIniEditor({
+    game: selectedGame, gameKey, requestId: detailRequestId, refresh,
+    notifyError: (title, message) => notifyError(title, message),
+  });
   const gameGroups: SupportedGameReport["supported_games"][] = [];
   const ambiguityGroups = new Map<string, SupportedGameReport["supported_games"]>();
   for (const game of [...(report?.supported_games ?? [])].sort(
@@ -425,41 +255,15 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     group.push(game);
   }
 
-  const openGameDetails = async (
-    game: SupportedGameReport["supported_games"][number],
-  ) => {
+  const openGameDetails = async (game: SupportedGame) => {
     const requestId = ++detailRequestId.current;
-    const selectedKey = gameKey(game);
-    iniSavingRef.current = false;
-    pendingIniSave.current = false;
-    setSelectedGameKey(selectedKey);
+    setSelectedGameKey(gameKey(game));
     setDetailView("manage");
-    setIniGameKey(null);
-    setIniLines([]);
-    setSavedIniContent("");
-    setIniExists(false);
-    setIniLoaded(false);
-    setIniSaving(false);
-    setIniStatus("");
-    if (!game.ini_file || !game.game_path) return;
-
-    setIniGameKey(selectedKey);
-    try {
-      const ini = await getModIni(game.mod_id, game.game_path);
-      if (requestId !== detailRequestId.current) return;
-      setIniLines(ini.content.split(/\r\n|\n|\r/));
-      setSavedIniContent(ini.content);
-      setIniExists(ini.exists);
-      setIniLoaded(true);
-    } catch (error) {
-      if (requestId === detailRequestId.current) {
-        notifyError("Could not load configuration", String(error));
-      }
-    }
+    await ini.open(game, requestId);
   };
 
   const openGameReadme = async (
-    game: SupportedGameReport["supported_games"][number],
+    game: SupportedGame,
   ) => {
     const requestId = ++detailRequestId.current;
     setSelectedGameKey(gameKey(game));
@@ -511,12 +315,10 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
         delete updated[group];
         return updated;
       });
-      try {
-        setReport(await scanSupportedGames());
-        setCachedScanTime(new Date().toISOString());
-      } catch (error) {
+      const refreshError = await refresh();
+      if (refreshError) {
         setReport(null);
-        notifyError("Status refresh failed", `Choice cleared; scan again: ${String(error)}`);
+        notifyError("Status refresh failed", `Choice cleared; scan again: ${refreshError}`);
       }
     } catch (error) {
       notifyError("Could not clear game choice", String(error));
@@ -525,65 +327,6 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     }
   };
 
-  const saveIni = async () => {
-    const gameBeingSaved = selectedGame;
-    if (
-      !gameBeingSaved?.game_path ||
-      !gameBeingSaved.ini_file ||
-      iniGameKey !== gameKey(gameBeingSaved)
-    ) return;
-    if (iniSavingRef.current) {
-      pendingIniSave.current = true;
-      return;
-    }
-    if (iniLines.join("\n") === savedIniContent) return;
-    const requestId = detailRequestId.current;
-    const gamePath = gameBeingSaved.game_path;
-    const iniContent = iniLines.join("\n");
-    iniSavingRef.current = true;
-    setIniSaving(true);
-    setIniStatus("");
-    try {
-      const result = await saveModIni(
-        gameBeingSaved.mod_id,
-        gamePath,
-        iniContent,
-      );
-      if (requestId !== detailRequestId.current) return;
-      setSavedIniContent(iniContent);
-      setIniExists(true);
-      setIniStatus(result.permissions_preserved
-        ? "Configuration saved."
-        : "Configuration saved, but this filesystem could not preserve the file permissions.");
-    } catch (error) {
-      if (requestId === detailRequestId.current) {
-        notifyError("Could not save configuration", String(error));
-      }
-      return;
-    } finally {
-      if (requestId === detailRequestId.current) {
-        iniSavingRef.current = false;
-        setIniSaving(false);
-        if (pendingIniSave.current) {
-          pendingIniSave.current = false;
-          window.setTimeout(() => void saveIniRef.current(), 0);
-        }
-      }
-    }
-
-    try {
-      setReport(await scanSupportedGames());
-      setCachedScanTime(new Date().toISOString());
-    } catch (error) {
-      if (requestId === detailRequestId.current) {
-        notifyError(
-          "Configuration saved, but status refresh failed",
-          String(error),
-        );
-      }
-    }
-  };
-  saveIniRef.current = saveIni;
 
 
   return (
@@ -625,31 +368,16 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           view={detailView}
           readme={{ title: readmeTitle, content: readmeContent, loading: readmeLoading }}
           logs={modLogs}
-          ini={{ lines: iniLines, loaded: iniLoaded, exists: iniExists, saving: iniSaving, status: iniStatus }}
+          ini={ini.state}
           onBack={() => {
             detailRequestId.current += 1;
-            iniSavingRef.current = false;
-            pendingIniSave.current = false;
+            ini.close();
             setSelectedGameKey(null);
             setDetailView("manage");
-            setIniGameKey(null);
-            setIniSaving(false);
             setReadmeLoading(false);
           }}
-          onIniBlur={() => {
-            if (!iniLoaded) return;
-            if (iniSavingRef.current) {
-              pendingIniSave.current = true;
-            } else if (iniLines.join("\n") !== savedIniContent) {
-              void saveIni();
-            }
-          }}
-          onIniChange={(index, value) => {
-            const updatedLines = [...iniLines];
-            updatedLines[index] = value;
-            setIniLines(updatedLines);
-            setIniStatus("");
-          }}
+          onIniBlur={ini.onBlur}
+          onIniChange={ini.onChange}
         />
       ) : gameGroups.map((group, index, ordered) => {
 

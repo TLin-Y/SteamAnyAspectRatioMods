@@ -1,23 +1,23 @@
-import struct
+import asyncio
 import importlib
 import logging
+import struct
 import sys
 import tempfile
 import types
 import unittest
 from dataclasses import replace
 from pathlib import Path
-from zipfile import ZipFile
 from unittest.mock import patch
-import asyncio
+from zipfile import ZipFile
 
 from scanner.mod_catalog import ModDefinition, ModSource, load_mod_catalog
 from scanner.mod_installer import apply_mod_files
 from scanner.non_steam_shortcuts import parse_shortcuts, scan_non_steam_shortcuts
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
-from store import PluginStore
 from store.dependencies import CatalogSource
+from store.plugin_store import PluginStore
 
 
 def _string(key: str, value: str) -> bytes:

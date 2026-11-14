@@ -39,7 +39,7 @@ Install **AnyAspectRatio** from the Decky Plugin Store, then open it in the Deck
 
 The plugin only connects to GitHub, and only for the mod source repository set in **Settings** (default: `TLin-Y/SteamAnyAspectRatioMods`):
 
-- `raw.githubusercontent.com`: the mod catalog (`catalog.json`), mod READMEs and mod zips. Every downloaded zip is checked against the `sha256` in the catalog before it is used.
+- `raw.githubusercontent.com`: the mod catalog (`catalog.json`), mod READMEs, mod zips and loose mod files. Every downloaded zip and file is checked against its SHA-256 checksum in the catalog before anything is written to the game folder.
 - `api.github.com` and `github.com/.../releases/download`: the optional offline mods pack.
 
 Mods contain Windows DLL/ASI files that run inside the game under Proton, not on SteamOS itself. The plugin only copies them into the selected game's folder and can remove them again. Source code for the mods is in the mod repository; third-party mods are credited in the plugin's **Mods** tab.
@@ -50,4 +50,4 @@ Turn on **Settings → Offline mode** to prevent the plugin from connecting to t
 
 ## License
 
-MIT, see [LICENSE](LICENSE). It also includes the BSD 3-Clause license of the Decky plugin template. Third-party notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT, see [LICENSE](LICENSE). It also includes the BSD 3-Clause license of the Decky plugin template. Third-party notices: [THIRD_PARTY_NOTICES.md](defaults/THIRD_PARTY_NOTICES.md); bundled npm package licenses: [THIRD_PARTY_LICENSES.txt](defaults/THIRD_PARTY_LICENSES.txt).

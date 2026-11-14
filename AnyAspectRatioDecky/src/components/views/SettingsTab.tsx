@@ -16,18 +16,12 @@ import {
   savePluginSettings,
   setOfflineMode,
   updateDependencies,
-  checkForPluginUpdate,
-  installPluginUpdateRequest,
   getLog,
-  PLUGIN_VERSION,
 } from "../../services/callables";
 import { showErrorModal } from "../../services/modals";
-import { formatCatalogUpdate } from "../../services/formatters";
-import type {
-  PluginSettingsValues,
-  PluginSettingsInfo,
-  PluginUpdateInfo,
-} from "../../services/types";
+import { errorText, formatCatalogUpdate } from "../../services/formatters";
+import { PluginUpdateSection } from "./PluginUpdateSection";
+import type { PluginSettingsInfo, PluginSettingsValues } from "../../services/types";
 
 type SettingsFormValues = PluginSettingsValues & {
   ini_resolution_width: string;
@@ -61,8 +55,6 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const savedValues = useRef("");
   const [status, setStatus] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
-  const [pluginUpdate, setPluginUpdate] = useState<PluginUpdateInfo | null>(null);
-  const [pluginStatus, setPluginStatus] = useState("");
 
   const resolutionUnsaved = !!info && (
     resolution.ini_resolution_width !== String(info.settings.ini_resolution_width) ||
@@ -73,90 +65,8 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     values.catalog_repository_url || "the configured repository"
   ).replace("https://github.com/", "");
 
-  const checkPluginUpdate = async () => {
-    setBusy(true);
-    setPluginUpdate(null);
-    setPluginStatus("Checking for a newer plugin release...");
-    try {
-      const result = await checkForPluginUpdate();
-      if (result.error) throw new Error(result.error);
-      setPluginUpdate(result);
-      if (!result.update_available) {
-        setPluginStatus(`AnyAspectRatio ${PLUGIN_VERSION} is up to date.`);
-      } else if (!result.download_url) {
-        setPluginStatus(
-          `Version ${result.latest_version} exists but has no plugin zip attached yet.`,
-        );
-      } else {
-        setPluginStatus(`Version ${result.latest_version} is available.`);
-      }
-    } catch (error) {
-      setPluginStatus("");
-      showErrorModal(
-        "Plugin update check failed",
-        error instanceof Error ? error.message : String(error),
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const installPluginUpdate = async () => {
-    setBusy(true);
-    setPluginStatus("Downloading and installing the update...");
-    try {
-      const result = await installPluginUpdateRequest();
-      if (result.error) throw new Error(result.error);
-      if (result.installed) {
-        setPluginUpdate(null);
-        setPluginStatus(
-          result.restarted
-            ? `Updated to ${result.version}. Decky is reloading the plugin.`
-            : `Updated to ${result.version}. Restart Decky Loader or reboot to finish.`,
-        );
-      } else {
-        const sizeMb = ((result.size_bytes ?? 0) / (1024 * 1024)).toFixed(2);
-        setPluginStatus(`Downloaded ${result.file_name}. Install it manually (see the popup).`);
-        showModal(
-          <ConfirmModal
-            bAlertDialog
-            strTitle="Update downloaded - install it manually"
-            strDescription={
-              `File: ${result.file_name}\n` +
-              `Size: ${result.size_bytes} bytes (${sizeMb} MB)\n` +
-              `Saved to: ${result.saved_zip}\n\n` +
-              "Decky plugins cannot replace themselves, so finish the update yourself:\n" +
-              "1. Open Decky Settings > Developer.\n" +
-              "2. Choose Install Plugin from ZIP.\n" +
-              `3. Select ${result.file_name} from the Downloads folder and confirm.`
-            }
-            strOKButtonText="OK"
-          />,
-        );
-      }
-    } catch (error) {
-      setPluginStatus("");
-      showErrorModal(
-        "Plugin update failed",
-        error instanceof Error ? error.message : String(error),
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const confirmPluginUpdate = () =>
-    showModal(
-      <ConfirmModal
-        strTitle={`Update to ${pluginUpdate?.latest_version}?`}
-        strDescription={`Downloads AnyAspectRatio ${pluginUpdate?.latest_version} from ${repositoryLabel} and replaces the installed plugin files. Your settings and applied mods are kept.`}
-        strOKButtonText="Update"
-        onOK={installPluginUpdate}
-      />,
-    );
-
   const showError = (title: string, error: unknown) => {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = errorText(error);
     setStatus(`${title}: ${message}`);
     showErrorModal(title, message);
   };
@@ -445,34 +355,12 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         </PanelSectionRow>
       </PanelSection>
       {info?.self_update_enabled && (
-      <PanelSection title="Plugin update">
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={checkPluginUpdate}
-            disabled={busy || !info || info.settings.offline_mode}
-            description={
-              info?.settings.offline_mode
-                ? "Unavailable in offline mode."
-                : `Installed: ${PLUGIN_VERSION}. Checks the releases of ${repositoryLabel}.`
-            }
-          >
-            Check for plugin update
-          </ButtonItem>
-        </PanelSectionRow>
-        {pluginUpdate?.update_available && (
-          <PanelSectionRow>
-            <ButtonItem layout="below" onClick={confirmPluginUpdate} disabled={busy}>
-              Update to {pluginUpdate.latest_version}
-            </ButtonItem>
-          </PanelSectionRow>
-        )}
-        {pluginStatus && (
-          <PanelSectionRow>
-            <div role="status" style={{ overflowWrap: "anywhere" }}>{pluginStatus}</div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
+        <PluginUpdateSection
+          busy={busy}
+          setBusy={setBusy}
+          offline={info.settings.offline_mode}
+          repositoryLabel={repositoryLabel}
+        />
       )}
       <PanelSection title="Troubleshooting">
         <PanelSectionRow>

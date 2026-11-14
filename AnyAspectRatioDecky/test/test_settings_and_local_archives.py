@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from zipfile import ZipFile
 
-from scanner import InstalledApp, SteamScanReport, match_supported_games
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModSource, load_mod_catalog
 from scanner.mod_installer import (
@@ -18,15 +17,15 @@ from scanner.mod_installer import (
     set_offline_mode,
     set_pack_dir,
 )
-from store import (
-    PluginStore,
-    Settings,
+from scanner.steam_library_scanner import InstalledApp, SteamScanReport
+from scanner.supported_game_scanner import match_supported_games
+from store.dependencies import (
+    _with_bundled_resolution_metadata,
     load_active_catalog,
     refresh_catalog_on_start,
     update_dependencies,
-    validate_settings,
 )
-from store.dependencies import _with_bundled_resolution_metadata
+from store.plugin_store import PluginStore, Settings, validate_settings
 
 
 def write_zip(path: Path, files: dict[str, bytes]) -> None:
