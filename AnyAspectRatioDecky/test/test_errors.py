@@ -6,14 +6,14 @@ from utils.network import NetworkError
 
 
 class ErrorsTests(unittest.TestCase):
-    def test_context_prefixes_failures_and_keeps_the_cause(self) -> None:
-        with self.assertRaises(PluginError) as caught, errors.context("Unable to read matched games"):
+    def test_wrap_prefixes_failures_and_keeps_the_cause(self) -> None:
+        with self.assertRaises(PluginError) as caught, errors.wrap("Unable to read matched games"):
             raise OSError("disk gone")
         self.assertEqual("Unable to read matched games: disk gone", str(caught.exception))
         self.assertIsInstance(caught.exception.__cause__, OSError)
 
-    def test_context_leaves_bugs_alone(self) -> None:
-        with self.assertRaises(KeyError), errors.context("Reading settings"):
+    def test_wrap_leaves_bugs_alone(self) -> None:
+        with self.assertRaises(KeyError), errors.wrap("Reading settings"):
             raise KeyError("missing")
 
     def test_collect_records_a_warning_and_continues(self) -> None:

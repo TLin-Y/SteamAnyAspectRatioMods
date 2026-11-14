@@ -4,13 +4,30 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path, PurePosixPath
 from typing import Annotated
-from urllib.parse import urlparse
 
 from helper import errors
 from helper.errors import PluginError
+from helper.validated_types import (
+    DisplayTag,
+    GitHubRepository,
+    GitRef,
+    HttpsUrl,
+    HttpsUrlOrEmpty,
+    IniKey,
+    IniSection,
+    ModId,
+    NonBlank,
+    NonEmpty,
+    RelativePath,
+    RelativePathOrEmpty,
+    Sha256,
+    Sha256OrEmpty,
+    SteamAppId,
+    WineOverride,
+)
 from helper.validator import Validator
 from utils import text_files
-from utils.json_codec import Check, decode, empty_or, exact_keys, json_field, one_of
+from utils.json_codec import decode, exact_keys, json_field, one_of
 
 CATALOG_SCHEMA_VERSION = 3
 REPOSITORY_OWNER = "TLin-Y"
@@ -34,31 +51,6 @@ class IniValueKind(StrEnum):
     # One key holds both as text, e.g. Resolution="1280x800"
     PIXELS_STRING = "pixels_string"
 
-def _is_https(value: str) -> bool:
-    return urlparse(value).scheme == "https"
-
-
-_SAFE_PATH = Check(Validator.Paths.is_relative, "a safe relative path")
-_HTTPS_URL = Check(_is_https, "an https URL")
-_SHA256 = Check(Validator.Hash.sha256, "a SHA-256 hex digest")
-
-NonEmpty = Annotated[str, Check(bool, "a non-empty string")]
-NonBlank = Annotated[str, Check(lambda value: bool(value.strip()), "a non-blank string")]
-RelativePath = Annotated[str, _SAFE_PATH]
-RelativePathOrEmpty = Annotated[str, empty_or(_SAFE_PATH)]
-HttpsUrl = Annotated[str, _HTTPS_URL]
-HttpsUrlOrEmpty = Annotated[str, empty_or(_HTTPS_URL)]
-Sha256 = Annotated[str, _SHA256]
-Sha256OrEmpty = Annotated[str, empty_or(_SHA256)]
-ModId = Annotated[str, Check(Validator.Catalog.mod_id, "lowercase letters, digits and -")]
-SteamAppId = Annotated[str, Check(Validator.Catalog.steam_app_id, "a numeric Steam app ID")]
-DisplayTag = Annotated[str, Check(Validator.Catalog.display_tag, "lowercase letters, digits, _ and -")]
-WineOverride = Annotated[str, Check(Validator.Wine.override, "a Wine DLL override like dinput8=n,b")]
-IniSection = Annotated[str, Check(Validator.Ini.section, "an INI section name")]
-IniKey = Annotated[str, Check(Validator.Ini.key, "an INI key name")]
-GitHubRepository = Annotated[str, Check(Validator.GitHub.repository, "https://github.com/<owner>/<repo>")]
-GitRef = Annotated[str, Check(Validator.GitHub.ref, "a git branch, tag or commit")]
-
 def _sorted_items(mapping: dict[str, str]) -> tuple[tuple[str, str], ...]:
     return tuple(sorted(mapping.items()))
 
@@ -78,7 +70,6 @@ class ModSource:
     repository_url: str = json_field(default="", skip=True)
     repository_ref: str = json_field(default="", skip=True)
     sha256: Sha256OrEmpty = ""
-    # files/directory sources: SHA-256 per installed path, checked after each download.
     file_hashes: tuple[tuple[str, str], ...] = json_field(
         default=(), wire=dict[RelativePath, Sha256], convert=_sorted_items,
     )
@@ -142,7 +133,6 @@ class ModDefinition:
     source: ModSource
     files: tuple[RelativePath, ...]
     wine_dll_overrides: tuple[WineOverride, ...]
-    # A manual mod is only listed and explained, so its executable may be unknown ("").
     executable: RelativePathOrEmpty = ""
     ini_file: RelativePath | None = None
     credits: tuple[ModCredit, ...] = ()
@@ -201,7 +191,6 @@ def _folded(paths: Iterable[str]) -> set[str]:
 
 
 def _reserved_paths(mod: ModDefinition) -> set[str]:
-    """Paths a backup may not take over: the mod's files and the game's executables."""
     return set(mod.files) | set(mod.executables)
 
 
@@ -224,6 +213,7 @@ def _check_files(mod: ModDefinition) -> None:
 def _check_source(mod: ModDefinition) -> None:
     source = mod.source
     is_file_list = source.kind == SourceKind.FILES
+
     if is_file_list:
         if source.path is not None:
             raise PluginError("source.path is only for archive and directory sources")
@@ -234,6 +224,7 @@ def _check_source(mod: ModDefinition) -> None:
             raise PluginError("source.path is missing")
         if source.files:
             raise PluginError("source.files is only for files sources")
+        
     if source.file_hashes and source.kind not in _HASHED_SOURCE_KINDS:
         raise PluginError("source.file_hashes is only for files and directory sources")
     if unlisted := sorted({path for path, _ in source.file_hashes} - set(mod.files)):
@@ -243,6 +234,7 @@ def _check_source(mod: ModDefinition) -> None:
 def _check_ini(mod: ModDefinition) -> None:
     if mod.ini_resolution and (mod.ini_file is None or mod.manual):
         raise PluginError("ini_resolution needs an ini_file and a mod that is not manual")
+    
     seen: set[tuple[str, str]] = set()
     for pair in mod.ini_resolution:
         keys = {(pair.section.casefold(), name.casefold()) for name in (pair.width, pair.height)}
@@ -262,6 +254,7 @@ def _check_backup(mod: ModDefinition) -> None:
         raise PluginError("backup_file must sit beside the mod's only file under a free name")
     if mod.backups and (mod.backup_file is not None or mod.manual):
         raise PluginError("backups cannot be combined with backup_file or a manual mod")
+    
     taken = reserved | _folded(mod_log_names(mod.files))
     targets: set[str] = set()
     for item in mod.backups:
@@ -280,12 +273,13 @@ def _check_backup(mod: ModDefinition) -> None:
 
 
 def _check_launcher(mod: ModDefinition) -> None:
-    """An offline-only mod without other backups may swap the game's launcher for one of its files."""
+    """An offline mod without other backups may swap the game's launcher for one of its files."""
     launcher = mod.launcher_replacement
     if launcher is None:
         return
     if not mod.offline_only or mod.manual or mod.backup_file is not None or mod.backups:
         raise PluginError("launcher_replacement is only for offline_only mods without backups")
+    
     reserved = _reserved_paths(mod)
     if (
         len({launcher.source, launcher.target, launcher.backup}) != 3
@@ -352,7 +346,7 @@ def _parse_mod(
     repository: SourceRepository,
     default_credits: tuple[ModCredit, ...],
 ) -> ModDefinition:
-    with errors.context(f"Mod catalog entry {_entry_label(entry, index)}"):
+    with errors.wrap(f"Mod catalog entry {_entry_label(entry, index)}"):
         mod = decode(entry, ModDefinition)
         extras = decode(entry, _EntryExtras)
         mod = replace(
@@ -373,7 +367,7 @@ def _read_catalog_document(path: Path, content: bytes | None = None) -> _Catalog
     version = document.get("schema_version") if isinstance(document, dict) else None
     if type(version) is not int or version != CATALOG_SCHEMA_VERSION:
         raise PluginError(f"Unsupported mod catalog schema version: {version}")
-    with errors.context("Mod catalog"):
+    with errors.wrap("Mod catalog"):
         return decode(document, _CatalogDocument)
 
 
@@ -396,10 +390,6 @@ def load_mod_catalog(
     repository_url: str | None = None,
     repository_ref: str | None = None,
 ) -> tuple[ModDefinition, ...]:
-    """Load a catalog file, or catalog bytes given as content (the bundled catalog by default).
-
-    The optional repository values override its source_repository.
-    """
     document = _read_catalog_document(bundled_catalog_path() if path is None else path, content)
     repository = SourceRepository(
         repository_url or document.source_repository.url,
@@ -409,6 +399,7 @@ def load_mod_catalog(
         _parse_mod(entry, index, repository, document.default_credits)
         for index, entry in enumerate(document.mods)
     )
+    
     if repeat := _first_repeat(mod.mod_id for mod in mods):
         raise PluginError(f"Duplicate mod ID in catalog: {repeat}")
     return mods

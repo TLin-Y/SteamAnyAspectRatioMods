@@ -9,17 +9,17 @@ from scanner.mod_catalog import (
     load_mod_catalog,
     read_catalog_repository,
 )
-from scanner.mod_installer import repository_file_url
+from store.mod_sources import repository_file_url
 from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
     Settings,
     utc_now,
 )
-from utils import files, text_files
+from utils import files, sizes, text_files
 from utils.network import read_url_limited
 
-MAX_CATALOG_SIZE_BYTES = 2 * 1024 * 1024
+MAX_CATALOG_SIZE_BYTES = 2 * sizes.MIB
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource
     overrides = repository_overrides(settings)
     pack_catalog = store.pack_dir / (settings.catalog_path or DEFAULT_CATALOG_PATH)
     if settings.offline_mode and pack_catalog.is_file():
-        with errors.context("Offline pack catalog is unusable"):
+        with errors.wrap("Offline pack catalog is unusable"):
             mods = load_mod_catalog(pack_catalog, **overrides)
             return CatalogSource("cache", _with_bundled_resolution_metadata(mods, settings))
     meta = store.catalog_meta()

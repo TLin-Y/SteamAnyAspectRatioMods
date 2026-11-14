@@ -9,7 +9,7 @@ from zipfile import ZipFile
 
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModSource, load_mod_catalog
-from scanner.mod_installer import apply_mod_files, set_archive_cache_dir, set_pack_dir
+from scanner.mod_installer import apply_mod_files
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
 from store.dependencies import (
@@ -18,6 +18,7 @@ from store.dependencies import (
     refresh_catalog_on_start,
     update_dependencies,
 )
+from store.mod_sources import set_archive_cache_dir, set_pack_dir
 from store.plugin_store import PluginStore, Settings, validate_settings
 from utils.network import OfflineModeError, open_url, set_offline_mode
 

@@ -29,12 +29,9 @@ from scanner.mod_installer import (
     MissingModBackupError,
     apply_mod_files,
     existing_mod_logs,
-    fetch_mod_readme,
     read_mod_ini,
     read_mod_log,
     remove_mod_files,
-    set_archive_cache_dir,
-    set_pack_dir,
     update_existing_ini_resolution,
     write_mod_ini,
 )
@@ -52,6 +49,7 @@ from store.dependencies import (
     refresh_catalog_on_start,
     update_dependencies,
 )
+from store.mod_sources import fetch_mod_readme, set_archive_cache_dir, set_pack_dir
 from store.pack import download_release_pack, install_pack, pack_operation
 from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
@@ -140,13 +138,13 @@ def _record_outcome(
     outcome = f"Mod files were {'applied' if applied else 'removed'}, but"
     complete = not conflicts
     if mod.source.kind == SourceKind.ARCHIVE and complete:
-        with errors.context(f"{outcome} the applied version could not be saved"):
+        with errors.wrap(f"{outcome} the applied version could not be saved"):
             store.set_applied_hash(game_path, mod.mod_id, (mod.source.sha256 or None) if applied else None)
     if not awaiting:
-        with errors.context(f"{outcome} the cached game status could not be cleared"):
+        with errors.wrap(f"{outcome} the cached game status could not be cleared"):
             store.clear_last_scan()
     if not applied and complete:
-        with errors.context(f"{outcome} the saved game match could not be cleared"):
+        with errors.wrap(f"{outcome} the saved game match could not be cleared"):
             store.remove_matched_game(mod.mod_id, game_path)
 
 

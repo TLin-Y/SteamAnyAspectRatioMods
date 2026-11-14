@@ -1,6 +1,6 @@
 import { ConfirmModal, DialogButton } from "@decky/ui";
 import { useState } from "react";
-import { copyToClipboard } from "../../services/modals";
+import { copyToClipboard } from "../../services/clipboard";
 import type { LaunchOptionsDisplay } from "../../services/types";
 
 export function LaunchOptionsInfoModal({

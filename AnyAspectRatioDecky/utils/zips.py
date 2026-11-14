@@ -5,7 +5,7 @@ from zipfile import BadZipFile, ZipFile, ZipInfo, is_zipfile
 
 from helper.errors import PluginError
 from helper.validator import Validator
-from utils import files, streams
+from utils import files, sizes, streams
 
 
 def is_zip(path: Path) -> bool:
@@ -32,7 +32,7 @@ def file_names(path: Path) -> list[str]:
 
 def read_file(archive: ZipFile, info: ZipInfo, max_bytes: int, description: str) -> bytes:
     if info.file_size > max_bytes:
-        raise PluginError(f"{description} exceeds the {streams.size_label(max_bytes)} limit")
+        raise PluginError(f"{description} exceeds the {sizes.label(max_bytes)} limit")
     with archive.open(info) as stream:
         return streams.read_limited(stream, max_bytes, description)
 
