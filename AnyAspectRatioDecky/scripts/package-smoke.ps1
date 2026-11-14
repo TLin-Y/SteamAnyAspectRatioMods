@@ -43,6 +43,7 @@ $requiredFiles = @(
 $runtimeFiles = @(
     "helper\__init__.py",
     "helper\build_flavor.py",
+    "helper\errors.py",
     "helper\validator.py",
     "logger\__init__.py",
     "logger\plugin_logger.py",

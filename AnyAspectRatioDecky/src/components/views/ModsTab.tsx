@@ -36,7 +36,7 @@ const subscribeActionState = (listener: () => void) => {
 
 const getActionState = () => actionState;
 
-async function runAction<T extends { error?: string; warning?: string | null }>(
+async function runAction<T extends { warning?: string | null; [key: string]: unknown }>(
   title: string,
   action: () => Promise<T>,
   doneMessage: string | ((result: T) => string),
@@ -48,7 +48,6 @@ async function runAction<T extends { error?: string; warning?: string | null }>(
   updateActionState({ busy: true, downloading, status: pendingMessage });
   try {
     const result = await action();
-    if (result.error) throw new Error(result.error);
     const message = typeof doneMessage === "function" ? doneMessage(result) : doneMessage;
     updateActionState({ status: result.warning ? `${message} ${result.warning}` : message });
     onDone();

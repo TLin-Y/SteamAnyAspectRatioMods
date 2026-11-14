@@ -13,8 +13,9 @@ for import_root in (plugin_dir, str(Path(plugin_dir) / "py_modules")):
         sys.path.remove(import_root)
     sys.path.insert(0, import_root)
 
-from helper import PLUGIN_NAME
+from helper import PLUGIN_NAME, errors
 from helper.build_flavor import SELF_UPDATE_ENABLED
+from helper.errors import PluginError
 from logger.plugin_logger import log
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import (
@@ -132,28 +133,21 @@ def _include_tracked_backup_targets(
     )
 
 
-def _error_result(error: Exception) -> dict[str, object]:
-    return {"error": str(error) or type(error).__name__}
-
-
 def _record_outcome(
     store: PluginStore, mod: ModDefinition, game_path: str, applied: bool, conflicts: list[str], awaiting: bool,
 ) -> None:
     """Persist what an apply/remove changed: applied version, cached scan and saved game match."""
-    action = "applied" if applied else "removed"
+    outcome = f"Mod files were {'applied' if applied else 'removed'}, but"
     complete = not conflicts
-    try:
-        if mod.source.kind == SourceKind.ARCHIVE and complete:
-            step = "the applied version could not be saved"
+    if mod.source.kind == SourceKind.ARCHIVE and complete:
+        with errors.context(f"{outcome} the applied version could not be saved"):
             store.set_applied_hash(game_path, mod.mod_id, (mod.source.sha256 or None) if applied else None)
-        if not awaiting:
-            step = "the cached game status could not be cleared"
+    if not awaiting:
+        with errors.context(f"{outcome} the cached game status could not be cleared"):
             store.clear_last_scan()
-        if not applied and complete:
-            step = "the saved game match could not be cleared"
+    if not applied and complete:
+        with errors.context(f"{outcome} the saved game match could not be cleared"):
             store.remove_matched_game(mod.mod_id, game_path)
-    except (OSError, ValueError) as error:
-        raise ValueError(f"Mod files were {action}, but {step}: {error}") from error
 
 
 def _is_chosen(game: SupportedGame, choices: dict[str, dict[str, str]]) -> bool:
@@ -164,21 +158,15 @@ def _is_chosen(game: SupportedGame, choices: dict[str, dict[str, str]]) -> bool:
 def _find_mod_logs(files: Sequence[str], name: str, game_path: str | None, warnings: list[str]) -> list[str]:
     if not game_path or not mod_log_names(files):
         return []
-    try:
+    with errors.collect(warnings, f"Could not check logs for {name}"):
         return existing_mod_logs(files, game_path)
-    except (OSError, ValueError) as error:
-        log.warning("Could not check mod logs for %s", name)
-        warnings.append(f"Could not check logs for {name}: {error}")
-        return []
+    return []
 
 
 def _load_applied_hashes(store: PluginStore, warnings: list[str]) -> dict[str, dict[str, str]] | None:
-    try:
+    with errors.collect(warnings, "Mod update checks are skipped"):
         return store.load_applied_hashes()
-    except ValueError as error:
-        log.warning("Could not read applied mod versions")
-        warnings.append(str(error))
-        return None
+    return None
 
 
 def _refresh_games(
@@ -237,7 +225,7 @@ class Plugin:
         report = Plugin._scan()
         mod = report.mods.get(mod_id)
         if mod is None:
-            raise ValueError("Mod is not present in the catalog")
+            raise PluginError("Mod is not present in the catalog")
         game = next(
             (
                 candidate
@@ -247,14 +235,14 @@ class Plugin:
             None,
         )
         if game is None or game.game_path is None:
-            raise ValueError("Game installation is no longer available")
+            raise PluginError("Game installation is no longer available")
         return mod, game.game_path
 
     @staticmethod
     def _get_mod_definition(mod_id: str) -> ModDefinition:
         mod = Plugin._scan().mods.get(mod_id)
         if mod is None:
-            raise ValueError("Mod is not present in the catalog")
+            raise PluginError("Mod is not present in the catalog")
         return mod
 
     @staticmethod
@@ -288,7 +276,7 @@ class Plugin:
             game.ambiguity_group == group and game.mod_id == mod_id and game.game_path == game_path
             for game in report.supported_games
         ):
-            raise ValueError("Selected game is no longer available. Scan again and retry.")
+            raise PluginError("Selected game is no longer available. Scan again and retry.")
         store = get_store()
         store.set_matched_game(group, mod_id, game_path)
         store.clear_last_scan()
@@ -303,9 +291,9 @@ class Plugin:
                 None,
             )
             if game is None or not game.match_locked:
-                raise ValueError("Saved game selection has changed. Scan again and retry.")
+                raise PluginError("Saved game selection has changed. Scan again and retry.")
             if not game.manual and game.files_present:
-                raise ValueError("Remove the mod files before changing the game selection.")
+                raise PluginError("Remove the mod files before changing the game selection.")
             store = get_store()
             store.clear_last_scan()
             store.clear_matched_game(group, mod_id, game_path)
@@ -323,21 +311,15 @@ class Plugin:
 
     async def import_offline_pack(self, archive_path: str) -> dict[str, object]:
         store = get_store()
-        try:
+        with log.on_error("Offline pack import failed"):
             result = await asyncio.to_thread(install_pack, store, store.load_settings(), Path(archive_path))
-        except (OSError, ValueError) as error:
-            log.error("Offline pack import failed", error)
-            return _error_result(error)
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
 
     async def download_offline_pack(self) -> dict[str, object]:
         store = get_store()
-        try:
+        with log.on_error("Offline pack download failed"):
             result = await asyncio.to_thread(download_release_pack, store, store.load_settings())
-        except (OSError, ValueError) as error:
-            log.error("Offline pack download failed", error)
-            return _error_result(error)
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
 
@@ -356,13 +338,9 @@ class Plugin:
 
     async def clear_local_data(self) -> dict[str, object]:
         store = get_store()
-        try:
-            with pack_operation():
-                store.clear_local_data()
-                log.clear_files()
-        except (OSError, ValueError) as error:
-            log.error("Clearing local data failed", error)
-            return _error_result(error)
+        with log.on_error("Clearing local data failed"), pack_operation():
+            store.clear_local_data()
+            log.clear_files()
         return {}
 
     async def get_settings(self) -> dict[str, object]:
@@ -406,12 +384,12 @@ class Plugin:
         ini_resolution_height: str,
     ) -> dict[str, object]:
         store = get_store()
-        try:
+        with log.on_error("Settings rejected"):
             if not all(
                 isinstance(value, str) and value.isascii() and value.isdecimal()
                 for value in (ini_resolution_width, ini_resolution_height)
             ):
-                raise ValueError("INI resolution dimensions must be whole numbers")
+                raise PluginError("INI resolution dimensions must be whole numbers")
             requested = validate_settings(
                 Settings(
                     catalog_repository_url,
@@ -422,9 +400,6 @@ class Plugin:
                     ini_resolution_height=int(ini_resolution_height),
                 )
             )
-        except ValueError:
-            log.warning("Settings rejected")
-            raise
 
         default_url, default_ref = read_catalog_repository()
 
@@ -468,8 +443,6 @@ class Plugin:
             content = log.read_tail(max(1, min(max_lines, 2000)))
         except FileNotFoundError:
             return {"content": "", "path": str(path)}
-        except OSError as error:
-            return {"error": str(error)}
         return {"content": content, "path": str(path)}
 
     async def set_offline_mode(self, enabled: bool) -> dict[str, object]:
@@ -484,15 +457,8 @@ class Plugin:
         store = get_store()
         settings = store.load_settings()
         log.info("Catalog update started")
-        try:
-            with pack_operation():
-                result = update_dependencies(store, settings)
-        except NetworkError as error:
-            log.warning("Catalog update failed: network error")
-            return {"error": str(error)}
-        except (OSError, ValueError) as error:
-            log.error("Catalog update failed", error)
-            return _error_result(error)
+        with log.on_error("Catalog update failed"), pack_operation():
+            result = update_dependencies(store, settings)
         store.clear_local_index()
         archives, warnings = self._scan_local_archives(store, settings)
         log.info(
@@ -608,7 +574,7 @@ class Plugin:
         phase = "apply" if applied else "remove"
         log.info("Mod %s started: %s", phase, mod_id)
         ini_warnings: list[str] = []
-        try:
+        with log.on_error(f"Mod {phase} failed: {mod_id}"):
             mod, path = self._resolve_mod_game(mod_id, game_path)
             store = get_store()
             settings = store.load_settings()
@@ -636,12 +602,6 @@ class Plugin:
                 awaiting = bool(conflicts) and preserve_modified_ini is None
                 copied = 0
             _record_outcome(store, mod, path, applied, conflicts, awaiting)
-        except NetworkError as error:
-            log.warning("Mod %s failed, network error: %s", phase, mod_id)
-            return {"error": str(error)}
-        except (OSError, ValueError) as error:
-            log.error(f"Mod {phase} failed: {mod_id}", error)
-            raise
 
         log.info("Mod %s completed: %s", phase, mod_id)
         result: dict[str, object] = {"applied": applied, "copied_file_count": copied, "conflicting_files": conflicts}
@@ -665,13 +625,11 @@ class Plugin:
     async def get_mod_readme(self, mod_id: str) -> dict[str, str]:
         mod = self._get_mod_definition(mod_id)
         try:
-            content = fetch_mod_readme(mod)
+            with log.on_error(f"Reading mod README failed: {mod_id}"):
+                content = fetch_mod_readme(mod)
         except NetworkError as error:
-            log.warning("Mod README download failed: %s", mod_id)
+            # Shown in place of the README, so the dialog still opens while offline.
             return {"title": mod.name, "content": f"**Could not load the ReadMe.**\n\n{error}"}
-        except (OSError, ValueError) as error:
-            log.error(f"Reading mod README failed: {mod_id}", error)
-            raise
         return {"title": mod.name, "content": content}
 
     async def save_mod_ini(self, mod_id: str, game_path: str, content: str) -> dict[str, object]:
@@ -687,31 +645,31 @@ class Plugin:
         configured = get_store().load_settings().catalog_repository_url
         return configured or read_catalog_repository()[0]
 
-    async def check_plugin_update(self) -> dict[str, object]:
+    @staticmethod
+    def _require_self_update() -> None:
         if not SELF_UPDATE_ENABLED:
-            return {"error": "Plugin updates are delivered through the Decky Plugin Store."}
+            raise PluginError("Plugin updates are delivered through the Decky Plugin Store.")
+
+    async def check_plugin_update(self) -> dict[str, object]:
+        self._require_self_update()
         installed = read_installed_version(Path(plugin_dir))
-        try:
+        with log.on_error("Plugin update check failed"):
             return await asyncio.to_thread(
                 check_for_update, self._update_repository(), installed
             )
-        except (OSError, ValueError) as error:
-            log.warning("Plugin update check failed")
-            return _error_result(error)
 
     async def install_plugin_update(self) -> dict[str, object]:
-        if not SELF_UPDATE_ENABLED:
-            return {"error": "Plugin updates are delivered through the Decky Plugin Store."}
+        self._require_self_update()
         log.info("Plugin update started")
         repository = self._update_repository()
-        try:
+        with log.on_error("Plugin update failed"):
             info = await asyncio.to_thread(
                 check_for_update, repository, read_installed_version(Path(plugin_dir))
             )
             if not info["update_available"]:
-                return {"error": "The plugin is already up to date."}
+                raise PluginError("The plugin is already up to date.")
             if not info["download_url"]:
-                raise ValueError(
+                raise PluginError(
                     f"Release {info['latest_version']} has no {PLUGIN_NAME}-<version>.zip file attached"
                 )
             result = await asyncio.to_thread(
@@ -721,9 +679,6 @@ class Plugin:
                 Path(plugin_dir),
                 Path.home() / "Downloads",
             )
-        except (OSError, ValueError) as error:
-            log.warning("Plugin update failed")
-            return _error_result(error)
         log.info("Plugin update completed")
         return result
 

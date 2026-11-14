@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile, ZipInfo, is_zipfile
 
+from helper.errors import PluginError
 from helper.validator import Validator
 from utils import files, streams
 
@@ -21,7 +22,7 @@ def open_zip(path: Path, invalid_message: str) -> Generator[ZipFile, None, None]
         with ZipFile(path) as archive:
             yield archive
     except BadZipFile as error:
-        raise ValueError(invalid_message) from error
+        raise PluginError(invalid_message) from error
 
 
 def member_names(path: Path) -> list[str]:
@@ -40,7 +41,7 @@ def member_names(path: Path) -> list[str]:
 def read_member(archive: ZipFile, info: ZipInfo, max_bytes: int, description: str) -> bytes:
     """A member's content; refuses one larger than max_bytes before or while reading."""
     if info.file_size > max_bytes:
-        raise ValueError(f"{description} exceeds the {streams.size_label(max_bytes)} limit")
+        raise PluginError(f"{description} exceeds the {streams.size_label(max_bytes)} limit")
     with archive.open(info) as stream:
         return streams.read_limited(stream, max_bytes, description)
 

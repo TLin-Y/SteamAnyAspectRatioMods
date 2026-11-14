@@ -3,6 +3,7 @@ import struct
 import zlib
 from pathlib import Path
 
+from helper.errors import PluginError
 from scanner.steam_library_scanner import InstalledApp
 from utils import text_files
 
@@ -32,7 +33,7 @@ def parse_binary_vdf(data: bytes) -> dict[str, object]:
                 result[key] = struct.unpack_from("<I", data, index)[0]
                 index += 4
             else:
-                raise ValueError(f"Unsupported binary VDF type {kind}")
+                raise PluginError(f"Unsupported binary VDF type {kind}")
 
     parsed, _ = parse_map(0)
     return parsed

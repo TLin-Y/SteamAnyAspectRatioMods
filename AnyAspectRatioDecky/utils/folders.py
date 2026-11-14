@@ -5,26 +5,27 @@ from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 
+from helper.errors import PluginError
 from helper.validator import Validator
 from utils import files
 
 
 def resolve_inside(root: Path, relative_path: str) -> Path:
     if not Validator.Paths.is_relative(relative_path):
-        raise ValueError(f"Unsafe path: {relative_path}")
+        raise PluginError(f"Unsafe path: {relative_path}")
     parts = PurePosixPath(relative_path).parts
     target = root.joinpath(*parts)
     if target.is_symlink():
-        raise ValueError(f"Path is a symbolic link: {relative_path}")
+        raise PluginError(f"Path is a symbolic link: {relative_path}")
     current = root
     for part in parts[:-1]:
         current = current / part
         if current.is_symlink():
-            raise ValueError(f"Path traverses a symbolic link: {relative_path}")
+            raise PluginError(f"Path traverses a symbolic link: {relative_path}")
     try:
         target.parent.resolve(strict=False).relative_to(root)
     except ValueError as error:
-        raise ValueError(f"Path escapes its folder: {relative_path}") from error
+        raise PluginError(f"Path escapes its folder: {relative_path}") from error
     return target
 
 

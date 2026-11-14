@@ -5,6 +5,8 @@ from functools import cache
 from types import NoneType, UnionType
 from typing import Annotated, Any, TypeVar, Union, get_args, get_origin, get_type_hints
 
+from helper.errors import PluginError
+
 T = TypeVar("T")
 Decoder = Callable[[object], Any]
 
@@ -14,7 +16,7 @@ _ABSENT = object()
 _EXACT_KEYS: set[type] = set()
 
 
-class DecodeError(ValueError):
+class DecodeError(PluginError):
     def __init__(self, problem: str) -> None:
         super().__init__(problem)
         self.problem = problem

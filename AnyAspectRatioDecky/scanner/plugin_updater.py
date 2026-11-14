@@ -5,6 +5,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 from helper import PLUGIN_NAME
+from helper.errors import PluginError
 from scanner.mod_installer import _repository_parts
 from utils import files, folders, text_files, zips
 from utils.network import download, read_url_limited
@@ -44,14 +45,14 @@ def latest_release(repository_url: str) -> tuple[str, dict[str, object], str]:
             read_url_limited(api_url, MAX_RELEASE_METADATA_BYTES, "Release information")
         )
     except ValueError as error:
-        raise ValueError("The repository returned unreadable release information") from error
+        raise PluginError("The repository returned unreadable release information") from error
     if not isinstance(release, dict):
-        raise ValueError("The repository returned unreadable release information")
+        raise PluginError("The repository returned unreadable release information")
 
     latest_text = str(release.get("tag_name") or "")
     latest = parse_version(latest_text)
     if latest is None:
-        raise ValueError(f"Latest release tag '{latest_text}' is not a version number")
+        raise PluginError(f"Latest release tag '{latest_text}' is not a version number")
     return repository, release, latest_text
 
 
@@ -60,7 +61,7 @@ def check_for_update(repository_url: str, installed_version: str) -> dict[str, o
     repository, release, latest_text = latest_release(repository_url)
     latest = parse_version(latest_text)
     if latest is None:
-        raise ValueError(f"Latest release tag '{latest_text}' is not a version number")
+        raise PluginError(f"Latest release tag '{latest_text}' is not a version number")
 
     download_prefix = f"https://github.com/{repository}/releases/download/"
     download_url = ""
@@ -93,7 +94,7 @@ def _plugin_root_in_archive(names: list[str]) -> str:
     ]
     roots = ["" if root == "." else root for root in roots if root.count("/") == 0]
     if len(roots) != 1:
-        raise ValueError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
+        raise PluginError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
     return roots[0]
 
 
@@ -103,11 +104,11 @@ def _extract_plugin_zip(archive: Path, plugin_dir: Path) -> str:
         root = _plugin_root_in_archive([info.filename for info in members])
         prefix = f"{root}/" if root else ""
         if sum(info.file_size for info in members) > MAX_PLUGIN_UNPACKED_BYTES:
-            raise ValueError("The plugin zip is larger than expected")
+            raise PluginError("The plugin zip is larger than expected")
         manifest_info = zip_file.getinfo(f"{prefix}plugin.json")
         manifest = json.loads(zips.read_member(zip_file, manifest_info, MAX_RELEASE_METADATA_BYTES, "plugin.json"))
         if manifest.get("name") != PLUGIN_NAME:
-            raise ValueError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
+            raise PluginError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
 
         plugin_root = plugin_dir.resolve()
         try:
@@ -117,7 +118,7 @@ def _extract_plugin_zip(archive: Path, plugin_dir: Path) -> str:
                 if info.filename.startswith(prefix)
             ]
         except ValueError as error:
-            raise ValueError("The plugin zip contains an unsafe path") from error
+            raise PluginError("The plugin zip contains an unsafe path") from error
         for info, target in planned:
             zips.extract_member(zip_file, info, target, MAX_PLUGIN_UNPACKED_BYTES, "Plugin file")
         return str(manifest.get("version") or "")
@@ -150,7 +151,7 @@ def install_update(
     """
     repository = _repository_parts(repository_url)
     if not download_url.startswith(f"https://github.com/{repository}/releases/download/"):
-        raise ValueError("The update must come from the configured repository's releases")
+        raise PluginError("The update must come from the configured repository's releases")
 
     with folders.temporary() as scratch:
         archive = scratch / Path(urlparse(download_url).path).name

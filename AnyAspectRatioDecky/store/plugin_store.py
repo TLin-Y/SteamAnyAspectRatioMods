@@ -3,6 +3,8 @@ from dataclasses import asdict, dataclass, fields, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+from helper import errors
+from helper.errors import PluginError
 from helper.validator import Validator
 from utils import folders, text_files
 
@@ -32,30 +34,30 @@ def validate_settings(settings: Settings) -> Settings:
         ("INI resolution height", settings.ini_resolution_height),
     ):
         if not Validator.Settings.resolution(dimension):
-            raise ValueError(f"{label} must be an integer between 1 and {Validator.Settings.MAX_RESOLUTION}")
+            raise PluginError(f"{label} must be an integer between 1 and {Validator.Settings.MAX_RESOLUTION}")
 
     url = settings.catalog_repository_url.strip().rstrip("/")
     if url.endswith(".git"):
         url = url[: -len(".git")]
     if url and not Validator.GitHub.repository(url):
-        raise ValueError("Repository must look like https://github.com/<owner>/<repo>")
+        raise PluginError("Repository must look like https://github.com/<owner>/<repo>")
 
     ref = settings.catalog_ref.strip()
     if ref and not Validator.GitHub.ref(ref):
-        raise ValueError("Branch, tag, or commit contains unsupported characters")
+        raise PluginError("Branch, tag, or commit contains unsupported characters")
 
     catalog_path = settings.catalog_path.strip().strip("/")
     if catalog_path and (
         not Validator.Paths.is_relative(catalog_path) or not Validator.Files.has_extension(catalog_path, ".json")
     ):
-        raise ValueError("Catalog path must be a relative path to a .json file")
+        raise PluginError("Catalog path must be a relative path to a .json file")
 
     local_dir = settings.local_archive_dir.strip()
     if local_dir:
         if "\0" in local_dir or not os.path.isabs(local_dir):
-            raise ValueError("Local mod folder must be an absolute path")
+            raise PluginError("Local mod folder must be an absolute path")
         if not Path(local_dir).is_dir():
-            raise ValueError("Local mod folder does not exist")
+            raise PluginError("Local mod folder does not exist")
         local_dir = str(Path(local_dir))
     return replace(
         settings,
@@ -118,12 +120,10 @@ class PluginStore:
         text_files.write_json_atomic(self.settings_path, asdict(settings))
 
     def load_applied_hashes(self) -> dict[str, dict[str, str]]:
-        try:
-            document = text_files.load_json(self.applied_hashes_path)
-        except FileNotFoundError:
+        if not self.applied_hashes_path.exists():
             return {}
-        except (OSError, ValueError) as error:
-            raise ValueError(f"Unable to read applied mod hashes: {error}") from error
+        with errors.context("Unable to read applied mod hashes"):
+            document = text_files.load_json(self.applied_hashes_path)
         if not isinstance(document, dict) or not all(
             isinstance(path, str)
             and isinstance(mods, dict)
@@ -135,14 +135,14 @@ class PluginStore:
             )
             for path, mods in document.items()
         ):
-            raise ValueError("Applied mod hashes are invalid")
+            raise PluginError("Applied mod hashes are invalid")
         return document
 
     def set_applied_hash(self, game_path: str, mod_id: str, digest: str | None) -> None:
         hashes = self.load_applied_hashes()
         if digest is not None:
             if not Validator.Hash.sha256(digest):
-                raise ValueError("Invalid applied mod SHA-256")
+                raise PluginError("Invalid applied mod SHA-256")
             hashes.setdefault(game_path, {})[mod_id] = digest
         elif game_path in hashes:
             hashes[game_path].pop(mod_id, None)
@@ -153,12 +153,10 @@ class PluginStore:
         text_files.write_json_atomic(self.applied_hashes_path, hashes)
 
     def load_matched_games(self) -> dict[str, dict[str, str]]:
-        try:
-            document = text_files.load_json(self.matched_games_path)
-        except FileNotFoundError:
+        if not self.matched_games_path.exists():
             return {}
-        except (OSError, ValueError) as error:
-            raise ValueError(f"Unable to read matched games: {error}") from error
+        with errors.context("Unable to read matched games"):
+            document = text_files.load_json(self.matched_games_path)
         if not isinstance(document, dict) or not all(
             isinstance(group, str)
             and isinstance(choice, dict)
@@ -166,7 +164,7 @@ class PluginStore:
             and isinstance(choice.get("game_path"), str)
             for group, choice in document.items()
         ):
-            raise ValueError("Matched games are invalid")
+            raise PluginError("Matched games are invalid")
         return document
 
     def set_matched_game(self, group: str, mod_id: str, game_path: str) -> None:
@@ -187,7 +185,7 @@ class PluginStore:
         choices = self.load_matched_games()
         choice = choices.get(group)
         if not choice or choice["mod_id"] != mod_id or choice["game_path"] != game_path:
-            raise ValueError("Saved game selection has changed. Scan again and retry.")
+            raise PluginError("Saved game selection has changed. Scan again and retry.")
         del choices[group]
         text_files.write_json_atomic(self.matched_games_path, choices)
 
