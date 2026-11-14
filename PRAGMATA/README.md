@@ -8,7 +8,7 @@
 
 Extract the ZIP into the game folder, beside `PRAGMATA.exe`.
 
-## 2. Options: SteamOS / Proton / Winlator / macOS
+## 2. Optional: SteamOS / Proton / Winlator / macOS
 
 Launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`
 

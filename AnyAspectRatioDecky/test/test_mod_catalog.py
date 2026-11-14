@@ -228,6 +228,27 @@ class ModCatalogTests(unittest.TestCase):
             self.assertEqual(800, config.getint("Resolution", "Height"))
             self.assertTrue(config.getboolean("Resolution", "PreserveHUDAspect"))
 
+    def test_apollo_justice_release_paths_and_defaults(self) -> None:
+        import configparser
+
+        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "apollo-justice-ace-attorney-trilogy")
+        self.assertEqual("2187220", mod.steam_app_id)
+        self.assertEqual("Apollo Justice Ace Attorney Trilogy", mod.install_dir)
+        self.assertEqual("GS456.exe", mod.executable)
+        self.assertEqual(("dinput8=n,b",), mod.wine_dll_overrides)
+        root = Path(__file__).resolve().parents[2]
+        with ZipFile(root / mod.source.path) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(set(mod.files) | {"README.md", "LICENSE-Ultimate-ASI-Loader.txt"},
+                             set(archive.namelist()))
+            self.assertEqual((root / "Apollo Justice Ace Attorney Trilogy/README.md").read_bytes(),
+                             archive.read("README.md"))
+            config = configparser.ConfigParser()
+            config.read_string(archive.read(mod.ini_file).decode("utf-8-sig"))
+            self.assertEqual(1280, config.getint("Window", "Width"))
+            self.assertEqual(800, config.getint("Window", "Height"))
+            self.assertEqual(1280, config.getint("Scene", "BackgroundHeight"))
+
     def test_pwaat_release_paths_and_defaults(self) -> None:
         import configparser
 
@@ -297,7 +318,7 @@ class ModCatalogTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         mods = load_mod_catalog()
         configured = [mod for mod in mods if mod.ini_resolution]
-        self.assertEqual(64, len(configured))
+        self.assertEqual(65, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
                 if mod.source.kind == MOD_SOURCE_ARCHIVE:
@@ -398,7 +419,7 @@ class ModCatalogTests(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
             authors = summarize_credits(load_mod_catalog(path))
             self.assertEqual(["TLin-Y", "Other"], [author["name"] for author in authors])
-            self.assertEqual([37, 1], [author["mod_count"] for author in authors])
+            self.assertEqual([38, 1], [author["mod_count"] for author in authors])
 
             document["mods"][0]["credits"] = [{"name": "Bad", "url": "http://x"}]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -413,7 +434,7 @@ class ModCatalogTests(unittest.TestCase):
                 load_mod_catalog(path)
 
         everyone = {a["name"]: a for a in summarize_credits(load_mod_catalog())}
-        self.assertEqual(("", 39), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
+        self.assertEqual(("", 40), (everyone["TLin-Y"]["url"], everyone["TLin-Y"]["mod_count"]))
         self.assertEqual(["Mod list", "Ko-fi"], [link["label"] for link in everyone["TLin-Y"]["support"]])
         self.assertEqual(
             ["Patreon", "Ko-fi"], [link["label"] for link in everyone["Lyall"]["support"]]
@@ -424,11 +445,11 @@ class ModCatalogTests(unittest.TestCase):
         mod = next(mod for mod in catalog if mod.steam_app_id == "3841510")
         repository_root = Path(__file__).resolve().parents[2]
 
-        self.assertEqual(39, len(catalog))
+        self.assertEqual(40, len(catalog))
         self.assertEqual("DW3CE_RE", mod.install_dir)
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
-            36,
+            37,
             sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
         )
         self.assertEqual(
