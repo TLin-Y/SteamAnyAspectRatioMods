@@ -764,4 +764,11 @@ class Plugin:
         log.info("Startup catalog refresh completed (changed: %s)", changed)
 
     async def _unload(self) -> None:
+        if task := getattr(self, "_startup_refresh", None):
+            task.cancel()
         log.info("Plugin stopped")
+
+    async def _uninstall(self) -> None:
+        """Free the disk space of downloaded zips and caches; settings, logs and applied fixes stay."""
+        get_store().clear_local_data()
+        log.info("Plugin uninstalled, local caches deleted")
