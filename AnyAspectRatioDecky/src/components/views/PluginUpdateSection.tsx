@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ButtonItem, ConfirmModal, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
-import { checkForPluginUpdate, installPluginUpdateRequest, PLUGIN_VERSION } from "../../services/callables";
+import { checkForPluginUpdate, installPluginUpdateRequest, PLUGIN_NAME, PLUGIN_VERSION } from "../../services/callables";
 import { errorText } from "../../services/formatters";
 import { showErrorModal } from "../../services/modals";
 import type { PluginUpdateInfo } from "../../services/types";
@@ -45,7 +45,7 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
       if (result.error) throw new Error(result.error);
       setUpdate(result);
       setStatus(
-        !result.update_available ? `AnyAspectRatio ${PLUGIN_VERSION} is up to date.`
+        !result.update_available ? `${PLUGIN_NAME} ${PLUGIN_VERSION} is up to date.`
           : !result.download_url ? `Version ${result.latest_version} exists but has no plugin zip attached yet.`
           : `Version ${result.latest_version} is available.`,
       );
@@ -83,7 +83,7 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
   const confirmInstall = () => showModal(
     <ConfirmModal
       strTitle={`Update to ${update?.latest_version}?`}
-      strDescription={`Downloads AnyAspectRatio ${update?.latest_version} from ${repositoryLabel} and replaces the installed plugin files. Your settings and applied mods are kept.`}
+      strDescription={`Downloads ${PLUGIN_NAME} ${update?.latest_version} from ${repositoryLabel} and replaces the installed plugin files. Your settings and applied mods are kept.`}
       strOKButtonText="Update"
       onOK={install}
     />,

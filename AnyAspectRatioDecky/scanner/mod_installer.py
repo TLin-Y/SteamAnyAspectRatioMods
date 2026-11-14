@@ -6,7 +6,7 @@ import socket
 import ssl
 import stat
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import ExitStack, contextmanager
 from http.client import IncompleteRead
 from pathlib import Path, PurePosixPath
@@ -16,6 +16,7 @@ from urllib.request import urlopen
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
 from scanner.mod_catalog import IniResolutionPair, ModDefinition, ModSource
+from utils.text_files import BOM_TEXT_ENCODING, TEXT_ENCODING, read_text_tail
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
 MAX_MOD_DOWNLOAD_SIZE_BYTES = 256 * 1024 * 1024
@@ -231,7 +232,7 @@ def _drop_stale_cache(cached_path: Path) -> None:
 
 
 @contextmanager
-def _open_archive(source: ModSource) -> Iterator[Path]:
+def _open_archive(source: ModSource) -> Generator[Path, None, None]:
     """Yield a local path to the mod archive.
 
     A pack archive whose checksum matches the catalog is the newest version, so it is used
@@ -272,7 +273,7 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
 
 
 @contextmanager
-def _open_downloaded_archive(source: ModSource) -> Iterator[Path]:
+def _open_downloaded_archive(source: ModSource) -> Generator[Path, None, None]:
     """Yield the downloaded (or cached) archive, verified against the catalog checksum."""
     archive_url = repository_file_url(
         source.repository_url,
@@ -351,7 +352,7 @@ def _read_local_archive_readme(mod: ModDefinition) -> str:
                     and name.startswith("readme")
                     and info.file_size <= MAX_README_SIZE_BYTES
                 ):
-                    return archive.read(info).decode("utf-8-sig", errors="replace")
+                    return archive.read(info).decode(BOM_TEXT_ENCODING, errors="replace")
     except (BadZipFile, OSError) as error:
         raise ValueError("Local mod archive is unavailable") from error
     return (
@@ -367,7 +368,7 @@ def fetch_mod_readme(mod: ModDefinition) -> str:
     with open_repository_file(mod.source, mod_readme_path(mod)) as stream:
         content = _read_limited(stream, MAX_README_SIZE_BYTES, "Mod README")
     try:
-        return content.decode("utf-8-sig")
+        return content.decode(BOM_TEXT_ENCODING)
     except UnicodeDecodeError as error:
         raise ValueError("Mod README is not valid UTF-8 text") from error
 
@@ -715,7 +716,7 @@ def read_mod_ini(mod: ModDefinition, game_path: str) -> tuple[str, bool]:
     if len(content) > MAX_INI_SIZE_BYTES:
         raise ValueError("Mod INI file exceeds the 256 KiB editor limit")
     try:
-        return content.decode("utf-8"), True
+        return content.decode(TEXT_ENCODING), True
     except UnicodeDecodeError as error:
         raise ValueError("Mod INI file is not valid UTF-8 text") from error
 
@@ -740,12 +741,7 @@ def read_mod_log(mod: ModDefinition, game_path: str, name: str) -> tuple[str, bo
     path = _target_path(root, name)
     if not path.is_file():
         raise ValueError("Mod log is no longer available")
-    with path.open("rb") as stream:
-        stream.seek(0, os.SEEK_END)
-        size = stream.tell()
-        stream.seek(max(0, size - MAX_MOD_LOG_SIZE_BYTES))
-        content = stream.read(MAX_MOD_LOG_SIZE_BYTES)
-    return content.decode("utf-8", errors="replace"), size > MAX_MOD_LOG_SIZE_BYTES
+    return read_text_tail(path, MAX_MOD_LOG_SIZE_BYTES)
 
 
 def _rewrite_ini_resolution(
@@ -842,7 +838,7 @@ def write_mod_ini(
     if not isinstance(content, str):
         raise ValueError("Mod INI content must be text")
 
-    encoded_content = content.encode("utf-8")
+    encoded_content = content.encode(TEXT_ENCODING)
     if len(encoded_content) > MAX_INI_SIZE_BYTES:
         raise ValueError("Mod INI content exceeds the 256 KiB editor limit")
 
@@ -890,12 +886,12 @@ def update_existing_ini_resolution(
     content, exists = read_mod_ini(mod, game_path)
     if not exists:
         raise ValueError("Mod INI no longer exists")
-    original = content.encode("utf-8")
+    original = content.encode(TEXT_ENCODING)
     adjusted = _rewrite_ini_resolution(original, width, height, mod.ini_resolution)
     if adjusted == original:
         return False, True
     return True, write_mod_ini(
-        mod, game_path, adjusted.decode("utf-8"), expected_content=original
+        mod, game_path, adjusted.decode(TEXT_ENCODING), expected_content=original
     )
 
 

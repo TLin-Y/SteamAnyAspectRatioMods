@@ -1,13 +1,12 @@
-import json
 import os
 import re
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from zipfile import BadZipFile, ZipFile
 
 from scanner.mod_catalog import UNSAFE_PATH_CHARACTERS, ModDefinition, ModSource
 from scanner.steam_library_scanner import InstalledApp
+from utils.text_files import load_json, write_json_atomic
 
 MAX_LOCAL_ARCHIVES = 500
 MAX_LOCAL_ARCHIVE_FILES = 5000
@@ -98,7 +97,7 @@ def _load_index(index_path: Path | None, directory: Path) -> dict[str, dict]:
     if index_path is None:
         return {}
     try:
-        document = json.loads(index_path.read_text(encoding="utf-8"))
+        document = load_json(index_path)
     except (OSError, ValueError):
         return {}
     if (
@@ -112,18 +111,11 @@ def _load_index(index_path: Path | None, directory: Path) -> dict[str, dict]:
 
 
 def _save_index(index_path: Path, directory: Path, archives: dict[str, dict]) -> None:
-    index_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(dir=index_path.parent, suffix=".tmp")
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-            json.dump(
-                {"version": INDEX_VERSION, "directory": str(directory), "archives": archives},
-                stream,
-            )
-        os.replace(temporary_name, index_path)
-    except BaseException:
-        Path(temporary_name).unlink(missing_ok=True)
-        raise
+    write_json_atomic(
+        index_path,
+        {"version": INDEX_VERSION, "directory": str(directory), "archives": archives},
+        indent=None,
+    )
 
 
 def scan_local_archives(

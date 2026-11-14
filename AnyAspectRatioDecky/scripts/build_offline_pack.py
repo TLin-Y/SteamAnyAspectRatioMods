@@ -24,7 +24,7 @@ import verify_catalog_steam  # noqa: E402
 from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
 
 from scanner.mod_catalog import load_mod_catalog  # noqa: E402
-from store.pack import _wanted_paths  # noqa: E402
+from store.pack import OFFLINE_PACK_NAME, _wanted_paths  # noqa: E402
 from store.plugin_store import DEFAULT_CATALOG_PATH  # noqa: E402
 
 
@@ -69,7 +69,7 @@ def main() -> None:
     mods = load_mod_catalog(PLUGIN_ROOT / "catalog.json")
     required, optional = _wanted_paths(mods)
 
-    root = f"AnyAspectRatio-Offline-Mods-{version}"
+    root = f"{OFFLINE_PACK_NAME}-{version}"
     output_dir = PLUGIN_ROOT / "out"
     output_dir.mkdir(exist_ok=True)
     catalog = REPOSITORY_ROOT / DEFAULT_CATALOG_PATH
