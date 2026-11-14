@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from helper.validator import Charset, Validator
-from scanner.mod_catalog import ModDefinition, ModSource
+from scanner.mod_catalog import ModDefinition, ModSource, SourceKind
 from scanner.steam_library_scanner import InstalledApp
 from utils import folders, text_files, zips
 
@@ -224,7 +224,7 @@ def build_local_mods(
             install_dir=app.install_dir,
             executable="",
             source=ModSource(
-                kind="local_archive",
+                kind=SourceKind.LOCAL_ARCHIVE,
                 path=archive.path,
                 destination=destination,
                 files=(),

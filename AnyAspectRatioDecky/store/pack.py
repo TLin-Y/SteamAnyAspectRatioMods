@@ -5,7 +5,7 @@ from functools import wraps
 from pathlib import Path
 
 from helper import PLUGIN_NAME
-from scanner.mod_catalog import ModDefinition, load_mod_catalog
+from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
 from scanner.mod_installer import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from scanner.plugin_updater import latest_release
 from store.dependencies import (
@@ -51,9 +51,9 @@ def _wanted_paths(mods: tuple[ModDefinition, ...]) -> tuple[set[str], set[str]]:
     optional: set[str] = set()
     for mod in mods:
         source = mod.source
-        if source.kind == "files":
+        if source.kind == SourceKind.FILES:
             required.update(item.path for item in source.files)
-        elif source.kind == "directory":
+        elif source.kind == SourceKind.DIRECTORY:
             required.update(f"{source.path}/{path}" for path in mod.files)
         elif source.path is not None:
             required.add(source.path)

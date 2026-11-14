@@ -64,6 +64,7 @@ $runtimeFiles = @(
     "utils\text_files.py",
     "utils\files.py",
     "utils\folders.py",
+    "utils\json_codec.py",
     "utils\network.py",
     "utils\zips.py"
 )

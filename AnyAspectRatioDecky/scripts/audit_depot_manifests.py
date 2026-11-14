@@ -5,7 +5,7 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +49,7 @@ def manifest_executables(path: Path) -> list[str]:
 def fetch_app(app_id: str, username: str | None) -> dict:
     app_dir = DOWNLOAD_ROOT / "manifests" / app_id
     app_dir.mkdir(parents=True, exist_ok=True)
-    run_dir = app_dir / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    run_dir = app_dir / datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
     run_dir.mkdir()
     command = [str(DOWNLOADER), "-app", app_id, "-os", "windows", "-manifest-only",
                "-dir", str(run_dir)]
