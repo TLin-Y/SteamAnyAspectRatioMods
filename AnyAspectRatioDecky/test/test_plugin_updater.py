@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from helper import PLUGIN_NAME
 from scanner import plugin_updater
 
 REPO = "https://github.com/TLin-Y/SteamAnyAspectRatioMods"
@@ -39,6 +40,20 @@ class _Response(io.BytesIO):
 
 
 class PluginUpdaterTests(unittest.TestCase):
+    def test_plugin_name_matches_manifest_and_frontend(self):
+        plugin_root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((plugin_root / "plugin.json").read_text(encoding="utf-8"))
+        callables = (plugin_root / "src" / "services" / "callables.ts").read_text(encoding="utf-8")
+        self.assertEqual(PLUGIN_NAME, manifest["name"])
+        self.assertIn(f'export const PLUGIN_NAME = "{PLUGIN_NAME}";', callables)
+
+    def test_installed_version_reads_plugin_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plugin_dir = Path(directory)
+            self.assertEqual("", plugin_updater.read_installed_version(plugin_dir))
+            (plugin_dir / "plugin.json").write_text(json.dumps({"version": "1.9.0"}), encoding="utf-8")
+            self.assertEqual("1.9.0", plugin_updater.read_installed_version(plugin_dir))
+
     def test_version_comparison_ignores_trailing_zeroes_and_prefix(self):
         self.assertEqual(plugin_updater.parse_version("v1.4.0"), (1, 4))
         self.assertGreater(plugin_updater.parse_version("1.10"), plugin_updater.parse_version("1.9.9"))

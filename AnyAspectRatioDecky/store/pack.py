@@ -8,6 +8,7 @@ from functools import wraps
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile, ZipInfo, is_zipfile
 
+from helper import PLUGIN_NAME
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
 from scanner.mod_installer import (
     MAX_MOD_FILE_SIZE_BYTES,
@@ -27,8 +28,9 @@ from store.plugin_store import DEFAULT_CATALOG_PATH, PluginStore, Settings
 
 MAX_PACK_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
 MAX_PACK_DOWNLOAD_BYTES = MAX_PACK_TOTAL_BYTES + 64 * 1024 * 1024
+OFFLINE_PACK_NAME = f"{PLUGIN_NAME}-Offline-Mods"
 OFFLINE_PACK_PART_PATTERN = re.compile(
-    r"AnyAspectRatio-Offline-Mods-(?P<version>.+)-part(?P<index>\d+)-of-(?P<count>\d+)\.zip"
+    re.escape(OFFLINE_PACK_NAME) + r"-(?P<version>.+)-part(?P<index>\d+)-of-(?P<count>\d+)\.zip"
 )
 _pack_lock = threading.RLock()
 
@@ -71,7 +73,7 @@ def _release_pack_assets(
     repository: str, release: dict[str, object], tag: str
 ) -> list[tuple[str, str]]:
     version = tag.removeprefix("v")
-    base_name = f"AnyAspectRatio-Offline-Mods-{version}"
+    base_name = f"{OFFLINE_PACK_NAME}-{version}"
     expected_url = f"https://github.com/{repository}/releases/download/{tag}"
     assets = release.get("assets")
     if not isinstance(assets, list):
@@ -128,7 +130,7 @@ def _resolve_pack_paths(archive_path: Path | tuple[Path, ...]) -> tuple[Path, ..
             version, count = match["version"], int(match["count"])
             if count < 2 or int(match["index"]) > count:
                 raise ValueError("The selected offline pack part has an invalid filename.")
-            prefix = f"AnyAspectRatio-Offline-Mods-{version}-part"
+            prefix = f"{OFFLINE_PACK_NAME}-{version}-part"
             candidates = [
                 candidate
                 for candidate in archive_path.parent.iterdir()

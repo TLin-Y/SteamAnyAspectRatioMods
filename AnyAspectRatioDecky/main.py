@@ -1,9 +1,7 @@
 import asyncio
 import sys
-from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from collections.abc import Sequence
 from dataclasses import asdict, replace
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import decky
@@ -15,8 +13,9 @@ for import_root in (plugin_dir, str(Path(plugin_dir) / "py_modules")):
         sys.path.remove(import_root)
     sys.path.insert(0, import_root)
 
+from helper import PLUGIN_NAME
 from helper.build_flavor import SELF_UPDATE_ENABLED
-from logger.plugin_logger import attach_file_handler, clear_file_handler_logs
+from logger.plugin_logger import log
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import (
     ModDefinition,
@@ -40,7 +39,6 @@ from scanner.mod_installer import (
     write_mod_ini,
 )
 from scanner.plugin_updater import (
-    PLUGIN_NAME,
     check_for_update,
     install_update,
     read_installed_version,
@@ -62,26 +60,25 @@ from store.plugin_store import (
     validate_settings,
 )
 
-log = decky.logger
+log.bind(decky.logger)
 _store: PluginStore | None = None
-_file_handler: RotatingFileHandler | None = None
 
 
 def get_store() -> PluginStore:
     """Open the persistent data directory once and wire the cache and file log to it."""
-    global _store, _file_handler
+    global _store
     if _store is None:
         data_dir = (
             getattr(decky, "DECKY_PLUGIN_RUNTIME_DIR", None)
             or getattr(decky, "DECKY_PLUGIN_SETTINGS_DIR", None)
-            or Path.home() / ".local" / "share" / "AnyAspectRatio"
+            or Path.home() / ".local" / "share" / PLUGIN_NAME
         )
         store = PluginStore(Path(data_dir))
         store.ensure_directories()
         set_archive_cache_dir(store.archive_cache_dir)
         set_pack_dir(store.pack_dir)
         block_network(store.load_settings().offline_mode)
-        _file_handler = attach_file_handler(decky.logger, store.log_path)
+        log.attach_file(store.log_path)
         _store = store
     return _store
 
@@ -135,18 +132,8 @@ def _include_tracked_backup_targets(
     )
 
 
-@contextmanager
-def _logged_failure(message: str, *args: object) -> Iterator[None]:
-    """Log file-system and validation errors with a traceback, then let them reach the UI."""
-    try:
-        yield
-    except (OSError, ValueError):
-        log.exception(message, *args)
-        raise
-
-
 def _error_result(error: Exception) -> dict[str, object]:
-    return _error_result(error)
+    return {"error": str(error) or type(error).__name__}
 
 
 def _record_outcome(
@@ -308,7 +295,7 @@ class Plugin:
         return {"selected": True}
 
     async def clear_matched_game(self, group: str, mod_id: str, game_path: str) -> dict[str, object]:
-        with _logged_failure("Clearing the game selection failed: %s", mod_id):
+        with log.on_error(f"Clearing the game selection failed: {mod_id}"):
             report = self._scan()
             game = next(
                 (game for game in report.supported_games
@@ -339,7 +326,7 @@ class Plugin:
         try:
             result = await asyncio.to_thread(install_pack, store, store.load_settings(), Path(archive_path))
         except (OSError, ValueError) as error:
-            log.exception("Offline pack import failed")
+            log.error("Offline pack import failed", error)
             return _error_result(error)
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
@@ -349,7 +336,7 @@ class Plugin:
         try:
             result = await asyncio.to_thread(download_release_pack, store, store.load_settings())
         except (OSError, ValueError) as error:
-            log.exception("Offline pack download failed")
+            log.error("Offline pack download failed", error)
             return _error_result(error)
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
@@ -372,11 +359,9 @@ class Plugin:
         try:
             with pack_operation():
                 store.clear_local_data()
-                if _file_handler is None:
-                    raise ValueError("Plugin log handler is unavailable.")
-                clear_file_handler_logs(_file_handler)
+                log.clear_files()
         except (OSError, ValueError) as error:
-            log.exception("Clearing local data failed")
+            log.error("Clearing local data failed", error)
             return _error_result(error)
         return {}
 
@@ -480,12 +465,12 @@ class Plugin:
     async def get_log(self, max_lines: int = 300) -> dict[str, object]:
         path = get_store().log_path
         try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+            content = log.read_tail(max(1, min(max_lines, 2000)))
         except FileNotFoundError:
             return {"content": "", "path": str(path)}
         except OSError as error:
             return {"error": str(error)}
-        return {"content": "\n".join(lines[-max(1, min(max_lines, 2000)):]), "path": str(path)}
+        return {"content": content, "path": str(path)}
 
     async def set_offline_mode(self, enabled: bool) -> dict[str, object]:
         store = get_store()
@@ -506,7 +491,7 @@ class Plugin:
             log.warning("Catalog update failed: network error")
             return {"error": str(error)}
         except (OSError, ValueError) as error:
-            log.exception("Catalog update failed")
+            log.error("Catalog update failed", error)
             return _error_result(error)
         store.local_index_path.unlink(missing_ok=True)
         archives, warnings = self._scan_local_archives(store, settings)
@@ -518,7 +503,7 @@ class Plugin:
 
     async def scan_supported_games(self) -> dict[str, object]:
         log.info("Scan started")
-        with _logged_failure("Scan failed"):
+        with log.on_error("Scan failed"):
             report = self._scan()
         for warning in report.warnings:
             if warning.startswith("Steam library is unavailable:"):
@@ -538,7 +523,7 @@ class Plugin:
 
     async def update_current_resolution(self) -> dict[str, object]:
         log.info("Resolution update started")
-        with _logged_failure("Resolution update failed"):
+        with log.on_error("Resolution update failed"):
             report = self._scan()
             settings = get_store().load_settings()
 
@@ -580,7 +565,7 @@ class Plugin:
                     mod, game.game_path, settings.ini_resolution_width, settings.ini_resolution_height
                 )
             except (OSError, ValueError) as error:
-                log.exception("Resolution update failed: %s", mod.mod_id)
+                log.error(f"Resolution update failed: {mod.mod_id}", error)
                 failures.append(f"{game.app_name}: {error}")
                 continue
             if changed:
@@ -654,8 +639,8 @@ class Plugin:
         except NetworkError as error:
             log.warning("Mod %s failed, network error: %s", phase, mod_id)
             return {"error": str(error)}
-        except (OSError, ValueError):
-            log.exception("Mod %s failed: %s", phase, mod_id)
+        except (OSError, ValueError) as error:
+            log.error(f"Mod {phase} failed: {mod_id}", error)
             raise
 
         log.info("Mod %s completed: %s", phase, mod_id)
@@ -666,13 +651,13 @@ class Plugin:
         return result
 
     async def get_mod_ini(self, mod_id: str, game_path: str) -> dict[str, object]:
-        with _logged_failure("Reading mod INI failed: %s", mod_id):
+        with log.on_error(f"Reading mod INI failed: {mod_id}"):
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
             content, exists = read_mod_ini(mod, installed_game_path)
         return {"ini_file": mod.ini_file, "content": content, "exists": exists}
 
     async def get_mod_log(self, mod_id: str, game_path: str, name: str) -> dict[str, object]:
-        with _logged_failure("Reading mod log failed: %s", mod_id):
+        with log.on_error(f"Reading mod log failed: {mod_id}"):
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
             content, truncated = read_mod_log(mod, installed_game_path, name)
         return {"name": name, "content": content, "truncated": truncated}
@@ -684,13 +669,13 @@ class Plugin:
         except NetworkError as error:
             log.warning("Mod README download failed: %s", mod_id)
             return {"title": mod.name, "content": f"**Could not load the ReadMe.**\n\n{error}"}
-        except (OSError, ValueError):
-            log.exception("Reading mod README failed: %s", mod_id)
+        except (OSError, ValueError) as error:
+            log.error(f"Reading mod README failed: {mod_id}", error)
             raise
         return {"title": mod.name, "content": content}
 
     async def save_mod_ini(self, mod_id: str, game_path: str, content: str) -> dict[str, object]:
-        with _logged_failure("Saving mod INI failed: %s", mod_id):
+        with log.on_error(f"Saving mod INI failed: {mod_id}"):
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
             permissions_preserved = write_mod_ini(mod, installed_game_path, content)
         if not permissions_preserved:
@@ -772,3 +757,4 @@ class Plugin:
         """Free the disk space of downloaded zips and caches; settings, logs and applied fixes stay."""
         get_store().clear_local_data()
         log.info("Plugin uninstalled, local caches deleted")
+        log.close()

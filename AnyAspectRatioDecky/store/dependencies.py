@@ -16,8 +16,8 @@ from store.plugin_store import (
     PluginStore,
     Settings,
     utc_now,
-    write_json_atomic,
 )
+from utils.text_files import write_json_atomic
 
 MAX_CATALOG_SIZE_BYTES = 2 * 1024 * 1024
 

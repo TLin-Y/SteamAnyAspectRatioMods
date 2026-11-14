@@ -1,12 +1,12 @@
-import json
 import os
 import re
 import shutil
-import tempfile
 from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
+
+from utils.text_files import load_json, write_json_atomic
 
 DEFAULT_CATALOG_PATH = "AnyAspectRatioDecky/catalog.json"
 REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}\Z")
@@ -83,21 +83,9 @@ def validate_settings(settings: Settings) -> Settings:
     )
 
 
-def write_json_atomic(path: Path, document: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-            json.dump(document, stream, indent=2)
-        os.replace(temporary_name, path)
-    except BaseException:
-        Path(temporary_name).unlink(missing_ok=True)
-        raise
-
-
 def read_json(path: Path) -> object | None:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return load_json(path)
     except (OSError, ValueError):
         return None
 
@@ -148,7 +136,7 @@ class PluginStore:
 
     def load_applied_hashes(self) -> dict[str, dict[str, str]]:
         try:
-            document = json.loads(self.applied_hashes_path.read_text(encoding="utf-8"))
+            document = load_json(self.applied_hashes_path)
         except FileNotFoundError:
             return {}
         except (OSError, ValueError) as error:
@@ -183,7 +171,7 @@ class PluginStore:
 
     def load_matched_games(self) -> dict[str, dict[str, str]]:
         try:
-            document = json.loads(self.matched_games_path.read_text(encoding="utf-8"))
+            document = load_json(self.matched_games_path)
         except FileNotFoundError:
             return {}
         except (OSError, ValueError) as error:

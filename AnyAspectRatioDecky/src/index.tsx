@@ -6,7 +6,7 @@ import {
 import { definePlugin } from "@decky/api";
 import { useState, useEffect } from "react";
 
-import { PLUGIN_VERSION, getOfflineMode } from "./services/callables";
+import { PLUGIN_NAME, PLUGIN_VERSION, getOfflineMode } from "./services/callables";
 import GamesTab from "./components/views/GamesTab";
 import { SettingsTab } from "./components/views/SettingsTab";
 import { ModsTab } from "./components/views/ModsTab";
@@ -83,10 +83,10 @@ function Content() {
 }
 
 export default definePlugin(() => ({
-  name: "AnyAspectRatio",
+  name: PLUGIN_NAME,
   titleView: (
     <div className={staticClasses.Title}>
-      AnyAspectRatio <span style={{ fontSize: "0.7em", opacity: 0.7 }}>{PLUGIN_VERSION}</span>
+      {PLUGIN_NAME} <span style={{ fontSize: "0.7em", opacity: 0.7 }}>{PLUGIN_VERSION}</span>
     </div>
   ),
   content: <Content />,

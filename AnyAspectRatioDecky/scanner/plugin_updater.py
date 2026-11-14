@@ -7,14 +7,15 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 from zipfile import BadZipFile, ZipFile
 
+from helper import PLUGIN_NAME
 from scanner.mod_installer import (
     _repository_parts,
     copy_limited,
     open_url,
     read_url_limited,
 )
+from utils.text_files import load_json
 
-PLUGIN_NAME = "AnyAspectRatio"
 MAX_RELEASE_METADATA_BYTES = 2 * 1024 * 1024
 MAX_PLUGIN_ZIP_BYTES = 64 * 1024 * 1024
 MAX_PLUGIN_UNPACKED_BYTES = 128 * 1024 * 1024
@@ -25,7 +26,7 @@ _ASSET_PATTERN = re.compile(rf"^{PLUGIN_NAME}-v?(\d+(?:\.\d+)*)\.zip$")
 
 def read_installed_version(plugin_dir: Path) -> str:
     try:
-        manifest = json.loads((plugin_dir / "plugin.json").read_text(encoding="utf-8"))
+        manifest = load_json(plugin_dir / "plugin.json")
     except (OSError, ValueError):
         return ""
     version = manifest.get("version") if isinstance(manifest, dict) else None
@@ -99,7 +100,7 @@ def _plugin_root_in_archive(names: list[str]) -> str:
     ]
     roots = ["" if root == "." else root for root in roots if root.count("/") == 0]
     if len(roots) != 1:
-        raise ValueError("The downloaded file is not an AnyAspectRatio plugin zip")
+        raise ValueError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
     return roots[0]
 
 
@@ -113,7 +114,7 @@ def _extract_plugin_zip(archive: Path, plugin_dir: Path) -> str:
                 raise ValueError("The plugin zip is larger than expected")
             manifest = json.loads(zip_file.read(f"{prefix}plugin.json"))
             if manifest.get("name") != PLUGIN_NAME:
-                raise ValueError("The downloaded file is not an AnyAspectRatio plugin zip")
+                raise ValueError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
 
             plugin_root = plugin_dir.resolve()
             planned: list[tuple[object, Path]] = []

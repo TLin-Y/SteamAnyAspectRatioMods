@@ -58,7 +58,8 @@ $runtimeFiles = @(
     "store\pack.py",
     "store\plugin_store.py",
     "utils\__init__.py",
-    "utils\steam_vdf.py"
+    "utils\steam_vdf.py",
+    "utils\text_files.py"
 )
 foreach ($file in $requiredFiles) {
     if (-not (Test-Path (Join-Path $pluginRoot $file))) {

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
+from utils.text_files import load_json
+
 _APP_ID_PATTERN = re.compile(r"\d+\Z")
 _MOD_ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
 _WINE_OVERRIDE_PATTERN = re.compile(r"[a-z0-9_,-]+=[a-z,]+\Z")
@@ -487,7 +489,7 @@ def _parse_mod(
 
 def _read_catalog_document(path: Path) -> tuple[dict[str, object], str, str]:
     try:
-        document = json.loads(path.read_text(encoding="utf-8"))
+        document = load_json(path)
     except json.JSONDecodeError as error:
         raise ValueError(f"Mod catalog is not valid JSON: {error}") from error
 
