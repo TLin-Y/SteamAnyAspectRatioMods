@@ -4,38 +4,23 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from zipfile import BadZipFile, ZipFile
 
-from scanner.mod_catalog import UNSAFE_PATH_CHARACTERS, ModDefinition, ModSource
+from helper.validator import Charset, Validator
+from scanner.mod_catalog import ModDefinition, ModSource
 from scanner.steam_library_scanner import InstalledApp
 from utils.text_files import load_json, write_json_atomic
 
+# Bounded limits for local archive scanning (to prevent excessive resource usage)
 MAX_LOCAL_ARCHIVES = 500
 MAX_LOCAL_ARCHIVE_FILES = 5000
 MAX_SCAN_DEPTH = 2
+# How deep to look for a game's main executable below its install folder.
+MAX_EXECUTABLE_DEPTH = 3
 INDEX_VERSION = 1
-IGNORED_MEMBERS = {".ds_store", "thumbs.db"}
-# DLLs that Wine only loads from the game directory when overridden to "native".
-PROXY_DLLS = frozenset(
-    {
-        "d3d9",
-        "d3d11",
-        "dinput8",
-        "dsound",
-        "dxgi",
-        "version",
-        "wininet",
-        "winhttp",
-        "winmm",
-        "xinput1_3",
-        "xinput1_4",
-        "xinput9_1_0",
-    }
-)
-HELPER_EXECUTABLE = re.compile(
-    r"(unins|crash|redist|vcredist|setup|installer|launcher|eac|easyanticheat|dxsetup)",
-    re.IGNORECASE,
-)
+# Unused version suffixes in file names (e.g., "v1.2.3")
 VERSION_SUFFIX = re.compile(r"[\s._-]*v?\d+(\.\d+)+.*$", re.IGNORECASE)
+# Bracketed expressions in file names (e.g., "[1.2.3]")
 BRACKETED = re.compile(r"[\[(][^\])]*[\])]")
+# Steam App ID token in file names (e.g., "123456")
 APP_ID_TOKEN = re.compile(r"(?<!\d)(\d{3,10})(?!\d)")
 
 
@@ -46,26 +31,15 @@ class LocalArchive:
     files: tuple[str, ...]
 
 
-def _safe_member(name: str) -> bool:
-    return (
-        bool(name)
-        and not name.startswith("/")
-        and not any(character in name for character in UNSAFE_PATH_CHARACTERS)
-        and not any(part in ("", ".", "..") for part in name.split("/"))
-    )
-
-
 def _list_archive_files(path: Path) -> tuple[list[str], str | None]:
     try:
         with ZipFile(path) as archive:
             files: list[str] = []
             for info in archive.infolist():
                 name = info.filename
-                if info.is_dir() or name.startswith("__MACOSX/"):
+                if info.is_dir() or Validator.Files.is_os_junk(name):
                     continue
-                if name.rsplit("/", 1)[-1].lower() in IGNORED_MEMBERS:
-                    continue
-                if not _safe_member(name):
+                if not Validator.Paths.is_relative(name):
                     return [], f"unsafe entry name {name!r}"
                 files.append(name)
                 if len(files) > MAX_LOCAL_ARCHIVE_FILES:
@@ -86,9 +60,9 @@ def _find_archives(directory: Path) -> list[Path]:
         root_path = Path(root)
         if len(root_path.parts) - base_depth >= MAX_SCAN_DEPTH:
             dirnames[:] = []
-        dirnames[:] = sorted(name for name in dirnames if not name.startswith("."))
+        dirnames[:] = sorted(name for name in dirnames if not Validator.Files.is_hidden(name))
         for filename in sorted(filenames):
-            if filename.lower().endswith(".zip") and not filename.startswith("."):
+            if Validator.Files.has_extension(filename, ".zip") and not Validator.Files.is_hidden(filename):
                 found.append(root_path / filename)
     return found[:MAX_LOCAL_ARCHIVES]
 
@@ -167,7 +141,8 @@ def scan_local_archives(
 
 
 def _normalize(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", value.lower())
+    """Lower-case letters and digits only, so "Dark Souls III" and "dark_souls_iii" compare equal."""
+    return "".join(character for character in value.lower() if character in Charset.LOWER_ALNUM)
 
 
 def _archive_label(stem: str) -> str:
@@ -199,11 +174,11 @@ def _executable_directory(game_path: Path, app: InstalledApp) -> str:
     for current, dirnames, filenames in os.walk(root):
         current_path = Path(current)
         depth = len(current_path.relative_to(root).parts)
-        if depth >= 3:
+        if depth >= MAX_EXECUTABLE_DEPTH:
             dirnames[:] = []
-        dirnames[:] = [name for name in dirnames if not name.startswith(".")]
+        dirnames[:] = [name for name in dirnames if not Validator.Files.is_hidden(name)]
         for filename in filenames:
-            if filename.lower().endswith(".exe") and not HELPER_EXECUTABLE.search(filename):
+            if Validator.Files.has_extension(filename, ".exe") and not Validator.Files.is_helper_executable(filename):
                 candidates.append(current_path / filename)
     if not candidates:
         return ""
@@ -225,8 +200,8 @@ def _wine_overrides(files: tuple[str, ...], destination: str) -> tuple[str, ...]
             for name in files
             if name.startswith(prefix)
             and "/" not in name[len(prefix) :]
-            and name.lower().endswith(".dll")
-            and PurePosixPath(name).stem.lower() in PROXY_DLLS
+            and Validator.Files.has_extension(name, ".dll")
+            and Validator.Wine.is_proxy_dll(PurePosixPath(name).stem)
         }
     )
     return (f"{','.join(names)}=n,b",) if names else ()

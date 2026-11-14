@@ -1,16 +1,13 @@
 import os
-import re
 import shutil
 from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
-from urllib.parse import urlparse
+from pathlib import Path
 
+from helper.validator import Validator
 from utils.text_files import load_json, write_json_atomic
 
 DEFAULT_CATALOG_PATH = "AnyAspectRatioDecky/catalog.json"
-REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}\Z")
-REPOSITORY_SEGMENT = re.compile(r"[A-Za-z0-9._-]+\Z")
 
 
 @dataclass(frozen=True)
@@ -35,35 +32,22 @@ def validate_settings(settings: Settings) -> Settings:
         ("INI resolution width", settings.ini_resolution_width),
         ("INI resolution height", settings.ini_resolution_height),
     ):
-        if type(dimension) is not int or not 1 <= dimension <= 16384:
-            raise ValueError(f"{label} must be an integer between 1 and 16384")
+        if not Validator.Settings.resolution(dimension):
+            raise ValueError(f"{label} must be an integer between 1 and {Validator.Settings.MAX_RESOLUTION}")
 
     url = settings.catalog_repository_url.strip().rstrip("/")
     if url.endswith(".git"):
         url = url[: -len(".git")]
-    if url:
-        parsed = urlparse(url)
-        segments = parsed.path.strip("/").split("/")
-        if (
-            parsed.scheme != "https"
-            or parsed.hostname != "github.com"
-            or parsed.query
-            or parsed.fragment
-            or len(segments) != 2
-            or not all(REPOSITORY_SEGMENT.fullmatch(segment) for segment in segments)
-        ):
-            raise ValueError("Repository must look like https://github.com/<owner>/<repo>")
+    if url and not Validator.GitHub.repository(url):
+        raise ValueError("Repository must look like https://github.com/<owner>/<repo>")
 
     ref = settings.catalog_ref.strip()
-    if ref and (not REF_PATTERN.fullmatch(ref) or ".." in ref or ref.endswith("/")):
+    if ref and not Validator.GitHub.ref(ref):
         raise ValueError("Branch, tag, or commit contains unsupported characters")
 
     catalog_path = settings.catalog_path.strip().strip("/")
     if catalog_path and (
-        "\\" in catalog_path
-        or ":" in catalog_path
-        or any(part in ("", ".", "..") for part in catalog_path.split("/"))
-        or not PurePosixPath(catalog_path).name.lower().endswith(".json")
+        not Validator.Paths.is_relative(catalog_path) or not Validator.Files.has_extension(catalog_path, ".json")
     ):
         raise ValueError("Catalog path must be a relative path to a .json file")
 
@@ -127,7 +111,7 @@ class PluginStore:
             if key in field_types and type(value) is type(field_types[key])
         }
         for key in ("ini_resolution_width", "ini_resolution_height"):
-            if key in values and not 1 <= values[key] <= 16384:
+            if key in values and not Validator.Settings.resolution(values[key]):
                 del values[key]
         return Settings(**values)
 
@@ -147,7 +131,7 @@ class PluginStore:
             and all(
                 isinstance(mod_id, str)
                 and isinstance(digest, str)
-                and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+                and Validator.Hash.sha256(digest)
                 for mod_id, digest in mods.items()
             )
             for path, mods in document.items()
@@ -158,7 +142,7 @@ class PluginStore:
     def set_applied_hash(self, game_path: str, mod_id: str, digest: str | None) -> None:
         hashes = self.load_applied_hashes()
         if digest is not None:
-            if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            if not Validator.Hash.sha256(digest):
                 raise ValueError("Invalid applied mod SHA-256")
             hashes.setdefault(game_path, {})[mod_id] = digest
         elif game_path in hashes:

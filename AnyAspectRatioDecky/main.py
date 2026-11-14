@@ -19,6 +19,7 @@ from logger.plugin_logger import log
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import (
     ModDefinition,
+    mod_log_names,
     read_catalog_repository,
     summarize_credits,
 )
@@ -28,7 +29,6 @@ from scanner.mod_installer import (
     apply_mod_files,
     existing_mod_logs,
     fetch_mod_readme,
-    mod_log_names,
     read_mod_ini,
     read_mod_log,
     remove_mod_files,

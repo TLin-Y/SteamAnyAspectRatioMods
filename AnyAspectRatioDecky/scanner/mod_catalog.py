@@ -1,17 +1,13 @@
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
+from helper.validator import Validator
 from utils.text_files import load_json
 
-_APP_ID_PATTERN = re.compile(r"\d+\Z")
-_MOD_ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
-_WINE_OVERRIDE_PATTERN = re.compile(r"[a-z0-9_,-]+=[a-z,]+\Z")
+CATALOG_SCHEMA_VERSION = 3
 _REQUIRED_FIELDS = ("id", "name", "steam_app_id", "install_dir")
-UNSAFE_PATH_CHARACTERS = ("\\", ":", "\0")
-_DISPLAY_TAG_PATTERN = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
 _SOURCE_KINDS = ("archive", "directory", "files")
 
 
@@ -168,14 +164,17 @@ def _require_string(entry: dict[str, object], key: str, mod_id: str) -> str:
     return value
 
 
+def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
+    """The <name>.log an ASI loader writes beside each .asi plugin."""
+    return list(dict.fromkeys(
+        str(PurePosixPath(path).with_suffix(".log"))
+        for path in files
+        if Validator.Files.has_extension(path, ".asi")
+    ))
+
+
 def _validate_relative_path(path: str, mod_id: str) -> None:
-    parsed = PurePosixPath(path)
-    if (
-        not path
-        or parsed.is_absolute()
-        or any(character in path for character in UNSAFE_PATH_CHARACTERS)
-        or any(part in ("", ".", "..") for part in path.split("/"))
-    ):
+    if not Validator.Paths.is_relative(path):
         raise ValueError(
             f"Mod catalog entry {mod_id} has an unsafe relative path: {path}"
         )
@@ -203,7 +202,7 @@ def _parse_source(
         _validate_relative_path(destination, mod_id)
 
     sha256 = raw_source.get("sha256", "")
-    if not isinstance(sha256, str) or (sha256 and not _is_sha256(sha256)):
+    if not isinstance(sha256, str) or (sha256 and not Validator.Hash.sha256(sha256)):
         raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
 
     source_files: tuple[ModSourceFile, ...] = ()
@@ -233,7 +232,7 @@ def _parse_source(
     if (
         not isinstance(raw_hashes, dict)
         or (raw_hashes and kind not in ("files", "directory"))
-        or not all(isinstance(value, str) and _is_sha256(value) for value in raw_hashes.values())
+        or not all(Validator.Hash.sha256(value) for value in raw_hashes.values())
     ):
         raise ValueError(f"Mod catalog entry {mod_id} has invalid source metadata")
 
@@ -247,10 +246,6 @@ def _parse_source(
         sha256=sha256,
         file_hashes=tuple(sorted(raw_hashes.items())),
     )
-
-
-def _is_sha256(value: str) -> bool:
-    return len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def _unique_paths(paths: list[str], mod_id: str, seen: set[str]) -> None:
@@ -298,8 +293,8 @@ def _parse_ini_resolution(
             not isinstance(pair, dict)
             or set(pair) != fields
             or not all(isinstance(pair[key], str) for key in pair)
-            or not re.fullmatch(r"[A-Za-z0-9 _.-]{1,80}", pair["section"], re.ASCII)
-            or not all(re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", pair[name], re.ASCII) for name in names)
+            or not Validator.Ini.section(pair["section"])
+            or not all(Validator.Ini.key(pair[name]) for name in names)
             or pair.get("kind", "pixels") not in ("pixels", "ratio")
         ):
             raise ValueError(f"Mod {mod_id} has invalid ini_resolution metadata")
@@ -339,10 +334,7 @@ def _parse_backups(
     if not isinstance(raw_backups, list) or (raw_backups and (has_backup_file or manual)):
         raise ValueError(f"Mod {mod_id} has invalid backups metadata")
     taken = {path.casefold() for path in reserved}
-    taken.update(  # An ASI loader writes <name>.log beside each .asi plugin.
-        str(PurePosixPath(path).with_suffix(".log")).casefold()
-        for path in files if PurePosixPath(path).suffix.lower() == ".asi"
-    )
+    taken.update(name.casefold() for name in mod_log_names(files))
     backups = []
     seen_targets: set[str] = set()
     for item in raw_backups:
@@ -373,7 +365,7 @@ def _parse_display_tags(entry: dict, mod_id: str) -> tuple[str, ...]:
     tags = entry.get("display_tags", [])
     if (
         not isinstance(tags, list)
-        or not all(isinstance(tag, str) and _DISPLAY_TAG_PATTERN.fullmatch(tag) for tag in tags)
+        or not all(Validator.Catalog.display_tag(tag) for tag in tags)
         or len(set(tags)) != len(tags)
     ):
         raise ValueError(f"Mod {mod_id} has invalid display_tags")
@@ -417,11 +409,11 @@ def _parse_mod(
         raise ValueError(f"Mod catalog entry {index} must be an object")
     mod_id = entry.get("id")
     mod_id = mod_id if isinstance(mod_id, str) else "unknown"
-    if not _MOD_ID_PATTERN.fullmatch(mod_id):
+    if not Validator.Catalog.mod_id(mod_id):
         raise ValueError(f"Mod catalog entry {index} must be an object")
     for key in _REQUIRED_FIELDS:
         _require_string(entry, key, mod_id)
-    if not _APP_ID_PATTERN.fullmatch(entry["steam_app_id"]):
+    if not Validator.Catalog.steam_app_id(entry["steam_app_id"]):
         raise ValueError(f"Mod catalog entry {mod_id} has an invalid Steam app ID")
     manual = entry.get("manual", False)
     if not isinstance(manual, bool):
@@ -460,9 +452,7 @@ def _parse_mod(
         allowed=offline_only and not manual and backup_file is None and not backups,
     )
     overrides = entry.get("wine_dll_overrides")
-    if not isinstance(overrides, list) or not all(
-        isinstance(value, str) and _WINE_OVERRIDE_PATTERN.fullmatch(value) for value in overrides
-    ):
+    if not isinstance(overrides, list) or not all(Validator.Wine.override(value) for value in overrides):
         raise ValueError(f"Mod catalog entry {mod_id} has an invalid Wine DLL overrides list")
 
     return ModDefinition(
@@ -499,11 +489,7 @@ def _read_catalog_document(path: Path) -> tuple[dict[str, object], str, str]:
     ):
         raise ValueError("Mod catalog must contain schema_version, source_repository, and mods")
     schema_version = document.get("schema_version")
-    if (
-        not isinstance(schema_version, int)
-        or isinstance(schema_version, bool)
-        or schema_version != 3
-    ):
+    if type(schema_version) is not int or schema_version != CATALOG_SCHEMA_VERSION:
         raise ValueError(
             f"Unsupported mod catalog schema version: {schema_version}"
         )
@@ -515,9 +501,9 @@ def _read_catalog_document(path: Path) -> tuple[dict[str, object], str, str]:
     repository_ref = repository.get("ref")
     if (
         not isinstance(repository_url, str)
-        or urlparse(repository_url).scheme != "https"
+        or not Validator.GitHub.repository(repository_url)
         or not isinstance(repository_ref, str)
-        or not repository_ref
+        or not Validator.GitHub.ref(repository_ref)
     ):
         raise ValueError("Mod catalog has invalid source repository metadata")
     return document, repository_url, repository_ref

@@ -169,6 +169,23 @@ class SteamDiscoveryTests(unittest.TestCase):
         self.assertEqual([], report.apps)
         self.assertIn("Unsafe install directory", report.warnings[0])
 
+    def test_install_dir_backslashes_are_separators_and_cannot_escape(self) -> None:
+        library = self.root / "Steam"
+        steamapps = library / "steamapps"
+        steamapps.mkdir(parents=True)
+        self._write(steamapps / "libraryfolders.vdf", self._library_config(library))
+        unsafe = {"101": "..\\\\Outside", "102": "Game\\\\..\\\\..\\\\Outside", "103": "C:\\\\Games\\\\X"}
+        for app_id, install_dir in unsafe.items():
+            self._write(self._manifest_path(steamapps, app_id), self._app_manifest(app_id, "Bad", install_dir))
+        self._write(self._manifest_path(steamapps, "200"), self._app_manifest("200", "Good", "Good Game"))
+        (steamapps / "common" / "Good Game").mkdir(parents=True)
+        self._write(self._manifest_path(steamapps, "201"), self._app_manifest("201", "Nested", "Studio\\\\Game"))
+
+        report = scan_steam_libraries([library])
+
+        self.assertEqual(["200", "201"], sorted(app.app_id for app in report.apps))
+        self.assertEqual(3, sum("Unsafe install directory" in warning for warning in report.warnings))
+
     def test_manifest_id_must_match_filename(self) -> None:
         library = self.root / "Steam"
         steamapps = library / "steamapps"
