@@ -8,9 +8,9 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 from scanner.mod_catalog import CATALOG_SCHEMA_VERSION, load_mod_catalog, summarize_credits
-from scanner.mod_installer import mod_readme_path
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import SupportedGame, match_supported_games
+from store.mod_sources import mod_readme_path
 
 
 class ModCatalogTests(unittest.TestCase):
@@ -59,7 +59,7 @@ class ModCatalogTests(unittest.TestCase):
             target = game / destination
             target.mkdir(parents=True)
             (target / "d3d9.dll").write_bytes(b"existing proxy")
-            with patch("scanner.mod_installer._pack_file", return_value=bundle):
+            with patch("store.mod_sources._pack_file", return_value=bundle):
                 conflicts = apply_mod_files(mod, str(game), ini_resolution=(1920, 1080))
                 self.assertEqual([f"{destination}/d3d9.dll"], conflicts)
                 self.assertEqual(b"existing proxy", (target / "d3d9.dll").read_bytes())
@@ -132,7 +132,7 @@ class ModCatalogTests(unittest.TestCase):
                 self.assertEqual(str(exe), matched.executable_path)
                 self.assertTrue(matched.executable_found)
                 self.assertFalse(matched.to_dict()["manual"])
-                with patch("scanner.mod_installer._pack_file", return_value=archive_path):
+                with patch("store.mod_sources._pack_file", return_value=archive_path):
                     apply_mod_files(mod, str(game))
                 for name, content in contents.items():
                     self.assertEqual(content, (exe.parent / name).read_bytes())
@@ -430,7 +430,7 @@ class ModCatalogTests(unittest.TestCase):
                         load_mod_catalog(path)
 
     def test_readme_sits_beside_archive_zips(self) -> None:
-        from scanner.mod_installer import mod_readme_path
+        from store.mod_sources import mod_readme_path
 
         mods = {mod.mod_id: mod for mod in load_mod_catalog()}
         self.assertEqual("Dark Souls III/README.md", mod_readme_path(mods["dark-souls-iii"]))

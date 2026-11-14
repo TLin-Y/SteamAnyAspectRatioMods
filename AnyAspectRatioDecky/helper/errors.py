@@ -1,20 +1,17 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 
-# What a broken file, folder, download or input raises; anything else is a bug.
+# What a broken file, folder, download or input raises, anything else is a code bug.
 FAILURES = (OSError, ValueError)
 
 
 class PluginError(ValueError):
-    """An expected failure. Its message is written for the user, so it is logged without a traceback.
-
-    Plugin methods raise it as-is: Decky passes str(error) to the frontend, which shows it.
-    """
+    """General class for plugin failure."""
 
 
 @contextmanager
-def context(message: str) -> Generator[None, None, None]:
-    """Re-raise any failure inside as PluginError("<message>: <error>")."""
+def wrap(message: str) -> Generator[None, None, None]:
+    """Wrap any failure inside PluginError, keeping the original as its cause."""
     try:
         yield
     except FAILURES as error:
@@ -23,7 +20,6 @@ def context(message: str) -> Generator[None, None, None]:
 
 @contextmanager
 def collect(warnings: list[str], message: str) -> Generator[None, None, None]:
-    """Record any failure inside as the warning "<message>: <error>" and continue after the block."""
     try:
         yield
     except FAILURES as error:

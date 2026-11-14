@@ -122,7 +122,7 @@ class PluginStore:
     def load_applied_hashes(self) -> dict[str, dict[str, str]]:
         if not self.applied_hashes_path.exists():
             return {}
-        with errors.context("Unable to read applied mod hashes"):
+        with errors.wrap("Unable to read applied mod hashes"):
             document = text_files.load_json(self.applied_hashes_path)
         if not isinstance(document, dict) or not all(
             isinstance(path, str)
@@ -155,7 +155,7 @@ class PluginStore:
     def load_matched_games(self) -> dict[str, dict[str, str]]:
         if not self.matched_games_path.exists():
             return {}
-        with errors.context("Unable to read matched games"):
+        with errors.wrap("Unable to read matched games"):
             document = text_files.load_json(self.matched_games_path)
         if not isinstance(document, dict) or not all(
             isinstance(group, str)

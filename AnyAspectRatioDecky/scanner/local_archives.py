@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from helper import errors
 from helper.errors import PluginError
 from helper.validator import Charset, Validator
 from scanner.mod_catalog import ModDefinition, ModSource, SourceKind
@@ -84,9 +85,10 @@ def scan_local_archives(
     directory: str | None,
     index_path: Path | None = None,
 ) -> tuple[list[LocalArchive], list[str]]:
-    """List valid *.zip mods in a directory, reusing cached member lists for unchanged files."""
+    """List valid *.zip mods in a directory, reusing cached file lists for unchanged zips."""
     if not directory:
         return [], []
+    
     root = Path(directory)
     if not root.is_dir():
         return [], [f"Local mod archive folder is unavailable: {directory}"]
@@ -96,44 +98,43 @@ def scan_local_archives(
     archives: list[LocalArchive] = []
     warnings: list[str] = []
     for path in _find_archives(root):
-        try:
-            stat_result = path.stat()
-        except OSError:
-            continue
         key = str(path)
-        entry = cached.get(key)
-        if (
-            not isinstance(entry, dict)
-            or entry.get("size") != stat_result.st_size
-            or entry.get("mtime_ns") != stat_result.st_mtime_ns
-        ):
-            try:
-                files, error = _list_archive_files(path), None
-            except PluginError as failure:
-                # Cached with the entry, so an unusable zip is not reopened until it changes.
-                files, error = [], str(failure)
-            entry = {
-                "size": stat_result.st_size,
-                "mtime_ns": stat_result.st_mtime_ns,
-                "files": files,
-                "error": error,
-            }
+        entry = _index_entry(path, cached.get(key))
+        if entry is None:
+            continue
         fresh[key] = entry
         if entry.get("error"):
             warnings.append(f"Skipped local archive {path.name}: {entry['error']}")
-            continue
-        archives.append(LocalArchive(key, path.stem, tuple(entry["files"])))
+        else:
+            archives.append(LocalArchive(key, path.stem, tuple(entry["files"])))
 
     if index_path is not None and fresh != cached:
-        try:
+        with errors.collect(warnings, "Local archive index could not be cached"):
             _save_index(index_path, root, fresh)
-        except OSError:
-            warnings.append("Local archive index could not be cached.")
     return archives, warnings
 
 
+def _index_entry(path: Path, cached: object) -> dict | None:
+    try:
+        stat_result = path.stat()
+    except OSError:
+        return None
+    size, mtime_ns = stat_result.st_size, stat_result.st_mtime_ns
+    match cached:
+        case {"size": cached_size, "mtime_ns": cached_mtime_ns} if (cached_size, cached_mtime_ns) == (size, mtime_ns):
+            return cached
+    return {"size": size, "mtime_ns": mtime_ns, **_read_archive(path)}
+
+
+def _read_archive(path: Path) -> dict:
+    try:
+        return {"files": _list_archive_files(path), "error": None}
+    except PluginError as failure:
+        return {"files": [], "error": str(failure)}
+
+
 def _normalize(value: str) -> str:
-    """Lower-case letters and digits only, so "Dark Souls III" and "dark_souls_iii" compare equal."""
+    """Lower case letters and digits only, so "Dark Souls III" and "dark_souls_iii" compare equal."""
     return "".join(character for character in value.lower() if character in Charset.LOWER_ALNUM)
 
 
@@ -169,6 +170,7 @@ def _executable_directory(game_path: Path, app: InstalledApp) -> str:
     ]
     if not candidates:
         return ""
+    
     names = {_normalize(app.name), _normalize(app.install_dir)}
     named = [path for path in candidates if _normalize(path.stem) in names]
     chosen = named or candidates
@@ -176,6 +178,7 @@ def _executable_directory(game_path: Path, app: InstalledApp) -> str:
     if len(directories) != 1:
         return ""
     directory = directories.pop().relative_to(root)
+
     return directory.as_posix() if directory.parts else ""
 
 
@@ -191,6 +194,7 @@ def _wine_overrides(files: tuple[str, ...], destination: str) -> tuple[str, ...]
             and Validator.Wine.is_proxy_dll(PurePosixPath(name).stem)
         }
     )
+
     return (f"{','.join(names)}=n,b",) if names else ()
 
 
@@ -202,6 +206,7 @@ def build_local_mods(
     """Match archives to installed games by name/app id and describe where they install."""
     mods: dict[str, ModDefinition] = {}
     warnings: list[str] = []
+
     for archive in archives:
         app = _match_archive_to_app(archive, apps)
         if app is None:
@@ -217,9 +222,11 @@ def build_local_mods(
                 f"Local archive {archive.name} ignored: {app.name} already uses another local archive."
             )
             continue
+
         destination = _executable_directory(Path(app.game_path or ""), app)
         prefix = f"{destination}/" if destination else ""
         installed_files = tuple(f"{prefix}{name}" for name in archive.files)
+
         mods[app.app_id] = ModDefinition(
             mod_id=f"local-{app.app_id}",
             name=f"{archive.name} (local archive)",
@@ -238,4 +245,5 @@ def build_local_mods(
             ini_file=None,
             wine_dll_overrides=_wine_overrides(installed_files, destination),
         )
+        
     return tuple(mods.values()), warnings

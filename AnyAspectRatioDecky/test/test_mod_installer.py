@@ -20,15 +20,14 @@ from scanner.mod_catalog import (
 from scanner.mod_installer import (
     apply_mod_files,
     existing_mod_logs,
-    fetch_mod_readme,
     launcher_setup_complete,
-    mod_readme_path,
     read_mod_ini,
     read_mod_log,
     remove_mod_files,
     update_existing_ini_resolution,
     write_mod_ini,
 )
+from store.mod_sources import fetch_mod_readme, mod_readme_path
 from utils.network import create_ssl_context
 
 
@@ -401,7 +400,7 @@ class ModInstallerTests(unittest.TestCase):
         target.write_bytes(b"original")
 
         with patch(
-            "scanner.mod_installer.open_repository_file",
+            "store.mod_sources.open_repository_file",
             return_value=io.BytesIO(b"ultrawide"),
         ):
             self.assertEqual(
@@ -485,7 +484,7 @@ class ModInstallerTests(unittest.TestCase):
         ):
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
 
-        with patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4):
+        with patch("store.mod_sources.MAX_MOD_FILE_SIZE_BYTES", 4):
             self.assertEqual(
                 [],
                 remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False),
@@ -774,7 +773,7 @@ class ModInstallerTests(unittest.TestCase):
 
     def test_elden_ring_real_archive_apply_and_remove_in_temporary_game(self) -> None:
         from scanner.mod_catalog import load_mod_catalog
-        from scanner.mod_installer import set_pack_dir
+        from store.mod_sources import set_pack_dir
         from utils.network import set_offline_mode
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "elden-ring-ultrawide-fix")
         folder = self.game_path / "Game"
@@ -863,7 +862,7 @@ class ModInstallerTests(unittest.TestCase):
         archive_bytes = self._archive({"fix.dll": b"payload"})
 
         with (
-            patch("scanner.mod_installer.MAX_MOD_DOWNLOAD_SIZE_BYTES", 4),
+            patch("store.mod_sources.MAX_MOD_DOWNLOAD_SIZE_BYTES", 4),
             patch(
                 "utils.network.urlopen",
                 return_value=io.BytesIO(archive_bytes),
@@ -883,7 +882,7 @@ class ModInstallerTests(unittest.TestCase):
         archive_bytes = self._archive({"fix.dll": b"payload"})
 
         with (
-            patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4),
+            patch("store.mod_sources.MAX_MOD_FILE_SIZE_BYTES", 4),
             patch(
                 "utils.network.urlopen",
                 return_value=io.BytesIO(archive_bytes),
@@ -902,7 +901,7 @@ class ModInstallerTests(unittest.TestCase):
         )
 
         with (
-            patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4),
+            patch("store.mod_sources.MAX_MOD_FILE_SIZE_BYTES", 4),
             patch(
                 "utils.network.urlopen",
                 return_value=io.BytesIO(b"payload"),
@@ -946,7 +945,7 @@ class ModInstallerTests(unittest.TestCase):
         }
 
         with (
-            patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4),
+            patch("store.mod_sources.MAX_MOD_FILE_SIZE_BYTES", 4),
             patch("scanner.mod_installer.MAX_MOD_TOTAL_SIZE_BYTES", 3),
             patch(
                 "utils.network.urlopen",

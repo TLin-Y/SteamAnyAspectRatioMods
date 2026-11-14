@@ -17,8 +17,9 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 from scanner.mod_catalog import load_mod_catalog
-from scanner.mod_installer import apply_mod_files, fetch_mod_readme, set_pack_dir
+from scanner.mod_installer import apply_mod_files
 from store.dependencies import load_active_catalog, update_dependencies
+from store.mod_sources import fetch_mod_readme, set_pack_dir
 from store.pack import download_release_pack, install_pack
 from store.plugin_store import PluginStore, Settings
 from utils.network import OfflineModeError, set_offline_mode

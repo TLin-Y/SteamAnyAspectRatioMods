@@ -9,7 +9,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from zipfile import ZipFile
 
-from utils import files, folders, network, streams, zips
+from utils import files, folders, ini, network, sizes, streams, zips
 
 
 class FilesTests(unittest.TestCase):
@@ -22,8 +22,9 @@ class FilesTests(unittest.TestCase):
         return list(self.root.rglob(f"{files.TEMPORARY_PREFIX}*"))
 
     def test_size_limits_name_the_limit(self) -> None:
-        self.assertEqual("256 KiB", streams.size_label(256 * 1024))
-        self.assertEqual("64 MiB", streams.size_label(64 * 1024 * 1024))
+        self.assertEqual("256 KiB", sizes.label(256 * sizes.KIB))
+        self.assertEqual("64 MiB", sizes.label(64 * sizes.MIB))
+        self.assertEqual("2 GiB", sizes.label(2 * sizes.GIB + 1))
         with self.assertRaisesRegex(ValueError, "^Mod INI exceeds the 1 KiB limit$"):
             streams.read_limited(io.BytesIO(b"x" * 1025), 1024, "Mod INI")
         self.assertEqual(b"x" * 1024, streams.read_limited(io.BytesIO(b"x" * 1024), 1024, "Mod INI"))
@@ -80,6 +81,27 @@ class FilesTests(unittest.TestCase):
         (self.root / "a.bin").write_bytes(b"12")
         (self.root / "sub" / "b.bin").write_bytes(b"345")
         self.assertEqual((2, 5), folders.stats(self.root))
+
+
+class IniTests(unittest.TestCase):
+    def test_values_keep_their_position_after_a_bom_and_before_a_comment(self) -> None:
+        lines = b"\xef\xbb\xbf[ Resolution ]\r\n  Width =\t1280.0  ; pixels\r\n1Bad=1\nHeight=800\r".splitlines(keepends=True)
+        sections = ini.values_by_section(lines)
+        self.assertEqual([b"resolution"], list(sections))
+        self.assertEqual({b"width", b"height"}, set(sections[b"resolution"]))
+        (width,) = sections[b"resolution"][b"width"]
+        (height,) = sections[b"resolution"][b"height"]
+        self.assertEqual((b"1280.0", b"800"), (width.read(lines), height.read(lines)))
+
+    def test_number_and_resolution_formats(self) -> None:
+        for value, expected in ((b"1280", True), (b"16.00", True), (b"", False), (b".5", False), (b"5.", False),
+                                (b"1.2.3", False), (b"-5", False), ("١".encode(), False)):
+            with self.subTest(value=value):
+                self.assertIs(expected, ini.is_decimal(value))
+        for value, expected in ((b"1280x800", b""), (b'"1280x800"', b'"'), (b"'1920x1080'", b"'"),
+                                (b'"1280x800', None), (b"0x800", None), (b"1280X800", None), (b"auto", None)):
+            with self.subTest(value=value):
+                self.assertEqual(expected, ini.resolution_quote(value))
 
 
 class ZipsTests(unittest.TestCase):

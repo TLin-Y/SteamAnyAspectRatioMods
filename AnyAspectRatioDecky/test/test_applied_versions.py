@@ -15,6 +15,7 @@ from scanner import mod_installer
 from scanner.mod_catalog import load_mod_catalog
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
+from store import mod_sources
 from store.dependencies import CatalogSource
 from store.plugin_store import PluginStore, Settings
 
@@ -290,7 +291,7 @@ class AppliedVersionTests(unittest.TestCase):
             patch.object(self.main, "get_store", return_value=self.store),
             patch.object(self.main, "load_active_catalog", side_effect=lambda *args: CatalogSource("test", tuple(active))),
             patch.object(self.main, "scan_supported_games_report", side_effect=lambda *args, **kwargs: self._report(active[0])),
-            patch.object(mod_installer, "_pack_dir", pack),
+            patch.object(mod_sources, "_pack_dir", pack),
         ):
             plugin = self.main.Plugin()
             result = asyncio.run(plugin.set_mod_applied(old.mod_id, str(self.game), True))

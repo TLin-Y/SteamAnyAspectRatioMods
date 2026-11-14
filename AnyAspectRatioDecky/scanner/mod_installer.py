@@ -1,261 +1,32 @@
-import hashlib
 import math
-import re
-from collections.abc import Generator
-from contextlib import ExitStack, contextmanager
-from pathlib import Path, PurePosixPath
-from urllib.parse import quote, urlparse
+from contextlib import ExitStack
+from pathlib import Path
 
 from helper.errors import PluginError
-from helper.validator import Validator
 from scanner.mod_catalog import (
     ZIP_SOURCE_KINDS,
     IniResolutionPair,
     IniValueKind,
     ModDefinition,
-    ModSource,
     SourceKind,
     mod_log_names,
 )
-from utils import files, folders, streams, text_files, zips
-from utils.network import NetworkError, OfflineModeError, download_buffered, download_staged, is_offline_mode
+from store import mod_sources
+from utils import files, folders, ini, sizes, streams, text_files, zips
 
-MAX_MOD_DOWNLOAD_SIZE_BYTES = 256 * 1024 * 1024
-MAX_MOD_FILE_SIZE_BYTES = 256 * 1024 * 1024
-MAX_MOD_TOTAL_SIZE_BYTES = 512 * 1024 * 1024
-MAX_INI_SIZE_BYTES = 256 * 1024
-MAX_README_SIZE_BYTES = 1024 * 1024
-MAX_MOD_LOG_SIZE_BYTES = 256 * 1024
-INI_ASSIGNMENT_PATTERN = re.compile(
-    rb"^([ \t]*)([A-Za-z][A-Za-z0-9_]*)([ \t]*=[ \t]*)"
-    rb"([^;#\r\n]*?)([ \t]*(?:[;#].*)?)(\r?\n)?$"
-)
-INI_NUMBER_PATTERN = re.compile(rb"[0-9]+(?:\.[0-9]+)?")
-INI_RESOLUTION_STRING_PATTERN = re.compile(rb'(["\']?)[1-9][0-9]*x[1-9][0-9]*\1')
-
-def _repository_parts(repository_url: str) -> str:
-    if not Validator.GitHub.repository(repository_url):
-        raise PluginError("Mod source repository must look like https://github.com/<owner>/<repo>")
-    return urlparse(repository_url).path.strip("/")
-
-
-def repository_file_url(repository_url: str, repository_ref: str, path: str) -> str:
-    return (
-        f"https://raw.githubusercontent.com/{_repository_parts(repository_url)}/"
-        f"{quote(repository_ref, safe='')}/{quote(path, safe='/')}"
-    )
-
+MAX_MOD_TOTAL_SIZE_BYTES = 512 * sizes.MIB
+MAX_INI_SIZE_BYTES = 256 * sizes.KIB
+MAX_MOD_LOG_SIZE_BYTES = 256 * sizes.KIB
 
 class MissingModBackupError(PluginError):
     """A replacement file cannot be safely restored because its original backup is missing."""
 
 
-_pack_dir: Path | None = None
-
-
-def set_pack_dir(path: Path | None) -> None:
-    """Offline pack: a directory laid out like the repository, used before the network."""
-    global _pack_dir
-    _pack_dir = path
-
-
-def _pack_file(path: str) -> Path | None:
-    if _pack_dir is None:
-        return None
-    candidate = _pack_dir / PurePosixPath(path)
-    try:
-        candidate.resolve().relative_to(_pack_dir.resolve())
-    except ValueError:
-        return None
-    return candidate if candidate.is_file() else None
-
-
-@contextmanager
-def open_repository_file(source: ModSource, path: str):
-    """Newest online file first; the offline pack is used in offline mode or when the network fails."""
-    local = _pack_file(path)
-    with ExitStack() as stack:
-        stream = None
-        if local is None or not is_offline_mode():
-            url = repository_file_url(source.repository_url, source.repository_ref, path)
-            try:
-                stream = stack.enter_context(download_buffered(url, MAX_MOD_FILE_SIZE_BYTES, "Mod file"))
-            except NetworkError:
-                if local is None:
-                    raise
-        if stream is None:
-            stream = stack.enter_context(local.open("rb"))
-        yield stream
-
-
-def _mib(size: int) -> int:
-    return size // (1024 * 1024)
-
-
 def _check_total_size(total: int) -> None:
     if total > MAX_MOD_TOTAL_SIZE_BYTES:
         raise PluginError(
-            f"Mod files exceed the {_mib(MAX_MOD_TOTAL_SIZE_BYTES)} MiB total limit"
+            f"Mod files exceed the {sizes.label(MAX_MOD_TOTAL_SIZE_BYTES)} total limit"
         )
-
-
-_archive_cache_dir: Path | None = None
-
-
-def set_archive_cache_dir(path: Path | None) -> None:
-    global _archive_cache_dir
-    _archive_cache_dir = path
-
-
-def _cached_archive_path(url: str, sha256: str = "") -> Path | None:
-    """Cache file for an archive; the catalog checksum is part of the name, so a replaced zip is re-downloaded."""
-    if _archive_cache_dir is None:
-        return None
-    name = hashlib.sha256(url.encode()).hexdigest()
-    return _archive_cache_dir / (f"{name}-{sha256[:16]}.zip" if sha256 else f"{name}.zip")
-
-
-def _drop_stale_cache(cached_path: Path) -> None:
-    prefix = cached_path.name.split("-")[0].removesuffix(".zip")
-    for other in cached_path.parent.glob(f"{prefix}*.zip"):
-        if other != cached_path:
-            other.unlink(missing_ok=True)
-
-
-@contextmanager
-def _open_archive(source: ModSource) -> Generator[Path, None, None]:
-    """Yield a local path to the mod archive.
-
-    A pack archive whose checksum matches the catalog is the newest version, so it is used
-    directly. Otherwise the newest archive is downloaded; the pack copy is only a fallback
-    when the network fails, and the only source in offline mode.
-    """
-    if source.path is None:
-        raise PluginError("Archive source path is missing")
-    if source.kind == SourceKind.LOCAL_ARCHIVE:
-        local_path = Path(source.path)
-        if not local_path.is_file():
-            raise PluginError("Local mod archive is unavailable")
-        yield local_path
-        return
-    packed = _pack_file(source.path)
-    if packed is not None:
-        if source.sha256:
-            if files.sha256(packed) == source.sha256:
-                yield packed
-                return
-            if is_offline_mode():
-                raise OfflineModeError(
-                    "The offline pack has an outdated mod archive. "
-                    "Import an updated offline pack or turn off offline mode."
-                )
-        elif is_offline_mode():
-            yield packed
-            return
-
-    with ExitStack() as stack:
-        try:
-            archive_path = stack.enter_context(_open_downloaded_archive(source))
-        except NetworkError:
-            if packed is None or source.sha256:
-                raise
-            archive_path = packed
-        yield archive_path
-
-
-@contextmanager
-def _open_downloaded_archive(source: ModSource) -> Generator[Path, None, None]:
-    """Yield the downloaded (or cached) archive, verified against the catalog checksum."""
-    archive_url = repository_file_url(
-        source.repository_url,
-        source.repository_ref,
-        source.path,
-    )
-    cached_path = _cached_archive_path(archive_url, source.sha256)
-    if cached_path is not None and cached_path.is_file() and (source.sha256 or is_offline_mode()):
-        if source.sha256 and files.sha256(cached_path) != source.sha256:
-            cached_path.unlink(missing_ok=True)
-        else:
-            try:
-                yield cached_path
-            except BaseException:
-                cached_path.unlink(missing_ok=True)
-                raise
-            return
-
-    archive_path, _ = download_staged(
-        archive_url,
-        cached_path.parent if cached_path is not None else None,
-        MAX_MOD_DOWNLOAD_SIZE_BYTES,
-        "Mod archive download",
-        suffix=".zip",
-    )
-    try:
-        if source.sha256 and files.sha256(archive_path) != source.sha256:
-            raise PluginError(
-                "The downloaded mod archive does not match the catalog checksum. "
-                "Update the catalog and try again."
-            )
-        if cached_path is not None and zips.is_zip(archive_path):
-            files.move(archive_path, cached_path)
-            archive_path = cached_path
-            _drop_stale_cache(cached_path)
-        yield archive_path
-    finally:
-        if cached_path is None or archive_path != cached_path:
-            archive_path.unlink(missing_ok=True)
-
-
-def mod_readme_path(mod: ModDefinition) -> str:
-    """README location: beside an archive mod's zip, else in the mod's top-level folder."""
-    if mod.source.kind == SourceKind.FILES:
-        source_path = mod.source.files[0].path
-    elif mod.source.path is not None:
-        source_path = mod.source.path
-    else:
-        raise PluginError(f"Mod {mod.mod_id} has no source path for its README")
-    parts = PurePosixPath(source_path).parts
-    folder = (
-        parts[:1]
-        if mod.source.kind == SourceKind.DIRECTORY
-        else parts[:-1]
-    )
-    return "/".join((*folder, "README.md"))
-
-
-def _read_local_archive_readme(mod: ModDefinition) -> str:
-    local_path = Path(mod.source.path or "")
-    try:
-        with zips.open_zip(local_path, "Local mod archive is unavailable") as archive:
-            readme = next(
-                (
-                    info for info in archive.infolist()
-                    if "/" not in info.filename and info.filename.lower().startswith("readme")
-                    and info.file_size <= MAX_README_SIZE_BYTES
-                ),
-                None,
-            )
-            if readme is not None:
-                content = zips.read_file(archive, readme, MAX_README_SIZE_BYTES, "Mod README")
-                return content.decode(text_files.BOM_TEXT_ENCODING, errors="replace")
-    except OSError as error:
-        raise PluginError("Local mod archive is unavailable") from error
-    return (
-        f"Local archive: `{local_path}`\n\n"
-        "No README was found in the archive. Its files are extracted next to the "
-        f"game executable (`{mod.source.destination or '.'}`)."
-    )
-
-
-def fetch_mod_readme(mod: ModDefinition) -> str:
-    if mod.source.kind == SourceKind.LOCAL_ARCHIVE:
-        return _read_local_archive_readme(mod)
-    with open_repository_file(mod.source, mod_readme_path(mod)) as stream:
-        content = streams.read_limited(stream, MAX_README_SIZE_BYTES, "Mod README")
-    try:
-        return content.decode(text_files.BOM_TEXT_ENCODING)
-    except UnicodeDecodeError as error:
-        raise PluginError("Mod README is not valid UTF-8 text") from error
 
 
 def _game_root(game_path: str) -> Path:
@@ -288,10 +59,10 @@ def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
     source_path = _source_file_map(mod)[relative_path]
     source = mod.source
     if source.kind in ZIP_SOURCE_KINDS:
-        with _open_archive(source) as archive_path, zips.open_zip(archive_path, "Mod archive is invalid") as archive:
+        with mod_sources.open_archive(source) as archive_path, zips.open_zip(archive_path, "Mod archive is invalid") as archive:
             info = _archive_member(archive, source_path)
             return zips.read_file(archive, info, MAX_INI_SIZE_BYTES, "Mod INI source")
-    with open_repository_file(source, source_path) as stream:
+    with mod_sources.open_repository_file(source, source_path) as stream:
         return streams.read_limited(stream, MAX_INI_SIZE_BYTES, "Mod INI source")
 
 
@@ -324,17 +95,17 @@ def _stage_archive_files(
     targets: dict[str, Path],
     staged_files: list[tuple[Path, Path]],
 ) -> None:
-    with _open_archive(mod.source) as archive_path, zips.open_zip(archive_path, "Mod archive is invalid") as archive:
+    with mod_sources.open_archive(mod.source) as archive_path, zips.open_zip(archive_path, "Mod archive is invalid") as archive:
         members = {path: _archive_member(archive, name) for path, name in source_files.items()}
         total_size = 0
         for info in members.values():
-            if info.file_size > MAX_MOD_FILE_SIZE_BYTES:
-                raise PluginError(f"Mod file exceeds the {_mib(MAX_MOD_FILE_SIZE_BYTES)} MiB limit")
+            if info.file_size > mod_sources.MAX_MOD_FILE_SIZE_BYTES:
+                raise PluginError(f"Mod file exceeds the {sizes.label(mod_sources.MAX_MOD_FILE_SIZE_BYTES)} limit")
             total_size += info.file_size
             _check_total_size(total_size)
         for relative_path, info in members.items():
             target = targets[relative_path]
-            staged, actual_size = zips.stage_file(archive, info, target.parent, MAX_MOD_FILE_SIZE_BYTES, "Mod file")
+            staged, actual_size = zips.stage_file(archive, info, target.parent, mod_sources.MAX_MOD_FILE_SIZE_BYTES, "Mod file")
             staged_files.append((staged, target))
             total_size += actual_size - info.file_size
             _check_total_size(total_size)
@@ -349,8 +120,8 @@ def _stage_downloads(
     expected_hashes = dict(mod.source.file_hashes)
     total_size = 0
     for relative_path, source_path in source_files.items():
-        with open_repository_file(mod.source, source_path) as response:
-            staged, size = files.stage_stream(response, targets[relative_path].parent, MAX_MOD_FILE_SIZE_BYTES, "Mod file")
+        with mod_sources.open_repository_file(mod.source, source_path) as response:
+            staged, size = files.stage_stream(response, targets[relative_path].parent, mod_sources.MAX_MOD_FILE_SIZE_BYTES, "Mod file")
         staged_files.append((staged, targets[relative_path]))
         expected = expected_hashes.get(relative_path)
         if expected and files.sha256(staged) != expected:
@@ -500,23 +271,7 @@ def _rewrite_ini_resolution(
     content: bytes, width: int, height: int, pairs: tuple[IniResolutionPair, ...]
 ) -> bytes:
     lines = content.splitlines(keepends=True)
-    sections: dict[bytes, dict[bytes, list[tuple[int, re.Match[bytes], int]]]] = {}
-    section = b""
-
-    for index, line in enumerate(lines):
-        prefix = b"\xef\xbb\xbf" if index == 0 and line.startswith(b"\xef\xbb\xbf") else b""
-        candidate = line[len(prefix):]
-        stripped = candidate.strip()
-        if stripped.startswith(b"[") and b"]" in stripped:
-            section = stripped[1:stripped.index(b"]")].strip().lower()
-            continue
-        match = INI_ASSIGNMENT_PATTERN.match(candidate)
-        if match is None:
-            continue
-        key = match.group(2).lower()
-        sections.setdefault(section, {}).setdefault(key, []).append(
-            (index, match, len(prefix))
-        )
+    sections = ini.values_by_section(lines)
 
     replacements: dict[int, tuple[int, int, bytes]] = {}
     divisor = math.gcd(width, height)
@@ -528,24 +283,19 @@ def _rewrite_ini_resolution(
             rows = values.get(pair.width.lower().encode("ascii"), [])
             if len(rows) != 1:
                 continue
-            index, match, offset = rows[0]
-            current = INI_RESOLUTION_STRING_PATTERN.fullmatch(match.group(4))
-            if current is None:
+            row = rows[0]
+            quote = ini.resolution_quote(row.read(lines))
+            if quote is None:
                 continue
-            quote = current.group(1)
-            replacements[index] = (
-                match.start(4) + offset,
-                match.end(4) + offset,
-                quote + f"{width}x{height}".encode("ascii") + quote,
-            )
+            replacements[row.line] = (row.start, row.end, quote + f"{width}x{height}".encode("ascii") + quote)
             continue
         width_rows = values.get(pair.width.lower().encode("ascii"), [])
         height_rows = values.get(pair.height.lower().encode("ascii"), [])
         if len(width_rows) != 1 or len(height_rows) != 1:
             continue
         width_row, height_row = width_rows[0], height_rows[0]
-        width_value, height_value = width_row[1].group(4), height_row[1].group(4)
-        if not all(INI_NUMBER_PATTERN.fullmatch(value) for value in (width_value, height_value)):
+        width_value, height_value = width_row.read(lines), height_row.read(lines)
+        if not all(ini.is_decimal(value) for value in (width_value, height_value)):
             continue
         if pair.kind == IniValueKind.PIXELS and (not width_value.isdigit() or not height_value.isdigit()):
             continue
@@ -553,15 +303,11 @@ def _rewrite_ini_resolution(
             continue
         dimensions = (ratio_width, ratio_height) if pair.kind == IniValueKind.RATIO else (width, height)
         for row, dimension in zip((width_row, height_row), dimensions):
-            old_value = row[1].group(4)
+            old_value = row.read(lines)
             value = str(dimension).encode("ascii")
             if b"." in old_value:
                 value += b"." + b"0" * len(old_value.split(b".", 1)[1])
-            replacements[row[0]] = (
-                row[1].start(4) + row[2],
-                row[1].end(4) + row[2],
-                value,
-            )
+            replacements[row.line] = (row.start, row.end, value)
 
     for index, (start, end, value) in replacements.items():
         lines[index] = lines[index][:start] + value + lines[index][end:]
@@ -578,7 +324,7 @@ def write_mod_ini(
 
     encoded_content = content.encode(text_files.TEXT_ENCODING)
     if len(encoded_content) > MAX_INI_SIZE_BYTES:
-        raise PluginError("Mod INI content exceeds the 256 KiB editor limit")
+        raise PluginError(f"Mod INI content exceeds the {sizes.label(MAX_INI_SIZE_BYTES)} editor limit")
 
     game_root = _game_root(game_path)
     ini_path = folders.resolve_inside(game_root, mod.ini_file)

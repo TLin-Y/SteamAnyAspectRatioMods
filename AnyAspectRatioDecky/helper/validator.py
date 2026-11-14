@@ -59,6 +59,11 @@ class Validator:
             name = name.lower()
             return any(part in name for part in cls._HELPER_EXECUTABLE_PARTS)
 
+    class Urls:
+        @staticmethod
+        def is_https(value: str) -> bool:
+            return urlparse(value).scheme == "https"
+
     class GitHub:
         _NAME = Charset.ALNUM | frozenset("._-")
         _REF_FORBIDDEN = frozenset(" ~^:?*[\\")

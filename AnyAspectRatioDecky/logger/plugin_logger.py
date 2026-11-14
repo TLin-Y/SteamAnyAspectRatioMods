@@ -6,10 +6,10 @@ from pathlib import Path
 
 from helper import PLUGIN_NAME
 from helper.errors import FAILURES, PluginError
-from utils import text_files
+from utils import sizes, text_files
 
 # Must be bounded, the log I/O will cause performance issues if too large in DroidDeck
-LOG_FILE_MAX_BYTES = 512 * 1024 # 512 KB based on my RP Nova testing, SD OLED no such issue.
+LOG_FILE_MAX_BYTES = 512 * sizes.KIB # 512 KB based on my RP Nova testing, SD OLED no such issue.
 LOG_FILE_BACKUPS = 2
 LOG_FILE_FORMAT = "%(asctime)s %(levelname)s %(message)s"
 

@@ -6,13 +6,13 @@ from urllib.parse import urlparse
 
 from helper import PLUGIN_NAME
 from helper.errors import PluginError
-from scanner.mod_installer import _repository_parts
-from utils import files, folders, text_files, zips
+from store.mod_sources import repository_path
+from utils import files, folders, sizes, text_files, zips
 from utils.network import download, read_url_limited
 
-MAX_RELEASE_METADATA_BYTES = 2 * 1024 * 1024
-MAX_PLUGIN_ZIP_BYTES = 64 * 1024 * 1024
-MAX_PLUGIN_UNPACKED_BYTES = 128 * 1024 * 1024
+MAX_RELEASE_METADATA_BYTES = 2 * sizes.MIB
+MAX_PLUGIN_ZIP_BYTES = 64 * sizes.MIB
+MAX_PLUGIN_UNPACKED_BYTES = 128 * sizes.MIB
 RESTART_TIMEOUT_SECONDS = 15
 _VERSION_PATTERN = re.compile(r"^v?(\d+(?:\.\d+)*)$")
 _ASSET_PATTERN = re.compile(rf"^{PLUGIN_NAME}-v?(\d+(?:\.\d+)*)\.zip$")
@@ -38,7 +38,7 @@ def parse_version(value: str) -> tuple[int, ...] | None:
 
 
 def latest_release(repository_url: str) -> tuple[str, dict[str, object], str]:
-    repository = _repository_parts(repository_url)
+    repository = repository_path(repository_url)
     api_url = f"https://api.github.com/repos/{repository}/releases/latest"
     try:
         release = json.loads(
@@ -149,7 +149,7 @@ def install_update(
     asked), the zip is saved to fallback_dir so it can be installed from Decky's
     developer settings instead.
     """
-    repository = _repository_parts(repository_url)
+    repository = repository_path(repository_url)
     if not download_url.startswith(f"https://github.com/{repository}/releases/download/"):
         raise PluginError("The update must come from the configured repository's releases")
 

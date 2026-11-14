@@ -7,7 +7,6 @@ from pathlib import Path
 from helper import PLUGIN_NAME
 from helper.errors import PluginError
 from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
-from scanner.mod_installer import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from scanner.plugin_updater import latest_release
 from store.dependencies import (
     MAX_CATALOG_SIZE_BYTES,
@@ -15,12 +14,13 @@ from store.dependencies import (
     repository_overrides,
     save_catalog,
 )
+from store.mod_sources import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from store.plugin_store import DEFAULT_CATALOG_PATH, PluginStore, Settings
-from utils import files, folders, zips
+from utils import files, folders, sizes, zips
 from utils.network import OfflineModeError, download
 
-MAX_PACK_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
-MAX_PACK_DOWNLOAD_BYTES = MAX_PACK_TOTAL_BYTES + 64 * 1024 * 1024
+MAX_PACK_TOTAL_BYTES = 2 * sizes.GIB
+MAX_PACK_DOWNLOAD_BYTES = MAX_PACK_TOTAL_BYTES + 64 * sizes.MIB
 OFFLINE_PACK_NAME = f"{PLUGIN_NAME}-Offline-Mods"
 OFFLINE_PACK_PART_PATTERN = re.compile(
     re.escape(OFFLINE_PACK_NAME) + r"-(?P<version>.+)-part(?P<index>\d+)-of-(?P<count>\d+)\.zip"
@@ -212,7 +212,7 @@ def install_pack(
                 catalog_info = archive.getinfo(root + catalog_path)
                 if catalog_info.file_size > MAX_CATALOG_SIZE_BYTES:
                     raise PluginError(
-                        f"Catalog exceeds the {MAX_CATALOG_SIZE_BYTES // 1024 // 1024} MiB limit"
+                        f"Catalog exceeds the {sizes.label(MAX_CATALOG_SIZE_BYTES)} limit"
                     )
                 part_catalog = zips.read_file(archive, catalog_info, MAX_CATALOG_SIZE_BYTES, "Catalog")
                 if catalog_bytes is None:
@@ -235,7 +235,7 @@ def install_pack(
                         raise PluginError(f"Unusable archive entry: {path}")
                     total += info.file_size
                     if total > MAX_PACK_TOTAL_BYTES:
-                        raise PluginError(f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB")
+                        raise PluginError(f"The pack exceeds {sizes.label(MAX_PACK_TOTAL_BYTES)}")
                     zips.extract_file(
                         archive, info, folders.resolve_inside(staging, path), MAX_MOD_FILE_SIZE_BYTES, "Offline pack file"
                     )
