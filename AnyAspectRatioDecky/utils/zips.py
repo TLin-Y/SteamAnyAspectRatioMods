@@ -7,9 +7,6 @@ from helper.errors import PluginError
 from helper.validator import Validator
 from utils import files, streams
 
-__all__ = ["BadZipFile", "ZipFile", "ZipInfo", "is_zip", "member_names", "open_zip", "read_member",
-           "stage_member", "extract_member"]
-
 
 def is_zip(path: Path) -> bool:
     return is_zipfile(path)
@@ -17,7 +14,6 @@ def is_zip(path: Path) -> bool:
 
 @contextmanager
 def open_zip(path: Path, invalid_message: str) -> Generator[ZipFile, None, None]:
-    """Open a zip; a damaged zip, found now or while reading it, raises ValueError(invalid_message)."""
     try:
         with ZipFile(path) as archive:
             yield archive
@@ -25,11 +21,7 @@ def open_zip(path: Path, invalid_message: str) -> Generator[ZipFile, None, None]
         raise PluginError(invalid_message) from error
 
 
-def member_names(path: Path) -> list[str]:
-    """The files in a zip, without folders and the junk macOS and Windows add.
-
-    Raises BadZipFile or OSError when the zip cannot be read.
-    """
+def file_names(path: Path) -> list[str]:
     with ZipFile(path) as archive:
         return [
             info.filename
@@ -38,21 +30,18 @@ def member_names(path: Path) -> list[str]:
         ]
 
 
-def read_member(archive: ZipFile, info: ZipInfo, max_bytes: int, description: str) -> bytes:
-    """A member's content; refuses one larger than max_bytes before or while reading."""
+def read_file(archive: ZipFile, info: ZipInfo, max_bytes: int, description: str) -> bytes:
     if info.file_size > max_bytes:
         raise PluginError(f"{description} exceeds the {streams.size_label(max_bytes)} limit")
     with archive.open(info) as stream:
         return streams.read_limited(stream, max_bytes, description)
 
-
-def stage_member(archive: ZipFile, info: ZipInfo, directory: Path, max_bytes: int, description: str) -> tuple[Path, int]:
-    """Extract a member to a new temporary file in directory. The caller moves or deletes it."""
+# For safer async IO
+def stage_file(archive: ZipFile, info: ZipInfo, directory: Path, max_bytes: int, description: str) -> tuple[Path, int]:
+    """Extract a file to a new tmp file in directory. The caller moves or deletes it."""
     with archive.open(info) as stream:
         return files.stage_stream(stream, directory, max_bytes, description)
 
-
-def extract_member(archive: ZipFile, info: ZipInfo, path: Path, max_bytes: int, description: str) -> int:
-    """Extract a member to path (parent folders are created). Returns the bytes written."""
+def extract_file(archive: ZipFile, info: ZipInfo, path: Path, max_bytes: int, description: str) -> int:
     with archive.open(info) as stream:
         return files.write_stream(stream, path, max_bytes, description)

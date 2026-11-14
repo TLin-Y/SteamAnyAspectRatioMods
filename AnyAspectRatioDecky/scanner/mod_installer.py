@@ -236,7 +236,7 @@ def _read_local_archive_readme(mod: ModDefinition) -> str:
                 None,
             )
             if readme is not None:
-                content = zips.read_member(archive, readme, MAX_README_SIZE_BYTES, "Mod README")
+                content = zips.read_file(archive, readme, MAX_README_SIZE_BYTES, "Mod README")
                 return content.decode(text_files.BOM_TEXT_ENCODING, errors="replace")
     except OSError as error:
         raise PluginError("Local mod archive is unavailable") from error
@@ -290,7 +290,7 @@ def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
     if source.kind in ZIP_SOURCE_KINDS:
         with _open_archive(source) as archive_path, zips.open_zip(archive_path, "Mod archive is invalid") as archive:
             info = _archive_member(archive, source_path)
-            return zips.read_member(archive, info, MAX_INI_SIZE_BYTES, "Mod INI source")
+            return zips.read_file(archive, info, MAX_INI_SIZE_BYTES, "Mod INI source")
     with open_repository_file(source, source_path) as stream:
         return streams.read_limited(stream, MAX_INI_SIZE_BYTES, "Mod INI source")
 
@@ -334,7 +334,7 @@ def _stage_archive_files(
             _check_total_size(total_size)
         for relative_path, info in members.items():
             target = targets[relative_path]
-            staged, actual_size = zips.stage_member(archive, info, target.parent, MAX_MOD_FILE_SIZE_BYTES, "Mod file")
+            staged, actual_size = zips.stage_file(archive, info, target.parent, MAX_MOD_FILE_SIZE_BYTES, "Mod file")
             staged_files.append((staged, target))
             total_size += actual_size - info.file_size
             _check_total_size(total_size)

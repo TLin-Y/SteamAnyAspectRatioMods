@@ -214,7 +214,7 @@ def install_pack(
                     raise PluginError(
                         f"Catalog exceeds the {MAX_CATALOG_SIZE_BYTES // 1024 // 1024} MiB limit"
                     )
-                part_catalog = zips.read_member(archive, catalog_info, MAX_CATALOG_SIZE_BYTES, "Catalog")
+                part_catalog = zips.read_file(archive, catalog_info, MAX_CATALOG_SIZE_BYTES, "Catalog")
                 if catalog_bytes is None:
                     catalog_bytes = part_catalog
                     mods = load_mod_catalog(content=catalog_bytes, **repository_overrides(settings))
@@ -236,7 +236,7 @@ def install_pack(
                     total += info.file_size
                     if total > MAX_PACK_TOTAL_BYTES:
                         raise PluginError(f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB")
-                    zips.extract_member(
+                    zips.extract_file(
                         archive, info, folders.resolve_inside(staging, path), MAX_MOD_FILE_SIZE_BYTES, "Offline pack file"
                     )
                     found.add(path)
