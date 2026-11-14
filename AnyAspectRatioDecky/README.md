@@ -29,6 +29,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 - Fixes by **Lyall** are shipped as-is and haven't all been tested by me. If one misbehaves, press Remove and tell me which game.
 - Some fixes are for specific game versions. If a game updates, a fix may need a new release.
 - Anti-cheat or online games: use fixes at your own risk.
+- Uninstalling the plugin deletes its downloaded zips and caches, but keeps applied fixes and launch options. Press **Remove** on each game first if you want them gone.
 
 ## What it does
 

@@ -206,6 +206,22 @@ class OfflinePackTests(unittest.TestCase):
         self.assertIn("Could not refresh", result["warning"])
         self.assertEqual(1, len(load_active_catalog(self.store, Settings(offline_mode=True)).mods))
 
+    def test_uninstall_deletes_pack_and_caches_but_keeps_settings(self) -> None:
+        decky = types.ModuleType("decky")
+        decky.logger = logging.getLogger("test_offline_pack")
+        with patch.dict(sys.modules, {"decky": decky}):
+            main = importlib.import_module("main")
+        install_pack(self.store, Settings(), self.repo_zip)
+        (self.store.cache_dir / "test.cache").write_bytes(b"cache")
+        self.store.save_settings(Settings(offline_mode=True))
+        plugin = main.Plugin()
+        with patch.object(main, "get_store", return_value=self.store):
+            asyncio.run(plugin._unload())
+            asyncio.run(plugin._uninstall())
+        self.assertFalse(self.store.pack_dir.exists())
+        self.assertEqual([], [path for path in self.store.cache_dir.rglob("*") if path.is_file()])
+        self.assertTrue(self.store.load_settings().offline_mode)
+
     def test_disk_usage_counts_data_cache_pack_and_logs(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)
         (self.store.log_dir / "test.log").write_bytes(b"log")
