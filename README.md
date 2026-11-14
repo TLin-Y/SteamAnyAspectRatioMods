@@ -9,7 +9,7 @@ Play your favorite games at the aspect ratio you want (48:9 / 32:9 / 21:9 / 16:1
 ---
 
 - **Windows/MacOS/Linux:** extract the mod's ZIP into the game folder beside the game's exe. That's it.
-- **Steam OS:** the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
+- **Steam OS/DroidDeck:** the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
 
 ![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg?v=4556e8ed)
 
