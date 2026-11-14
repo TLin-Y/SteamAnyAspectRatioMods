@@ -59,6 +59,7 @@ export type PluginSettingsInfo = {
     warning: string | null;
   };
   local_archives: { count: number; warnings: string[] };
+  self_update_enabled: boolean;
   paths: { data_dir: string; log_file: string };
 };
 

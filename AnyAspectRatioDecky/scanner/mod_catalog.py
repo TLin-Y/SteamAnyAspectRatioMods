@@ -575,7 +575,10 @@ def _read_catalog_document(path: Path) -> tuple[dict[str, object], str, str]:
 
 
 def bundled_catalog_path() -> Path:
-    return Path(__file__).resolve().parents[1] / MOD_CATALOG_FILENAME
+    """catalog.json at the plugin root; store builds keep this package under py_modules/."""
+    package_root = Path(__file__).resolve().parents[1]
+    plugin_root = package_root.parent if package_root.name == "py_modules" else package_root
+    return plugin_root / MOD_CATALOG_FILENAME
 
 
 def read_catalog_repository(path: Path | None = None) -> tuple[str, str]:

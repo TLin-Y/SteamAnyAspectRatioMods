@@ -7,9 +7,13 @@ from pathlib import Path
 import decky
 
 plugin_dir = str(Path(__file__).resolve().parent)
-if plugin_dir not in sys.path:
-    sys.path.insert(0, plugin_dir)
+# Store builds keep the Python packages in py_modules/; search it and the plugin root first.
+for import_root in (plugin_dir, str(Path(plugin_dir) / "py_modules")):
+    if import_root in sys.path:
+        sys.path.remove(import_root)
+    sys.path.insert(0, import_root)
 
+from helper.build_flavor import SELF_UPDATE_ENABLED
 from helper.constants import (
     LOG_EVENT_CATALOG_FALLBACK,
     LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED,
@@ -446,6 +450,7 @@ class Plugin:
                 "warning": source.warning,
             },
             "local_archives": {"count": len(archives), "warnings": warnings},
+            "self_update_enabled": SELF_UPDATE_ENABLED,
             "paths": {
                 "data_dir": str(store.data_dir),
                 "log_file": str(store.log_path),
@@ -880,6 +885,8 @@ class Plugin:
         return configured or read_catalog_repository()[0]
 
     async def check_plugin_update(self) -> dict[str, object]:
+        if not SELF_UPDATE_ENABLED:
+            return {"error": "Plugin updates are delivered through the Decky Plugin Store."}
         installed = read_installed_version(Path(plugin_dir))
         try:
             return await asyncio.to_thread(
@@ -890,6 +897,8 @@ class Plugin:
             return {"error": str(error) or type(error).__name__}
 
     async def install_plugin_update(self) -> dict[str, object]:
+        if not SELF_UPDATE_ENABLED:
+            return {"error": "Plugin updates are delivered through the Decky Plugin Store."}
         log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase="plugin-install")
         repository = self._update_repository()
         try:
