@@ -1,6 +1,6 @@
 # AnyAspectRatio for Decky
 
-Play your games in full screen at any aspect ratio (16:10 / 4:3 / 3:2 etc.) on Steam Deck & SteamOS.
+Play your games in full screen at any aspect ratio (48:9 / 32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.) on Steam Deck & SteamOS.
 
 This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and helps set Steam launch options.
 
