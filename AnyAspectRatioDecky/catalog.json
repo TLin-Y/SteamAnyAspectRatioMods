@@ -549,8 +549,8 @@
       "executable": "PWAAT.exe",
       "source": {
         "kind": "archive",
-        "path": "Phoenix Wright Ace Attorney Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.0.zip",
-        "sha256": "b466779ea019acb4426937ef3167d88ac14257c617afc9bfdff2c6ec1f9e4ded"
+        "path": "Phoenix Wright Ace Attorney Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.1.zip",
+        "sha256": "49403306676ef6406345b3f80650a0d5d8708818d36f0be621e074397a642298"
       },
       "files": [
         "PWAAT_Data/Managed/Assembly-CSharp.dll",
@@ -565,7 +565,7 @@
       ],
       "ini_file": "PWAAT_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "display_tags": ["new-res-in-game-menu"],
+      "display_tags": ["must-read-readme", "new-res-in-game-menu"],
       "wine_dll_overrides": []
     },
     {

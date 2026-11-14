@@ -8,8 +8,10 @@ public static class PWAATResolution
     private static bool loaded;
     private static int width;
     private static int height;
+    public static KeyCode ToggleKey = KeyCode.F10;
+    public static bool Crop = true;
 
-    private static void Load()
+    public static void Load()
     {
         if (loaded)
             return;
@@ -27,8 +29,20 @@ public static class PWAATResolution
                 if (eq <= 0)
                     continue;
                 var key = line.Substring(0, eq).Trim();
+                var text = line.Substring(eq + 1).Trim();
+                if (string.Equals(key, "ToggleKey", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        ToggleKey = (KeyCode)Enum.Parse(typeof(KeyCode), text, true);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                    continue;
+                }
                 int value;
-                if (!int.TryParse(line.Substring(eq + 1).Trim(), out value))
+                if (!int.TryParse(text, out value))
                     continue;
                 if (string.Equals(key, "Width", StringComparison.OrdinalIgnoreCase))
                     w = value;
@@ -98,6 +112,17 @@ public class PWAATSceneCamera : MonoBehaviour
         return false;
     }
 
+    private void Awake()
+    {
+        PWAATResolution.Load();
+    }
+
+    private void Update()
+    {
+        if (PWAATResolution.ToggleKey != KeyCode.None && Input.GetKeyDown(PWAATResolution.ToggleKey))
+            PWAATResolution.Crop = !PWAATResolution.Crop;
+    }
+
     private void LateUpdate()
     {
         foreach (var c in Camera.allCameras)
@@ -107,7 +132,7 @@ public class PWAATSceneCamera : MonoBehaviour
                 continue;
             c.ResetProjectionMatrix();
             float a = c.aspect;
-            if (a <= 0f || a >= ReferenceAspect - 0.0001f)
+            if (!PWAATResolution.Crop || a <= 0f || a >= ReferenceAspect - 0.0001f)
                 continue;
             float h = c.orthographicSize * a / ReferenceAspect;
             c.projectionMatrix = Matrix4x4.Ortho(-h * a, h * a, -h, h, c.nearClipPlane, c.farClipPlane);

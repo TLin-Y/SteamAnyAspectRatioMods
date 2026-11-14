@@ -20,6 +20,7 @@ Edit `PWAAT_ARFix.ini`, then restart. Default is 1280x800 (16:10):
 [Resolution]
 Width = 1280
 Height = 800
+ToggleKey = F10
 ```
 
 The size is applied at every launch and added to the in-game resolution
@@ -35,6 +36,14 @@ from the left and right edges (about 5% per side at 16:10, 12.5% at 4:3).
 
 The game's art is 16:9 only. Wider than 16:9 shows black at the sides
 because there is nothing to display there; this is expected.
+
+## Toggle crop (F10)
+
+Something you need to examine or select can sit in the cropped edge area.
+Press `F10` in game to switch between the cropped (full screen) view and the
+full 16:9 width with bars, and press it again to go back. On Steam Deck, map
+a back button to `F10` in the Steam Input layout. Change the key with
+`ToggleKey` in `PWAAT_ARFix.ini` (Unity key names, e.g. `F9`, `Home`).
 
 ## Remove
 
