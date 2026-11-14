@@ -1,5 +1,7 @@
 import asyncio
 import sys
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import asdict, replace
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -14,44 +16,16 @@ for import_root in (plugin_dir, str(Path(plugin_dir) / "py_modules")):
     sys.path.insert(0, import_root)
 
 from helper.build_flavor import SELF_UPDATE_ENABLED
-from helper.constants import (
-    LOG_EVENT_CATALOG_FALLBACK,
-    LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED,
-    LOG_EVENT_DEPENDENCY_UPDATE_FAILED,
-    LOG_EVENT_DEPENDENCY_UPDATE_STARTED,
-    LOG_EVENT_MOD_FILE_OPERATION_COMPLETED,
-    LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-    LOG_EVENT_MOD_FILE_OPERATION_STARTED,
-    LOG_EVENT_MOD_INI_ADJUSTMENT_SKIPPED,
-    LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK,
-    LOG_EVENT_PLUGIN_STARTED,
-    LOG_EVENT_PLUGIN_STOPPED,
-    LOG_EVENT_SETTINGS_REJECTED,
-    LOG_EVENT_SETTINGS_SAVED,
-    LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED,
-    LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED,
-    LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE,
-    LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED,
-    LOG_SCAN_PHASE_FORMAT,
-    MOD_CATALOG_FILE_STATUS_COMPLETE,
-    MOD_CATALOG_FILE_STATUS_NONE,
-    MOD_CATALOG_FILE_STATUS_PARTIAL,
-    MOD_SOURCE_ARCHIVE,
-    STEAM_LIBRARY_UNAVAILABLE_WARNING,
-)
-from logger.plugin_logger import PluginLogger, attach_file_handler, clear_file_handler_logs
-from scanner import SupportedGame, scan_supported_games as scan_supported_games_report
+from logger.plugin_logger import attach_file_handler, clear_file_handler_logs
 from scanner.local_archives import scan_local_archives
-from scanner.plugin_updater import (
-    PLUGIN_NAME,
-    check_for_update,
-    install_update,
-    read_installed_version,
+from scanner.mod_catalog import (
+    ModDefinition,
+    read_catalog_repository,
+    summarize_credits,
 )
-from scanner.mod_catalog import ModDefinition, read_catalog_repository, summarize_credits
 from scanner.mod_installer import (
-    NetworkError,
     MissingModBackupError,
+    NetworkError,
     apply_mod_files,
     existing_mod_logs,
     fetch_mod_readme,
@@ -65,21 +39,30 @@ from scanner.mod_installer import (
     update_existing_ini_resolution,
     write_mod_ini,
 )
-from store import (
+from scanner.plugin_updater import (
+    PLUGIN_NAME,
+    check_for_update,
+    install_update,
+    read_installed_version,
+)
+from scanner.supported_game_scanner import (
+    SupportedGame,
+    scan_supported_games as scan_supported_games_report,
+)
+from store.dependencies import (
+    load_active_catalog,
+    refresh_catalog_on_start,
+    update_dependencies,
+)
+from store.pack import download_release_pack, install_pack, pack_operation
+from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
     Settings,
-    download_release_pack,
-    install_pack,
-    load_active_catalog,
-    pack_operation,
-    refresh_catalog_on_start,
-    update_dependencies,
     validate_settings,
 )
 
-
-log = PluginLogger(decky.logger)
+log = decky.logger
 _store: PluginStore | None = None
 _file_handler: RotatingFileHandler | None = None
 
@@ -103,16 +86,11 @@ def get_store() -> PluginStore:
     return _store
 
 
-def _update_available(
-    game_path: str | None,
-    files_present: list[str],
-    mod: ModDefinition,
-    hashes: dict[str, dict[str, str]],
-) -> bool:
-    applied_hash = hashes.get(game_path, {}).get(mod.mod_id) if game_path else None
+def _update_available(game: SupportedGame, mod: ModDefinition, hashes: dict[str, dict[str, str]]) -> bool:
+    applied_hash = hashes.get(game.game_path, {}).get(mod.mod_id) if game.game_path else None
     return bool(
-        files_present
-        and mod.source.kind == MOD_SOURCE_ARCHIVE
+        game.files_present
+        and mod.source.kind == "archive"
         and mod.source.sha256
         and applied_hash
         and applied_hash != mod.source.sha256
@@ -144,9 +122,9 @@ def _include_tracked_backup_targets(
     present_files = list(dict.fromkeys([*game.files_present, *targets]))
     missing_files = [path for path in game.files_missing if path not in targets]
     file_status = (
-        MOD_CATALOG_FILE_STATUS_COMPLETE if not missing_files
-        else MOD_CATALOG_FILE_STATUS_PARTIAL if present_files
-        else MOD_CATALOG_FILE_STATUS_NONE
+        "complete" if not missing_files
+        else "partial" if present_files
+        else "not_detected"
     )
     return replace(
         game,
@@ -157,39 +135,91 @@ def _include_tracked_backup_targets(
     )
 
 
-def _selected_groups(
-    candidates: list[tuple[object, object, object]],
-    choices: dict[str, dict[str, str]],
-) -> set[str]:
-    return {
-        group for group, mod_id, game_path in candidates
-        if isinstance(group, str) and group
-        and (choice := choices.get(group))
-        and choice["mod_id"] == mod_id and choice["game_path"] == game_path
-    }
+@contextmanager
+def _logged_failure(message: str, *args: object) -> Iterator[None]:
+    """Log file-system and validation errors with a traceback, then let them reach the UI."""
+    try:
+        yield
+    except (OSError, ValueError):
+        log.exception(message, *args)
+        raise
 
 
-def _matches_selection(
-    group: object, mod_id: object, game_path: object,
-    groups: set[str], choices: dict[str, dict[str, str]],
-) -> bool:
-    if not isinstance(group, str) or group not in groups:
-        return True
-    choice = choices[group]
-    return choice["mod_id"] == mod_id and choice["game_path"] == game_path
+def _error_result(error: Exception) -> dict[str, object]:
+    return _error_result(error)
 
 
-def _find_mod_logs(
-    files: tuple[str, ...] | list[str], name: str, game_path: str | None, warnings: list[str],
-) -> list[str]:
+def _record_outcome(
+    store: PluginStore, mod: ModDefinition, game_path: str, applied: bool, conflicts: list[str], awaiting: bool,
+) -> None:
+    """Persist what an apply/remove changed: applied version, cached scan and saved game match."""
+    action = "applied" if applied else "removed"
+    complete = not conflicts
+    try:
+        if mod.source.kind == "archive" and complete:
+            step = "the applied version could not be saved"
+            store.set_applied_hash(game_path, mod.mod_id, (mod.source.sha256 or None) if applied else None)
+        if not awaiting:
+            step = "the cached game status could not be cleared"
+            store.last_scan_path.unlink(missing_ok=True)
+        if not applied and complete:
+            step = "the saved game match could not be cleared"
+            store.remove_matched_game(mod.mod_id, game_path)
+    except (OSError, ValueError) as error:
+        raise ValueError(f"Mod files were {action}, but {step}: {error}") from error
+
+
+def _is_chosen(game: SupportedGame, choices: dict[str, dict[str, str]]) -> bool:
+    choice = choices.get(game.ambiguity_group) if game.ambiguity_group else None
+    return bool(choice) and choice["mod_id"] == game.mod_id and choice["game_path"] == game.game_path
+
+
+def _find_mod_logs(files: Sequence[str], name: str, game_path: str | None, warnings: list[str]) -> list[str]:
     if not game_path or not mod_log_names(files):
         return []
     try:
         return existing_mod_logs(files, game_path)
     except (OSError, ValueError) as error:
-        log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="mod-logs")
+        log.warning("Could not check mod logs for %s", name)
         warnings.append(f"Could not check logs for {name}: {error}")
         return []
+
+
+def _load_applied_hashes(store: PluginStore, warnings: list[str]) -> dict[str, dict[str, str]] | None:
+    try:
+        return store.load_applied_hashes()
+    except ValueError as error:
+        log.warning("Could not read applied mod versions")
+        warnings.append(str(error))
+        return None
+
+
+def _refresh_games(
+    games: list[SupportedGame],
+    mods: dict[str, ModDefinition],
+    hashes: dict[str, dict[str, str]] | None,
+    choices: dict[str, dict[str, str]],
+    warnings: list[str],
+) -> list[SupportedGame]:
+    """Recompute what changes without a rescan: update flags, mod logs and saved game choices.
+
+    In an ambiguity group with a saved choice, only the chosen game is kept and it is locked.
+    Unknown mods (catalog changed) and unreadable hashes leave the cached update flag alone.
+    """
+    locked_groups = {game.ambiguity_group for game in games if _is_chosen(game, choices)}
+    refreshed = []
+    for game in games:
+        locked = game.ambiguity_group in locked_groups
+        if locked and not _is_chosen(game, choices):
+            continue
+        mod = mods.get(game.mod_id)
+        changes: dict[str, object] = {"match_locked": True} if locked else {}
+        if mod is not None and hashes is not None:
+            changes["update_available"] = _update_available(game, mod, hashes)
+        files = mod.files if mod is not None else game.mod_files
+        changes["log_files"] = _find_mod_logs(files, game.mod_name, game.game_path, warnings)
+        refreshed.append(replace(game, **changes))
+    return refreshed
 
 
 class Plugin:
@@ -203,40 +233,15 @@ class Plugin:
             local_archive_dir=settings.local_archive_dir or None,
             local_index_path=store.local_index_path,
         )
-        try:
-            hashes = store.load_applied_hashes()
-        except ValueError as error:
-            log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="applied-hashes")
-            report.warnings.append(str(error))
-            hashes = {}
-        games = []
-        for game in report.supported_games:
-            mod = report.mods[game.mod_id]
-            game = _include_tracked_backup_targets(game, mod, hashes)
-            games.append(replace(
-                game,
-                update_available=_update_available(
-                    game.game_path, game.files_present, mod, hashes
-                ),
-                log_files=_find_mod_logs(
-                    mod.files, game.mod_name, game.game_path, report.warnings,
-                ),
-            ))
-        report.supported_games = games
-        if not include_all_matches:
-            choices = store.load_matched_games()
-            groups = _selected_groups(
-                [(game.ambiguity_group, game.mod_id, game.game_path) for game in report.supported_games],
-                choices,
-            )
-            report.supported_games = [
-                replace(game, match_locked=True)
-                if game.ambiguity_group in groups else game
-                for game in report.supported_games
-                if _matches_selection(game.ambiguity_group, game.mod_id, game.game_path, groups, choices)
-            ]
+        hashes = _load_applied_hashes(store, report.warnings) or {}
+        games = [
+            _include_tracked_backup_targets(game, report.mods[game.mod_id], hashes)
+            for game in report.supported_games
+        ]
+        choices = {} if include_all_matches else store.load_matched_games()
+        report.supported_games = _refresh_games(games, report.mods, hashes, choices, report.warnings)
         if source.warning:
-            log.warning(LOG_EVENT_CATALOG_FALLBACK)
+            log.warning("Cached catalog is unusable; using the bundled catalog")
             report.warnings.append(source.warning)
         return report
 
@@ -278,64 +283,16 @@ class Plugin:
         if cached is None:
             return None
         report = cached["report"]
-        games = report.get("supported_games") if isinstance(report, dict) else None
-        if not isinstance(games, list):
-            return None
-        choices = store.load_matched_games()
-        selected_groups = _selected_groups(
-            [(game.get("ambiguity_group"), game.get("mod_id"), game.get("game_path"))
-             for game in games if isinstance(game, dict)],
-            choices,
-        )
-        report["supported_games"] = games = [
-            game for game in games
-            if not isinstance(game, dict)
-            or _matches_selection(
-                game.get("ambiguity_group"), game.get("mod_id"),
-                game.get("game_path"), selected_groups, choices,
-            )
-        ]
-        for game in games:
-            if isinstance(game, dict) and isinstance(game.get("ambiguity_group"), str) and game["ambiguity_group"] in selected_groups:
-                game["match_locked"] = True
-        source = load_active_catalog(store, store.load_settings())
-        mods = {mod.mod_id: mod for mod in source.mods}
-        hashes = None
         try:
-            hashes = store.load_applied_hashes()
-        except ValueError as error:
-            log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="applied-hashes")
-            warnings = report.get("warnings")
-            if isinstance(warnings, list):
-                warnings.append(str(error))
-
-        for game in games:
-            if not isinstance(game, dict):
-                continue
-            mod_id, game_path, files_present = (
-                game.get("mod_id"), game.get("game_path"), game.get("files_present")
-            )
-            if (
-                isinstance(mod_id, str)
-                and mod_id in mods
-                and (game_path is None or isinstance(game_path, str))
-                and isinstance(files_present, list)
-            ):
-                if hashes is not None:
-                    game["update_available"] = _update_available(
-                        game_path, files_present, mods[mod_id], hashes
-                    )
-            warnings = report.get("warnings")
-            mod_files = list(mods[mod_id].files) if isinstance(mod_id, str) and mod_id in mods else game.get("mod_files")
-            mod_name = game.get("mod_name")
-            if (
-                isinstance(warnings, list)
-                and isinstance(mod_name, str)
-                and (game_path is None or isinstance(game_path, str))
-                and isinstance(mod_files, list)
-                and all(isinstance(path, str) for path in mod_files)
-            ):
-                game["log_files"] = _find_mod_logs(mod_files, mod_name, game_path, warnings)
+            games = [SupportedGame.from_dict(game) for game in report["supported_games"]]
+            warnings = list(report["warnings"])
+        except (KeyError, TypeError, ValueError):
+            return None  # Written by another plugin version: treat as no cached scan.
+        mods = {mod.mod_id: mod for mod in load_active_catalog(store, store.load_settings()).mods}
+        hashes = _load_applied_hashes(store, warnings)
+        games = _refresh_games(games, mods, hashes, store.load_matched_games(), warnings)
+        report["supported_games"] = [game.to_dict() for game in games]
+        report["warnings"] = warnings
         return cached
 
     async def select_matched_game(self, group: str, mod_id: str, game_path: str) -> dict[str, object]:
@@ -351,7 +308,7 @@ class Plugin:
         return {"selected": True}
 
     async def clear_matched_game(self, group: str, mod_id: str, game_path: str) -> dict[str, object]:
-        try:
+        with _logged_failure("Clearing the game selection failed: %s", mod_id):
             report = self._scan()
             game = next(
                 (game for game in report.supported_games
@@ -365,9 +322,6 @@ class Plugin:
             store = get_store()
             store.last_scan_path.unlink(missing_ok=True)
             store.clear_matched_game(group, mod_id, game_path)
-        except (OSError, ValueError):
-            log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, mod_id=mod_id, phase="clear-match")
-            raise
         return {"cleared": True}
 
     async def get_credits(self) -> dict[str, object]:
@@ -385,8 +339,8 @@ class Plugin:
         try:
             result = await asyncio.to_thread(install_pack, store, store.load_settings(), Path(archive_path))
         except (OSError, ValueError) as error:
-            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-import")
-            return {"error": str(error) or type(error).__name__}
+            log.exception("Offline pack import failed")
+            return _error_result(error)
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
 
@@ -395,8 +349,8 @@ class Plugin:
         try:
             result = await asyncio.to_thread(download_release_pack, store, store.load_settings())
         except (OSError, ValueError) as error:
-            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="pack-download")
-            return {"error": str(error) or type(error).__name__}
+            log.exception("Offline pack download failed")
+            return _error_result(error)
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
 
@@ -409,7 +363,7 @@ class Plugin:
         try:
             await asyncio.to_thread(refresh)
         except (OSError, ValueError) as error:
-            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="catalog-refresh")
+            log.warning("Catalog refresh failed")
             return f"Could not refresh the online catalog: {error}"
         return None
 
@@ -422,8 +376,8 @@ class Plugin:
                     raise ValueError("Plugin log handler is unavailable.")
                 clear_file_handler_logs(_file_handler)
         except (OSError, ValueError) as error:
-            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="clear-local-data")
-            return {"error": str(error) or type(error).__name__}
+            log.exception("Clearing local data failed")
+            return _error_result(error)
         return {}
 
     async def get_settings(self) -> dict[str, object]:
@@ -468,13 +422,9 @@ class Plugin:
     ) -> dict[str, object]:
         store = get_store()
         try:
-            if (
-                not isinstance(ini_resolution_width, str)
-                or not ini_resolution_width.isascii()
-                or not ini_resolution_width.isdecimal()
-                or not isinstance(ini_resolution_height, str)
-                or not ini_resolution_height.isascii()
-                or not ini_resolution_height.isdecimal()
+            if not all(
+                isinstance(value, str) and value.isascii() and value.isdecimal()
+                for value in (ini_resolution_width, ini_resolution_height)
             ):
                 raise ValueError("INI resolution dimensions must be whole numbers")
             requested = validate_settings(
@@ -488,27 +438,21 @@ class Plugin:
                 )
             )
         except ValueError:
-            log.warning(LOG_EVENT_SETTINGS_REJECTED)
+            log.warning("Settings rejected")
             raise
 
-        # Values equal to the shipped defaults are stored as "use default".
         default_url, default_ref = read_catalog_repository()
+
+        def unless_default(value: str, default: str) -> str:
+            return "" if value == default else value  # "" means "use the shipped default"
+
         with pack_operation():
             previous = store.load_settings()
             settings = replace(
                 requested,
-                catalog_repository_url=(
-                    "" if requested.catalog_repository_url == default_url
-                    else requested.catalog_repository_url
-                ),
-                catalog_ref=(
-                    "" if requested.catalog_ref == default_ref
-                    else requested.catalog_ref
-                ),
-                catalog_path=(
-                    "" if requested.catalog_path == DEFAULT_CATALOG_PATH
-                    else requested.catalog_path
-                ),
+                catalog_repository_url=unless_default(requested.catalog_repository_url, default_url),
+                catalog_ref=unless_default(requested.catalog_ref, default_ref),
+                catalog_path=unless_default(requested.catalog_path, DEFAULT_CATALOG_PATH),
                 offline_mode=previous.offline_mode,
                 ini_resolution_update_pending=(
                     previous.ini_resolution_update_pending
@@ -524,7 +468,7 @@ class Plugin:
                 store.clear_pack()
             if previous.local_archive_dir != settings.local_archive_dir:
                 store.local_index_path.unlink(missing_ok=True)
-        log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"source-changed-{source_changed}")
+        log.info("Settings saved (mod source changed: %s)", source_changed)
         return {"saved": True, "source_changed": source_changed}
 
     async def get_offline_mode(self) -> bool:
@@ -547,67 +491,56 @@ class Plugin:
         store = get_store()
         store.save_settings(replace(store.load_settings(), offline_mode=bool(enabled)))
         block_network(bool(enabled))
-        log.info(LOG_EVENT_SETTINGS_SAVED, phase=f"offline-mode-{bool(enabled)}")
+        log.info("Offline mode %s", "on" if enabled else "off")
         warning = None if enabled else await self._refresh_online_catalog(store)
         return {"offline_mode": bool(enabled), "warning": warning}
 
     async def update_dependencies(self) -> dict[str, object]:
         store = get_store()
         settings = store.load_settings()
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED)
+        log.info("Catalog update started")
         try:
             with pack_operation():
                 result = update_dependencies(store, settings)
         except NetworkError as error:
-            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="network")
+            log.warning("Catalog update failed: network error")
             return {"error": str(error)}
         except (OSError, ValueError) as error:
-            log.exception(LOG_EVENT_DEPENDENCY_UPDATE_FAILED)
-            return {"error": str(error) or type(error).__name__}
+            log.exception("Catalog update failed")
+            return _error_result(error)
         store.local_index_path.unlink(missing_ok=True)
         archives, warnings = self._scan_local_archives(store, settings)
         log.info(
-            LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED,
-            phase=f"mods-{result['mod_count']}-changed-{result['catalog_changed']}",
+            "Catalog update completed: %s mods, changed: %s",
+            result["mod_count"], result["catalog_changed"],
         )
         return {**result, "local_archive_count": len(archives), "warnings": warnings}
 
     async def scan_supported_games(self) -> dict[str, object]:
-        log.info(LOG_EVENT_SUPPORTED_GAME_SCAN_STARTED)
-        try:
+        log.info("Scan started")
+        with _logged_failure("Scan failed"):
             report = self._scan()
-        except (OSError, ValueError):
-            log.exception(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED)
-            raise
-        unavailable_warning = STEAM_LIBRARY_UNAVAILABLE_WARNING.split(
-            "{path}", maxsplit=1
-        )[0]
         for warning in report.warnings:
-            if warning.startswith(unavailable_warning):
-                log.warning(LOG_EVENT_SUPPORTED_GAME_LIBRARY_UNAVAILABLE)
+            if warning.startswith("Steam library is unavailable:"):
+                log.warning(warning)
         log.info(
-            LOG_EVENT_SUPPORTED_GAME_SCAN_COMPLETED,
-            phase=LOG_SCAN_PHASE_FORMAT.format(
-                libraries=report.steam_scan.libraries_scanned,
-                apps=report.steam_scan.apps_scanned,
-                supported=len(report.supported_games),
-            ),
+            "Scan completed: %s libraries, %s apps, %s supported",
+            report.steam_scan.libraries_scanned,
+            report.steam_scan.apps_scanned,
+            len(report.supported_games),
         )
         result = report.to_dict()
         try:
             get_store().save_last_scan(result)
         except OSError:
-            log.warning(LOG_EVENT_SUPPORTED_GAME_SCAN_FAILED, phase="cache-write")
+            log.warning("Could not save the scan result")
         return result
 
     async def update_current_resolution(self) -> dict[str, object]:
-        log.info(LOG_EVENT_MOD_FILE_OPERATION_STARTED, phase="update-resolution")
-        try:
+        log.info("Resolution update started")
+        with _logged_failure("Resolution update failed"):
             report = self._scan()
             settings = get_store().load_settings()
-        except (OSError, ValueError):
-            log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, phase="update-resolution")
-            raise
 
         candidates: dict[tuple[str, str], list[SupportedGame]] = {}
         skipped: list[str] = []
@@ -647,13 +580,13 @@ class Plugin:
                     mod, game.game_path, settings.ini_resolution_width, settings.ini_resolution_height
                 )
             except (OSError, ValueError) as error:
-                log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, mod_id=mod.mod_id, phase="update-resolution")
+                log.exception("Resolution update failed: %s", mod.mod_id)
                 failures.append(f"{game.app_name}: {error}")
                 continue
             if changed:
                 updated.append(game.app_name)
                 if not permissions_preserved:
-                    log.warning(LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK, mod_id=mod.mod_id)
+                    log.warning("Could not keep INI file permissions: %s", mod.mod_id)
             else:
                 unchanged.append(game.app_name)
         with pack_operation():
@@ -667,7 +600,7 @@ class Plugin:
             ):
                 latest = replace(latest, ini_resolution_update_pending=False)
                 store.save_settings(latest)
-        log.info(LOG_EVENT_MOD_FILE_OPERATION_COMPLETED, phase="update-resolution")
+        log.info("Resolution update completed")
         return {
             "updated": updated, "unchanged": unchanged, "skipped": skipped,
             "failures": failures, "warnings": warnings,
@@ -682,153 +615,66 @@ class Plugin:
         replace_existing_files: bool | None = None,
         preserve_modified_ini: bool | None = None,
     ) -> dict[str, object]:
+        """Apply or remove a mod's files.
+
+        Conflicting files are returned for confirmation first; the UI calls again with
+        replace_existing_files (apply) or preserve_modified_ini (remove) set.
+        """
         phase = "apply" if applied else "remove"
-        log.info(
-            LOG_EVENT_MOD_FILE_OPERATION_STARTED,
-            mod_id=mod_id,
-            phase=phase,
-        )
-        ini_adjustment_warnings: list[str] = []
+        log.info("Mod %s started: %s", phase, mod_id)
+        ini_warnings: list[str] = []
         try:
-            mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
-            settings = get_store().load_settings()
-            ini_resolution = (
-                settings.ini_resolution_width,
-                settings.ini_resolution_height,
-            )
+            mod, path = self._resolve_mod_game(mod_id, game_path)
+            store = get_store()
+            settings = store.load_settings()
+            resolution = (settings.ini_resolution_width, settings.ini_resolution_height)
             if applied:
-                conflicting_files = apply_mod_files(
-                    mod,
-                    installed_game_path,
+                conflicts = apply_mod_files(
+                    mod, path,
                     replace_existing_files=replace_existing_files,
-                    ini_resolution=ini_resolution,
-                    ini_adjustment_warnings=ini_adjustment_warnings,
+                    ini_resolution=resolution,
+                    ini_adjustment_warnings=ini_warnings,
                 )
-                if conflicting_files and replace_existing_files is None:
-                    copied_file_count = 0
-                elif replace_existing_files is False:
-                    copied_file_count = len(mod.files) - sum(
-                        path in mod.files for path in conflicting_files
-                    )
-                else:
-                    copied_file_count = len(mod.files)
+                awaiting = bool(conflicts) and replace_existing_files is None
+                kept = sum(file in mod.files for file in conflicts) if replace_existing_files is False else 0
+                copied = 0 if awaiting else len(mod.files) - kept
             else:
                 try:
-                    conflicting_files = remove_mod_files(
-                        mod,
-                        installed_game_path,
-                        preserve_modified_ini=preserve_modified_ini,
-                        ini_resolution=ini_resolution,
+                    conflicts = remove_mod_files(
+                        mod, path, preserve_modified_ini=preserve_modified_ini, ini_resolution=resolution
                     )
                 except MissingModBackupError as error:
-                    store = get_store()
-                    store.set_applied_hash(installed_game_path, mod.mod_id, None)
+                    store.set_applied_hash(path, mod.mod_id, None)
                     store.last_scan_path.unlink(missing_ok=True)
-                    warning = str(error)
-                    log.warning(
-                        LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                        mod_id=mod_id,
-                        phase=f"{phase}-missing-backup",
-                    )
-                    return {
-                        "applied": True,
-                        "copied_file_count": 0,
-                        "conflicting_files": [],
-                        "warning": warning,
-                    }
-                copied_file_count = 0
-            if mod.source.kind == MOD_SOURCE_ARCHIVE:
-                complete_apply = applied and not conflicting_files
-                complete_remove = not applied and not conflicting_files
-                if complete_apply or complete_remove:
-                    try:
-                        get_store().set_applied_hash(
-                            installed_game_path, mod.mod_id,
-                            mod.source.sha256 if complete_apply and mod.source.sha256 else None,
-                        )
-                    except (OSError, ValueError) as error:
-                        raise ValueError(
-                            f"Mod files were {'applied' if applied else 'removed'}, "
-                            f"but the applied version could not be saved: {error}"
-                        ) from error
-            awaiting_confirmation = bool(conflicting_files) and (
-                replace_existing_files is None if applied else preserve_modified_ini is None
-            )
-            if not awaiting_confirmation:
-                try:
-                    get_store().last_scan_path.unlink(missing_ok=True)
-                except OSError as error:
-                    raise ValueError(
-                        f"Mod files were {'applied' if applied else 'removed'}, "
-                        f"but the cached game status could not be cleared: {error}"
-                    ) from error
-            if not applied and not conflicting_files:
-                try:
-                    get_store().remove_matched_game(mod.mod_id, installed_game_path)
-                except (OSError, ValueError) as error:
-                    raise ValueError(
-                        f"Mod files were removed, but the saved game match could not be cleared: {error}"
-                    ) from error
+                    log.warning("Mod %s failed, backup missing: %s", phase, mod_id)
+                    return {"applied": True, "copied_file_count": 0, "conflicting_files": [], "warning": str(error)}
+                awaiting = bool(conflicts) and preserve_modified_ini is None
+                copied = 0
+            _record_outcome(store, mod, path, applied, conflicts, awaiting)
         except NetworkError as error:
-            log.warning(
-                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                mod_id=mod_id,
-                phase=f"{phase}-network",
-            )
+            log.warning("Mod %s failed, network error: %s", phase, mod_id)
             return {"error": str(error)}
         except (OSError, ValueError):
-            log.exception(
-                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                mod_id=mod_id,
-                phase=phase,
-            )
+            log.exception("Mod %s failed: %s", phase, mod_id)
             raise
 
-        log.info(
-            LOG_EVENT_MOD_FILE_OPERATION_COMPLETED,
-            mod_id=mod_id,
-            phase=phase,
-        )
-        result = {
-            "applied": applied,
-            "copied_file_count": copied_file_count,
-            "conflicting_files": conflicting_files,
-        }
-        if ini_adjustment_warnings:
-            log.warning(
-                LOG_EVENT_MOD_INI_ADJUSTMENT_SKIPPED,
-                mod_id=mod_id,
-                phase="apply",
-            )
-            result["ini_adjustment_warning"] = " ".join(
-                ini_adjustment_warnings
-            )
+        log.info("Mod %s completed: %s", phase, mod_id)
+        result: dict[str, object] = {"applied": applied, "copied_file_count": copied, "conflicting_files": conflicts}
+        if ini_warnings:
+            log.warning("Skipped INI resolution adjustment: %s", mod_id)
+            result["ini_adjustment_warning"] = " ".join(ini_warnings)
         return result
 
     async def get_mod_ini(self, mod_id: str, game_path: str) -> dict[str, object]:
-        try:
+        with _logged_failure("Reading mod INI failed: %s", mod_id):
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
             content, exists = read_mod_ini(mod, installed_game_path)
-        except (OSError, ValueError):
-            log.exception(
-                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                mod_id=mod_id,
-                phase="read-ini",
-            )
-            raise
-        return {
-            "ini_file": mod.ini_file,
-            "content": content,
-            "exists": exists,
-        }
+        return {"ini_file": mod.ini_file, "content": content, "exists": exists}
 
     async def get_mod_log(self, mod_id: str, game_path: str, name: str) -> dict[str, object]:
-        try:
+        with _logged_failure("Reading mod log failed: %s", mod_id):
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
             content, truncated = read_mod_log(mod, installed_game_path, name)
-        except (OSError, ValueError):
-            log.exception(LOG_EVENT_MOD_FILE_OPERATION_FAILED, mod_id=mod_id, phase="read-mod-log")
-            raise
         return {"name": name, "content": content, "truncated": truncated}
 
     async def get_mod_readme(self, mod_id: str) -> dict[str, str]:
@@ -836,48 +682,20 @@ class Plugin:
         try:
             content = fetch_mod_readme(mod)
         except NetworkError as error:
-            log.warning(
-                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                mod_id=mod_id,
-                phase="read-readme-network",
-            )
+            log.warning("Mod README download failed: %s", mod_id)
             return {"title": mod.name, "content": f"**Could not load the ReadMe.**\n\n{error}"}
         except (OSError, ValueError):
-            log.exception(
-                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                mod_id=mod_id,
-                phase="read-readme",
-            )
+            log.exception("Reading mod README failed: %s", mod_id)
             raise
         return {"title": mod.name, "content": content}
 
-    async def save_mod_ini(
-        self,
-        mod_id: str,
-        game_path: str,
-        content: str,
-    ) -> dict[str, object]:
-        try:
+    async def save_mod_ini(self, mod_id: str, game_path: str, content: str) -> dict[str, object]:
+        with _logged_failure("Saving mod INI failed: %s", mod_id):
             mod, installed_game_path = self._resolve_mod_game(mod_id, game_path)
             permissions_preserved = write_mod_ini(mod, installed_game_path, content)
-        except (OSError, ValueError):
-            log.exception(
-                LOG_EVENT_MOD_FILE_OPERATION_FAILED,
-                mod_id=mod_id,
-                phase="save-ini",
-            )
-            raise
         if not permissions_preserved:
-            log.warning(
-                LOG_EVENT_MOD_INI_PERMISSIONS_FALLBACK,
-                mod_id=mod_id,
-                phase="save-ini",
-            )
-        return {
-            "saved": True,
-            "ini_file": mod.ini_file,
-            "permissions_preserved": permissions_preserved,
-        }
+            log.warning("Could not keep INI file permissions: %s", mod_id)
+        return {"saved": True, "ini_file": mod.ini_file, "permissions_preserved": permissions_preserved}
 
     @staticmethod
     def _update_repository() -> str:
@@ -893,13 +711,13 @@ class Plugin:
                 check_for_update, self._update_repository(), installed
             )
         except (OSError, ValueError) as error:
-            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="plugin-check")
-            return {"error": str(error) or type(error).__name__}
+            log.warning("Plugin update check failed")
+            return _error_result(error)
 
     async def install_plugin_update(self) -> dict[str, object]:
         if not SELF_UPDATE_ENABLED:
             return {"error": "Plugin updates are delivered through the Decky Plugin Store."}
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase="plugin-install")
+        log.info("Plugin update started")
         repository = self._update_repository()
         try:
             info = await asyncio.to_thread(
@@ -919,20 +737,20 @@ class Plugin:
                 Path.home() / "Downloads",
             )
         except (OSError, ValueError) as error:
-            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="plugin-install")
-            return {"error": str(error) or type(error).__name__}
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED, phase="plugin-install")
+            log.warning("Plugin update failed")
+            return _error_result(error)
+        log.info("Plugin update completed")
         return result
 
     async def _main(self) -> None:
         store = get_store()
-        log.info(LOG_EVENT_PLUGIN_STARTED)
+        log.info("Plugin started")
         self._startup_refresh = asyncio.create_task(self._refresh_catalog(store))
 
     @staticmethod
     async def _refresh_catalog(store: PluginStore) -> None:
         """Fetch the newest catalog in the background; the bundled or cached one stays in use on failure."""
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_STARTED, phase="startup")
+        log.info("Startup catalog refresh started")
 
         def refresh():
             with pack_operation():
@@ -941,9 +759,9 @@ class Plugin:
         try:
             changed = await asyncio.to_thread(refresh)
         except Exception:
-            log.warning(LOG_EVENT_DEPENDENCY_UPDATE_FAILED, phase="startup")
+            log.warning("Startup catalog refresh failed")
             return
-        log.info(LOG_EVENT_DEPENDENCY_UPDATE_COMPLETED, phase=f"startup-changed-{changed}")
+        log.info("Startup catalog refresh completed (changed: %s)", changed)
 
     async def _unload(self) -> None:
-        log.info(LOG_EVENT_PLUGIN_STOPPED)
+        log.info("Plugin stopped")

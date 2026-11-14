@@ -15,15 +15,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import urlopen
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
-from helper.constants import (
-    MOD_MANUAL_INSTALL_MESSAGE,
-    MOD_SOURCE_ARCHIVE,
-    MOD_SOURCE_DIRECTORY,
-    MOD_SOURCE_FILES,
-    MOD_SOURCE_LOCAL_ARCHIVE,
-)
 from scanner.mod_catalog import IniResolutionPair, ModDefinition, ModSource
-
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
 MAX_MOD_DOWNLOAD_SIZE_BYTES = 256 * 1024 * 1024
@@ -248,7 +240,7 @@ def _open_archive(source: ModSource) -> Iterator[Path]:
     """
     if source.path is None:
         raise ValueError("Archive source path is missing")
-    if source.kind == MOD_SOURCE_LOCAL_ARCHIVE:
+    if source.kind == "local_archive":
         local_path = Path(source.path)
         if not local_path.is_file():
             raise ValueError("Local mod archive is unavailable")
@@ -333,7 +325,7 @@ def _open_downloaded_archive(source: ModSource) -> Iterator[Path]:
 
 def mod_readme_path(mod: ModDefinition) -> str:
     """README location: beside an archive mod's zip, else in the mod's top-level folder."""
-    if mod.source.kind == MOD_SOURCE_FILES:
+    if mod.source.kind == "files":
         source_path = mod.source.files[0].path
     elif mod.source.path is not None:
         source_path = mod.source.path
@@ -342,7 +334,7 @@ def mod_readme_path(mod: ModDefinition) -> str:
     parts = PurePosixPath(source_path).parts
     folder = (
         parts[:1]
-        if mod.source.kind == MOD_SOURCE_DIRECTORY
+        if mod.source.kind == "directory"
         else parts[:-1]
     )
     return "/".join((*folder, "README.md"))
@@ -370,7 +362,7 @@ def _read_local_archive_readme(mod: ModDefinition) -> str:
 
 
 def fetch_mod_readme(mod: ModDefinition) -> str:
-    if mod.source.kind == MOD_SOURCE_LOCAL_ARCHIVE:
+    if mod.source.kind == "local_archive":
         return _read_local_archive_readme(mod)
     with open_repository_file(mod.source, mod_readme_path(mod)) as stream:
         content = _read_limited(stream, MAX_README_SIZE_BYTES, "Mod README")
@@ -378,6 +370,13 @@ def fetch_mod_readme(mod: ModDefinition) -> str:
         return content.decode("utf-8-sig")
     except UnicodeDecodeError as error:
         raise ValueError("Mod README is not valid UTF-8 text") from error
+
+
+def _game_root(game_path: str) -> Path:
+    root = Path(game_path).resolve(strict=True)
+    if not root.is_dir():
+        raise ValueError("Game installation directory is unavailable")
+    return root
 
 
 def _target_path(game_root: Path, relative_path: str) -> Path:
@@ -408,11 +407,11 @@ def _target_path(game_root: Path, relative_path: str) -> Path:
 
 def _source_file_map(mod: ModDefinition) -> dict[str, str]:
     source = mod.source
-    if source.kind == MOD_SOURCE_FILES:
+    if source.kind == "files":
         return {source_file.destination: source_file.path for source_file in source.files}
-    if source.kind == MOD_SOURCE_DIRECTORY:
+    if source.kind == "directory":
         return {path: f"{source.path}/{path}" for path in mod.files}
-    if source.kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_LOCAL_ARCHIVE):
+    if source.kind in ("archive", "local_archive"):
         prefix = f"{source.destination}/" if source.destination else ""
         result = {}
         for path in mod.files:
@@ -428,7 +427,7 @@ def _source_file_map(mod: ModDefinition) -> dict[str, str]:
 def _read_source_file(mod: ModDefinition, relative_path: str) -> bytes:
     source_path = _source_file_map(mod)[relative_path]
     source = mod.source
-    if source.kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_LOCAL_ARCHIVE):
+    if source.kind in ("archive", "local_archive"):
         try:
             with _open_archive(source) as archive_path:
                 with ZipFile(archive_path) as archive:
@@ -554,6 +553,61 @@ def _stage_archive_files(
         raise ValueError("Mod archive is invalid") from error
 
 
+def _stage_downloads(
+    mod: ModDefinition,
+    source_files: dict[str, str],
+    targets: dict[str, Path],
+    staged_files: list[tuple[Path, Path]],
+) -> None:
+    expected_hashes = dict(mod.source.file_hashes)
+    total_size = 0
+    for relative_path, source_path in source_files.items():
+        with open_repository_file(mod.source, source_path) as response:
+            staged, size = _stage_stream(response, targets[relative_path], MAX_MOD_FILE_SIZE_BYTES)
+        staged_files.append((staged, targets[relative_path]))
+        expected = expected_hashes.get(relative_path)
+        if expected and _file_sha256(staged) != expected:
+            raise ValueError(f"Mod file {relative_path} does not match the catalog checksum")
+        total_size += size
+        _check_total_size(total_size)
+
+
+def _adjust_staged_ini(
+    mod: ModDefinition, staged_ini: Path, ini_resolution: tuple[int, int], warnings: list[str] | None,
+) -> None:
+    """Write the configured resolution into the staged INI; keep the original INI if that fails."""
+    try:
+        content = staged_ini.read_bytes()
+        if len(content) > MAX_INI_SIZE_BYTES:
+            raise ValueError("Mod INI exceeds the 256 KiB automatic edit limit")
+        adjusted = _rewrite_ini_resolution(content, *ini_resolution, mod.ini_resolution)
+        if adjusted != content:
+            _replace_staged_file(staged_ini, adjusted)
+    except (OSError, ValueError):
+        if warnings is not None:
+            warnings.append(f"Could not adjust {mod.ini_file}; the original INI was kept.")
+
+
+def _replace_with_backup(staged: Path, target: Path, backup: Path | None, action: str) -> None:
+    """Move staged over target, first renaming an existing original to backup (undone on failure)."""
+    renamed = False
+    try:
+        if backup is not None and target.is_file() and not backup.exists():
+            target.rename(backup)
+            renamed = True
+        os.replace(staged, target)
+    except OSError as error:
+        if renamed:
+            try:
+                backup.rename(target)
+            except OSError as restore_error:
+                raise OSError(
+                    f"{action} failed ({error}) and restoration failed "
+                    f"({restore_error}); restore {backup.name} manually"
+                ) from restore_error
+        raise
+
+
 def apply_mod_files(
     mod: ModDefinition,
     game_path: str,
@@ -562,158 +616,83 @@ def apply_mod_files(
     ini_resolution: tuple[int, int] | None = None,
     ini_adjustment_warnings: list[str] | None = None,
 ) -> list[str]:
-    if mod.manual:
-        raise ValueError(MOD_MANUAL_INSTALL_MESSAGE.format(mod_id=mod.mod_id))
-    game_root = Path(game_path).resolve(strict=True)
-    if not game_root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+    """Stage every mod file beside its target, then move the staged files into place.
 
+    Returns the existing files that differ from the mod. While replace_existing_files is None
+    nothing is written if there are any; False keeps them and True overwrites them.
+    """
+    if mod.manual:
+        raise ValueError(f"Mod {mod.mod_id} must be installed manually; follow its ReadMe")
+    game_root = _game_root(game_path)
     source_files = _source_file_map(mod)
-    targets = {
-        relative_path: _target_path(game_root, relative_path)
-        for relative_path in mod.files
-    }
-    backups = {
-        targets[item.target]: _target_path(game_root, item.backup)
-        for item in mod.file_backups
-    }
+    targets = {relative_path: _target_path(game_root, relative_path) for relative_path in mod.files}
+    backups = {targets[item.target]: _target_path(game_root, item.backup) for item in mod.file_backups}
     for backup_target, backup in backups.items():
         if backup.exists() and not backup.is_file():
             raise ValueError(f"Mod backup path is not a regular file: {backup.name}")
         if not backup.is_file() and not backup_target.is_file():
             raise ValueError("Original mod target and its backup are missing; verify game files first")
     launcher = mod.launcher_replacement
-    launcher_target = (
-        _target_path(game_root, launcher.target) if launcher is not None else None
-    )
-    launcher_backup = (
-        _target_path(game_root, launcher.backup) if launcher is not None else None
-    )
-    if launcher_target is not None and launcher_backup is not None:
+    if launcher is not None:
+        launcher_target = _target_path(game_root, launcher.target)
+        launcher_backup = _target_path(game_root, launcher.backup)
         for path in (launcher_target, launcher_backup):
             if path.exists() and not path.is_file():
                 raise ValueError(f"Launcher path is not a regular file: {path.name}")
         if not launcher_target.is_file() and not launcher_backup.is_file():
             raise ValueError("Original launcher and its backup are missing; verify game files first")
+
     staged_files: list[tuple[Path, Path]] = []
     staged_launcher = None
     try:
-        if mod.source.kind in (MOD_SOURCE_ARCHIVE, MOD_SOURCE_LOCAL_ARCHIVE):
+        if mod.source.kind in ("archive", "local_archive"):
             _stage_archive_files(mod, source_files, targets, staged_files)
         else:
-            total_download_size = 0
-            for relative_path, source_path in source_files.items():
-                with open_repository_file(mod.source, source_path) as response:
-                    staged, file_size = _stage_stream(
-                        response,
-                        targets[relative_path],
-                        MAX_MOD_FILE_SIZE_BYTES,
-                    )
-                staged_files.append((staged, targets[relative_path]))
-                total_download_size += file_size
-                _check_total_size(total_download_size)
-
+            _stage_downloads(mod, source_files, targets, staged_files)
         staged_by_target = {target: staged for staged, target in staged_files}
         if mod.ini_file is not None and ini_resolution is not None and mod.ini_resolution:
             staged_ini = staged_by_target.get(_target_path(game_root, mod.ini_file))
             if staged_ini is not None:
-                try:
-                    content = staged_ini.read_bytes()
-                    if len(content) > MAX_INI_SIZE_BYTES:
-                        raise ValueError(
-                            "Mod INI exceeds the 256 KiB automatic edit limit"
-                        )
-                    adjusted = _rewrite_ini_resolution(content, *ini_resolution, mod.ini_resolution)
-                    if adjusted != content:
-                        _replace_staged_file(staged_ini, adjusted)
-                except (OSError, ValueError):
-                    if ini_adjustment_warnings is not None:
-                        ini_adjustment_warnings.append(
-                            f"Could not adjust {mod.ini_file}; the original INI was kept."
-                        )
-        conflicting_files = []
-        already_installed_without_backup: set[Path] = set()
+                _adjust_staged_ini(mod, staged_ini, ini_resolution, ini_adjustment_warnings)
+
+        conflicts = []
+        installed_without_backup: set[Path] = set()
         for relative_path, target in targets.items():
             if target.is_dir():
                 raise ValueError(f"Mod target is a directory: {relative_path}")
-            staged = staged_by_target[target]
-            if target.is_file():
-                matches_mod = files_equal(target, staged)
-                backup = backups.get(target)
-                if matches_mod and backup is not None and not backup.is_file():
-                    already_installed_without_backup.add(target)
-                if not matches_mod:
-                    conflicting_files.append(relative_path)
-        if launcher is not None and launcher_target is not None and launcher_backup is not None:
+            if not target.is_file():
+                continue
+            if not files_equal(target, staged_by_target[target]):
+                conflicts.append(relative_path)
+            elif target in backups and not backups[target].is_file():
+                installed_without_backup.add(target)
+        if launcher is not None:
             source = _target_path(game_root, launcher.source)
             source = staged_by_target.get(source, source)
             if not source.is_file():
                 raise ValueError(f"Launcher copy source is missing: {launcher.source}")
             with source.open("rb") as stream:
-                staged_launcher, _ = _stage_stream(
-                    stream, launcher_target, MAX_MOD_FILE_SIZE_BYTES
-                )
+                staged_launcher, _ = _stage_stream(stream, launcher_target, MAX_MOD_FILE_SIZE_BYTES)
             if launcher_target.is_file():
-                matches_mod = files_equal(launcher_target, staged_launcher)
-                if matches_mod and not launcher_backup.is_file():
+                if not files_equal(launcher_target, staged_launcher):
+                    conflicts.append(launcher.target)
+                elif not launcher_backup.is_file():
                     raise ValueError(
                         "Launcher is already replaced but its original backup is missing; "
                         "verify game files before applying"
                     )
-                if not matches_mod:
-                    conflicting_files.append(launcher.target)
-        if conflicting_files and replace_existing_files is None:
-            return conflicting_files
+        if conflicts and replace_existing_files is None:
+            return conflicts
 
         for relative_path, target in targets.items():
-            staged = staged_by_target[target]
-            if target in already_installed_without_backup:
+            if target in installed_without_backup:
                 continue
-            if (
-                replace_existing_files is False
-                and relative_path in conflicting_files
-            ):
+            if replace_existing_files is False and relative_path in conflicts:
                 continue
-            renamed = False
-            backup = backups.get(target)
-            try:
-                if backup is not None and target.is_file() and not backup.exists():
-                    target.rename(backup)
-                    renamed = True
-                os.replace(staged, target)
-            except OSError as error:
-                if renamed and backup is not None:
-                    try:
-                        backup.rename(target)
-                    except OSError as restore_error:
-                        raise OSError(
-                            f"Mod replacement failed ({error}) and restoration failed "
-                            f"({restore_error}); restore {backup.name} manually"
-                        ) from restore_error
-                raise
-        if (
-            staged_launcher is not None
-            and launcher_target is not None
-            and launcher_backup is not None
-            and not (replace_existing_files is False and conflicting_files)
-        ):
-            renamed = False
-            try:
-                if not launcher_backup.exists():
-                    launcher_target.rename(launcher_backup)
-                    renamed = True
-                os.replace(staged_launcher, launcher_target)
-            except OSError as error:
-                if renamed:
-                    try:
-                        launcher_backup.rename(launcher_target)
-                    except OSError as restore_error:
-                        raise OSError(
-                            f"Launcher setup failed ({error}) and restoration failed "
-                            f"({restore_error}); restore {launcher_backup.name} manually"
-                        ) from restore_error
-                raise
-        return conflicting_files if replace_existing_files is False else []
+            _replace_with_backup(staged_by_target[target], target, backups.get(target), "Mod replacement")
+        if staged_launcher is not None and not (replace_existing_files is False and conflicts):
+            _replace_with_backup(staged_launcher, launcher_target, launcher_backup, "Launcher setup")
+        return conflicts if replace_existing_files is False else []
     finally:
         for staged, _ in staged_files:
             staged.unlink(missing_ok=True)
@@ -725,9 +704,7 @@ def read_mod_ini(mod: ModDefinition, game_path: str) -> tuple[str, bool]:
     if mod.ini_file is None:
         raise ValueError("This mod does not define an INI configuration file")
 
-    game_root = Path(game_path).resolve(strict=True)
-    if not game_root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+    game_root = _game_root(game_path)
     ini_path = _target_path(game_root, mod.ini_file)
     if not ini_path.exists():
         return "", False
@@ -752,18 +729,14 @@ def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
 
 
 def existing_mod_logs(files: tuple[str, ...] | list[str], game_path: str) -> list[str]:
-    root = Path(game_path).resolve(strict=True)
-    if not root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+    root = _game_root(game_path)
     return [name for name in mod_log_names(files) if _target_path(root, name).is_file()]
 
 
 def read_mod_log(mod: ModDefinition, game_path: str, name: str) -> tuple[str, bool]:
     if name not in mod_log_names(mod.files):
         raise ValueError("Log is not associated with this mod")
-    root = Path(game_path).resolve(strict=True)
-    if not root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+    root = _game_root(game_path)
     path = _target_path(root, name)
     if not path.is_file():
         raise ValueError("Mod log is no longer available")
@@ -873,9 +846,7 @@ def write_mod_ini(
     if len(encoded_content) > MAX_INI_SIZE_BYTES:
         raise ValueError("Mod INI content exceeds the 256 KiB editor limit")
 
-    game_root = Path(game_path).resolve(strict=True)
-    if not game_root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+    game_root = _game_root(game_path)
     ini_path = _target_path(game_root, mod.ini_file)
     if ini_path.exists() and not ini_path.is_file():
         raise ValueError("Mod INI path is not a regular file")
@@ -928,6 +899,48 @@ def update_existing_ini_resolution(
     )
 
 
+def _ini_is_modified(mod: ModDefinition, ini_path: Path, ini_resolution: tuple[int, int] | None) -> bool:
+    """Compare the installed INI with the mod's original (with the resolution the plugin wrote)."""
+    try:
+        original = _read_source_file(mod, mod.ini_file)
+        if ini_resolution is not None:
+            original = _rewrite_ini_resolution(original, *ini_resolution, mod.ini_resolution)
+        return ini_path.stat().st_size != len(original) or ini_path.read_bytes() != original
+    except (OSError, ValueError, KeyError, BadZipFile):
+        # Original unavailable (offline, bad cache): keep the user's INI safe by asking.
+        return True
+
+
+def _restore_backups(backups: dict[Path, Path]) -> None:
+    """Copy each backup over its target; nothing is replaced unless every copy was staged."""
+    with ExitStack() as cleanup:
+        staged_backups = []
+        for target, backup in backups.items():
+            if not backup.is_file():
+                continue
+            backup_size = backup.stat().st_size
+            with backup.open("rb") as stream:
+                staged, staged_size = _stage_stream(stream, target, backup_size)
+            if staged_size != backup_size:
+                staged.unlink(missing_ok=True)
+                raise OSError(f"Mod backup changed while being restored: {backup.name}")
+            cleanup.callback(staged.unlink, missing_ok=True)
+            staged_backups.append((staged, target))
+        for staged, target in staged_backups:
+            os.replace(staged, target)
+
+
+def _remove_empty_parents(paths: list[Path], game_root: Path) -> None:
+    for path in paths:
+        parent = path.parent
+        while parent != game_root:
+            try:
+                parent.rmdir()
+            except OSError:
+                break
+            parent = parent.parent
+
+
 def remove_mod_files(
     mod: ModDefinition,
     game_path: str,
@@ -935,13 +948,14 @@ def remove_mod_files(
     preserve_modified_ini: bool | None = None,
     ini_resolution: tuple[int, int] | None = None,
 ) -> list[str]:
-    if mod.manual:
-        raise ValueError(MOD_MANUAL_INSTALL_MESSAGE.format(mod_id=mod.mod_id))
-    game_root = Path(game_path).resolve(strict=True)
-    if not game_root.is_dir():
-        raise ValueError("Game installation directory is unavailable")
+    """Delete the mod's files and logs and restore backed-up originals.
 
-    targets = [_target_path(game_root, path) for path in mod.files]
+    A user-modified INI is returned for confirmation while preserve_modified_ini is None;
+    True keeps it, False deletes it too.
+    """
+    if mod.manual:
+        raise ValueError(f"Mod {mod.mod_id} must be installed manually; follow its ReadMe")
+    game_root = _game_root(game_path)
     backups = {
         _target_path(game_root, item.target): _target_path(game_root, item.backup)
         for item in mod.file_backups
@@ -959,13 +973,9 @@ def remove_mod_files(
                 "Steam will restore the original file."
             )
     launcher = mod.launcher_replacement
-    launcher_target = (
-        _target_path(game_root, launcher.target) if launcher is not None else None
-    )
-    launcher_backup = (
-        _target_path(game_root, launcher.backup) if launcher is not None else None
-    )
-    if launcher_target is not None and launcher_backup is not None:
+    if launcher is not None:
+        launcher_target = _target_path(game_root, launcher.target)
+        launcher_backup = _target_path(game_root, launcher.backup)
         for path in (launcher_target, launcher_backup):
             if path.exists() and not path.is_file():
                 raise ValueError(f"Launcher path is not a regular file: {path.name}")
@@ -975,76 +985,34 @@ def remove_mod_files(
                 launcher_source.is_file() and launcher_target.is_file()
                 and files_equal(launcher_source, launcher_target)
             ):
-                raise ValueError(
-                    "Original launcher backup is missing; verify game files "
-                    "before removing the mod"
-                )
-    modified_ini_path = None
+                raise ValueError("Original launcher backup is missing; verify game files before removing the mod")
+
+    kept_ini = None
     if mod.ini_file is not None:
         ini_path = _target_path(game_root, mod.ini_file)
         if ini_path.is_file() and preserve_modified_ini is not False:
-            try:
-                source_content = _read_source_file(mod, mod.ini_file)
-                if ini_resolution is not None:
-                    source_content = _rewrite_ini_resolution(
-                        source_content,
-                        *ini_resolution,
-                        mod.ini_resolution,
-                    )
-                modified = (
-                    ini_path.stat().st_size != len(source_content)
-                    or ini_path.read_bytes() != source_content
-                )
-            except (OSError, ValueError, KeyError, BadZipFile):
-                # Original unavailable (offline, bad cache): keep the user's INI safe by asking.
-                modified = True
-            if modified and preserve_modified_ini is None:
-                return [mod.ini_file]
-            if modified:
-                modified_ini_path = ini_path
+            if _ini_is_modified(mod, ini_path, ini_resolution):
+                if preserve_modified_ini is None:
+                    return [mod.ini_file]
+                kept_ini = ini_path
 
-    targets = list(dict.fromkeys([
-        *targets,
-        *(_target_path(game_root, name) for name in mod_log_names(mod.files)),
-    ]))
+    targets = list(dict.fromkeys(
+        _target_path(game_root, name) for name in (*mod.files, *mod_log_names(mod.files))
+    ))
+    # A launcher copy made from a mod file is removed after the original launcher is back.
     launcher_source = (
         _target_path(game_root, launcher.source)
         if launcher is not None and launcher.source in mod.files else None
     )
-    with ExitStack() as cleanup:
-        staged_backups = []
-        for backup_target, backup in backups.items():
-            if backup.is_file():
-                backup_size = backup.stat().st_size
-                with backup.open("rb") as stream:
-                    staged, staged_size = _stage_stream(stream, backup_target, backup_size)
-                if staged_size != backup_size:
-                    staged.unlink(missing_ok=True)
-                    raise OSError(f"Mod backup changed while being restored: {backup.name}")
-                cleanup.callback(staged.unlink, missing_ok=True)
-                staged_backups.append((staged, backup_target))
-        for staged, backup_target in staged_backups:
-            os.replace(staged, backup_target)
+    _restore_backups(backups)
     for target in targets:
-        if target == modified_ini_path or target == launcher_source or target in backups:
-            continue
-        target.unlink(missing_ok=True)
-
-    if launcher_target is not None and launcher_backup is not None and launcher_backup.is_file():
+        if target not in (kept_ini, launcher_source) and target not in backups:
+            target.unlink(missing_ok=True)
+    if launcher is not None and launcher_backup.is_file():
         os.replace(launcher_backup, launcher_target)
     if launcher_source is not None:
         launcher_source.unlink(missing_ok=True)
     for backup in backups.values():
         backup.unlink(missing_ok=True)
-
-    for target in targets:
-        if target == modified_ini_path:
-            continue
-        parent = target.parent
-        while parent != game_root:
-            try:
-                parent.rmdir()
-            except OSError:
-                break
-            parent = parent.parent
+    _remove_empty_parents([target for target in targets if target != kept_ini], game_root)
     return []

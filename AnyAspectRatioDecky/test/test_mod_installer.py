@@ -1,3 +1,4 @@
+import hashlib
 import io
 import os
 import ssl
@@ -8,19 +9,26 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from scanner.mod_catalog import IniResolutionPair, LauncherReplacement, ModBackup, ModDefinition, ModSource, ModSourceFile
+from scanner.mod_catalog import (
+    IniResolutionPair,
+    LauncherReplacement,
+    ModBackup,
+    ModDefinition,
+    ModSource,
+    ModSourceFile,
+)
 from scanner.mod_installer import (
-    create_ssl_context,
     apply_mod_files,
-    fetch_mod_readme,
+    create_ssl_context,
     existing_mod_logs,
+    fetch_mod_readme,
+    launcher_setup_complete,
     mod_readme_path,
     read_mod_ini,
     read_mod_log,
     remove_mod_files,
     update_existing_ini_resolution,
     write_mod_ini,
-    launcher_setup_complete,
 )
 
 
@@ -648,7 +656,8 @@ class ModInstallerTests(unittest.TestCase):
         )
 
     def test_launcher_confirm_apply_reapply_remove_and_scan_status(self) -> None:
-        from scanner import InstalledApp, SteamScanReport, match_supported_games
+        from scanner.steam_library_scanner import InstalledApp, SteamScanReport
+        from scanner.supported_game_scanner import match_supported_games
 
         mod = self._launcher_mod()
         target, backup = self._launcher_game()
@@ -902,6 +911,23 @@ class ModInstallerTests(unittest.TestCase):
                 apply_mod_files(mod, str(self.game_path))
 
         self.assertFalse((self.game_path / "fix.dll").exists())
+        self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
+
+    def test_loose_file_downloads_are_checked_against_catalog_hashes(self) -> None:
+        good = hashlib.sha256(b"payload").hexdigest()
+        files = (ModSourceFile("source/first.dll", "first.dll"), ModSourceFile("source/second.dll", "second.dll"))
+        base = self._mod("files", ("first.dll", "second.dll"), source_files=files)
+        with patch("scanner.mod_installer.urlopen", side_effect=lambda url, **kwargs: io.BytesIO(b"payload")):
+            hashed = replace(base, source=replace(base.source, file_hashes=(("first.dll", good), ("second.dll", good))))
+            self.assertEqual([], apply_mod_files(hashed, str(self.game_path)))
+            self.assertEqual(b"payload", (self.game_path / "second.dll").read_bytes())
+            for name in ("first.dll", "second.dll"):
+                (self.game_path / name).unlink()
+
+            tampered = replace(base, source=replace(base.source, file_hashes=(("second.dll", "0" * 64),)))
+            with self.assertRaisesRegex(ValueError, "second.dll does not match the catalog checksum"):
+                apply_mod_files(tampered, str(self.game_path))
+        self.assertFalse((self.game_path / "first.dll").exists())
         self.assertFalse(list(self.game_path.rglob(".anyaspectratio-*")))
 
     def test_rejects_total_file_download_limit_without_installing_partial_set(self) -> None:

@@ -5,10 +5,7 @@ const test = require("node:test");
 const vm = require("node:vm");
 const ts = require("typescript");
 
-const source = fs.readFileSync(path.join(__dirname, "..", "src", "index.tsx"), "utf8");
-const compiled = ts.transpileModule(`${source}\nexport { GamesTab };`, {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
-}).outputText;
+const src = path.join(__dirname, "..", "src");
 
 function renderGames(report, options = {}) {
   const gameStates = [report];
@@ -48,6 +45,7 @@ function renderGames(report, options = {}) {
   const api = {
     callable: (name) => async (...args) => {
       calls.push({ name, args });
+      if (options.handlers?.[name]) return options.handlers[name](...args);
       if (name === "set_mod_applied") {
         const handler = args[2] ? options.apply : options.remove;
         const result = handler
@@ -80,28 +78,43 @@ function renderGames(report, options = {}) {
     },
     definePlugin: () => {}, openFilePicker: () => {},
   };
-  const module = { exports: {} };
-  const context = {
-    module, exports: module.exports,
-    require(name) {
-      if (name === "react") return react;
-      if (name === "react/jsx-runtime") return { jsx: element, jsxs: element, Fragment: "Fragment" };
-      if (name === "@decky/ui") return ui;
-      if (name === "@decky/api") return api;
-      if (name === "react-markdown") return { __esModule: true, default: "ReactMarkdown" };
-      if (name === "./launch_options/steamLaunchOptions") return {
-        prepareLaunchOptions: async () => null,
-        removeLaunchOptions: options.removeLaunchOptions,
-        readCurrentLaunchOptions: async () => "",
-      };
-      throw new Error(`Unexpected dependency: ${name}`);
-    },
+  const cache = new Map();
+  const load = (file) => {
+    if (cache.has(file)) return cache.get(file);
+    const module = { exports: {} };
+    cache.set(file, module.exports);
+    const code = ts.transpileModule(fs.readFileSync(file, "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
+    }).outputText;
+    vm.runInNewContext(code, {
+      module, exports: module.exports,
+      window: { setTimeout, clearTimeout, setInterval, clearInterval },
+      require(name) {
+        if (name === "react") return react;
+        if (name === "react/jsx-runtime") return { jsx: element, jsxs: element, Fragment: "Fragment" };
+        if (name === "@decky/ui") return ui;
+        if (name === "@decky/api") return api;
+        if (name === "react-markdown") return { __esModule: true, default: "ReactMarkdown" };
+        if (name.endsWith("/steamLaunchOptions")) return {
+          prepareLaunchOptions: async () => null,
+          removeLaunchOptions: options.removeLaunchOptions,
+          readCurrentLaunchOptions: async () => "",
+        };
+        if (name.startsWith(".")) {
+          const base = path.resolve(path.dirname(file), name);
+          return load([".tsx", ".ts"].map((ext) => base + ext).find(fs.existsSync));
+        }
+        throw new Error(`Unexpected dependency: ${name}`);
+      },
+    });
+    cache.set(file, module.exports);
+    return module.exports;
   };
-  vm.runInNewContext(compiled, context);
+  const GamesTab = load(path.join(src, "components", "views", "GamesTab.tsx")).default;
   const render = () => {
     states = gameStates;
     hook = 0;
-    return module.exports.GamesTab({ dataRevision: 0 });
+    return expand(GamesTab({ dataRevision: 0 }));
   };
   render.modal = () => {
     states = modalStates;
@@ -113,9 +126,19 @@ function renderGames(report, options = {}) {
   return render;
 }
 
+// Render child function components so assertions see the whole tree.
+function expand(node) {
+  if (!node || typeof node !== "object") return node;
+  if (Array.isArray(node)) return node.map(expand);
+  if (typeof node.type === "function") return expand(node.type(node.props));
+  const children = node.props?.children;
+  return children === undefined ? node : { ...node, props: { ...node.props, children: expand(children) } };
+}
+
 function findElements(node, type) {
   if (!node || typeof node !== "object") return [];
   if (Array.isArray(node)) return node.flatMap((child) => findElements(child, type));
+  if (typeof node.type === "function") return findElements(node.type(node.props), type);
   return [
     ...(node.type === type ? [node] : []),
     ...findElements(node.props?.children, type),
@@ -140,7 +163,7 @@ test("Apply confirms exactly one matching game before installing it", async () =
     assert.ok(!JSON.stringify(tree).includes("By Exe"));
     assert.ok(!JSON.stringify(tree).includes("Choose game to manage"));
     assert.ok(findElements(tree, "div").some((node) =>
-      typeof node.props.children === "string" && node.props.children.includes("Found 1 supported game row(s)"),
+      typeof node.props.children === "string" && node.props.children.includes("Found 1 supported games."),
     ));
     findElements(tree, "ToggleField")[0].props.onChange(true);
     let modal = render.modal();
@@ -402,4 +425,45 @@ test("manual fix logs share the manual install row", async () => {
   const row = findElements(tree, "PanelSectionRow").find((item) => findElements(item, "DialogButton").includes(button));
   assert.ok(JSON.stringify(row).includes("Manual install"));
   assert.equal(findElements(tree, "ToggleField").length, 0);
+});
+
+test("INI edits save on blur and never overlap", async () => {
+  const tick = () => new Promise((resolve) => setImmediate(resolve));
+  const game = {
+    mod_id: "wo3", mod_name: "WO3 Fix", app_name: "WO3", steam_app_id: "1", game_path: "/games/WO3",
+    manual: false, source_kind: "archive", wine_dll_overrides: [], mod_files: ["fix.ini"],
+    file_status: "complete", files_present: ["fix.ini"], files_missing: [], ini_file: "fix.ini", log_files: [],
+  };
+  const report = { steam_scan: { apps_scanned: 1, libraries_scanned: 1 }, catalogued_mods: 1, supported_games: [game], warnings: [] };
+  const saves = [];
+  let finishSave;
+  const render = renderGames(report, { handlers: {
+    get_mod_ini: async () => ({ ini_file: "fix.ini", content: "Width=1\nHeight=2", exists: true }),
+    save_mod_ini: (...args) => {
+      saves.push(args[2]);
+      return new Promise((resolve) => { finishSave = () => resolve({ saved: true, permissions_preserved: true }); });
+    },
+  } });
+  const edit = findElements(render(), "DialogButton").find((button) => JSON.stringify(button.props.children).includes("Edit"));
+  edit.props.onClick();
+  await tick();
+  const fields = () => findElements(render(), "TextField");
+  assert.equal(fields().length, 2);
+
+  fields()[0].props.onChange({ target: { value: "Width=3" } });
+  fields()[0].props.onBlur();
+  await tick();
+  assert.deepEqual(saves, ["Width=3\nHeight=2"]);
+
+  fields()[1].props.onChange({ target: { value: "Height=4" } });
+  fields()[1].props.onBlur();
+  await tick();
+  assert.equal(saves.length, 1, "a second save waits for the first");
+
+  finishSave();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.deepEqual(saves, ["Width=3\nHeight=2", "Width=3\nHeight=4"]);
+  finishSave();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.ok(JSON.stringify(render()).includes("Configuration saved."));
 });

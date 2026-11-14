@@ -7,27 +7,10 @@ from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
-from helper.constants import (
-    MOD_CATALOG_FILE_STATUS_COMPLETE,
-    MOD_CATALOG_FILE_STATUS_NONE,
-    MOD_CATALOG_FILE_STATUS_PARTIAL,
-    MOD_CATALOG_MODS_KEY,
-    MOD_FILES_KEY,
-    MOD_SOURCE_ARCHIVE,
-    MOD_SOURCE_DIRECTORY,
-    MOD_SOURCE_FILES,
-    MOD_SOURCE_KEY,
-    MOD_SOURCE_PATH_KEY,
-)
-from scanner import (
-    InstalledApp,
-    SteamScanReport,
-    SupportedGame,
-    load_mod_catalog,
-    match_supported_games,
-)
+from scanner.mod_catalog import load_mod_catalog, summarize_credits
 from scanner.mod_installer import mod_readme_path
-from scanner.mod_catalog import summarize_credits
+from scanner.steam_library_scanner import InstalledApp, SteamScanReport
+from scanner.supported_game_scanner import SupportedGame, match_supported_games
 
 
 class ModCatalogTests(unittest.TestCase):
@@ -321,15 +304,15 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(65, len(configured))
         for mod in configured:
             with self.subTest(mod=mod.mod_id):
-                if mod.source.kind == MOD_SOURCE_ARCHIVE:
+                if mod.source.kind == "archive":
                     prefix = f"{mod.source.destination}/" if mod.source.destination else ""
                     name = mod.ini_file.removeprefix(prefix)
                     with ZipFile(root / mod.source.path) as archive:
                         content = archive.read(name).decode("utf-8-sig")
-                elif mod.source.kind == MOD_SOURCE_FILES:
+                elif mod.source.kind == "files":
                     source = next(item for item in mod.source.files if item.destination == mod.ini_file)
                     content = (root / source.path).read_text(encoding="utf-8-sig")
-                elif mod.source.kind == MOD_SOURCE_DIRECTORY:
+                elif mod.source.kind == "directory":
                     content = (root / mod.source.path / mod.ini_file).read_text(encoding="utf-8-sig")
                 else:
                     self.fail(f"Unsupported source for {mod.mod_id}")
@@ -450,22 +433,22 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(3, len(mod.files))
         self.assertEqual(
             37,
-            sum(candidate.source.kind == MOD_SOURCE_ARCHIVE for candidate in catalog),
+            sum(candidate.source.kind == "archive" for candidate in catalog),
         )
         self.assertEqual(
             1,
-            sum(candidate.source.kind == MOD_SOURCE_DIRECTORY for candidate in catalog),
+            sum(candidate.source.kind == "directory" for candidate in catalog),
         )
         self.assertEqual(
             2,
-            sum(candidate.source.kind == MOD_SOURCE_FILES for candidate in catalog),
+            sum(candidate.source.kind == "files" for candidate in catalog),
         )
         for candidate in catalog:
             self.assertTrue(
                 (repository_root / mod_readme_path(candidate)).is_file(),
                 candidate.mod_id,
             )
-            if candidate.source.kind == MOD_SOURCE_ARCHIVE:
+            if candidate.source.kind == "archive":
                 self.assertIsNotNone(candidate.source.path)
                 archive_path = repository_root / candidate.source.path
                 self.assertTrue(archive_path.is_file(), candidate.mod_id)
@@ -478,7 +461,7 @@ class ModCatalogTests(unittest.TestCase):
                             candidate.source.destination
                         )
                     self.assertIn(relative_path.as_posix(), members, candidate.mod_id)
-            elif candidate.source.kind == MOD_SOURCE_DIRECTORY:
+            elif candidate.source.kind == "directory":
                 source_directory = repository_root / candidate.source.path
                 self.assertTrue(source_directory.is_dir(), candidate.mod_id)
                 for installed_file in candidate.files:
@@ -607,6 +590,7 @@ class ModCatalogTests(unittest.TestCase):
 
     def test_bloodstained_package_and_install_paths(self) -> None:
         import configparser
+
         from scanner.mod_installer import existing_mod_logs, read_mod_log
 
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "bloodstained-ritual-of-the-night")
@@ -742,7 +726,7 @@ class ModCatalogTests(unittest.TestCase):
         )
         self.assertEqual("x64.steam/Absolum_ARFix.ini", mod.ini_file)
         self.assertEqual(("winhttp=n,b",), mod.wine_dll_overrides)
-        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("archive", mod.source.kind)
         self.assertEqual("Reimpl-Absolum/Absolum-v0.1.0.zip", mod.source.path)
         self.assertEqual(("TLin-Y",), tuple(credit.name for credit in mod.credits))
 
@@ -754,7 +738,7 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(("winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"), mod.files)
         self.assertEqual("Dave_ARFix.ini", mod.ini_file)
         self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
-        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("archive", mod.source.kind)
         self.assertEqual("DAVE THE DIVER/DAVE-THE-DIVER-v1.1.0.zip", mod.source.path)
 
     def test_pentiment_release_paths_and_defaults(self) -> None:
@@ -767,7 +751,7 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(("winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"), mod.files)
         self.assertEqual("Pentiment_ARFix.ini", mod.ini_file)
         self.assertEqual(("winhttp=n,b",), mod.wine_dll_overrides)
-        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("archive", mod.source.kind)
         self.assertEqual("Pentiment/Pentiment-v0.2.0.zip", mod.source.path)
         self.assertEqual(1, len(mod.ini_resolution))
         pair = mod.ini_resolution[0]
@@ -796,14 +780,14 @@ class ModCatalogTests(unittest.TestCase):
         self.assertEqual(("winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"), mod.files)
         self.assertEqual("SNB_ARFix.ini", mod.ini_file)
         self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
-        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("archive", mod.source.kind)
         self.assertEqual("SANABI/SANABI-v1.1.0.zip", mod.source.path)
 
     def test_undertale_catalog_paths(self) -> None:
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "undertale")
         self.assertEqual("Undertale", mod.install_dir)
         self.assertEqual("UNDERTALE.exe", mod.executable)
-        self.assertEqual(MOD_SOURCE_ARCHIVE, mod.source.kind)
+        self.assertEqual("archive", mod.source.kind)
         self.assertEqual(
             "external/Twig/Undertale/Undertale-Ultrawide-Fix.zip", mod.source.path
         )
@@ -972,17 +956,41 @@ class ModCatalogTests(unittest.TestCase):
 
         ori = catalog["ori-and-the-blind-forest-definitive-edition"]
         self.assertIsNone(ori.ini_file)
-        self.assertEqual(MOD_SOURCE_FILES, ori.source.kind)
+        self.assertEqual("files", ori.source.kind)
         self.assertEqual(1, len(ori.source.files))
 
         trials = catalog["trials-of-mana"]
-        self.assertEqual(MOD_SOURCE_FILES, trials.source.kind)
+        self.assertEqual("files", trials.source.kind)
         self.assertEqual(3, len(trials.source.files))
+
+        # Every loose file has a checksum, so nothing is installed unverified.
+        for mod in (ninja_gaiden, ori, trials):
+            self.assertEqual(set(mod.files), {path for path, _ in mod.source.file_hashes}, mod.mod_id)
+
+    def test_rejects_invalid_file_hashes(self) -> None:
+        catalog_path = Path(__file__).resolve().parents[1] / "catalog.json"
+        document = json.loads(catalog_path.read_text(encoding="utf-8"))
+        index = next(i for i, mod in enumerate(document["mods"]) if mod["id"] == "trials-of-mana")
+        archive_index = next(i for i, mod in enumerate(document["mods"]) if mod["source"]["kind"] == "archive")
+        bad_values = [
+            (index, {"Trials of Mana/Binaries/Win64/dxgi.dll": "not-a-hash"}),
+            (index, {"unlisted.dll": "0" * 64}),
+            (index, ["0" * 64]),
+            (archive_index, {"any.dll": "0" * 64}),
+        ]
+        for mod_index, value in bad_values:
+            broken = json.loads(json.dumps(document))
+            broken["mods"][mod_index]["source"]["file_hashes"] = value
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as temporary_directory:
+                path = Path(temporary_directory) / "catalog.json"
+                path.write_text(json.dumps(broken), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "invalid source metadata"):
+                    load_mod_catalog(path)
 
     def test_rejects_unsafe_repository_source_path(self) -> None:
         catalog_path = Path(__file__).resolve().parents[1] / "catalog.json"
         document = json.loads(catalog_path.read_text(encoding="utf-8"))
-        document[MOD_CATALOG_MODS_KEY][0][MOD_SOURCE_KEY][MOD_SOURCE_PATH_KEY] = (
+        document["mods"][0]["source"]["path"] = (
             "../outside.zip"
         )
 
@@ -996,7 +1004,7 @@ class ModCatalogTests(unittest.TestCase):
     def test_rejects_unsafe_mod_file_path(self) -> None:
         catalog_path = Path(__file__).resolve().parents[1] / "catalog.json"
         document = json.loads(catalog_path.read_text(encoding="utf-8"))
-        document[MOD_CATALOG_MODS_KEY][0][MOD_FILES_KEY][0] = "../outside.dll"
+        document["mods"][0]["files"][0] = "../outside.dll"
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             path = Path(temporary_directory) / "catalog.json"
@@ -1036,7 +1044,7 @@ class ModCatalogTests(unittest.TestCase):
             sys.path.remove(scripts)
         self.assertFalse(update(check=True), "run scripts/update_catalog_hashes.py")
         for mod in load_mod_catalog():
-            if mod.source.kind == MOD_SOURCE_ARCHIVE:
+            if mod.source.kind == "archive":
                 self.assertEqual(64, len(mod.source.sha256), mod.mod_id)
 
 
@@ -1123,7 +1131,7 @@ class SupportedGameScannerTests(unittest.TestCase):
         game = report.supported_games[0]
 
         self.assertTrue(game.executable_found)
-        self.assertEqual(MOD_CATALOG_FILE_STATUS_NONE, game.file_status)
+        self.assertEqual("not_detected", game.file_status)
         self.assertEqual(list(self.mod.files), game.files_missing)
         self.assertEqual(list(self.mod.files), game.to_dict()["mod_files"])
         self.assertEqual(self.mod.ini_file, game.to_dict()["ini_file"])
@@ -1151,12 +1159,12 @@ class SupportedGameScannerTests(unittest.TestCase):
         self._touch(self.mod.files[0])
 
         partial = self._scan()
-        self.assertEqual(MOD_CATALOG_FILE_STATUS_PARTIAL, partial.file_status)
+        self.assertEqual("partial", partial.file_status)
 
         for relative_path in self.mod.files:
             self._touch(relative_path)
         complete = self._scan()
-        self.assertEqual(MOD_CATALOG_FILE_STATUS_COMPLETE, complete.file_status)
+        self.assertEqual("complete", complete.file_status)
         self.assertEqual(str(self.game_path / self.mod.ini_file), complete.ini_path)
 
     def test_restored_backup_target_is_not_reported_as_an_installed_mod_file(self) -> None:
@@ -1175,13 +1183,13 @@ class SupportedGameScannerTests(unittest.TestCase):
             ).supported_games[0]
 
         restored = scan()
-        self.assertEqual(MOD_CATALOG_FILE_STATUS_NONE, restored.file_status)
+        self.assertEqual("not_detected", restored.file_status)
         self.assertEqual([], restored.files_present)
         self.assertNotIn(backup.target, restored.mod_files)
 
         self._touch(backup.backup)
         applied = scan()
-        self.assertEqual(MOD_CATALOG_FILE_STATUS_PARTIAL, applied.file_status)
+        self.assertEqual("partial", applied.file_status)
         self.assertIn(backup.target, applied.files_present)
         self.assertIn(backup.target, applied.mod_files)
 

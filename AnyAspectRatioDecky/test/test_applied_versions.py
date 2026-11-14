@@ -11,10 +11,12 @@ from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
-from scanner import InstalledApp, SteamScanReport, load_mod_catalog, match_supported_games
 from scanner import mod_installer
-from store import PluginStore, Settings
+from scanner.mod_catalog import load_mod_catalog
+from scanner.steam_library_scanner import InstalledApp, SteamScanReport
+from scanner.supported_game_scanner import match_supported_games
 from store.dependencies import CatalogSource
+from store.plugin_store import PluginStore, Settings
 
 
 class AppliedVersionTests(unittest.TestCase):
@@ -174,7 +176,7 @@ class AppliedVersionTests(unittest.TestCase):
         self.assertEqual(["Game"], result["updated"])
         self.assertEqual([], result["warnings"])
         self.assertFalse(result["resolution_update_pending"])
-        self.assertIn("ini_permissions_fallback", "\n".join(logs.output))
+        self.assertIn("Could not keep INI file permissions", "\n".join(logs.output))
         self.assertEqual(b"[AspectRatio]\r\nAspectWidth = 8\r\nAspectHeight = 5\r\n", ini.read_bytes())
 
     def test_bulk_update_keeps_reminder_when_saved_resolution_changes_during_scan(self) -> None:

@@ -7,6 +7,10 @@ export function formatCatalogUpdate(result: Awaited<ReturnType<typeof updateDepe
   return [summary, ...result.warnings].join("\n");
 }
 
+export function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;

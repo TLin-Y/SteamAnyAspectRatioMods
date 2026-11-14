@@ -8,7 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "test:backend": "python -m unittest discover -s test -v",
-    "test:frontend": "node --test test/test_settings_ui.cjs test/test_mods_ui.cjs",
+    "test:frontend": "node --test test/test_settings_ui.cjs test/test_mods_ui.cjs test/test_game_selector.cjs test/test_offline_games.cjs test/test_launch_options.cjs",
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",

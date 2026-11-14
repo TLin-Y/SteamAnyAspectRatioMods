@@ -94,7 +94,11 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
     "@decky/api": {},
     "../../services/callables": api,
     "../../services/modals": { showErrorModal: (...args) => errors.push(args) },
-    "../../services/formatters": { formatCatalogUpdate: () => "Catalog updated." },
+    "../../services/formatters": {
+      formatCatalogUpdate: () => "Catalog updated.",
+      errorText: (error) => (error instanceof Error ? error.message : String(error)),
+    },
+    "./PluginUpdateSection": { PluginUpdateSection: "PluginUpdateSection" },
   };
   const source = fs.readFileSync(path.join(__dirname, "../src/components/views/SettingsTab.tsx"), "utf8");
   const compiled = ts.transpileModule(source, {

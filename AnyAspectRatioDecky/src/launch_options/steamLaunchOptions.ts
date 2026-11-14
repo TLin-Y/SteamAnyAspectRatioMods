@@ -50,18 +50,12 @@ export type LaunchOptionsRemovalResult = {
 const STORAGE_KEY = "anyaspectratio.launch-options.v1";
 const COMMAND_TOKEN = "%command%";
 
-function getApps(): {
-  RegisterForAppDetails?: SteamApps["RegisterForAppDetails"];
-  SetAppLaunchOptions?: SteamApps["SetAppLaunchOptions"];
-} {
-  return (
-    globalThis as typeof globalThis & {
-      SteamClient?: {
-        Apps?: SteamApps;
-      };
-    }
-  ).SteamClient?.Apps ?? {};
+/** Steam's frontend app API; either method may be missing on some Steam client versions. */
+function getApps(): SteamApps {
+  return (globalThis as typeof globalThis & { SteamClient?: { Apps?: SteamApps } }).SteamClient?.Apps ?? {};
 }
+
+const toError = (error: unknown) => (error instanceof Error ? error : new Error(String(error)));
 
 function tokenize(options: string): LaunchToken[] {
   const tokens: LaunchToken[] = [];
@@ -135,11 +129,19 @@ function encodeOverrideAssignment(value: string): string {
   return `WINEDLLOVERRIDES="${value.replace(/(["\\$`])/g, "\\$1")}"`;
 }
 
-function splitOverrideAssignment(
-  token: LaunchToken,
-): { value: string } | null {
-  const match = /^WINEDLLOVERRIDES=(.*)$/i.exec(token.value);
-  return match ? { value: match[1] } : null;
+function overrideToken(value: string): LaunchToken {
+  return { raw: encodeOverrideAssignment(value), value: `WINEDLLOVERRIDES=${value}` };
+}
+
+/** The last WINEDLLOVERRIDES assignment before the command, with its ";"-separated groups. */
+function findOverride(tokens: LaunchToken[], prefixLength: number): { index: number; groups: string[] } {
+  for (let index = prefixLength - 1; index >= 0; index -= 1) {
+    const match = /^WINEDLLOVERRIDES=(.*)$/i.exec(tokens[index].value);
+    if (match) {
+      return { index, groups: match[1].split(";").map((group) => group.trim()).filter(Boolean) };
+    }
+  }
+  return { index: -1, groups: [] };
 }
 
 function parseOverrideRule(group: string): [string[], string] | null {
@@ -172,19 +174,7 @@ function mergeOverrides(
 } {
   const tokens = tokenize(options);
   const prefixLength = assignmentPrefixLength(tokens);
-  let overrideIndex = -1;
-  let currentGroups: string[] = [];
-
-  for (let index = 0; index < prefixLength; index += 1) {
-    const assignment = splitOverrideAssignment(tokens[index]);
-    if (assignment) {
-      overrideIndex = index;
-      currentGroups = assignment.value
-        .split(";")
-        .map((group) => group.trim())
-        .filter(Boolean);
-    }
-  }
+  const { index: overrideIndex, groups: currentGroups } = findOverride(tokens, prefixLength);
 
   const currentRules = getOverrideRules(currentGroups);
   const addedGroups: string[] = [];
@@ -211,17 +201,8 @@ function mergeOverrides(
 
   const mergedValue = currentGroups.join(";");
   const createdAssignment = overrideIndex < 0;
-  if (createdAssignment) {
-    tokens.splice(prefixLength, 0, {
-      raw: encodeOverrideAssignment(mergedValue),
-      value: `WINEDLLOVERRIDES=${mergedValue}`,
-    });
-  } else {
-    tokens[overrideIndex] = {
-      raw: encodeOverrideAssignment(mergedValue),
-      value: `WINEDLLOVERRIDES=${mergedValue}`,
-    };
-  }
+  if (createdAssignment) tokens.splice(prefixLength, 0, overrideToken(mergedValue));
+  else tokens[overrideIndex] = overrideToken(mergedValue);
 
   const commandTokenAdded = !tokens.some(
     (token) => token.value.toLowerCase() === COMMAND_TOKEN,
@@ -291,7 +272,8 @@ export async function readCurrentLaunchOptions(appId: number): Promise<string> {
     throw new Error("The catalogued Steam App ID is invalid.");
   }
   const apps = getApps();
-  if (!apps.RegisterForAppDetails) {
+  const register = apps.RegisterForAppDetails?.bind(apps); // Steam's methods need their object as `this`.
+  if (!register) {
     throw new Error(
       "Steam's launch-options read API is unavailable. Add the required WINEDLLOVERRIDES manually in the game's Steam Properties.",
     );
@@ -315,14 +297,12 @@ export async function readCurrentLaunchOptions(appId: number): Promise<string> {
       else reject(new Error("Steam app details did not include launch options."));
     };
     try {
-      registration = apps.RegisterForAppDetails!(appId, (details) => {
+      registration = register(appId, (details) => {
         finish(undefined, details?.strLaunchOptions ?? "");
       });
       if (!active) registration.unregister();
     } catch (error) {
-      finish(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      finish(toError(error));
     }
   });
 }
@@ -362,17 +342,13 @@ async function writeLaunchOptions(
     apps.SetAppLaunchOptions(appId, options);
     await waitForLaunchOptions(appId, options);
   } catch (error) {
-    const failure = error instanceof Error ? error : new Error(String(error));
+    const failure = toError(error);
     try {
       apps.SetAppLaunchOptions(appId, previousOptions);
       await waitForLaunchOptions(appId, previousOptions);
     } catch (rollbackError) {
-      const rollback =
-        rollbackError instanceof Error
-          ? rollbackError
-          : new Error(String(rollbackError));
       throw new Error(
-        `${failure.message}; restoring the previous launch options also failed: ${rollback.message}`,
+        `${failure.message}; restoring the previous launch options also failed: ${toError(rollbackError).message}`,
       );
     }
     throw failure;
@@ -449,43 +425,24 @@ function removeOwnedOverrides(
   record: InjectionRecord,
 ): { options: string; changed: boolean } {
   const tokens = tokenize(options);
-  const prefixLength = assignmentPrefixLength(tokens);
-  let overrideIndex = -1;
-  for (let index = prefixLength - 1; index >= 0; index -= 1) {
-    if (splitOverrideAssignment(tokens[index])) {
-      overrideIndex = index;
-      break;
-    }
-  }
+  const { index: overrideIndex, groups } = findOverride(tokens, assignmentPrefixLength(tokens));
 
   let changed = false;
   if (overrideIndex >= 0) {
-    const assignment = splitOverrideAssignment(tokens[overrideIndex]);
-    if (assignment) {
-      const groups = assignment.value
-        .split(";")
-        .map((group) => group.trim())
-        .filter(Boolean);
-      for (const addedGroup of record.addedGroups) {
-        const index = groups.findIndex(
-          (group) => group.toLowerCase() === addedGroup.toLowerCase(),
-        );
-        if (index >= 0) {
-          groups.splice(index, 1);
-          changed = true;
-        }
+    for (const addedGroup of record.addedGroups) {
+      const index = groups.findIndex((group) => group.toLowerCase() === addedGroup.toLowerCase());
+      if (index >= 0) {
+        groups.splice(index, 1);
+        changed = true;
       }
-      if (changed || (!groups.length && record.createdAssignment)) {
-        const value = groups.join(";");
-        if (!value && record.createdAssignment) {
-          tokens.splice(overrideIndex, 1);
-          changed = true;
-        } else {
-          tokens[overrideIndex] = {
-            raw: encodeOverrideAssignment(value),
-            value: `WINEDLLOVERRIDES=${value}`,
-          };
-        }
+    }
+    if (changed || (!groups.length && record.createdAssignment)) {
+      const value = groups.join(";");
+      if (!value && record.createdAssignment) {
+        tokens.splice(overrideIndex, 1);
+        changed = true;
+      } else {
+        tokens[overrideIndex] = overrideToken(value);
       }
     }
   }

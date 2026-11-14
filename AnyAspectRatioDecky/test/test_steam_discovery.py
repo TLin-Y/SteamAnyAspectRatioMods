@@ -2,22 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from helper.constants import (
-    STEAM_APP_ID_KEY,
-    STEAM_APP_INSTALL_DIRECTORY_KEY,
-    STEAM_APP_NAME_KEY,
-    STEAM_APP_STATE_KEY,
-    STEAM_COMMON_DIRECTORY,
-    STEAM_LIBRARY_CONFIG_FILE,
-    STEAM_LIBRARY_FOLDERS_KEY,
-    STEAMAPPS_DIRECTORY,
-    VDF_PATH_KEY,
-)
-from scanner import (
-    find_steam_roots,
-    scan_steam_libraries,
-)
-from utils import VdfParseError, parse_vdf
+from scanner.steam_library_scanner import find_steam_roots, scan_steam_libraries
+from utils.steam_vdf import VdfParseError, parse_vdf
 
 
 class SteamDiscoveryTests(unittest.TestCase):
@@ -43,25 +29,25 @@ class SteamDiscoveryTests(unittest.TestCase):
     @staticmethod
     def _app_manifest(app_id: str, name: str, install_dir: str) -> str:
         return (
-            f'"{STEAM_APP_STATE_KEY}" {{ "{STEAM_APP_ID_KEY}" "{app_id}" '
-            f'"{STEAM_APP_NAME_KEY}" "{name}" '
-            f'"{STEAM_APP_INSTALL_DIRECTORY_KEY}" "{install_dir}" }}'
+            f'"{"AppState"}" {{ "{"appid"}" "{app_id}" '
+            f'"{"name"}" "{name}" '
+            f'"{"installdir"}" "{install_dir}" }}'
         )
 
     @staticmethod
     def _library_config(*libraries: Path) -> str:
         entries = " ".join(
-            f'"{index}" {{ "{VDF_PATH_KEY}" "{SteamDiscoveryTests._vdf_path(path)}" }}'
+            f'"{index}" {{ "{"path"}" "{SteamDiscoveryTests._vdf_path(path)}" }}'
             for index, path in enumerate(libraries)
         )
-        return f'"{STEAM_LIBRARY_FOLDERS_KEY}" {{ {entries} }}'
+        return f'"{"libraryfolders"}" {{ {entries} }}'
 
     def _create_library(self, root: Path, app_id: str, install_dir: str, name: str) -> Path:
-        steamapps = root / STEAMAPPS_DIRECTORY
-        common = steamapps / STEAM_COMMON_DIRECTORY / install_dir
+        steamapps = root / "steamapps"
+        common = steamapps / "common" / install_dir
         common.mkdir(parents=True)
         self._write(
-            steamapps / STEAM_LIBRARY_CONFIG_FILE,
+            steamapps / "libraryfolders.vdf",
             self._library_config(root),
         )
         self._write(
@@ -100,7 +86,7 @@ class SteamDiscoveryTests(unittest.TestCase):
         self._create_library(default_library, "100", "Game A", "Game A")
         self._create_library(sd_library, "200", "Nested/Game B", "Game B")
         self._write(
-            default_library / STEAMAPPS_DIRECTORY / STEAM_LIBRARY_CONFIG_FILE,
+            default_library / "steamapps" / "libraryfolders.vdf",
             self._library_config(default_library, sd_library),
         )
 
@@ -114,7 +100,7 @@ class SteamDiscoveryTests(unittest.TestCase):
     def test_malformed_manifest_does_not_hide_other_games(self) -> None:
         library = self.root / "Steam"
         self._create_library(library, "100", "Good", "Good Game")
-        steamapps = library / STEAMAPPS_DIRECTORY
+        steamapps = library / "steamapps"
         self._write(self._manifest_path(steamapps, "200"), '"broken" {')
 
         report = scan_steam_libraries([library])
@@ -126,7 +112,7 @@ class SteamDiscoveryTests(unittest.TestCase):
     def test_missing_library_configuration_uses_default_and_warns(self) -> None:
         library = self.root / "Steam"
         self._create_library(library, "100", "Game", "Game")
-        (library / STEAMAPPS_DIRECTORY / STEAM_LIBRARY_CONFIG_FILE).unlink()
+        (library / "steamapps" / "libraryfolders.vdf").unlink()
 
         report = scan_steam_libraries([library])
 
@@ -138,8 +124,8 @@ class SteamDiscoveryTests(unittest.TestCase):
         second = self.root / "sd" / "SteamLibrary"
         self._create_library(first, "100", "Game", "Game")
         self._create_library(second, "100", "Game", "Game")
-        stale = first / STEAMAPPS_DIRECTORY / "common" / "Game"
-        moved = second / STEAMAPPS_DIRECTORY / "common" / "Game"
+        stale = first / "steamapps" / "common" / "Game"
+        moved = second / "steamapps" / "common" / "Game"
         self._write(stale / "leftover.txt", "x")
         self._write(moved / "game.bin", "x" * 1000)
 
@@ -156,7 +142,7 @@ class SteamDiscoveryTests(unittest.TestCase):
         unavailable = self.root / "missing" / "SteamLibrary"
         self._create_library(valid, "100", "Game", "Game")
         self._write(
-            valid / STEAMAPPS_DIRECTORY / STEAM_LIBRARY_CONFIG_FILE,
+            valid / "steamapps" / "libraryfolders.vdf",
             self._library_config(valid, unavailable),
         )
 
@@ -167,10 +153,10 @@ class SteamDiscoveryTests(unittest.TestCase):
 
     def test_rejects_install_path_traversal(self) -> None:
         library = self.root / "Steam"
-        steamapps = library / STEAMAPPS_DIRECTORY
+        steamapps = library / "steamapps"
         steamapps.mkdir(parents=True)
         self._write(
-            steamapps / STEAM_LIBRARY_CONFIG_FILE,
+            steamapps / "libraryfolders.vdf",
             self._library_config(library),
         )
         self._write(
@@ -185,10 +171,10 @@ class SteamDiscoveryTests(unittest.TestCase):
 
     def test_manifest_id_must_match_filename(self) -> None:
         library = self.root / "Steam"
-        steamapps = library / STEAMAPPS_DIRECTORY
+        steamapps = library / "steamapps"
         steamapps.mkdir(parents=True)
         self._write(
-            steamapps / STEAM_LIBRARY_CONFIG_FILE,
+            steamapps / "libraryfolders.vdf",
             self._library_config(library),
         )
         self._write(
