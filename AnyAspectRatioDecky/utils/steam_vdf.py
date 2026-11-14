@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 
-from utils.text_files import BOM_TEXT_ENCODING
+from utils import text_files
 
 _TOKEN_PATTERN = re.compile(r'"((?:\\.|[^"\\])*)"|(\{|\})|//[^\r\n]*|([^\s{}"]+)')
 
@@ -67,4 +67,4 @@ def parse_vdf(text: str) -> dict[str, object]:
 
 
 def read_vdf(path: Path) -> dict[str, object]:
-    return parse_vdf(path.read_text(encoding=BOM_TEXT_ENCODING))
+    return parse_vdf(path.read_text(encoding=text_files.BOM_TEXT_ENCODING))

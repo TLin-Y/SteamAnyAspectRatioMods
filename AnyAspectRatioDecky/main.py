@@ -25,7 +25,6 @@ from scanner.mod_catalog import (
 )
 from scanner.mod_installer import (
     MissingModBackupError,
-    NetworkError,
     apply_mod_files,
     existing_mod_logs,
     fetch_mod_readme,
@@ -33,7 +32,6 @@ from scanner.mod_installer import (
     read_mod_log,
     remove_mod_files,
     set_archive_cache_dir,
-    set_offline_mode as block_network,
     set_pack_dir,
     update_existing_ini_resolution,
     write_mod_ini,
@@ -59,6 +57,7 @@ from store.plugin_store import (
     Settings,
     validate_settings,
 )
+from utils.network import NetworkError, set_offline_mode
 
 log.bind(decky.logger)
 _store: PluginStore | None = None
@@ -77,7 +76,7 @@ def get_store() -> PluginStore:
         store.ensure_directories()
         set_archive_cache_dir(store.archive_cache_dir)
         set_pack_dir(store.pack_dir)
-        block_network(store.load_settings().offline_mode)
+        set_offline_mode(store.load_settings().offline_mode)
         log.attach_file(store.log_path)
         _store = store
     return _store
@@ -148,7 +147,7 @@ def _record_outcome(
             store.set_applied_hash(game_path, mod.mod_id, (mod.source.sha256 or None) if applied else None)
         if not awaiting:
             step = "the cached game status could not be cleared"
-            store.last_scan_path.unlink(missing_ok=True)
+            store.clear_last_scan()
         if not applied and complete:
             step = "the saved game match could not be cleared"
             store.remove_matched_game(mod.mod_id, game_path)
@@ -291,7 +290,7 @@ class Plugin:
             raise ValueError("Selected game is no longer available. Scan again and retry.")
         store = get_store()
         store.set_matched_game(group, mod_id, game_path)
-        store.last_scan_path.unlink(missing_ok=True)
+        store.clear_last_scan()
         return {"selected": True}
 
     async def clear_matched_game(self, group: str, mod_id: str, game_path: str) -> dict[str, object]:
@@ -307,7 +306,7 @@ class Plugin:
             if not game.manual and game.files_present:
                 raise ValueError("Remove the mod files before changing the game selection.")
             store = get_store()
-            store.last_scan_path.unlink(missing_ok=True)
+            store.clear_last_scan()
             store.clear_matched_game(group, mod_id, game_path)
         return {"cleared": True}
 
@@ -452,7 +451,7 @@ class Plugin:
                 store.clear_archive_cache()
                 store.clear_pack()
             if previous.local_archive_dir != settings.local_archive_dir:
-                store.local_index_path.unlink(missing_ok=True)
+                store.clear_local_index()
         log.info("Settings saved (mod source changed: %s)", source_changed)
         return {"saved": True, "source_changed": source_changed}
 
@@ -475,7 +474,7 @@ class Plugin:
     async def set_offline_mode(self, enabled: bool) -> dict[str, object]:
         store = get_store()
         store.save_settings(replace(store.load_settings(), offline_mode=bool(enabled)))
-        block_network(bool(enabled))
+        set_offline_mode(bool(enabled))
         log.info("Offline mode %s", "on" if enabled else "off")
         warning = None if enabled else await self._refresh_online_catalog(store)
         return {"offline_mode": bool(enabled), "warning": warning}
@@ -493,7 +492,7 @@ class Plugin:
         except (OSError, ValueError) as error:
             log.error("Catalog update failed", error)
             return _error_result(error)
-        store.local_index_path.unlink(missing_ok=True)
+        store.clear_local_index()
         archives, warnings = self._scan_local_archives(store, settings)
         log.info(
             "Catalog update completed: %s mods, changed: %s",
@@ -630,7 +629,7 @@ class Plugin:
                     )
                 except MissingModBackupError as error:
                     store.set_applied_hash(path, mod.mod_id, None)
-                    store.last_scan_path.unlink(missing_ok=True)
+                    store.clear_last_scan()
                     log.warning("Mod %s failed, backup missing: %s", phase, mod_id)
                     return {"applied": True, "copied_file_count": 0, "conflicting_files": [], "warning": str(error)}
                 awaiting = bool(conflicts) and preserve_modified_ini is None

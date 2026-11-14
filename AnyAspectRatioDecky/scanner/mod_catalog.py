@@ -4,7 +4,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 from helper.validator import Validator
-from utils.text_files import load_json
+from utils import text_files
 
 CATALOG_SCHEMA_VERSION = 3
 _REQUIRED_FIELDS = ("id", "name", "steam_app_id", "install_dir")
@@ -477,9 +477,9 @@ def _parse_mod(
     )
 
 
-def _read_catalog_document(path: Path) -> tuple[dict[str, object], str, str]:
+def _read_catalog_document(path: Path, content: bytes | None = None) -> tuple[dict[str, object], str, str]:
     try:
-        document = load_json(path)
+        document = text_files.load_json(path) if content is None else json.loads(content.decode(text_files.TEXT_ENCODING))
     except json.JSONDecodeError as error:
         raise ValueError(f"Mod catalog is not valid JSON: {error}") from error
 
@@ -526,12 +526,16 @@ def read_catalog_repository(path: Path | None = None) -> tuple[str, str]:
 def load_mod_catalog(
     path: Path | None = None,
     *,
+    content: bytes | None = None,
     repository_url: str | None = None,
     repository_ref: str | None = None,
 ) -> tuple[ModDefinition, ...]:
-    """Load a catalog; the optional repository values override its source_repository."""
+    """Load a catalog file, or catalog bytes given as content (the bundled catalog by default).
+
+    The optional repository values override its source_repository.
+    """
     document, catalog_url, catalog_ref = _read_catalog_document(
-        bundled_catalog_path() if path is None else path
+        bundled_catalog_path() if path is None else path, content
     )
     repository_url = repository_url or catalog_url
     repository_ref = repository_ref or catalog_ref

@@ -1,20 +1,13 @@
 import json
 import re
-import shutil
 import subprocess
-import tempfile
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
-from zipfile import BadZipFile, ZipFile
 
 from helper import PLUGIN_NAME
-from scanner.mod_installer import (
-    _repository_parts,
-    copy_limited,
-    open_url,
-    read_url_limited,
-)
-from utils.text_files import load_json
+from scanner.mod_installer import _repository_parts
+from utils import files, folders, text_files, zips
+from utils.network import download, read_url_limited
 
 MAX_RELEASE_METADATA_BYTES = 2 * 1024 * 1024
 MAX_PLUGIN_ZIP_BYTES = 64 * 1024 * 1024
@@ -26,7 +19,7 @@ _ASSET_PATTERN = re.compile(rf"^{PLUGIN_NAME}-v?(\d+(?:\.\d+)*)\.zip$")
 
 def read_installed_version(plugin_dir: Path) -> str:
     try:
-        manifest = load_json(plugin_dir / "plugin.json")
+        manifest = text_files.load_json(plugin_dir / "plugin.json")
     except (OSError, ValueError):
         return ""
     version = manifest.get("version") if isinstance(manifest, dict) else None
@@ -105,37 +98,29 @@ def _plugin_root_in_archive(names: list[str]) -> str:
 
 
 def _extract_plugin_zip(archive: Path, plugin_dir: Path) -> str:
-    try:
-        with ZipFile(archive) as zip_file:
-            members = [info for info in zip_file.infolist() if not info.is_dir()]
-            root = _plugin_root_in_archive([info.filename for info in members])
-            prefix = f"{root}/" if root else ""
-            if sum(info.file_size for info in members) > MAX_PLUGIN_UNPACKED_BYTES:
-                raise ValueError("The plugin zip is larger than expected")
-            manifest = json.loads(zip_file.read(f"{prefix}plugin.json"))
-            if manifest.get("name") != PLUGIN_NAME:
-                raise ValueError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
+    with zips.open_zip(archive, "The downloaded file is not a valid zip") as zip_file:
+        members = [info for info in zip_file.infolist() if not info.is_dir()]
+        root = _plugin_root_in_archive([info.filename for info in members])
+        prefix = f"{root}/" if root else ""
+        if sum(info.file_size for info in members) > MAX_PLUGIN_UNPACKED_BYTES:
+            raise ValueError("The plugin zip is larger than expected")
+        manifest_info = zip_file.getinfo(f"{prefix}plugin.json")
+        manifest = json.loads(zips.read_member(zip_file, manifest_info, MAX_RELEASE_METADATA_BYTES, "plugin.json"))
+        if manifest.get("name") != PLUGIN_NAME:
+            raise ValueError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
 
-            plugin_root = plugin_dir.resolve()
-            planned: list[tuple[object, Path]] = []
-            for info in members:
-                if not info.filename.startswith(prefix):
-                    continue
-                relative = PurePosixPath(info.filename[len(prefix):])
-                if relative.is_absolute() or ".." in relative.parts:
-                    raise ValueError("The plugin zip contains an unsafe path")
-                target = plugin_root.joinpath(*relative.parts)
-                if plugin_root not in target.resolve().parents:
-                    raise ValueError("The plugin zip contains an unsafe path")
-                planned.append((info, target))
-
-            for info, target in planned:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                with zip_file.open(info) as source, target.open("wb") as output:
-                    copy_limited(source, output, MAX_PLUGIN_UNPACKED_BYTES, "Plugin file")
-            return str(manifest.get("version") or "")
-    except BadZipFile as error:
-        raise ValueError("The downloaded file is not a valid zip") from error
+        plugin_root = plugin_dir.resolve()
+        try:
+            planned = [
+                (info, folders.resolve_inside(plugin_root, info.filename[len(prefix):]))
+                for info in members
+                if info.filename.startswith(prefix)
+            ]
+        except ValueError as error:
+            raise ValueError("The plugin zip contains an unsafe path") from error
+        for info, target in planned:
+            zips.extract_member(zip_file, info, target, MAX_PLUGIN_UNPACKED_BYTES, "Plugin file")
+        return str(manifest.get("version") or "")
 
 
 def restart_plugin_loader() -> bool:
@@ -167,16 +152,14 @@ def install_update(
     if not download_url.startswith(f"https://github.com/{repository}/releases/download/"):
         raise ValueError("The update must come from the configured repository's releases")
 
-    with tempfile.TemporaryDirectory(prefix="aar-update-") as scratch:
-        archive = Path(scratch) / Path(urlparse(download_url).path).name
-        with open_url(download_url) as response, archive.open("wb") as output:
-            copy_limited(response, output, MAX_PLUGIN_ZIP_BYTES, "Plugin update")
+    with folders.temporary() as scratch:
+        archive = scratch / Path(urlparse(download_url).path).name
+        download(download_url, archive, MAX_PLUGIN_ZIP_BYTES, "Plugin update")
         try:
             version = _extract_plugin_zip(archive, plugin_dir)
         except PermissionError:
-            fallback_dir.mkdir(parents=True, exist_ok=True)
             saved = fallback_dir / archive.name
-            shutil.copyfile(archive, saved)
+            files.copy(archive, saved)
             return {
                 "installed": False,
                 "saved_zip": str(saved),

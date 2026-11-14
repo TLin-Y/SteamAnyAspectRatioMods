@@ -19,7 +19,6 @@ from scanner.mod_catalog import (
 )
 from scanner.mod_installer import (
     apply_mod_files,
-    create_ssl_context,
     existing_mod_logs,
     fetch_mod_readme,
     launcher_setup_complete,
@@ -30,6 +29,7 @@ from scanner.mod_installer import (
     update_existing_ini_resolution,
     write_mod_ini,
 )
+from utils.network import create_ssl_context
 
 
 class ModInstallerTests(unittest.TestCase):
@@ -118,7 +118,7 @@ class ModInstallerTests(unittest.TestCase):
         response = io.BytesIO(b"# Mod\n\nRead me")
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             return_value=response,
         ) as open_url:
             readme = fetch_mod_readme(mod)
@@ -147,7 +147,7 @@ class ModInstallerTests(unittest.TestCase):
         (self.game_path / "Game" / "user.txt").write_text("keep", encoding="utf-8")
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(self._archive_bytes),
         ) as open_url:
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
@@ -220,7 +220,7 @@ class ModInstallerTests(unittest.TestCase):
         )
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
         ):
             apply_mod_files(
@@ -311,7 +311,7 @@ class ModInstallerTests(unittest.TestCase):
         def concurrent_edit(*args):
             path.write_bytes(edited)
 
-        with patch("scanner.mod_installer.os.chmod", side_effect=concurrent_edit):
+        with patch("utils.files.os.chmod", side_effect=concurrent_edit):
             with self.assertRaisesRegex(ValueError, "changed during"):
                 update_existing_ini_resolution(mod, str(self.game_path), 1920, 1080)
         self.assertEqual(edited, path.read_bytes())
@@ -330,7 +330,7 @@ class ModInstallerTests(unittest.TestCase):
 
         with (
             patch(
-                "scanner.mod_installer.urlopen",
+                "utils.network.urlopen",
                 side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
             ),
             patch(
@@ -366,11 +366,11 @@ class ModInstallerTests(unittest.TestCase):
 
         with (
             patch(
-                "scanner.mod_installer.urlopen",
+                "utils.network.urlopen",
                 side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
             ),
             patch(
-                "scanner.mod_installer._replace_staged_file",
+                "utils.files.write_bytes_atomic",
                 side_effect=PermissionError("read-only staging filesystem"),
             ),
         ):
@@ -450,7 +450,7 @@ class ModInstallerTests(unittest.TestCase):
         mod = self._backup_mod()
         self._backup_originals()
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
         ):
             for _ in range(2):
@@ -480,7 +480,7 @@ class ModInstallerTests(unittest.TestCase):
         original = b"original game larger than the normal mod file limit"
         (self.game_path / "Managed/Game.dll").write_bytes(original)
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             return_value=io.BytesIO(self._backup_archive()),
         ):
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
@@ -497,7 +497,7 @@ class ModInstallerTests(unittest.TestCase):
         mod = self._backup_mod()
         self._backup_originals()
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
         ):
             for choice in (None, False):
@@ -520,7 +520,7 @@ class ModInstallerTests(unittest.TestCase):
         self.assertEqual(b"helper", (self.game_path / "helper.dll").read_bytes())
         (self.game_path / "Managed/Game.dll").write_bytes(b"patched game")
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda *args, **kwargs: io.BytesIO(self._backup_archive()),
         ):
             self.assertEqual(
@@ -545,8 +545,8 @@ class ModInstallerTests(unittest.TestCase):
             real_replace(source, target)
 
         with (
-            patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(self._backup_archive())),
-            patch("scanner.mod_installer.os.replace", side_effect=fail_game),
+            patch("utils.network.urlopen", return_value=io.BytesIO(self._backup_archive())),
+            patch("utils.files.os.replace", side_effect=fail_game),
         ):
             with self.assertRaisesRegex(PermissionError, "replacement blocked"):
                 apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
@@ -557,9 +557,9 @@ class ModInstallerTests(unittest.TestCase):
     def test_backup_restore_failure_keeps_helper_and_backup(self) -> None:
         mod = self._backup_mod()
         self._backup_originals()
-        with patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(self._backup_archive())):
+        with patch("utils.network.urlopen", return_value=io.BytesIO(self._backup_archive())):
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
-        with patch("scanner.mod_installer.os.replace", side_effect=PermissionError("restore blocked")):
+        with patch("utils.files.os.replace", side_effect=PermissionError("restore blocked")):
             with self.assertRaisesRegex(PermissionError, "restore blocked"):
                 remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
         self.assertEqual(b"helper", (self.game_path / "helper.dll").read_bytes())
@@ -584,7 +584,7 @@ class ModInstallerTests(unittest.TestCase):
     def test_partial_backup_restore_failure_keeps_all_backups_for_retry(self) -> None:
         mod = self._backup_mod()
         self._backup_originals()
-        with patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(self._backup_archive())):
+        with patch("utils.network.urlopen", return_value=io.BytesIO(self._backup_archive())):
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
         real_replace = os.replace
 
@@ -593,7 +593,7 @@ class ModInstallerTests(unittest.TestCase):
                 raise PermissionError("second restore blocked")
             real_replace(source, target)
 
-        with patch("scanner.mod_installer.os.replace", side_effect=fail_second):
+        with patch("utils.files.os.replace", side_effect=fail_second):
             with self.assertRaisesRegex(PermissionError, "second restore blocked"):
                 remove_mod_files(mod, str(self.game_path), preserve_modified_ini=False)
         self.assertEqual(b"original game", (self.game_path / "Managed/Game.dll").read_bytes())
@@ -617,7 +617,7 @@ class ModInstallerTests(unittest.TestCase):
         archive_bytes = self._archive({"fix.dll": b"new"})
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
         ):
             with self.assertRaisesRegex(ValueError, "missing fix.ini"):
@@ -651,7 +651,7 @@ class ModInstallerTests(unittest.TestCase):
     def _launcher_archive(self):
         archive = self._archive({"offline.exe": b"offline", "mods/fix.dll": b"fix"})
         return patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(archive),
         )
 
@@ -704,7 +704,7 @@ class ModInstallerTests(unittest.TestCase):
     def test_launcher_copy_failure_restores_original_and_partial_files_can_be_removed(self) -> None:
         mod = self._launcher_mod()
         target, backup = self._launcher_game()
-        from scanner.mod_installer import os
+        import os
         original_replace = os.replace
 
         def replace_except_launcher(source, destination):
@@ -713,7 +713,7 @@ class ModInstallerTests(unittest.TestCase):
             return original_replace(source, destination)
 
         with self._launcher_archive(), patch(
-            "scanner.mod_installer.os.replace", side_effect=replace_except_launcher
+            "utils.files.os.replace", side_effect=replace_except_launcher
         ):
             with self.assertRaisesRegex(PermissionError, "launcher locked"):
                 apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
@@ -728,7 +728,7 @@ class ModInstallerTests(unittest.TestCase):
         target, backup = self._launcher_game()
         with self._launcher_archive():
             apply_mod_files(mod, str(self.game_path), replace_existing_files=True)
-        with patch("scanner.mod_installer.os.replace", side_effect=PermissionError("locked")):
+        with patch("utils.files.os.replace", side_effect=PermissionError("locked")):
             with self.assertRaisesRegex(PermissionError, "locked"):
                 remove_mod_files(mod, str(self.game_path))
         self.assertTrue(backup.is_file())
@@ -774,7 +774,8 @@ class ModInstallerTests(unittest.TestCase):
 
     def test_elden_ring_real_archive_apply_and_remove_in_temporary_game(self) -> None:
         from scanner.mod_catalog import load_mod_catalog
-        from scanner.mod_installer import set_offline_mode, set_pack_dir
+        from scanner.mod_installer import set_pack_dir
+        from utils.network import set_offline_mode
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "elden-ring-ultrawide-fix")
         folder = self.game_path / "Game"
         folder.mkdir()
@@ -838,7 +839,7 @@ class ModInstallerTests(unittest.TestCase):
         archive_bytes = self._archive({"data.win": b"ultrawide"})
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
         ):
             for _ in range(2):
@@ -864,7 +865,7 @@ class ModInstallerTests(unittest.TestCase):
         with (
             patch("scanner.mod_installer.MAX_MOD_DOWNLOAD_SIZE_BYTES", 4),
             patch(
-                "scanner.mod_installer.urlopen",
+                "utils.network.urlopen",
                 return_value=io.BytesIO(archive_bytes),
             ),
         ):
@@ -884,7 +885,7 @@ class ModInstallerTests(unittest.TestCase):
         with (
             patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4),
             patch(
-                "scanner.mod_installer.urlopen",
+                "utils.network.urlopen",
                 return_value=io.BytesIO(archive_bytes),
             ),
         ):
@@ -903,7 +904,7 @@ class ModInstallerTests(unittest.TestCase):
         with (
             patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4),
             patch(
-                "scanner.mod_installer.urlopen",
+                "utils.network.urlopen",
                 return_value=io.BytesIO(b"payload"),
             ),
         ):
@@ -917,7 +918,7 @@ class ModInstallerTests(unittest.TestCase):
         good = hashlib.sha256(b"payload").hexdigest()
         files = (ModSourceFile("source/first.dll", "first.dll"), ModSourceFile("source/second.dll", "second.dll"))
         base = self._mod("files", ("first.dll", "second.dll"), source_files=files)
-        with patch("scanner.mod_installer.urlopen", side_effect=lambda url, **kwargs: io.BytesIO(b"payload")):
+        with patch("utils.network.urlopen", side_effect=lambda url, **kwargs: io.BytesIO(b"payload")):
             hashed = replace(base, source=replace(base.source, file_hashes=(("first.dll", good), ("second.dll", good))))
             self.assertEqual([], apply_mod_files(hashed, str(self.game_path)))
             self.assertEqual(b"payload", (self.game_path / "second.dll").read_bytes())
@@ -948,7 +949,7 @@ class ModInstallerTests(unittest.TestCase):
             patch("scanner.mod_installer.MAX_MOD_FILE_SIZE_BYTES", 4),
             patch("scanner.mod_installer.MAX_MOD_TOTAL_SIZE_BYTES", 3),
             patch(
-                "scanner.mod_installer.urlopen",
+                "utils.network.urlopen",
                 side_effect=lambda url, **kwargs: io.BytesIO(responses[url]),
             ),
         ):
@@ -982,7 +983,7 @@ class ModInstallerTests(unittest.TestCase):
         def open_source(url: str, **kwargs) -> io.BytesIO:
             return io.BytesIO(responses[url])
 
-        with patch("scanner.mod_installer.urlopen", side_effect=open_source):
+        with patch("utils.network.urlopen", side_effect=open_source):
             conflicting_files = apply_mod_files(mod, str(self.game_path))
 
             self.assertEqual(["fix.ini"], conflicting_files)
@@ -992,7 +993,7 @@ class ModInstallerTests(unittest.TestCase):
             (self.game_path / "fix.ini").read_bytes(),
         )
 
-        with patch("scanner.mod_installer.urlopen", side_effect=open_source):
+        with patch("utils.network.urlopen", side_effect=open_source):
             conflicting_files = apply_mod_files(
                 mod,
                 str(self.game_path),
@@ -1027,7 +1028,7 @@ class ModInstallerTests(unittest.TestCase):
         }
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(responses[url]),
         ):
             conflicting_files = apply_mod_files(
@@ -1063,7 +1064,7 @@ class ModInstallerTests(unittest.TestCase):
         }
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(responses[url]),
         ):
             conflicts = apply_mod_files(mod, str(self.game_path))
@@ -1072,7 +1073,7 @@ class ModInstallerTests(unittest.TestCase):
         self.assertFalse((self.game_path / "fix.ini").exists())
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda url, **kwargs: io.BytesIO(responses[url]),
         ):
             conflicts = apply_mod_files(
@@ -1100,7 +1101,7 @@ class ModInstallerTests(unittest.TestCase):
         (self.game_path / "fix.dll").write_bytes(b"catalog binary")
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             return_value=io.BytesIO(b"catalog binary"),
         ):
             conflicts = apply_mod_files(mod, str(self.game_path))
@@ -1149,7 +1150,7 @@ class ModInstallerTests(unittest.TestCase):
                 def open_source(url: str, **kwargs) -> io.BytesIO:
                     return io.BytesIO(responses[url])
 
-                with patch("scanner.mod_installer.urlopen", side_effect=open_source):
+                with patch("utils.network.urlopen", side_effect=open_source):
                     apply_mod_files(mod, str(self.game_path))
                 for relative_path, source_content in zip(
                     mod.files,
@@ -1163,9 +1164,9 @@ class ModInstallerTests(unittest.TestCase):
     def test_ssl_context_uses_available_system_ca_bundle(self) -> None:
         expected = Mock(spec=ssl.SSLContext)
         with (
-            patch("scanner.mod_installer.SYSTEM_CA_BUNDLE_PATHS", (Path(__file__),)),
+            patch("utils.network.SYSTEM_CA_BUNDLE_PATHS", (Path(__file__),)),
             patch(
-                "scanner.mod_installer.ssl.create_default_context",
+                "utils.network.ssl.create_default_context",
                 return_value=expected,
             ) as create_context,
         ):
@@ -1201,7 +1202,7 @@ class ModInstallerTests(unittest.TestCase):
         )
 
         with patch(
-            "scanner.mod_installer.os.chmod",
+            "utils.files.os.chmod",
             side_effect=PermissionError("unsupported"),
         ):
             permissions_preserved = write_mod_ini(
@@ -1310,7 +1311,7 @@ class ModInstallerTests(unittest.TestCase):
         )
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             return_value=io.BytesIO(b"default configuration"),
         ):
             conflicts = remove_mod_files(mod, str(self.game_path))
@@ -1323,7 +1324,7 @@ class ModInstallerTests(unittest.TestCase):
         )
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             return_value=io.BytesIO(b"default configuration"),
         ) as open_source:
             conflicts = remove_mod_files(
@@ -1354,7 +1355,7 @@ class ModInstallerTests(unittest.TestCase):
         (self.game_path / "fix.ini").write_bytes(b"user configuration")
 
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             return_value=io.BytesIO(b"default configuration"),
         ):
             conflicts = remove_mod_files(
@@ -1379,7 +1380,7 @@ class ModInstallerTests(unittest.TestCase):
         (self.game_path / "fix.dll").write_bytes(b"mod")
         (self.game_path / "fix.ini").write_bytes(b"user configuration")
 
-        with patch("scanner.mod_installer.urlopen", side_effect=OSError("offline")) as source:
+        with patch("utils.network.urlopen", side_effect=OSError("offline")) as source:
             self.assertEqual(["fix.ini"], remove_mod_files(mod, str(self.game_path)))
             self.assertEqual(
                 [], remove_mod_files(mod, str(self.game_path), preserve_modified_ini=True)

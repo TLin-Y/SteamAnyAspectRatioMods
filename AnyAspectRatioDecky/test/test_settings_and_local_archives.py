@@ -9,14 +9,7 @@ from zipfile import ZipFile
 
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModSource, load_mod_catalog
-from scanner.mod_installer import (
-    OfflineModeError,
-    apply_mod_files,
-    open_url,
-    set_archive_cache_dir,
-    set_offline_mode,
-    set_pack_dir,
-)
+from scanner.mod_installer import apply_mod_files, set_archive_cache_dir, set_pack_dir
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
 from store.dependencies import (
@@ -26,6 +19,7 @@ from store.dependencies import (
     update_dependencies,
 )
 from store.plugin_store import PluginStore, Settings, validate_settings
+from utils.network import OfflineModeError, open_url, set_offline_mode
 
 
 def write_zip(path: Path, files: dict[str, bytes]) -> None:
@@ -126,7 +120,7 @@ class DependencyUpdateTests(unittest.TestCase):
         stale_archive = self.store.archive_cache_dir / "old.zip"
         stale_archive.write_bytes(b"x")
 
-        with patch("scanner.mod_installer.urlopen", return_value=response(remote)) as opener:
+        with patch("utils.network.urlopen", return_value=response(remote)) as opener:
             result = update_dependencies(self.store, Settings(catalog_ref="dev"))
         self.assertIn("/dev/AnyAspectRatioDecky/catalog.json", opener.call_args.args[0])
         self.assertTrue(result["catalog_changed"])
@@ -139,14 +133,14 @@ class DependencyUpdateTests(unittest.TestCase):
         # A cache fetched for another source must not be used.
         self.assertEqual("bundled", load_active_catalog(self.store, Settings()).origin)
 
-        with patch("scanner.mod_installer.urlopen", return_value=response(remote)):
+        with patch("utils.network.urlopen", return_value=response(remote)):
             again = update_dependencies(self.store, Settings(catalog_ref="dev"))
         self.assertFalse(again["catalog_changed"])
 
     def test_invalid_remote_catalog_keeps_previous_cache(self) -> None:
-        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+        with patch("utils.network.urlopen", return_value=response(self.catalog_bytes)):
             update_dependencies(self.store, Settings())
-        with patch("scanner.mod_installer.urlopen", return_value=response(b"{not json")):
+        with patch("utils.network.urlopen", return_value=response(b"{not json")):
             with self.assertRaises(ValueError):
                 update_dependencies(self.store, Settings())
         self.assertEqual("cache", load_active_catalog(self.store, Settings()).origin)
@@ -155,36 +149,36 @@ class DependencyUpdateTests(unittest.TestCase):
     def test_startup_refresh_fetches_and_clears_archives_only_on_change(self) -> None:
         stale = self.store.archive_cache_dir / "old.zip"
         stale.write_bytes(b"x")
-        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+        with patch("utils.network.urlopen", return_value=response(self.catalog_bytes)):
             self.assertTrue(refresh_catalog_on_start(self.store, Settings()))
         self.assertFalse(stale.exists())
         self.assertEqual("cache", load_active_catalog(self.store, Settings()).origin)
 
         stale.write_bytes(b"x")
-        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+        with patch("utils.network.urlopen", return_value=response(self.catalog_bytes)):
             self.assertFalse(refresh_catalog_on_start(self.store, Settings()))
         self.assertTrue(stale.exists())
 
     def test_startup_refresh_failure_keeps_working_catalog(self) -> None:
-        with patch("scanner.mod_installer.urlopen", side_effect=OSError("offline")):
+        with patch("utils.network.urlopen", side_effect=OSError("offline")):
             with self.assertRaises(OSError):
                 refresh_catalog_on_start(self.store, Settings())
         self.assertEqual("bundled", load_active_catalog(self.store, Settings()).origin)
 
     def test_startup_refresh_replaces_an_imported_offline_pack_catalog(self) -> None:
-        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+        with patch("utils.network.urlopen", return_value=response(self.catalog_bytes)):
             update_dependencies(self.store, Settings())
         meta = json.loads(self.store.catalog_meta_path.read_text(encoding="utf-8"))
         meta["source_url"] = "offline pack"
         meta["sha256"] = "0" * 64
         self.store.catalog_meta_path.write_text(json.dumps(meta), encoding="utf-8")
-        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+        with patch("utils.network.urlopen", return_value=response(self.catalog_bytes)):
             self.assertTrue(refresh_catalog_on_start(self.store, Settings()))
         meta = json.loads(self.store.catalog_meta_path.read_text(encoding="utf-8"))
         self.assertNotEqual("offline pack", meta["source_url"])
 
     def test_corrupt_cached_catalog_falls_back_with_warning(self) -> None:
-        with patch("scanner.mod_installer.urlopen", return_value=response(self.catalog_bytes)):
+        with patch("utils.network.urlopen", return_value=response(self.catalog_bytes)):
             update_dependencies(self.store, Settings())
         self.store.catalog_path.write_text("{}", encoding="utf-8")
         source = load_active_catalog(self.store, Settings())
@@ -208,7 +202,7 @@ class NetworkErrorTests(unittest.TestCase):
         import socket
         from urllib.error import HTTPError, URLError
 
-        from scanner.mod_installer import NetworkError, open_url
+        from utils.network import NetworkError, open_url
 
         cases = {
             HTTPError("https://x/y", 404, "Not Found", {}, None): "HTTP 404",
@@ -217,7 +211,7 @@ class NetworkErrorTests(unittest.TestCase):
         }
         for error, expected in cases.items():
             with self.subTest(expected=expected):
-                with patch("scanner.mod_installer.urlopen", side_effect=error):
+                with patch("utils.network.urlopen", side_effect=error):
                     with self.assertRaises(NetworkError) as raised:
                         open_url("https://raw.githubusercontent.com/a/b")
                 self.assertIn(expected, str(raised.exception))
@@ -243,7 +237,7 @@ class OfflineModeTests(unittest.TestCase):
 
     def test_no_network_connection_is_attempted(self) -> None:
         set_offline_mode(True)
-        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
+        with patch("utils.network.urlopen", side_effect=AssertionError("network used")):
             with self.assertRaises(OfflineModeError):
                 open_url("https://raw.githubusercontent.com/o/r/main/a.zip")
             with self.assertRaises(OSError):
@@ -253,7 +247,7 @@ class OfflineModeTests(unittest.TestCase):
     def test_turning_it_off_restores_network_access(self) -> None:
         set_offline_mode(True)
         set_offline_mode(False)
-        with patch("scanner.mod_installer.urlopen", return_value=response(b"x")) as opener:
+        with patch("utils.network.urlopen", return_value=response(b"x")) as opener:
             open_url("https://raw.githubusercontent.com/o/r/main/a.zip")
         opener.assert_called_once()
 
@@ -380,7 +374,7 @@ class LocalArchiveTests(unittest.TestCase):
             wine_dll_overrides=(),
         )
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda *a, **k: response(archive_path.read_bytes()),
         ) as opener:
             apply_mod_files(mod, str(self.game))
@@ -415,7 +409,7 @@ class LocalArchiveTests(unittest.TestCase):
 
         served = {"data": versions["old"][0]}
         with patch(
-            "scanner.mod_installer.urlopen",
+            "utils.network.urlopen",
             side_effect=lambda *a, **k: response(served["data"]),
         ) as opener:
             apply_mod_files(make_mod(versions["old"][1]), str(self.game))
@@ -459,7 +453,7 @@ class LocalArchiveTests(unittest.TestCase):
 
         set_offline_mode(False)
         with patch(
-            "scanner.mod_installer.urlopen", side_effect=lambda *a, **k: response(content)
+            "utils.network.urlopen", side_effect=lambda *a, **k: response(content)
         ) as opener:
             apply_mod_files(mod, str(self.game))
             self.assertEqual(b"new", (self.game / "mod.dll").read_bytes())

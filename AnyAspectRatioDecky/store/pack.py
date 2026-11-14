@@ -1,22 +1,12 @@
-import os
 import re
-import shutil
-import tempfile
 import threading
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
-from zipfile import BadZipFile, ZipFile, ZipInfo, is_zipfile
 
 from helper import PLUGIN_NAME
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
-from scanner.mod_installer import (
-    MAX_MOD_FILE_SIZE_BYTES,
-    OfflineModeError,
-    copy_limited,
-    mod_readme_path,
-    open_url,
-)
+from scanner.mod_installer import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from scanner.plugin_updater import latest_release
 from store.dependencies import (
     MAX_CATALOG_SIZE_BYTES,
@@ -25,6 +15,8 @@ from store.dependencies import (
     save_catalog,
 )
 from store.plugin_store import DEFAULT_CATALOG_PATH, PluginStore, Settings
+from utils import files, folders, zips
+from utils.network import OfflineModeError, download
 
 MAX_PACK_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
 MAX_PACK_DOWNLOAD_BYTES = MAX_PACK_TOTAL_BYTES + 64 * 1024 * 1024
@@ -167,18 +159,14 @@ def download_release_pack(store: PluginStore, settings: Settings) -> dict[str, o
     version = tag.removeprefix("v")
     assets = _release_pack_assets(repository, release, tag)
     store.ensure_directories()
-    with tempfile.TemporaryDirectory(prefix="offline-download-", dir=store.data_dir) as scratch:
+    with folders.temporary(store.data_dir) as scratch:
         archives = []
         total_downloaded = 0
         for name, url in assets:
-            archive = Path(scratch) / name
-            with open_url(url) as response, archive.open("wb") as target:
-                total_downloaded += copy_limited(
-                    response,
-                    target,
-                    MAX_PACK_DOWNLOAD_BYTES - total_downloaded,
-                    "Offline pack download",
-                )
+            archive = scratch / name
+            total_downloaded += download(
+                url, archive, MAX_PACK_DOWNLOAD_BYTES - total_downloaded, "Offline pack download"
+            )
             archives.append(archive)
         current_settings = store.load_settings()
         if current_settings.offline_mode or current_settings.source_key() != settings.source_key():
@@ -199,26 +187,17 @@ def _pack_root(names: set[str], catalog_path: str) -> str:
     return roots.pop()
 
 
-def _extract_member(archive: ZipFile, info: ZipInfo, staging: Path, path: str) -> None:
-    destination = staging / path
-    if not destination.resolve().is_relative_to(staging.resolve()):
-        raise ValueError(f"Unsafe path in catalog: {path}")
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with archive.open(info) as source, destination.open("wb") as target:
-        shutil.copyfileobj(source, target)
-
-
 @_exclusive_pack_operation
 def install_pack(
     store: PluginStore, settings: Settings, archive_path: Path | tuple[Path, ...]
 ) -> dict[str, object]:
     """Extract needed files from one repository-layout zip or a complete part set."""
     archive_paths = _resolve_pack_paths(archive_path)
-    if any(not is_zipfile(path) for path in archive_paths):
+    if any(not zips.is_zip(path) for path in archive_paths):
         raise ValueError("The selected file is not a zip archive")
     catalog_path = settings.catalog_path or DEFAULT_CATALOG_PATH
-    staging = store.data_dir / "pack.tmp"
-    shutil.rmtree(staging, ignore_errors=True)
+    staging = (store.data_dir / "pack.tmp").resolve()
+    folders.remove_tree(staging)
     catalog_bytes: bytes | None = None
     try:
         required: set[str] = set()
@@ -226,7 +205,7 @@ def install_pack(
         found: set[str] = set()
         total = 0
         for archive_path in archive_paths:
-            with ZipFile(archive_path) as archive:
+            with zips.open_zip(archive_path, "The selected file is not a valid zip archive") as archive:
                 names = set(archive.namelist())
                 root = _pack_root(names, catalog_path)
                 catalog_info = archive.getinfo(root + catalog_path)
@@ -234,21 +213,12 @@ def install_pack(
                     raise ValueError(
                         f"Catalog exceeds the {MAX_CATALOG_SIZE_BYTES // 1024 // 1024} MiB limit"
                     )
-                part_catalog = archive.read(catalog_info)
+                part_catalog = zips.read_member(archive, catalog_info, MAX_CATALOG_SIZE_BYTES, "Catalog")
                 if catalog_bytes is None:
                     catalog_bytes = part_catalog
-                    with tempfile.TemporaryDirectory(dir=store.data_dir) as probe:
-                        probe_path = Path(probe) / "catalog.json"
-                        probe_path.write_bytes(catalog_bytes)
-                        mods = load_mod_catalog(
-                            probe_path, **repository_overrides(settings)
-                        )
+                    mods = load_mod_catalog(content=catalog_bytes, **repository_overrides(settings))
                     required, optional = _wanted_paths(mods)
-                    catalog_destination = staging / catalog_path
-                    if not catalog_destination.resolve().is_relative_to(staging.resolve()):
-                        raise ValueError(f"Unsafe catalog path: {catalog_path}")
-                    catalog_destination.parent.mkdir(parents=True, exist_ok=True)
-                    catalog_destination.write_bytes(catalog_bytes)
+                    files.write_bytes_atomic(folders.resolve_inside(staging, catalog_path), catalog_bytes)
                     total += len(catalog_bytes)
                 elif part_catalog != catalog_bytes:
                     raise ValueError("Offline pack parts contain different catalogs.")
@@ -265,7 +235,9 @@ def install_pack(
                     total += info.file_size
                     if total > MAX_PACK_TOTAL_BYTES:
                         raise ValueError(f"The pack exceeds {MAX_PACK_TOTAL_BYTES // 1024**3} GiB")
-                    _extract_member(archive, info, staging, path)
+                    zips.extract_member(
+                        archive, info, folders.resolve_inside(staging, path), MAX_MOD_FILE_SIZE_BYTES, "Offline pack file"
+                    )
                     found.add(path)
 
         missing = required - found
@@ -274,11 +246,9 @@ def install_pack(
         if catalog_bytes is None:
             raise ValueError(f"The archive does not contain {catalog_path}")
         store.clear_pack()
-        os.replace(staging, store.pack_dir)
-    except BadZipFile as error:
-        raise ValueError("The selected file is not a valid zip archive") from error
+        files.move(staging, store.pack_dir)
     finally:
-        shutil.rmtree(staging, ignore_errors=True)
+        folders.remove_tree(staging)
 
     meta = store.catalog_meta()
     if (

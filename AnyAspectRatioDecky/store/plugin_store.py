@@ -1,11 +1,10 @@
 import os
-import shutil
 from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
 from helper.validator import Validator
-from utils.text_files import load_json, write_json_atomic
+from utils import folders, text_files
 
 DEFAULT_CATALOG_PATH = "AnyAspectRatioDecky/catalog.json"
 
@@ -69,7 +68,7 @@ def validate_settings(settings: Settings) -> Settings:
 
 def read_json(path: Path) -> object | None:
     try:
-        return load_json(path)
+        return text_files.load_json(path)
     except (OSError, ValueError):
         return None
 
@@ -116,11 +115,11 @@ class PluginStore:
         return Settings(**values)
 
     def save_settings(self, settings: Settings) -> None:
-        write_json_atomic(self.settings_path, asdict(settings))
+        text_files.write_json_atomic(self.settings_path, asdict(settings))
 
     def load_applied_hashes(self) -> dict[str, dict[str, str]]:
         try:
-            document = load_json(self.applied_hashes_path)
+            document = text_files.load_json(self.applied_hashes_path)
         except FileNotFoundError:
             return {}
         except (OSError, ValueError) as error:
@@ -151,11 +150,11 @@ class PluginStore:
                 del hashes[game_path]
         else:
             return
-        write_json_atomic(self.applied_hashes_path, hashes)
+        text_files.write_json_atomic(self.applied_hashes_path, hashes)
 
     def load_matched_games(self) -> dict[str, dict[str, str]]:
         try:
-            document = load_json(self.matched_games_path)
+            document = text_files.load_json(self.matched_games_path)
         except FileNotFoundError:
             return {}
         except (OSError, ValueError) as error:
@@ -173,7 +172,7 @@ class PluginStore:
     def set_matched_game(self, group: str, mod_id: str, game_path: str) -> None:
         choices = self.load_matched_games()
         choices[group] = {"mod_id": mod_id, "game_path": game_path}
-        write_json_atomic(self.matched_games_path, choices)
+        text_files.write_json_atomic(self.matched_games_path, choices)
 
     def remove_matched_game(self, mod_id: str, game_path: str) -> None:
         choices = self.load_matched_games()
@@ -182,7 +181,7 @@ class PluginStore:
             if choice["mod_id"] != mod_id or choice["game_path"] != game_path
         }
         if remaining != choices:
-            write_json_atomic(self.matched_games_path, remaining)
+            text_files.write_json_atomic(self.matched_games_path, remaining)
 
     def clear_matched_game(self, group: str, mod_id: str, game_path: str) -> None:
         choices = self.load_matched_games()
@@ -190,14 +189,14 @@ class PluginStore:
         if not choice or choice["mod_id"] != mod_id or choice["game_path"] != game_path:
             raise ValueError("Saved game selection has changed. Scan again and retry.")
         del choices[group]
-        write_json_atomic(self.matched_games_path, choices)
+        text_files.write_json_atomic(self.matched_games_path, choices)
 
     def catalog_meta(self) -> dict[str, object] | None:
         meta = read_json(self.catalog_meta_path)
         return meta if isinstance(meta, dict) else None
 
     def clear_archive_cache(self) -> None:
-        shutil.rmtree(self.archive_cache_dir, ignore_errors=True)
+        folders.remove_tree(self.archive_cache_dir)
         self.archive_cache_dir.mkdir(parents=True, exist_ok=True)
 
     def clear_catalog_cache(self) -> None:
@@ -205,32 +204,29 @@ class PluginStore:
         self.catalog_meta_path.unlink(missing_ok=True)
 
     def clear_pack(self) -> None:
-        shutil.rmtree(self.pack_dir, ignore_errors=True)
+        folders.remove_tree(self.pack_dir)
+
+    def clear_last_scan(self) -> None:
+        self.last_scan_path.unlink(missing_ok=True)
+
+    def clear_local_index(self) -> None:
+        self.local_index_path.unlink(missing_ok=True)
 
     def clear_local_data(self) -> None:
         """Delete the pack and every cache; settings and logs are kept."""
         self.clear_pack()
-        shutil.rmtree(self.cache_dir, ignore_errors=True)
+        folders.remove_tree(self.cache_dir)
         self.ensure_directories()
 
     def pack_stats(self) -> dict[str, int]:
-        files = [path for path in self.pack_dir.rglob("*") if path.is_file()]
-        return {"file_count": len(files), "size_bytes": sum(p.stat().st_size for p in files)}
+        file_count, size_bytes = folders.stats(self.pack_dir)
+        return {"file_count": file_count, "size_bytes": size_bytes}
 
     def disk_usage(self) -> int:
-        def raise_walk_error(error: OSError) -> None:
-            raise error
-
-        total = 0
-        for root, _, files in os.walk(self.data_dir, onerror=raise_walk_error):
-            for name in files:
-                path = Path(root) / name
-                if not path.is_symlink():
-                    total += path.stat().st_size
-        return total
+        return folders.stats(self.data_dir)[1]
 
     def save_last_scan(self, report: dict[str, object]) -> None:
-        write_json_atomic(self.last_scan_path, {"scanned_at": utc_now(), "report": report})
+        text_files.write_json_atomic(self.last_scan_path, {"scanned_at": utc_now(), "report": report})
 
     def load_last_scan(self) -> dict[str, object] | None:
         document = read_json(self.last_scan_path)

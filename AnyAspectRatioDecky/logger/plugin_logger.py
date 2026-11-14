@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from helper import PLUGIN_NAME
-from utils.text_files import TEXT_ENCODING, read_text_tail
+from utils import text_files
 
 # Must be bounded, the log I/O will cause performance issues if too large in DroidDeck
 LOG_FILE_MAX_BYTES = 512 * 1024 # 512 KB based on my RP Nova testing, SD OLED no such issue.
@@ -40,13 +40,13 @@ class PluginLogger:
             return
         path.parent.mkdir(parents=True, exist_ok=True)
         self._handler = RotatingFileHandler(
-            path, maxBytes=LOG_FILE_MAX_BYTES, backupCount=LOG_FILE_BACKUPS, encoding=TEXT_ENCODING
+            path, maxBytes=LOG_FILE_MAX_BYTES, backupCount=LOG_FILE_BACKUPS, encoding=text_files.TEXT_ENCODING
         )
         self._handler.setFormatter(logging.Formatter(LOG_FILE_FORMAT))
         self._base.addHandler(self._handler)
 
     def read_tail(self, max_lines: int) -> str:
-        content, _ = read_text_tail(Path(self._file().baseFilename), LOG_FILE_MAX_BYTES)
+        content, _ = text_files.read_tail(Path(self._file().baseFilename), LOG_FILE_MAX_BYTES)
         return "\n".join(content.splitlines()[-max_lines:])
 
     def clear_files(self) -> None:

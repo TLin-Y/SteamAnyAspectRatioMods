@@ -145,7 +145,7 @@ class AppliedVersionTests(unittest.TestCase):
         with (
             patch.object(self.main, "get_store", return_value=self.store),
             patch.object(self.main.Plugin, "_scan", return_value=report),
-            patch("scanner.mod_installer.os.replace", side_effect=PermissionError("denied")),
+            patch("utils.files.os.replace", side_effect=PermissionError("denied")),
         ):
             result = asyncio.run(self.main.Plugin().update_current_resolution())
         self.assertEqual([], result["updated"])
@@ -169,7 +169,7 @@ class AppliedVersionTests(unittest.TestCase):
         with (
             patch.object(self.main, "get_store", return_value=self.store),
             patch.object(self.main.Plugin, "_scan", return_value=report),
-            patch("scanner.mod_installer.os.chmod", side_effect=PermissionError("denied")),
+            patch("utils.files.os.chmod", side_effect=PermissionError("denied")),
             self.assertLogs("test_applied_versions", level="WARNING") as logs,
         ):
             result = asyncio.run(self.main.Plugin().update_current_resolution())

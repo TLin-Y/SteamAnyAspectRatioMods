@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from helper.validator import Validator
+from utils import folders
 from utils.steam_vdf import VdfParseError, read_vdf
 
 _MANIFEST_PATTERN = re.compile(r"appmanifest_(\d+)\.acf\Z")
@@ -111,14 +112,7 @@ def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
 def _directory_size(path: str | None) -> int:
     if path is None:
         return -1
-    total = 0
-    for current, _, filenames in os.walk(path):
-        for filename in filenames:
-            try:
-                total += os.lstat(os.path.join(current, filename)).st_size
-            except OSError:
-                continue
-    return total
+    return folders.stats(Path(path), ignore_errors=True)[1]
 
 
 def _keep_largest_installs(apps: list[InstalledApp]) -> list[InstalledApp]:

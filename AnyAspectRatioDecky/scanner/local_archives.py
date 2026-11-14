@@ -1,13 +1,11 @@
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from zipfile import BadZipFile, ZipFile
 
 from helper.validator import Charset, Validator
 from scanner.mod_catalog import ModDefinition, ModSource
 from scanner.steam_library_scanner import InstalledApp
-from utils.text_files import load_json, write_json_atomic
+from utils import folders, text_files, zips
 
 # Bounded limits for local archive scanning (to prevent excessive resource usage)
 MAX_LOCAL_ARCHIVES = 500
@@ -34,13 +32,8 @@ class LocalArchive:
 def _list_archive_files(path: Path) -> tuple[list[str], str | None]:
     """The mod files in a local zip, or ([], why the zip can't be used)."""
     try:
-        with ZipFile(path) as archive:
-            files = [
-                info.filename
-                for info in archive.infolist()
-                if not info.is_dir() and not Validator.Files.is_os_junk(info.filename)
-            ]
-    except (BadZipFile, OSError) as error:
+        files = zips.member_names(path)
+    except (zips.BadZipFile, OSError) as error:
         return [], f"not a readable zip file ({error})"
     problem = _archive_problem(files)
     return ([], problem) if problem else (files, None)
@@ -60,16 +53,7 @@ def _archive_problem(files: list[str]) -> str | None:
 
 
 def _find_archives(directory: Path) -> list[Path]:
-    found: list[Path] = []
-    base_depth = len(directory.parts)
-    for root, dirnames, filenames in os.walk(directory):
-        root_path = Path(root)
-        if len(root_path.parts) - base_depth >= MAX_SCAN_DEPTH:
-            dirnames[:] = []
-        dirnames[:] = sorted(name for name in dirnames if not Validator.Files.is_hidden(name))
-        for filename in sorted(filenames):
-            if Validator.Files.has_extension(filename, ".zip") and not Validator.Files.is_hidden(filename):
-                found.append(root_path / filename)
+    found = [path for path in folders.walk_files(directory, MAX_SCAN_DEPTH) if Validator.Files.has_extension(path.name, ".zip")]
     return found[:MAX_LOCAL_ARCHIVES]
 
 
@@ -77,7 +61,7 @@ def _load_index(index_path: Path | None, directory: Path) -> dict[str, dict]:
     if index_path is None:
         return {}
     try:
-        document = load_json(index_path)
+        document = text_files.load_json(index_path)
     except (OSError, ValueError):
         return {}
     match document:
@@ -90,7 +74,7 @@ def _load_index(index_path: Path | None, directory: Path) -> dict[str, dict]:
 
 
 def _save_index(index_path: Path, directory: Path, archives: dict[str, dict]) -> None:
-    write_json_atomic(
+    text_files.write_json_atomic(
         index_path,
         {"version": INDEX_VERSION, "directory": str(directory), "archives": archives},
         indent=None,
@@ -175,16 +159,11 @@ def _match_archive_to_app(
 def _executable_directory(game_path: Path, app: InstalledApp) -> str:
     """Return the game-relative directory of the game's main executable, or "" for its root."""
     root = game_path.resolve()
-    candidates: list[Path] = []
-    for current, dirnames, filenames in os.walk(root):
-        current_path = Path(current)
-        depth = len(current_path.relative_to(root).parts)
-        if depth >= MAX_EXECUTABLE_DEPTH:
-            dirnames[:] = []
-        dirnames[:] = [name for name in dirnames if not Validator.Files.is_hidden(name)]
-        for filename in filenames:
-            if Validator.Files.has_extension(filename, ".exe") and not Validator.Files.is_helper_executable(filename):
-                candidates.append(current_path / filename)
+    candidates = [
+        path
+        for path in folders.walk_files(root, MAX_EXECUTABLE_DEPTH)
+        if Validator.Files.has_extension(path.name, ".exe") and not Validator.Files.is_helper_executable(path.name)
+    ]
     if not candidates:
         return ""
     names = {_normalize(app.name), _normalize(app.install_dir)}
