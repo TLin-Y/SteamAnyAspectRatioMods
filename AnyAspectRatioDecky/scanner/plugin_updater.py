@@ -106,7 +106,7 @@ def _extract_plugin_zip(archive: Path, plugin_dir: Path) -> str:
         if sum(info.file_size for info in members) > MAX_PLUGIN_UNPACKED_BYTES:
             raise PluginError("The plugin zip is larger than expected")
         manifest_info = zip_file.getinfo(f"{prefix}plugin.json")
-        manifest = json.loads(zips.read_member(zip_file, manifest_info, MAX_RELEASE_METADATA_BYTES, "plugin.json"))
+        manifest = json.loads(zips.read_file(zip_file, manifest_info, MAX_RELEASE_METADATA_BYTES, "plugin.json"))
         if manifest.get("name") != PLUGIN_NAME:
             raise PluginError(f"The downloaded file is not an {PLUGIN_NAME} plugin zip")
 
@@ -120,7 +120,7 @@ def _extract_plugin_zip(archive: Path, plugin_dir: Path) -> str:
         except ValueError as error:
             raise PluginError("The plugin zip contains an unsafe path") from error
         for info, target in planned:
-            zips.extract_member(zip_file, info, target, MAX_PLUGIN_UNPACKED_BYTES, "Plugin file")
+            zips.extract_file(zip_file, info, target, MAX_PLUGIN_UNPACKED_BYTES, "Plugin file")
         return str(manifest.get("version") or "")
 
 

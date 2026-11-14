@@ -1,8 +1,12 @@
 import io
+import socket
+import ssl
 import tempfile
 import unittest
+from email.message import Message
 from pathlib import Path
 from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 from zipfile import ZipFile
 
 from utils import files, folders, network, streams, zips
@@ -91,7 +95,7 @@ class ZipsTests(unittest.TestCase):
             archive.writestr("Thumbs.db", b"junk")
 
     def test_member_names_drop_folders_and_os_junk(self) -> None:
-        self.assertEqual(["bin/mod.asi"], zips.member_names(self.archive))
+        self.assertEqual(["bin/mod.asi"], zips.file_names(self.archive))
 
     def test_damaged_zip_raises_the_callers_message(self) -> None:
         broken = self.root / "broken.zip"
@@ -104,11 +108,11 @@ class ZipsTests(unittest.TestCase):
     def test_reading_and_extracting_respect_the_limit(self) -> None:
         with zips.open_zip(self.archive, "invalid") as archive:
             info = archive.getinfo("bin/mod.asi")
-            self.assertEqual(b"asi", zips.read_member(archive, info, 3, "Mod file"))
+            self.assertEqual(b"asi", zips.read_file(archive, info, 3, "Mod file"))
             with self.assertRaisesRegex(ValueError, "exceeds"):
-                zips.read_member(archive, info, 2, "Mod file")
+                zips.read_file(archive, info, 2, "Mod file")
             target = self.root / "out" / "mod.asi"
-            self.assertEqual(3, zips.extract_member(archive, info, target, 3, "Mod file"))
+            self.assertEqual(3, zips.extract_file(archive, info, target, 3, "Mod file"))
         self.assertEqual(b"asi", target.read_bytes())
 
 
@@ -127,6 +131,21 @@ class NetworkTests(unittest.TestCase):
                 self.assertEqual(b"payload", buffer.read())
         self.assertEqual(b"payload", (self.root / "a.bin").read_bytes())
         self.assertEqual((7, ".zip"), (size, staged.suffix))
+
+    def test_network_errors_are_described_for_the_user(self) -> None:
+        url = "https://example.com/catalog.json"
+        cases = (
+            (HTTPError(url, 404, "Not Found", Message(), None), "example.com HTTP 404. The file was not found."),
+            (HTTPError(url, 500, "Server Error", Message(), None), "example.com HTTP 500."),
+            (URLError(TimeoutError()), "Timed out while contacting example.com. Check your internet connection."),
+            (URLError(socket.gaierror(-2, "unknown")), "No internet connection: could not find example.com."),
+            (ssl.SSLCertVerificationError("bad"), "A secure connection to example.com could not be made."),
+            (URLError("refused"), "Could not reach example.com: refused."),
+            (OSError(), "Could not reach example.com."),
+        )
+        for error, message in cases:
+            with self.subTest(error=error):
+                self.assertEqual(message, network.describe_network_error(error, url))
 
     def test_offline_mode_blocks_every_request(self) -> None:
         network.set_offline_mode(True)

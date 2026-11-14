@@ -32,7 +32,7 @@ class LocalArchive:
 
 def _list_archive_files(path: Path) -> list[str]:
     try:
-        files = zips.member_names(path)
+        files = zips.file_names(path)
     except (zips.BadZipFile, OSError) as error:
         raise PluginError(f"not a readable zip file ({error})") from error
     _check_archive_files(files)
