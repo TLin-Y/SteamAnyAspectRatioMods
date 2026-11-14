@@ -149,7 +149,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Pentiment | TLin-Y | [1205520](https://store.steampowered.com/app/1205520) | [v0.2.0](./Pentiment/Pentiment-v0.2.0.zip) | 2026-11-13 | [README](./Pentiment/README.md) |
 | Persona 3 Reload | Lyall | [2161700](https://store.steampowered.com/app/2161700) | [v1.2.4](./external/Lyall/P3RFix/P3RFix_1.2.4.zip) | 2025-06-05 | [P3RFix](https://codeberg.org/Lyall/P3RFix) |
 | Persona 4 Golden | TLin-Y | [1113000](https://store.steampowered.com/app/1113000) | [v1.0.0](./Persona%204%20Golden/Persona-4-Golden-v1.0.0.zip) | 2026-11-14 | [README](./Persona%204%20Golden/README.md) |
-| Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v1.0.0](./Persona%205%20Royal/Persona-5-Royal-v1.0.0.zip) | 2026-11-04 | [README](./Persona%205%20Royal/README.md) |
+| Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v2.0.0](./Persona%205%20Royal/Persona-5-Royal-v2.0.0.zip) | 2026-11-14 | [README](./Persona%205%20Royal/README.md) |
 | Persona 5 Strikers | Lyall | [1382330](https://store.steampowered.com/app/1382330) | [v1.0.2](./external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip) | 2026-08-21 | [P5StrikersFix](https://codeberg.org/Lyall/P5StrikersFix) |
 | Phoenix Wright: Ace Attorney Trilogy | TLin-Y | [787480](https://store.steampowered.com/app/787480) | [v1.0.1](./Phoenix%20Wright%20Ace%20Attorney%20Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.1.zip) | 2026-11-13 | [README](./Phoenix%20Wright%20Ace%20Attorney%20Trilogy/README.md) |
 | PRAGMATA | TLin-Y | [3357650](https://store.steampowered.com/app/3357650) | [v1.0.0](./PRAGMATA/PRAGMATA-v1.0.0.zip) | 2026-11-13 | [README](./PRAGMATA/README.md) |

@@ -1,23 +1,26 @@
-Why?
-- Persona 5 Royal has no native support for custom aspect ratios. This mod patches the game to render at any ratio you choose.
+# PERSONA-5-ROYAL-Any-Aspect-Ratio
 
-1. Install
-   
-Extract the mod files directly into your Persona 5 Royal root folder (where P5R.exe is located).
+![Persona 5 Royal at 4:3 and 32:9](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Persona%205%20Royal/demo.jpg)
 
-2. For SteamOS / Winlator (Wine Users)
-   
-For Steam Deck / SteamOS, open the game's Properties, then General > Launch Options, and use:
-`WINEDLLOVERRIDES="dinput8=n,b" %command%`
+## 1. Install
 
-For Winlator / Wine, add the following environment variable to the game or container settings:
-Name: WINEDLLOVERRIDES
-Value: dinput8=n,b
+Extract the ZIP into the game folder, beside `P5R.exe`.
 
-3. Custom Aspect Ratio
-   
-Open P5R_ARFix.ini with any text editor. You can easily change Width and Height to match any screen ratio you want (e.g., 4:3, 16:10, 21:9).
+## 2. Optional: SteamOS / Proton / Winlator / macOS
 
-4. Full-Screen Stretching
-   
-Set your SteamOS display scaling to "Stretch" and set the in-game resolution to 1280x720. The stretch mods render at the ratio in the ini, then scale that picture to fill the screen; if the in-game resolution is not 1280x720, it will not stretch. The mod defaults to 16:10; set the width and height in the ini to the ratio you want.
+Launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`
+
+## 3. Custom Aspect Ratio
+
+Edit `Width` and `Height` in `[Resolution]` in `P5R_ARFix.ini`. The default is
+1280x800 (16:10, Steam Deck). Use your screen resolution and play in full
+screen, or set the game window to the same size. `Width = 0` and `Height = 0`
+use the resolution selected in the game's Config menu.
+
+The 3D scene fills the whole screen: taller screens (16:10, 4:3) show more above
+and below, wider ones (21:9, 32:9) show more to the sides. Menus, text boxes,
+portraits and the HUD keep their original 16:9 shape in the centre of the
+screen, so nothing is stretched. Menu backgrounds, screen tints and fades cover
+the whole screen.
+
+No SteamOS "Stretch" scaling is needed any more (it was required by v1.0.0).

@@ -382,7 +382,6 @@ class ModCatalogTests(unittest.TestCase):
             "dynasty-warriors-8-xtreme-legends-complete-edition",
             "monster-hunter-rise",
             "rayman-legends",
-            "persona-5-royal",
             "resident-evil-2",
             "resident-evil-3",
             "resident-evil-4",
