@@ -128,7 +128,7 @@ class PluginUpdaterTests(unittest.TestCase):
             source = root / "source.zip"
             build_zip(source, {"plugin.json": json.dumps({"name": "AnyAspectRatio"})})
             with (
-                mock.patch.object(plugin_updater, "open_url", side_effect=lambda url: _Response(source.read_bytes())),
+                mock.patch("utils.network.open_url", side_effect=lambda url: _Response(source.read_bytes())),
                 mock.patch.object(plugin_updater, "_extract_plugin_zip", side_effect=PermissionError),
             ):
                 result = plugin_updater.install_update(REPO, DOWNLOAD, root / "plugin", root / "Downloads")

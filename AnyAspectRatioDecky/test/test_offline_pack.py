@@ -17,16 +17,11 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 from scanner.mod_catalog import load_mod_catalog
-from scanner.mod_installer import (
-    OfflineModeError,
-    apply_mod_files,
-    fetch_mod_readme,
-    set_offline_mode,
-    set_pack_dir,
-)
+from scanner.mod_installer import apply_mod_files, fetch_mod_readme, set_pack_dir
 from store.dependencies import load_active_catalog, update_dependencies
 from store.pack import download_release_pack, install_pack
 from store.plugin_store import PluginStore, Settings
+from utils.network import OfflineModeError, set_offline_mode
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 
@@ -70,7 +65,7 @@ class OfflinePackTests(unittest.TestCase):
         game.mkdir()
         set_offline_mode(True)
         self.addCleanup(set_offline_mode, False)
-        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
+        with patch("utils.network.urlopen", side_effect=AssertionError("network used")):
             self.assertEqual([], apply_mod_files(mod, str(game)))
             self.assertEqual("# DS3", fetch_mod_readme(mod))
         self.assertTrue((game / "Game" / "dinput8.dll").is_file())
@@ -109,7 +104,7 @@ class OfflinePackTests(unittest.TestCase):
 
         self.assertEqual(1, result["mod_count"])
         self.assertTrue((self.store.pack_dir / self.mod_path).is_file())
-        with patch("scanner.mod_installer.urlopen", side_effect=OSError("offline")):
+        with patch("utils.network.urlopen", side_effect=OSError("offline")):
             self.assertEqual(
                 "# DS3", fetch_mod_readme(load_mod_catalog(self.store.catalog_path)[0])
             )
@@ -139,13 +134,13 @@ class OfflinePackTests(unittest.TestCase):
     def test_online_readme_prefers_the_newest_file_over_the_pack(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)
         mod = load_mod_catalog(self.store.catalog_path)[0]
-        with patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(b"# DS3 newer")):
+        with patch("utils.network.urlopen", return_value=io.BytesIO(b"# DS3 newer")):
             self.assertEqual("# DS3 newer", fetch_mod_readme(mod))
 
     def test_pack_is_the_fallback_when_the_network_fails(self) -> None:
         install_pack(self.store, Settings(), self.repo_zip)
         mod = load_mod_catalog(self.store.catalog_path)[0]
-        with patch("scanner.mod_installer.urlopen", side_effect=OSError("down")):
+        with patch("utils.network.urlopen", side_effect=OSError("down")):
             self.assertEqual("# DS3", fetch_mod_readme(mod))
 
     def test_interrupted_read_falls_back_to_complete_pack_file(self) -> None:
@@ -158,13 +153,13 @@ class OfflinePackTests(unittest.TestCase):
                     return super().read(3)
                 raise IncompleteRead(b"partial")
 
-        with patch("scanner.mod_installer.urlopen", return_value=InterruptedStream(b"partial")):
+        with patch("utils.network.urlopen", return_value=InterruptedStream(b"partial")):
             self.assertEqual("# DS3", fetch_mod_readme(mod))
 
     def test_import_preserves_online_catalog_and_offline_uses_pack_catalog(self) -> None:
         document = json.loads((PLUGIN_ROOT / "catalog.json").read_text(encoding="utf-8"))
         online = json.dumps(document).encode()
-        with patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(online)):
+        with patch("utils.network.urlopen", return_value=io.BytesIO(online)):
             update_dependencies(self.store, Settings())
         install_pack(self.store, Settings(), self.repo_zip)
 
@@ -175,7 +170,7 @@ class OfflinePackTests(unittest.TestCase):
         game.mkdir()
         set_offline_mode(True)
         self.addCleanup(set_offline_mode, False)
-        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
+        with patch("utils.network.urlopen", side_effect=AssertionError("network used")):
             self.assertEqual([], apply_mod_files(offline.mods[0], str(game)))
 
     def test_online_import_refreshes_pack_catalog(self) -> None:
@@ -186,7 +181,7 @@ class OfflinePackTests(unittest.TestCase):
         online = (PLUGIN_ROOT / "catalog.json").read_bytes()
         with (
             patch.object(main, "get_store", return_value=self.store),
-            patch("scanner.mod_installer.urlopen", return_value=io.BytesIO(online)),
+            patch("utils.network.urlopen", return_value=io.BytesIO(online)),
         ):
             result = asyncio.run(main.Plugin().import_offline_pack(str(self.repo_zip)))
         self.assertIsNone(result["warning"])
@@ -200,7 +195,7 @@ class OfflinePackTests(unittest.TestCase):
             main = importlib.import_module("main")
         with (
             patch.object(main, "get_store", return_value=self.store),
-            patch("scanner.mod_installer.urlopen", side_effect=OSError("network down")),
+            patch("utils.network.urlopen", side_effect=OSError("network down")),
         ):
             result = asyncio.run(main.Plugin().import_offline_pack(str(self.repo_zip)))
         self.assertIn("Could not refresh", result["warning"])
@@ -235,7 +230,7 @@ class OfflinePackTests(unittest.TestCase):
         newer = replace(mod, source=replace(mod.source, sha256="a" * 64))
         game = self.root / "game"
         game.mkdir()
-        with patch("scanner.mod_installer.urlopen", side_effect=OSError("down")):
+        with patch("utils.network.urlopen", side_effect=OSError("down")):
             with self.assertRaises(OSError):
                 apply_mod_files(newer, str(game))
         self.assertFalse((game / "Game").exists())
@@ -271,7 +266,7 @@ class OfflinePackTests(unittest.TestCase):
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
             patch("store.pack.latest_release", return_value=(repository, release, tag)),
-            patch("store.pack.open_url", return_value=io.BytesIO(self.repo_zip.read_bytes())) as download,
+            patch("utils.network.open_url", return_value=io.BytesIO(self.repo_zip.read_bytes())) as download,
         ):
             result = download_release_pack(self.store, Settings())
         download.assert_called_once_with(url)
@@ -281,7 +276,7 @@ class OfflinePackTests(unittest.TestCase):
         game.mkdir()
         set_offline_mode(True)
         self.addCleanup(set_offline_mode, False)
-        with patch("scanner.mod_installer.urlopen", side_effect=AssertionError("network used")):
+        with patch("utils.network.urlopen", side_effect=AssertionError("network used")):
             self.assertEqual([], apply_mod_files(mod, str(game)))
             self.assertEqual("# DS3", fetch_mod_readme(mod))
 
@@ -299,7 +294,7 @@ class OfflinePackTests(unittest.TestCase):
         with (
             patch("store.pack.latest_release", return_value=(repository, {"assets": assets}, tag)),
             patch(
-                "store.pack.open_url",
+                "utils.network.open_url",
                 side_effect=lambda url: io.BytesIO(part_contents[url]),
             ) as download,
         ):
@@ -317,7 +312,7 @@ class OfflinePackTests(unittest.TestCase):
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
             patch("store.pack.latest_release", return_value=(repository, release, tag)),
-            patch("store.pack.open_url", side_effect=AssertionError("download used")),
+            patch("utils.network.open_url", side_effect=AssertionError("download used")),
         ):
             with self.assertRaisesRegex(ValueError, "incomplete offline pack part set"):
                 download_release_pack(self.store, Settings())
@@ -329,7 +324,7 @@ class OfflinePackTests(unittest.TestCase):
         release = {"assets": [{"name": name, "browser_download_url": "https://example.com/pack.zip"}]}
         with (
             patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
-            patch("store.pack.open_url", side_effect=AssertionError("download used")),
+            patch("utils.network.open_url", side_effect=AssertionError("download used")),
         ):
             with self.assertRaisesRegex(ValueError, "does not contain"):
                 download_release_pack(self.store, Settings())
@@ -343,7 +338,7 @@ class OfflinePackTests(unittest.TestCase):
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
             patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
-            patch("store.pack.open_url", return_value=io.BytesIO(b"invalid")),
+            patch("utils.network.open_url", return_value=io.BytesIO(b"invalid")),
         ):
             with self.assertRaises(ValueError):
                 download_release_pack(self.store, Settings())
@@ -362,7 +357,7 @@ class OfflinePackTests(unittest.TestCase):
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
             patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
-            patch("store.pack.open_url", return_value=io.BytesIO(self.repo_zip.read_bytes())),
+            patch("utils.network.open_url", return_value=io.BytesIO(self.repo_zip.read_bytes())),
             patch.object(self.store, "load_settings", return_value=Settings(offline_mode=True)),
         ):
             with self.assertRaisesRegex(ValueError, "changed during the download"):
@@ -386,7 +381,7 @@ class OfflinePackTests(unittest.TestCase):
 
         with (
             patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
-            patch("store.pack.open_url", return_value=PausedDownload(self.repo_zip.read_bytes())),
+            patch("utils.network.open_url", return_value=PausedDownload(self.repo_zip.read_bytes())),
             ThreadPoolExecutor(max_workers=1) as executor,
         ):
             future = executor.submit(download_release_pack, self.store, Settings())

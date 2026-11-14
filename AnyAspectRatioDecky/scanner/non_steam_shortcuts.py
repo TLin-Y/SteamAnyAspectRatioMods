@@ -4,7 +4,7 @@ import zlib
 from pathlib import Path
 
 from scanner.steam_library_scanner import InstalledApp
-from utils.text_files import TEXT_ENCODING
+from utils import text_files
 
 SHORTCUTS_RELATIVE_PATH = ("config", "shortcuts.vdf")
 _TYPE_MAP, _TYPE_STRING, _TYPE_INT32, _TYPE_END = 0, 1, 2, 8
@@ -12,7 +12,7 @@ _TYPE_MAP, _TYPE_STRING, _TYPE_INT32, _TYPE_END = 0, 1, 2, 8
 
 def _read_cstring(data: bytes, index: int) -> tuple[str, int]:
     end = data.index(b"\x00", index)
-    return data[index:end].decode(TEXT_ENCODING, errors="replace"), end + 1
+    return data[index:end].decode(text_files.TEXT_ENCODING, errors="replace"), end + 1
 
 
 def parse_binary_vdf(data: bytes) -> dict[str, object]:

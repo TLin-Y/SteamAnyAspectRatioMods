@@ -1,8 +1,5 @@
 import hashlib
-import os
-import tempfile
 from dataclasses import dataclass, replace
-from pathlib import Path
 
 from scanner.mod_catalog import (
     ModDefinition,
@@ -10,14 +7,15 @@ from scanner.mod_catalog import (
     load_mod_catalog,
     read_catalog_repository,
 )
-from scanner.mod_installer import read_url_limited, repository_file_url
+from scanner.mod_installer import repository_file_url
 from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
     Settings,
     utc_now,
 )
-from utils.text_files import write_json_atomic
+from utils import files, text_files
+from utils.network import read_url_limited
 
 MAX_CATALOG_SIZE_BYTES = 2 * 1024 * 1024
 
@@ -107,22 +105,14 @@ def save_catalog(
     source_url: str,
 ) -> tuple[tuple[ModDefinition, ...], bool, str]:
     """Validate catalog bytes and atomically make them the cached catalog."""
-    store.ensure_directories()
-    descriptor, temporary_name = tempfile.mkstemp(dir=store.cache_dir, suffix=".json.tmp")
-    os.close(descriptor)
-    temporary_path = Path(temporary_name)
-    try:
-        temporary_path.write_bytes(content)
-        mods = load_mod_catalog(temporary_path, **repository_overrides(settings))
-        digest = hashlib.sha256(content).hexdigest()
-        previous = store.catalog_meta()
-        changed = previous is None or previous.get("sha256") != digest
-        os.replace(temporary_path, store.catalog_path)
-    finally:
-        temporary_path.unlink(missing_ok=True)
+    mods = load_mod_catalog(content=content, **repository_overrides(settings))
+    digest = hashlib.sha256(content).hexdigest()
+    previous = store.catalog_meta()
+    changed = previous is None or previous.get("sha256") != digest
+    files.write_bytes_atomic(store.catalog_path, content)
 
     fetched_at = utc_now()
-    write_json_atomic(
+    text_files.write_json_atomic(
         store.catalog_meta_path,
         {
             "fetched_at": fetched_at,
@@ -165,7 +155,7 @@ def refresh_catalog_on_start(store: PluginStore, settings: Settings) -> bool | N
     _, changed, _ = save_catalog(store, settings, _download_catalog(url), url)
     if changed:
         store.clear_archive_cache()
-        store.local_index_path.unlink(missing_ok=True)
+        store.clear_local_index()
     return changed
 
 
