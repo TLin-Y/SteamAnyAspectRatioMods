@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
-from scanner.mod_catalog import load_mod_catalog, summarize_credits
+from scanner.mod_catalog import CATALOG_SCHEMA_VERSION, load_mod_catalog, summarize_credits
 from scanner.mod_installer import mod_readme_path
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import SupportedGame, match_supported_games
@@ -295,6 +295,21 @@ class ModCatalogTests(unittest.TestCase):
             config.read_string(archive.read(mod.ini_file).decode("utf-8-sig"))
             self.assertEqual(1280, config.getint("Resolution", "Width"))
             self.assertEqual(800, config.getint("Resolution", "Height"))
+
+    def test_only_the_supported_schema_version_loads(self) -> None:
+        document = json.loads(
+            (Path(__file__).resolve().parents[1] / "catalog.json").read_text(encoding="utf-8")
+        )
+        document["mods"] = document["mods"][:1]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "catalog.json"
+            for version in (CATALOG_SCHEMA_VERSION - 1, str(CATALOG_SCHEMA_VERSION), float(CATALOG_SCHEMA_VERSION), True):
+                with self.subTest(version=version):
+                    path.write_text(json.dumps({**document, "schema_version": version}), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "Unsupported mod catalog schema version"):
+                        load_mod_catalog(path)
+            path.write_text(json.dumps(document), encoding="utf-8")
+            self.assertEqual(1, len(load_mod_catalog(path)))
 
     def test_invalid_ini_resolution_metadata_is_rejected(self) -> None:
         document = json.loads(

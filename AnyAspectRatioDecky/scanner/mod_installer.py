@@ -15,7 +15,8 @@ from urllib.parse import quote, urlparse
 from urllib.request import urlopen
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
-from scanner.mod_catalog import IniResolutionPair, ModDefinition, ModSource
+from helper.validator import Validator
+from scanner.mod_catalog import IniResolutionPair, ModDefinition, ModSource, mod_log_names
 from utils.text_files import BOM_TEXT_ENCODING, TEXT_ENCODING, read_text_tail
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
@@ -45,13 +46,9 @@ def create_ssl_context() -> ssl.SSLContext:
 
 
 def _repository_parts(repository_url: str) -> str:
-    repository = urlparse(repository_url)
-    if repository.hostname != "github.com":
-        raise ValueError("Mod source repository must be hosted on github.com")
-    owner_and_repo = repository.path.strip("/").split("/")
-    if len(owner_and_repo) != 2 or not all(owner_and_repo):
-        raise ValueError("Mod source repository URL must identify an owner and repository")
-    return "/".join(quote(part, safe="") for part in owner_and_repo)
+    if not Validator.GitHub.repository(repository_url):
+        raise ValueError("Mod source repository must look like https://github.com/<owner>/<repo>")
+    return urlparse(repository_url).path.strip("/")
 
 
 def repository_file_url(repository_url: str, repository_ref: str, path: str) -> str:
@@ -381,15 +378,9 @@ def _game_root(game_path: str) -> Path:
 
 
 def _target_path(game_root: Path, relative_path: str) -> Path:
-    relative = PurePosixPath(relative_path)
-    if (
-        not relative_path
-        or relative.is_absolute()
-        or "\\" in relative_path
-        or ":" in relative_path
-        or any(part in ("", ".", "..") for part in relative_path.split("/"))
-    ):
+    if not Validator.Paths.is_relative(relative_path):
         raise ValueError(f"Unsafe mod target path: {relative_path}")
+    relative = PurePosixPath(relative_path)
 
     target = game_root.joinpath(*relative.parts)
     if target.is_symlink():
@@ -719,14 +710,6 @@ def read_mod_ini(mod: ModDefinition, game_path: str) -> tuple[str, bool]:
         return content.decode(TEXT_ENCODING), True
     except UnicodeDecodeError as error:
         raise ValueError("Mod INI file is not valid UTF-8 text") from error
-
-
-def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
-    return list(dict.fromkeys(
-        str(PurePosixPath(path).with_suffix(".log"))
-        for path in files
-        if PurePosixPath(path).suffix.lower() == ".asi"
-    ))
 
 
 def existing_mod_logs(files: tuple[str, ...] | list[str], game_path: str) -> list[str]:

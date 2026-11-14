@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from helper.validator import Validator
 from utils.steam_vdf import VdfParseError, read_vdf
 
 _MANIFEST_PATTERN = re.compile(r"appmanifest_(\d+)\.acf\Z")
@@ -107,13 +108,6 @@ def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
     return roots, warnings
 
 
-def _safe_install_directory(value: str) -> bool:
-    relative = Path(value)
-    return bool(value) and not relative.is_absolute() and all(
-        part not in ("", ".", "..") for part in value.replace("\\", "/").split("/")
-    )
-
-
 def _directory_size(path: str | None) -> int:
     if path is None:
         return -1
@@ -165,7 +159,7 @@ def _read_manifest(
     if app_id != filename_match.group(1):
         warnings.append(f"App ID does not match manifest filename: {manifest_path}")
         return None
-    if not _safe_install_directory(install_dir):
+    if not Validator.Paths.is_relative(install_dir.replace("\\", "/")):
         warnings.append(f"Unsafe install directory in app manifest: {manifest_path}")
         return None
     candidate_path = (common_dir / install_dir).resolve(strict=False)
