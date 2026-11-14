@@ -320,6 +320,32 @@ class LocalArchiveTests(unittest.TestCase):
         self.assertEqual([], archives)
         self.assertTrue(any("unsafe" in warning for warning in warnings))
 
+    def test_each_unusable_archive_reports_why(self) -> None:
+        write_zip(self.archives / "Empty.zip", {"__MACOSX/x": b"junk", "Thumbs.db": b"junk"})
+        write_zip(self.archives / "Collide.zip", {"Fix.dll": b"1", "fix.dll": b"2"})
+        write_zip(self.archives / "Big.zip", {f"f{index}.dll": b"1" for index in range(4)})
+        with patch("scanner.local_archives.MAX_LOCAL_ARCHIVE_FILES", 3):
+            archives, warnings = scan_local_archives(str(self.archives))
+        self.assertEqual([], archives)
+        report = "\n".join(warnings)
+        self.assertIn("Empty.zip", report)
+        self.assertIn("archive contains no files", report)
+        self.assertIn("entry names collide", report)
+        self.assertIn("more than 3 files", report)
+
+    def test_index_from_another_folder_or_version_is_ignored(self) -> None:
+        write_zip(self.archives / "Cool Game.zip", {"a.dll": b"1"})
+        index = self.root / "index.json"
+        scan_local_archives(str(self.archives), index)
+        document = json.loads(index.read_text(encoding="utf-8"))
+        for stale in ({**document, "version": 0}, {**document, "directory": "/elsewhere"}, {**document, "archives": []}):
+            with self.subTest(stale=stale):
+                index.write_text(json.dumps(stale), encoding="utf-8")
+                with patch("scanner.local_archives._list_archive_files", return_value=(["a.dll"], None)) as listing:
+                    archives, _ = scan_local_archives(str(self.archives), index)
+                listing.assert_called_once()
+                self.assertEqual(1, len(archives))
+
     def test_apply_extracts_local_archive_and_shows_in_scan_report(self) -> None:
         write_zip(self.archives / "Cool Game.zip", {"mod.dll": b"new", "data/x.bin": b"x"})
         archives, _ = scan_local_archives(str(self.archives))
