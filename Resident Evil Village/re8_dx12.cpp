@@ -29,8 +29,7 @@ bool bEnableARFix = true;
 float fTargetARValue = 1.3333333f;
 
 bool bEnableFOVFix = true;
-float fTargetFOV = 95.0f;
-float fTargetFOVADS = 70.0f;
+float fFOVScale = 1.0f;
 
 template<typename T>
 T GetConfigAndLog(inipp::Ini<char>& ini, const std::string& section, const std::string& key, T defaultValue) {
@@ -79,8 +78,11 @@ void Configuration() {
     }
     
     bEnableFOVFix = GetConfigAndLog(ini, "FOV", "EnableFOVFix", true);
-    fTargetFOV = GetConfigAndLog(ini, "FOV", "IdleFOV", 95.0f);
-    fTargetFOVADS = GetConfigAndLog(ini, "FOV", "AimFOV", 70.0f);
+    fFOVScale = GetConfigAndLog(ini, "FOV", "FOVScale", 1.0f);
+    if (!(fFOVScale > 0.0f && fFOVScale <= 2.0f)) {
+        SPDLOG_ERROR("FOVScale {} out of range (0 - 2.0); using 1.0.", fFOVScale);
+        fFOVScale = 1.0f;
+    }
 }
 
 void AspectRatioFix() {
@@ -108,61 +110,32 @@ void AspectRatioFix() {
     }
 }
 
-uintptr_t ResolveRIP(uintptr_t instructionAddress, int offsetToDisp, int instructionSize) {
-    int32_t disp = *reinterpret_cast<int32_t*>(instructionAddress + offsetToDisp);
-    return instructionAddress + instructionSize + disp;
-}
+void FOV() {
+    if (!bEnableFOVFix || fFOVScale == 1.0f) return;
 
-DWORD __stdcall FOVThread(void*) {
-    if (!bEnableFOVFix) return 0;
-
-    std::uint8_t* scan = Memory::PatternScan(exeModule, 
-        "48 8B ? ? ? ? ? 48 39 ? ? 48 0F ? ? EB ? 48 8B ? 48 8B ? ? 48 39 ? ? 74 ? 0F 57");
-        
-    if (!scan) {
-        SPDLOG_ERROR("FOV basePlayer AOB scan failed for DX12!");
-        return 0;
+    auto hits = Memory::PatternScanAll(exeModule,
+        "F3 0F 10 ?? 38 F3 0F 59 05 ?? ?? ?? ?? 0F 29 74 24 30 F3 0F 10 ?? 30 F3 0F 59 05 ?? ?? ?? ?? 0F 29 7C 24 20 F3 0F 10 ?? 34 F3 0F 59 05 ?? ?? ?? ?? E8");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Camera projection code found {} times (expected 1); FOV not changed.", hits.size());
+        return;
     }
 
-    uintptr_t basePlayerPtr = ResolveRIP(reinterpret_cast<uintptr_t>(scan), 3, 7);
-    SPDLOG_INFO("FOV BasePlayer resolved to: 0x{:X}", basePlayerPtr);
-
-    bool bFovLogged = false;
-
-    while (true) {
-        Sleep(100);
-
-        __try {
-            uintptr_t ptr = *reinterpret_cast<uintptr_t*>(basePlayerPtr);
-            if (!ptr) { bFovLogged = false; continue; }
-
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x1F8); if (!ptr) { bFovLogged = false; continue; }
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x68);  if (!ptr) { bFovLogged = false; continue; }
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x78);  if (!ptr) { bFovLogged = false; continue; }
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x130); if (!ptr) { bFovLogged = false; continue; }
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x20);  if (!ptr) { bFovLogged = false; continue; }
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x20);  if (!ptr) { bFovLogged = false; continue; }
-            ptr = *reinterpret_cast<uintptr_t*>(ptr + 0x50);  if (!ptr) { bFovLogged = false; continue; }
-
-            float* idleFov = reinterpret_cast<float*>(ptr + 0x38);
-            float* adsFov  = reinterpret_cast<float*>(ptr + 0x3C);
-            
-            if (!bFovLogged) {
-                SPDLOG_INFO("Original FOV detected -> Idle: {:.2f}, ADS: {:.2f}", *idleFov, *adsFov);
-            }
-
-            *idleFov = fTargetFOV;
-            *adsFov = fTargetFOVADS;
-
-            if (!bFovLogged) {
-                SPDLOG_INFO("New FOV successfully applied -> Idle: {:.2f}, ADS: {:.2f}", *idleFov, *adsFov);
-                bFovLogged = true;
-            }
-
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-        }
+    static int cameraReg = hits[0][3] & 7;
+    static SafetyHookMid FOVHook{};
+    FOVHook = safetyhook::create_mid(hits[0] + 0x29, [](SafetyHookContext& ctx) {
+        std::uintptr_t regs[8] = { ctx.rax, ctx.rcx, ctx.rdx, ctx.rbx, ctx.rsp, ctx.rbp, ctx.rsi, ctx.rdi };
+        std::uintptr_t camera = regs[cameraReg];
+        if (bEnableARFix && *reinterpret_cast<float*>(camera + 0x44) != fTargetARValue) return;
+        float angle = ctx.xmm0.f32[0] * fFOVScale;
+        if (angle < 0.002f) angle = 0.002f;
+        if (angle > 2.96f) angle = 2.96f;
+        ctx.xmm0.f32[0] = angle;
+    });
+    if (FOVHook) {
+        SPDLOG_INFO("FOV hook installed at 0x{:X}", reinterpret_cast<uintptr_t>(hits[0] + 0x29));
+    } else {
+        SPDLOG_ERROR("FOV hook could not be installed.");
     }
-    return 0;
 }
 
 DWORD __stdcall Main(void*) {
@@ -172,10 +145,7 @@ DWORD __stdcall Main(void*) {
     Configuration();
     
     AspectRatioFix();
-    
-    if (HANDLE hFOVThread = CreateThread(NULL, 0, FOVThread, 0, NULL, 0)) {
-        CloseHandle(hFOVThread);
-    }
+    FOV();
 
     return 1;
 }
