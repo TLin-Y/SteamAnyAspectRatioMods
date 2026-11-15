@@ -33,6 +33,7 @@ from scanner.mod_catalog import (
 )
 from scanner.supported_game_scanner import (
     SupportedGame,
+    SupportedGameScanReport,
     scan_supported_games as scan_supported_games_report,
 )
 from store.dependencies import (
@@ -503,10 +504,36 @@ class Plugin:
             key = (str(Path(game.game_path).resolve()), mod.ini_file or "")
             candidates.setdefault(key, []).append(game)
 
+        # Locked before any INI changes, so a running pack operation stops the update instead of failing it halfway.
+        with pack_operation():
+            updated, unchanged, failures = self._update_ini_resolutions(candidates, report, settings, skipped)
+            store = get_store()
+            latest = store.load_settings()
+            if (
+                not failures
+                and latest.ini_resolution_update_pending
+                and (latest.ini_resolution_width, latest.ini_resolution_height)
+                == (settings.ini_resolution_width, settings.ini_resolution_height)
+            ):
+                latest = replace(latest, ini_resolution_update_pending=False)
+                store.save_settings(latest)
+        log.info("Resolution update completed")
+        return {
+            "updated": updated, "unchanged": unchanged, "skipped": skipped,
+            "failures": failures, "warnings": list(report.warnings),
+            "resolution_update_pending": latest.ini_resolution_update_pending,
+        }
+
+    @staticmethod
+    def _update_ini_resolutions(
+        candidates: dict[tuple[str, str], list[SupportedGame]],
+        report: SupportedGameScanReport,
+        settings: Settings,
+        skipped: list[str],
+    ) -> tuple[list[str], list[str], list[str]]:
         updated: list[str] = []
         unchanged: list[str] = []
         failures: list[str] = []
-        warnings = list(report.warnings)
         for games in candidates.values():
             if len(games) != 1:
                 skipped.extend(f"{game.app_name}: INI is shared by multiple matches." for game in games)
@@ -529,23 +556,7 @@ class Plugin:
                     log.warning("Could not keep INI file permissions: %s", mod.mod_id)
             else:
                 unchanged.append(game.app_name)
-        with pack_operation():
-            store = get_store()
-            latest = store.load_settings()
-            if (
-                not failures
-                and latest.ini_resolution_update_pending
-                and (latest.ini_resolution_width, latest.ini_resolution_height)
-                == (settings.ini_resolution_width, settings.ini_resolution_height)
-            ):
-                latest = replace(latest, ini_resolution_update_pending=False)
-                store.save_settings(latest)
-        log.info("Resolution update completed")
-        return {
-            "updated": updated, "unchanged": unchanged, "skipped": skipped,
-            "failures": failures, "warnings": warnings,
-            "resolution_update_pending": latest.ini_resolution_update_pending,
-        }
+        return updated, unchanged, failures
 
     async def set_mod_applied(
         self,

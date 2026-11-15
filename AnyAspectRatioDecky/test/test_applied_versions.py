@@ -4,6 +4,7 @@ import importlib
 import logging
 import sys
 import tempfile
+import threading
 import types
 import unittest
 from dataclasses import replace
@@ -130,6 +131,41 @@ class AppliedVersionTests(unittest.TestCase):
             skipped = asyncio.run(self.main.Plugin().update_current_resolution())
             self.assertEqual([], skipped["updated"])
             self.assertIn("select the correct mod", skipped["skipped"][0])
+
+    def test_update_current_refuses_during_a_pack_operation_without_touching_inis(self) -> None:
+        mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")
+        for name in mod.files:
+            path = self.game / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"mod")
+        ini = self.game / mod.ini_file
+        original = b"[AspectRatio]\nTargetWidth = 16.0\nTargetHeight = 10.0\n"
+        ini.write_bytes(original)
+        app = replace(self.app, app_id=mod.steam_app_id, install_dir=mod.install_dir)
+        report = match_supported_games(SteamScanReport(1, 1, [app], []), (mod,))
+        self.store.save_settings(Settings(
+            ini_resolution_width=1920, ini_resolution_height=1080, ini_resolution_update_pending=True
+        ))
+        held, release = threading.Event(), threading.Event()
+
+        def hold_pack_lock() -> None:
+            with self.main.pack_operation():
+                held.set()
+                release.wait(5)
+
+        holder = threading.Thread(target=hold_pack_lock)
+        holder.start()
+        self.addCleanup(holder.join)
+        self.addCleanup(release.set)
+        held.wait(5)
+        with (
+            patch.object(self.main, "get_store", return_value=self.store),
+            patch.object(self.main.Plugin, "_scan", return_value=report),
+            self.assertRaisesRegex(ValueError, "Another offline pack operation"),
+        ):
+            asyncio.run(self.main.Plugin().update_current_resolution())
+        self.assertEqual(original, ini.read_bytes())
+        self.assertTrue(self.store.load_settings().ini_resolution_update_pending)
 
     def test_update_current_reports_failure_without_modifying_other_inis(self) -> None:
         mod = next(m for m in load_mod_catalog() if m.mod_id == "ori-and-the-will-of-the-wisps")

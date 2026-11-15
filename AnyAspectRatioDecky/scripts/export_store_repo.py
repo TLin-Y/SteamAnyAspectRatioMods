@@ -43,7 +43,7 @@ ROOT_PATHS = (
     "tsconfig.json",
     "src",
 )
-PY_PACKAGES = ("helper", "logger", "scanner", "store", "utils")
+PY_PACKAGES = ("helper", "installer", "logger", "scanner", "store", "utils")
 DEFAULTS_FILES = (
     "LICENSE-Decky-Plugin-Template.txt",
     "LICENSE-LGPL-2.1.txt",

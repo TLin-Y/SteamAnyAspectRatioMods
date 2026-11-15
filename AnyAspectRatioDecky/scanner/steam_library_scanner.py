@@ -65,7 +65,9 @@ def find_steam_roots(
 
 
 def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
-    roots = [steam_root.resolve(strict=False)]
+    roots: list[Path] = []
+    seen: set[str] = set()
+    _add_unique_path(roots, seen, steam_root.resolve(strict=False))
     warnings: list[str] = []
     config_path = steam_layout.library_config(steam_root)
     if not config_path.exists():
@@ -84,8 +86,6 @@ def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
             f"Library configuration has no libraryfolders object: {config_path}"
         ]
 
-    seen: set[str] = set()
-    _add_unique_path(roots, seen, roots[0])
     for index, value in library_folders.items():
         if not index.isdigit():
             continue

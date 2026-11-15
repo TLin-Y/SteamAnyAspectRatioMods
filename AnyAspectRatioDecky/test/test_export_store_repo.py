@@ -9,6 +9,7 @@ sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
 
 from export_store_repo import (  # noqa: E402
     BUILD_FLAVOR,
+    PY_PACKAGES,
     SELF_UPDATE_ON,
     store_path,
 )
@@ -17,6 +18,10 @@ from scanner import mod_catalog  # noqa: E402
 
 
 class StoreLayoutTests(unittest.TestCase):
+    def test_every_python_package_is_exported(self) -> None:
+        packages = {init.parent.name for init in PLUGIN_ROOT.glob("*/__init__.py")}
+        self.assertEqual(packages, set(PY_PACKAGES))
+
     def test_python_packages_go_to_py_modules(self) -> None:
         self.assertEqual("py_modules/scanner/mod_catalog.py", store_path("scanner/mod_catalog.py"))
         self.assertEqual("py_modules/helper/__init__.py", store_path("helper/__init__.py"))
