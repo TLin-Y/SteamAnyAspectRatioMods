@@ -2,8 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scanner import steam_layout
 from scanner.steam_library_scanner import find_steam_roots, scan_steam_libraries
-from utils.steam_vdf import VdfParseError, parse_vdf
+from utils.steam_vdf import VdfParseError, parse_binary_vdf, parse_vdf
 
 
 class SteamDiscoveryTests(unittest.TestCase):
@@ -69,6 +70,13 @@ class SteamDiscoveryTests(unittest.TestCase):
         with self.assertRaises(VdfParseError):
             parse_vdf('"AppState" { "appid" "123"')
 
+    def test_parse_binary_vdf(self) -> None:
+        data = b"\x00shortcuts\x00\x000\x00\x01AppName\x00Game\x00\x02appid\x00\x01\x00\x00\x80\x08\x08\x08"
+        self.assertEqual({"shortcuts": {"0": {"AppName": "Game", "appid": 0x80000001}}}, parse_binary_vdf(data))
+        for broken in (data[:-3], data[:-8], b"\x01name", b"\x07key\x00\x08"):
+            with self.subTest(data=broken), self.assertRaises(VdfParseError):
+                parse_binary_vdf(broken)
+
     def test_find_steam_roots_uses_known_paths_and_deduplicates(self) -> None:
         steam = self.root / ".local" / "share" / "Steam"
         steam.mkdir(parents=True)
@@ -79,6 +87,17 @@ class SteamDiscoveryTests(unittest.TestCase):
         )
 
         self.assertEqual([steam.resolve()], roots)
+
+    def test_find_steam_roots_includes_flatpak_steam(self) -> None:
+        flatpak = self.root / ".var" / "app" / "com.valvesoftware.Steam" / ".local" / "share" / "Steam"
+        flatpak.mkdir(parents=True)
+        self.assertEqual([flatpak.resolve()], find_steam_roots(home=self.root, environment={}))
+
+    def test_manifest_app_id_needs_the_exact_manifest_name(self) -> None:
+        for name, expected in (("appmanifest_123.acf", "123"), ("appmanifest_.acf", None), ("appmanifest_12a.acf", None),
+                               ("appmanifest_123.acf.bak", None), ("xappmanifest_123.acf", None), ("appmanifest_\u0661.acf", None)):
+            with self.subTest(name=name):
+                self.assertEqual(expected, steam_layout.manifest_app_id(Path(name)))
 
     def test_scans_default_and_removable_libraries(self) -> None:
         default_library = self.root / "Steam"
