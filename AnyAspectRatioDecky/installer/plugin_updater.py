@@ -86,7 +86,6 @@ def check_for_update(repository_url: str, installed_version: str) -> dict[str, o
 
 
 def _plugin_root_in_archive(names: list[str]) -> str:
-    """Return the archive folder holding plugin.json ("" when it is at the top level)."""
     roots = [
         PurePosixPath(name).parent.as_posix()
         for name in names
@@ -143,12 +142,6 @@ def install_update(
     plugin_dir: Path,
     fallback_dir: Path,
 ) -> dict[str, object]:
-    """Download the release zip and overlay it onto the plugin folder.
-
-    When the plugin folder cannot be written (Decky runs plugins without root unless
-    asked), the zip is saved to fallback_dir so it can be installed from Decky's
-    developer settings instead.
-    """
     repository = repository_path(repository_url)
     if not download_url.startswith(f"https://github.com/{repository}/releases/download/"):
         raise PluginError("The update must come from the configured repository's releases")

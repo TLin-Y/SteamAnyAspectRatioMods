@@ -16,6 +16,12 @@ for import_root in (plugin_dir, str(Path(plugin_dir) / "py_modules")):
 from helper import PLUGIN_NAME, errors
 from helper.build_flavor import SELF_UPDATE_ENABLED
 from helper.errors import PluginError
+from installer.apply import apply_mod_files
+from installer.backups import MissingModBackupError
+from installer.mod_ini import read_mod_ini, update_existing_ini_resolution, write_mod_ini
+from installer.mod_logs import existing_mod_logs, read_mod_log
+from installer.plugin_updater import check_for_update, install_update, read_installed_version
+from installer.remove import remove_mod_files
 from logger.plugin_logger import log
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import (
@@ -24,21 +30,6 @@ from scanner.mod_catalog import (
     mod_log_names,
     read_catalog_repository,
     summarize_credits,
-)
-from scanner.mod_installer import (
-    MissingModBackupError,
-    apply_mod_files,
-    existing_mod_logs,
-    read_mod_ini,
-    read_mod_log,
-    remove_mod_files,
-    update_existing_ini_resolution,
-    write_mod_ini,
-)
-from scanner.plugin_updater import (
-    check_for_update,
-    install_update,
-    read_installed_version,
 )
 from scanner.supported_game_scanner import (
     SupportedGame,

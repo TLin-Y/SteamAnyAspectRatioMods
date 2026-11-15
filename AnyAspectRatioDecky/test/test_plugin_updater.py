@@ -10,7 +10,7 @@ from zipfile import ZipFile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from helper import PLUGIN_NAME
-from scanner import plugin_updater
+from installer import plugin_updater
 
 REPO = "https://github.com/TLin-Y/SteamAnyAspectRatioMods"
 DOWNLOAD = f"{REPO}/releases/download/v1.5.0/AnyAspectRatio-1.5.0.zip"

@@ -17,7 +17,8 @@ class ModCatalogTests(unittest.TestCase):
     def test_ff13_combined_package_and_installation(self) -> None:
         import configparser
 
-        from scanner.mod_installer import apply_mod_files, remove_mod_files
+        from installer.apply import apply_mod_files
+        from installer.remove import remove_mod_files
 
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "final-fantasy-xiii")
         root = Path(__file__).resolve().parents[2]
@@ -78,7 +79,9 @@ class ModCatalogTests(unittest.TestCase):
             self.assertEqual([], list(target.iterdir()) if target.exists() else [])
 
     def test_dragontweak_verified_paths_apply_and_remove(self) -> None:
-        from scanner.mod_installer import apply_mod_files, read_mod_ini, remove_mod_files
+        from installer.apply import apply_mod_files
+        from installer.mod_ini import read_mod_ini
+        from installer.remove import remove_mod_files
 
         expected = (
             ("3937550", "YakuzaKiwami3", "runtime/media/startup.exe"),
@@ -648,7 +651,7 @@ class ModCatalogTests(unittest.TestCase):
     def test_bloodstained_package_and_install_paths(self) -> None:
         import configparser
 
-        from scanner.mod_installer import existing_mod_logs, read_mod_log
+        from installer.mod_logs import existing_mod_logs, read_mod_log
 
         mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "bloodstained-ritual-of-the-night")
         destination = "BloodstainedRotN/Binaries/Win64"
@@ -712,7 +715,7 @@ class ModCatalogTests(unittest.TestCase):
         )
         self.assertEqual("SonicShadow_ARFix.ini", mod.ini_file)
         self.assertEqual(("winmm=n,b",), mod.wine_dll_overrides)
-        from scanner.mod_installer import existing_mod_logs, read_mod_log
+        from installer.mod_logs import existing_mod_logs, read_mod_log
 
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / "SonicShadow_ARFix.log"
@@ -1108,7 +1111,8 @@ class ModCatalogTests(unittest.TestCase):
 
 class ManualModTests(unittest.TestCase):
     def test_manual_mods_are_listed_but_never_installed(self) -> None:
-        from scanner.mod_installer import apply_mod_files, remove_mod_files
+        from installer.apply import apply_mod_files
+        from installer.remove import remove_mod_files
 
         mods = {mod.mod_id: mod for mod in load_mod_catalog()}
         wild_hearts, dbxv2 = mods["wildheartsfix"], mods["dbxv2fix"]
