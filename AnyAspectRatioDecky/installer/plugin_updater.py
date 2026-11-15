@@ -59,9 +59,7 @@ def latest_release(repository_url: str) -> tuple[str, dict[str, object], str]:
 def check_for_update(repository_url: str, installed_version: str) -> dict[str, object]:
     """Look up the latest release of the repository and report whether it is newer."""
     repository, release, latest_text = latest_release(repository_url)
-    latest = parse_version(latest_text)
-    if latest is None:
-        raise PluginError(f"Latest release tag '{latest_text}' is not a version number")
+    latest = parse_version(latest_text)  # never None: latest_release rejects other tags
 
     download_prefix = f"https://github.com/{repository}/releases/download/"
     download_url = ""

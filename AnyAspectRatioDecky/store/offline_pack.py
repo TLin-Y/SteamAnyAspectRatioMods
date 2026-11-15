@@ -6,6 +6,7 @@ from pathlib import Path
 
 from helper import PLUGIN_NAME
 from helper.errors import PluginError
+from installer import staging
 from installer.plugin_updater import latest_release
 from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
 from store.dependencies import (
@@ -65,14 +66,11 @@ def wanted_paths(mods: tuple[ModDefinition, ...]) -> tuple[set[str], set[str]]:
     required: set[str] = set()
     optional: set[str] = set()
     for mod in mods:
-        source = mod.source
-        match source.kind:
-            case SourceKind.FILES:
-                required.update(item.path for item in source.files)
-            case SourceKind.DIRECTORY:
-                required.update(f"{source.path}/{path}" for path in mod.files)
-            case _ if source.path is not None:
-                required.add(source.path)
+        match mod.source.kind:
+            case SourceKind.FILES | SourceKind.DIRECTORY:
+                required.update(staging.source_file_map(mod).values())
+            case _ if mod.source.path is not None:
+                required.add(mod.source.path)
         optional.add(mod_readme_path(mod))
     return required, optional
 

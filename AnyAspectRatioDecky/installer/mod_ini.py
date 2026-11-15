@@ -13,8 +13,7 @@ def _ini_path(mod: ModDefinition, game_path: str) -> Path:
     if mod.ini_file is None:
         raise PluginError("This mod does not define an INI configuration file")
     path = folders.resolve_inside(game_folder.root(game_path), mod.ini_file)
-    if path.exists() and not path.is_file():
-        raise PluginError("Mod INI path is not a regular file")
+    game_folder.reject_non_file(path, "Mod INI path")
     return path
 
 
