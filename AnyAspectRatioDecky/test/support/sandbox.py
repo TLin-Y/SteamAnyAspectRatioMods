@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -71,6 +72,13 @@ class GameTest(SandboxTest):
         super().setUp()
         self.game = self.folder("game")
         self.workdir = self.game
+
+    def touch(self, *paths: str) -> None:
+        self.write(dict.fromkeys(paths, b""))
+
+    def clear_game(self) -> None:
+        shutil.rmtree(self.game)
+        self.game.mkdir()
 
     def apply(self, mod: ModDefinition, **options: object) -> list[str]:
         return apply_mod_files(mod, str(self.game), **options)

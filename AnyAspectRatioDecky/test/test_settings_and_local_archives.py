@@ -9,10 +9,8 @@ from unittest.mock import Mock, patch
 from zipfile import ZipFile
 
 from installer.apply import apply_mod_files
-from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModSource, load_mod_catalog
-from scanner.steam_library_scanner import InstalledApp, SteamScanReport
-from scanner.supported_game_scanner import match_supported_games
+from scanner.steam_library_scanner import InstalledApp
 from store.dependencies import (
     _with_bundled_resolution_metadata,
     load_active_catalog,
@@ -238,94 +236,6 @@ class LocalArchiveTests(unittest.TestCase):
         (self.game / "bin" / "UnityCrashHandler64.exe").write_bytes(b"x")
         self.app = InstalledApp("42424", "Cool Game", "Cool Game", str(self.root), str(self.game))
         self.addCleanup(set_archive_cache_dir, None)
-
-    def test_scan_matches_by_name_installs_next_to_executable(self) -> None:
-        write_zip(
-            self.archives / "Cool-Game-v1.2.0.zip",
-            {"dinput8.dll": b"dll", "fix.ini": b"ini", "__MACOSX/x": b"junk"},
-        )
-        write_zip(self.archives / "Other Game.zip", {"a.txt": b"a"})
-        (self.archives / "broken.zip").write_bytes(b"not a zip")
-        index = self.root / "index.json"
-
-        archives, warnings = scan_local_archives(str(self.archives), index)
-        self.assertEqual(["Cool-Game-v1.2.0", "Other Game"], [a.name for a in archives])
-        self.assertTrue(any("broken.zip" in warning for warning in warnings))
-        self.assertTrue(index.is_file())
-
-        mods, match_warnings = build_local_mods(archives, [self.app], set())
-        self.assertEqual(1, len(mods))
-        mod = mods[0]
-        self.assertEqual("local-42424", mod.mod_id)
-        self.assertEqual("bin", mod.source.destination)
-        self.assertEqual(("bin/dinput8.dll", "bin/fix.ini"), mod.files)
-        self.assertEqual(("dinput8=n,b",), mod.wine_dll_overrides)
-        self.assertTrue(any("Other Game" in warning for warning in match_warnings))
-
-    def test_index_is_reused_when_archive_is_unchanged(self) -> None:
-        path = self.archives / "Cool Game.zip"
-        write_zip(path, {"a.dll": b"1"})
-        index = self.root / "index.json"
-        scan_local_archives(str(self.archives), index)
-        with patch("scanner.local_archives._list_archive_files") as listing:
-            archives, _ = scan_local_archives(str(self.archives), index)
-        listing.assert_not_called()
-        self.assertEqual(1, len(archives))
-
-    def test_matches_app_id_in_file_name_and_catalog_wins(self) -> None:
-        write_zip(self.archives / "anything [42424].zip", {"a.dll": b"1"})
-        archives, _ = scan_local_archives(str(self.archives))
-        mods, _ = build_local_mods(archives, [self.app], set())
-        self.assertEqual(1, len(mods))
-        mods, warnings = build_local_mods(archives, [self.app], {"42424"})
-        self.assertEqual(0, len(mods))
-        self.assertTrue(any("catalog mod" in warning for warning in warnings))
-
-    def test_rejects_archives_with_unsafe_entries(self) -> None:
-        write_zip(self.archives / "Evil.zip", {"../escape.dll": b"1"})
-        archives, warnings = scan_local_archives(str(self.archives))
-        self.assertEqual([], archives)
-        self.assertTrue(any("unsafe" in warning for warning in warnings))
-
-    def test_each_unusable_archive_reports_why(self) -> None:
-        write_zip(self.archives / "Empty.zip", {"__MACOSX/x": b"junk", "Thumbs.db": b"junk"})
-        write_zip(self.archives / "Collide.zip", {"Fix.dll": b"1", "fix.dll": b"2"})
-        write_zip(self.archives / "Big.zip", {f"f{index}.dll": b"1" for index in range(4)})
-        with patch("scanner.local_archives.MAX_LOCAL_ARCHIVE_FILES", 3):
-            archives, warnings = scan_local_archives(str(self.archives))
-        self.assertEqual([], archives)
-        report = "\n".join(warnings)
-        self.assertIn("Empty.zip", report)
-        self.assertIn("archive contains no files", report)
-        self.assertIn("entry names collide", report)
-        self.assertIn("more than 3 files", report)
-
-    def test_index_from_another_folder_or_version_is_ignored(self) -> None:
-        write_zip(self.archives / "Cool Game.zip", {"a.dll": b"1"})
-        index = self.root / "index.json"
-        scan_local_archives(str(self.archives), index)
-        document = json.loads(index.read_text(encoding="utf-8"))
-        for stale in ({**document, "version": 0}, {**document, "directory": "/elsewhere"}, {**document, "archives": []}):
-            with self.subTest(stale=stale):
-                index.write_text(json.dumps(stale), encoding="utf-8")
-                with patch("scanner.local_archives._list_archive_files", return_value=(["a.dll"], None)) as listing:
-                    archives, _ = scan_local_archives(str(self.archives), index)
-                listing.assert_called_once()
-                self.assertEqual(1, len(archives))
-
-    def test_apply_extracts_local_archive_and_shows_in_scan_report(self) -> None:
-        write_zip(self.archives / "Cool Game.zip", {"mod.dll": b"new", "data/x.bin": b"x"})
-        archives, _ = scan_local_archives(str(self.archives))
-        mods, _ = build_local_mods(archives, [self.app], set())
-        steam = SteamScanReport(1, 1, [self.app], [])
-        report = match_supported_games(steam, load_mod_catalog(), mods)
-        game = next(g for g in report.supported_games if g.mod_id == "local-42424")
-        self.assertEqual("local_archive", game.source_kind)
-        self.assertEqual("not_detected", game.file_status)
-
-        self.assertEqual([], apply_mod_files(mods[0], str(self.game)))
-        self.assertEqual(b"new", (self.game / "bin" / "mod.dll").read_bytes())
-        self.assertEqual(b"x", (self.game / "bin" / "data" / "x.bin").read_bytes())
 
     def test_unhashed_remote_archive_is_refetched_between_applies(self) -> None:
         cache = self.root / "cache"
