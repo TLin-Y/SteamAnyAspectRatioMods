@@ -48,7 +48,6 @@ ROOT_PATHS = (
     "plugin.json",
     "pnpm-lock.yaml",
     "rollup.config.js",
-    "ruff.toml",
     "tsconfig.json",
     "src",
 )
@@ -73,7 +72,7 @@ PNPM = "pnpm@9.15.9"
 # Everything allowed at the top of the store repository after an export.
 STORE_TOP_LEVEL = {
     ".git", ".gitignore", "LICENSE", "README.md", "defaults", "main.py", "package.json",
-    "plugin.json", "pnpm-lock.yaml", "py_modules", "rollup.config.js", "ruff.toml",
+    "plugin.json", "pnpm-lock.yaml", "py_modules", "rollup.config.js",
     "screenshots", "src", "tsconfig.json",
 }
 # Build output and dependencies, ignored by the store repository's .gitignore.

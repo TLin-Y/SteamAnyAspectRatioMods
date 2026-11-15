@@ -10,6 +10,18 @@ This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and 
 
 This repository is the Decky Plugin Store build. The mods, their C++ source and the mod catalog live in [SteamAnyAspectRatioMods](https://github.com/TLin-Y/SteamAnyAspectRatioMods), where the plugin is developed.
 
+## How it works
+
+```mermaid
+flowchart LR
+  Catalog["Mod repo<br/>catalog.json + mod zips"] -- "download + SHA-256 check" --> Backend
+  Pack["Offline pack zip"] -- import --> Backend
+  Steam["Steam libraries<br/>+ non-Steam shortcuts"] -- scan --> Backend
+  Backend["Plugin backend<br/>(Python)"] -- "apply / remove / edit INI" --> Game["Game folder"]
+  UI["Plugin UI"] <--> Backend
+  UI -- "WINEDLLOVERRIDES" --> Launch["Steam launch options"]
+```
+
 ## Install
 
 Install **AnyAspectRatio** from the Decky Plugin Store, then open it in the Decky menu and press **Scan for supported games**.
