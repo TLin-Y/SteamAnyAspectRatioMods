@@ -75,6 +75,7 @@ def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource
         with errors.wrap("Offline pack catalog is unusable"):
             mods = load_mod_catalog(pack_catalog, **overrides)
             return CatalogSource("cache", _with_bundled_resolution_metadata(mods, settings))
+        
     meta = store.catalog_meta()
     warning = None
     if (
@@ -87,6 +88,7 @@ def load_active_catalog(store: PluginStore, settings: Settings) -> CatalogSource
             return CatalogSource("cache", _with_bundled_resolution_metadata(mods, settings))
         except (OSError, ValueError) as error:
             warning = f"Cached catalog is unusable ({error}); using the bundled catalog."
+
     return CatalogSource(
         "bundled",
         load_mod_catalog(bundled_catalog_path(), **overrides),
@@ -143,12 +145,11 @@ def catalog_url(settings: Settings) -> str:
 
 
 def refresh_catalog_on_start(store: PluginStore, settings: Settings) -> bool | None:
-    """Best-effort catalog refresh at plugin load; returns whether it changed, None when skipped.
+    """Best effort catalog refresh at plugin load, returns whether it changed, None when skipped.
 
-    An imported offline pack does not block the refresh: the newest online catalog wins, and pack
-    files are then used only while their checksum still matches it. Cached mod archives are only
-    dropped when the catalog actually changed.
+    An imported offline pack does not block the refresh: the newest online catalog wins.
     """
+
     if settings.offline_mode:
         return None
     url = catalog_url(settings)
@@ -160,7 +161,6 @@ def refresh_catalog_on_start(store: PluginStore, settings: Settings) -> bool | N
 
 
 def update_dependencies(store: PluginStore, settings: Settings) -> dict[str, object]:
-    """Fetch the catalog from the configured repository and drop cached mod archives."""
     url = catalog_url(settings)
     mods, changed, fetched_at = save_catalog(store, settings, _download_catalog(url), url)
     store.clear_archive_cache()

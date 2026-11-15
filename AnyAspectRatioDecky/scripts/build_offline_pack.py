@@ -24,7 +24,7 @@ import verify_catalog_steam  # noqa: E402
 from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
 
 from scanner.mod_catalog import load_mod_catalog  # noqa: E402
-from store.pack import OFFLINE_PACK_NAME, _wanted_paths  # noqa: E402
+from store.offline_pack import OFFLINE_PACK_NAME, archive_names, parse_part_name, wanted_paths  # noqa: E402
 from store.plugin_store import DEFAULT_CATALOG_PATH  # noqa: E402
 
 
@@ -67,7 +67,7 @@ def main() -> None:
         raise SystemExit("Catalog does not match Steam metadata (or Steam was unreachable); see above.")
     update_catalog_hashes()
     mods = load_mod_catalog(PLUGIN_ROOT / "catalog.json")
-    required, optional = _wanted_paths(mods)
+    required, optional = wanted_paths(mods)
 
     root = f"{OFFLINE_PACK_NAME}-{version}"
     output_dir = PLUGIN_ROOT / "out"
@@ -91,16 +91,9 @@ def main() -> None:
         for path in paths
     }
     parts = _partition_paths(paths, file_sizes, catalog.stat().st_size)
-    if len(parts) > 1:
-        expected_names = {
-            f"{root}-part{index}-of-{len(parts)}.zip"
-            for index in range(1, len(parts) + 1)
-        }
-    else:
-        expected_names = {f"{root}.zip"}
-    for index, part_paths in enumerate(parts, 1):
-        suffix = f"-part{index}-of-{len(parts)}" if len(parts) > 1 else ""
-        output = output_dir / f"{root}{suffix}.zip"
+    names = archive_names(version, len(parts))
+    for name, part_paths in zip(names, parts):
+        output = output_dir / name
         temporary = output.with_suffix(output.suffix + ".tmp")
         try:
             with ZipFile(temporary, "w", ZIP_DEFLATED) as archive:
@@ -116,13 +109,11 @@ def main() -> None:
         finally:
             temporary.unlink(missing_ok=True)
         print(f"{output} ({size / 1e6:.1f} MB, {len(part_paths)} files)")
-    generated_name = re.compile(re.escape(root) + r"(?:-part\d+-of-\d+)?\.zip")
+    # Remove parts left over from an earlier build of this version with a different part count.
     for existing in output_dir.iterdir():
-        if (
-            existing.is_file()
-            and existing.name not in expected_names
-            and generated_name.fullmatch(existing.name)
-        ):
+        part = parse_part_name(existing.name)
+        built_earlier = existing.name == archive_names(version, 1)[0] or (part is not None and part[0] == version)
+        if existing.is_file() and existing.name not in names and built_earlier:
             existing.unlink()
     print(f"Offline pack: {len(parts)} part(s), {len(mods)} mods")
 

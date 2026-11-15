@@ -13,8 +13,6 @@ DEFAULT_CATALOG_PATH = "AnyAspectRatioDecky/catalog.json"
 
 @dataclass(frozen=True)
 class Settings:
-    """User overrides; an empty string means "use the catalog/bundled default"."""
-
     catalog_repository_url: str = ""
     catalog_ref: str = ""
     catalog_path: str = ""

@@ -68,7 +68,7 @@ $runtimeFiles = @(
     "store\__init__.py",
     "store\dependencies.py",
     "store\mod_sources.py",
-    "store\pack.py",
+    "store\offline_pack.py",
     "store\plugin_store.py",
     "utils\__init__.py",
     "utils\ini.py",

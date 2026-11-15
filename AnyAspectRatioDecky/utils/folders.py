@@ -79,6 +79,16 @@ def remove_tree(path: Path) -> None:
 
 
 @contextmanager
+def scratch(path: Path) -> Generator[Path, None, None]:
+    """An empty folder at a fixed path, deleted on exit unless moved away."""
+    remove_tree(path)
+    try:
+        yield path
+    finally:
+        remove_tree(path)
+
+
+@contextmanager
 def temporary(parent: Path | None = None) -> Generator[Path, None, None]:
     if parent is not None:
         parent.mkdir(parents=True, exist_ok=True)
