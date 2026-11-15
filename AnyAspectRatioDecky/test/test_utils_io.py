@@ -1,3 +1,4 @@
+import hashlib
 import io
 import socket
 import ssl
@@ -28,6 +29,18 @@ class FilesTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "^Mod INI exceeds the 1 KiB limit$"):
             streams.read_limited(io.BytesIO(b"x" * 1025), 1024, "Mod INI")
         self.assertEqual(b"x" * 1024, streams.read_limited(io.BytesIO(b"x" * 1024), 1024, "Mod INI"))
+
+    def test_unchanged_file_is_hashed_once(self) -> None:
+        path = self.root / "archive.zip"
+        path.write_bytes(b"one")
+        one = hashlib.sha256(b"one").hexdigest()
+        with patch("utils.files.sha256", wraps=files.sha256) as hashing:
+            self.assertTrue(files.matches_sha256(path, one))
+            self.assertFalse(files.matches_sha256(path, "0" * 64))
+            self.assertEqual(1, hashing.call_count)
+            path.write_bytes(b"two!")
+            self.assertTrue(files.matches_sha256(path, hashlib.sha256(b"two!").hexdigest()))
+            self.assertEqual(2, hashing.call_count)
 
     def test_write_bytes_atomic_creates_folders_and_leaves_no_temporary_file(self) -> None:
         target = self.root / "a" / "b" / "file.bin"
