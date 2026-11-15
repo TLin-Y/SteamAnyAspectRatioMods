@@ -38,6 +38,10 @@ class PluginLogger:
         except FAILURES as error:
             self.error(message, error)
             raise
+        except Exception as error:
+            self.error(message, error)
+            detail = str(error).strip()
+            raise PluginError(type(error).__name__ + (f": {detail}" if detail else "")) from error
 
     def attach_file(self, path: Path) -> None:
         if self._handler is not None:

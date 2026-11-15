@@ -80,6 +80,7 @@ $runtimeFiles = @(
     "utils\folders.py",
     "utils\json_codec.py",
     "utils\network.py",
+    "utils\retry.py",
     "utils\zips.py"
 )
 foreach ($file in $requiredFiles) {

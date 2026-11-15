@@ -62,6 +62,12 @@ def describe_network_error(error: BaseException, url: str) -> str:
             detail = str(getattr(error, "reason", error)).strip()
             return f"Could not reach {host}" + (f": {detail}." if detail else ".")
 
+
+def is_not_found(error: BaseException) -> bool:
+    """The server answered that the file does not exist (HTTP 404)."""
+    cause = error.__cause__ if isinstance(error, NetworkError) else error
+    return isinstance(cause, HTTPError) and cause.code == 404
+
 class _GuardedResponse:
     """Turns connection failures while reading a download into NetworkError."""
 

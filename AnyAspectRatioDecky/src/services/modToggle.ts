@@ -1,4 +1,5 @@
 import { setModApplied } from "./callables";
+import { errorText } from "./formatters";
 import {
   confirmFileReplacement,
   confirmModifiedIniRemoval,
@@ -23,7 +24,7 @@ async function currentLaunchOptions(game: SupportedGame): Promise<{ value: strin
   try {
     return { value: await readCurrentLaunchOptions(Number(game.steam_app_id)), note: "" };
   } catch (error) {
-    return { value: "", note: `\n\nSteam's current launch options could not be read: ${String(error)}` };
+    return { value: "", note: `\n\nSteam's current launch options could not be read: ${errorText(error)}` };
   }
 }
 
@@ -38,7 +39,7 @@ export async function planLaunchOptions(
     }
     return { plan, notice: "" };
   } catch (error) {
-    return { plan: null, notice: String(error) };
+    return { plan: null, notice: errorText(error) };
   }
 }
 
@@ -75,7 +76,7 @@ export async function showRemovalFailure(game: SupportedGame, error: unknown, re
   const current = await currentLaunchOptions(game);
   showLaunchOptionsInfo(
     "Mod removal failed",
-    withRefreshError(`Could not remove ${game.mod_name}: ${String(error)}${current.note}`, refreshError),
+    withRefreshError(`Could not remove ${game.mod_name}: ${errorText(error)}${current.note}`, refreshError),
     [{ label: "Current Steam launch options", value: current.value }],
   );
 }
@@ -114,7 +115,7 @@ export async function removeModLaunchOptions(
     showLaunchOptionsInfo(
       "Launch options removal failed",
       withRefreshError(
-        `${game.mod_name} files were removed, but Steam's launch options could not be updated: ${String(error)}${current.note}`,
+        `${game.mod_name} files were removed, but Steam's launch options could not be updated: ${errorText(error)}${current.note}`,
         refreshError,
       ),
       [{ label: "Current Steam launch options", value: current.value }],

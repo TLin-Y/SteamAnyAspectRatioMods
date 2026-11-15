@@ -35,10 +35,17 @@ class PluginLoggerTests(SandboxTest):
             raise ValueError("bad catalog")
         with self.assertRaisesRegex(PluginError, "^Mod archive is invalid$"), self.log.on_error("Mod apply failed"):
             raise PluginError("Mod archive is invalid")
+        with self.assertRaisesRegex(PluginError, "^KeyError: 'mod_id'$") as caught:
+            with self.log.on_error("Scan failed"):
+                {}["mod_id"]
+        self.assertIsInstance(caught.exception.__cause__, KeyError)
+        with self.assertRaisesRegex(PluginError, "^RuntimeError$"), self.log.on_error("Scan failed"):
+            raise RuntimeError()
         content = self.content()
         self.assertIn("ValueError: bad catalog", content)
+        self.assertIn("KeyError: 'mod_id'", content)
         self.assertIn("WARNING Mod apply failed: Mod archive is invalid\n", content)
-        self.assertEqual(1, content.count("Traceback"))
+        self.assertEqual(3, content.count("Traceback"))
 
     def test_read_tail_returns_the_newest_lines(self) -> None:
         self.path.write_bytes(b"one\ntwo\nthree \xff\n")

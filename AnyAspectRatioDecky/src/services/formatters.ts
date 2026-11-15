@@ -8,7 +8,8 @@ export function formatCatalogUpdate(result: Awaited<ReturnType<typeof updateDepe
 }
 
 export function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  const text = (error instanceof Error ? error.message : String(error ?? "")).trim();
+  return text || "Unexpected error. Details are in Settings > View log.";
 }
 
 export function formatBytes(bytes: number): string {

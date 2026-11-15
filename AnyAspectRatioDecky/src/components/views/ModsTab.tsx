@@ -12,7 +12,7 @@ import { openFilePicker } from "@decky/api";
 import type { FileSelectionType } from "@decky/api";
 import { getCredits, importOfflinePack, clearLocalData, updateDependencies, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
 import { showErrorModal } from "../../services/modals";
-import { formatBytes, formatCatalogUpdate } from "../../services/formatters";
+import { errorText, formatBytes, formatCatalogUpdate } from "../../services/formatters";
 import type { CreditsInfo } from "../../services/types";
 
 type ActionState = { busy: boolean; status: string; completions: number };
@@ -52,7 +52,7 @@ async function runAction<T extends { warning?: string | null; [key: string]: unk
     onDone();
   } catch (reason) {
     updateActionState({ status: "" });
-    showErrorModal(title, reason instanceof Error ? reason.message : String(reason));
+    showErrorModal(title, errorText(reason));
   } finally {
     updateActionState({ busy: false, completions: actionState.completions + 1 });
   }
@@ -73,7 +73,7 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
         }
       },
       (reason) => {
-        if (!cancelled) setError(String(reason));
+        if (!cancelled) setError(errorText(reason));
       },
     );
     return () => {
