@@ -140,6 +140,8 @@ void FOV() {
         std::uintptr_t regs[8] = { ctx.rax, ctx.rcx, ctx.rdx, ctx.rbx, ctx.rsp, ctx.rbp, ctx.rsi, ctx.rdi };
         std::uintptr_t camera = regs[cameraReg];
         if (bEnableARFix && *reinterpret_cast<float*>(camera + 0x44) != fTargetARValue) return;
+        float fov = *reinterpret_cast<float*>(camera + 0x38);
+        if (fov > 58.704f && fov < 58.706f) return;
         float angle = ctx.xmm0.f32[0] * fFOVScale;
         if (angle < 0.002f) angle = 0.002f;
         if (angle > 2.96f) angle = 2.96f;
