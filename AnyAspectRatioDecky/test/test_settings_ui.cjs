@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const ts = require("typescript");
 
-function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: [], skipped: [], failures: [], warnings: [] }, sourceChanged = false) {
+function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: [], skipped: [], failures: [] }, sourceChanged = false) {
   const states = [];
   let stateIndex = 0;
   let initialEffect;
@@ -86,7 +86,7 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
     "react/jsx-runtime": { jsx: element, jsxs: element, Fragment: "Fragment" },
     "@decky/ui": {
       ...Object.fromEntries(
-        ["ButtonItem", "ConfirmModal", "PanelSection", "PanelSectionRow", "TextField", "ToggleField"]
+        ["ButtonItem", "ConfirmModal", "PanelSection", "PanelSectionRow", "ToggleField"]
           .map((name) => [name, name]),
       ),
       showModal: (modal) => modals.push(modal),
@@ -99,6 +99,8 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
       errorText: (error) => (error instanceof Error ? error.message : String(error)),
     },
     "./PluginUpdateSection": { PluginUpdateSection: "PluginUpdateSection" },
+    "./EditableValue": { EditableValue: "EditableValue" },
+    "../../services/remembered": { useRemembered: (_key, initial) => hooks.useState(initial) },
   };
   const source = fs.readFileSync(path.join(__dirname, "../src/components/views/SettingsTab.tsx"), "utf8");
   const compiled = ts.transpileModule(source, {
@@ -130,11 +132,14 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
     return find(root.props?.children, predicate);
   };
   const section = (tree, title) => find(tree, (item) => item.type === "PanelSection" && item.props.title === title);
-  const field = (tree, title, label) => {
-    const row = find(section(tree, title), (item) =>
-      item.type === "div" && item.props.children?.[0]?.props?.children === label,
-    );
-    return find(row, (item) => item.type === "TextField");
+  const field = (tree, title, label) => find(section(tree, title), (item) =>
+    item.type === "EditableValue" && item.props.label === label,
+  );
+  const tick = () => new Promise((resolve) => setImmediate(resolve));
+  // Commits a value the way the edit dialog's OK does, then waits for the save.
+  const commit = async (title, label, value) => {
+    field(render(), title, label).props.onCommit(value);
+    await tick();
   };
   const text = (node) => {
     if (typeof node === "string") return node;
@@ -144,8 +149,14 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
   const button = (tree, title, label) => find(section(tree, title), (item) =>
     item.type === "ButtonItem" && text(item.props.children).replace(/ \*$/, "") === label,
   );
+  const moreToggle = () => find(render(), (item) =>
+    item.type === "ButtonItem" && /more settings/i.test(text(item.props.children)),
+  );
   return {
-    calls, errors, settings, render, field, button, modals, find, text,
+    calls, errors, settings, render, field, commit, button, modals, find, text, moreToggle,
+    showMore() {
+      moreToggle().props.onClick();
+    },
     get updateCalls() { return updateCalls; },
     get catalogUpdateCalls() { return catalogUpdateCalls; },
     async initialize() {
@@ -157,186 +168,122 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
   };
 }
 
-test("resolution fields wait for backend settings before showing defaults", async () => {
+const RES = "Default mod INI resolution";
+const WIDTH = "Width (pixels)";
+const pending = (h, tree) => h.find(tree, (item) =>
+  item.props?.role === "status" && h.text(item).startsWith("Saved resolution has not"),
+);
+
+test("resolution values wait for backend settings before showing defaults", async () => {
   const h = createSettingsHarness();
-  const before = h.render();
-  const field = h.field(before, "Mod INI resolution", "Width (pixels, when supported)");
-  assert.equal(field.props.value, "");
-  assert.equal(field.props.disabled, true);
+  const before = h.field(h.render(), RES, WIDTH);
+  assert.equal(before.props.value, "");
+  assert.equal(before.props.disabled, true);
+  assert.equal(before.props.numeric, true);
   await h.initialize();
-  assert.equal(
-    h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)").props.value,
-    String(h.settings.ini_resolution_width),
-  );
+  assert.equal(h.field(h.render(), RES, WIDTH).props.value, "1280");
 });
 
-test("resolution editing stays local until explicitly saved", async () => {
+test("a committed dimension is saved at once and highlights update current", async () => {
   const h = createSettingsHarness();
   await h.initialize();
+  await h.commit(RES, WIDTH, "1920");
+  assert.deepEqual(h.calls[0].slice(4), ["1920", "800"]);
   let tree = h.render();
-  let width = h.field(tree, "Mod INI resolution", "Width (pixels, when supported)");
-  assert.equal(width.props.onBlur, undefined);
-  for (const text of ["", "1", "19", "192", "1920"]) {
-    width.props.onChange({ currentTarget: { value: text } });
-    tree = h.render();
-    width = h.field(tree, "Mod INI resolution", "Width (pixels, when supported)");
-    assert.equal(width.props.value, text);
-    assert.equal(h.calls.length, 0);
-  }
-  h.field(tree, "Mod INI resolution", "Height (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1080" } });
+  assert.equal(h.field(tree, RES, WIDTH).props.value, "1920");
+  assert.ok(h.find(tree, (item) => item.props?.role === "status" && h.text(item) === "Resolution saved."));
+  assert.equal(h.button(tree, RES, "Update current").props.children.props.style.color, "#ff9830");
+  assert.ok(pending(h, tree));
+  h.button(tree, RES, "Update current").props.onClick();
+  assert.match(h.modals[0].props.strDescription, /1920 x 800/);
+  await h.modals[0].props.onOK();
   tree = h.render();
-  await h.button(tree, "Mod INI resolution", "Save resolution").props.onClick();
-  assert.deepEqual(h.calls[0].slice(4), ["1920", "1080"]);
-  assert.equal(h.settings.ini_resolution_width, 1920);
-  assert.equal(h.settings.ini_resolution_height, 1080);
+  assert.equal(h.button(tree, RES, "Update current").props.children.props.style, undefined);
+  assert.equal(pending(h, tree), undefined);
   assert.deepEqual(h.errors, []);
 });
 
-test("saved resolution highlights update current until a successful update", async () => {
-  const h = createSettingsHarness();
-  await h.initialize();
-  h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  await h.button(h.render(), "Mod INI resolution", "Save resolution").props.onClick();
-  let tree = h.render();
-  assert.equal(h.button(tree, "Mod INI resolution", "Update current").props.children.props.style.color, "#ff9830");
-  assert.ok(h.find(tree, (item) => item.props?.role === "status" && h.text(item).startsWith("Saved resolution has not")));
-  h.button(tree, "Mod INI resolution", "Update current").props.onClick();
-  await h.modals[0].props.onOK();
-  tree = h.render();
-  assert.equal(h.button(tree, "Mod INI resolution", "Update current").props.children.props.style, undefined);
-  assert.equal(h.find(tree, (item) => item.props?.role === "status" && h.text(item).startsWith("Saved resolution has not")), undefined);
-});
-
 test("failed batch update keeps the saved resolution reminder", async () => {
-  const h = createSettingsHarness({ updated: [], unchanged: [], skipped: [], failures: ["Game: denied"], warnings: [] });
+  const h = createSettingsHarness({ updated: [], unchanged: [], skipped: [], failures: ["Game: denied"] });
   await h.initialize();
-  h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  await h.button(h.render(), "Mod INI resolution", "Save resolution").props.onClick();
-  h.button(h.render(), "Mod INI resolution", "Update current").props.onClick();
+  await h.commit(RES, WIDTH, "1920");
+  h.button(h.render(), RES, "Update current").props.onClick();
   await h.modals[0].props.onOK();
-  assert.equal(h.button(h.render(), "Mod INI resolution", "Update current").props.children.props.style.color, "#ff9830");
+  assert.equal(h.button(h.render(), RES, "Update current").props.children.props.style.color, "#ff9830");
 });
 
 test("saved reminder appears after reopening settings", async () => {
   const h = createSettingsHarness();
   h.settings.ini_resolution_update_pending = true;
   await h.initialize();
-  assert.equal(h.button(h.render(), "Mod INI resolution", "Update current").props.children.props.style.color, "#ff9830");
+  assert.equal(h.button(h.render(), RES, "Update current").props.children.props.style.color, "#ff9830");
 });
 
-test("unsaved resolution is highlighted until saved or reverted", async () => {
+test("a rejected dimension shows the error and keeps the saved value", async () => {
   const h = createSettingsHarness();
   await h.initialize();
-  let tree = h.render();
-  const warning = (root) => h.find(root, (item) =>
-    item.props?.role === "status" && h.text(item).startsWith("Unsaved resolution."),
-  );
-  assert.equal(warning(tree), undefined);
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  tree = h.render();
-  assert.equal(warning(tree).props.style.color, "#ff9830");
-  assert.equal(h.button(tree, "Mod INI resolution", "Save resolution").props.children.props.style.color, "#ff9830");
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1280" } });
-  tree = h.render();
-  assert.equal(warning(tree), undefined);
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "" } });
-  tree = h.render();
-  await h.button(tree, "Mod INI resolution", "Save resolution").props.onClick();
-  assert.ok(warning(h.render()));
-  h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  await h.button(h.render(), "Mod INI resolution", "Save resolution").props.onClick();
-  tree = h.render();
-  assert.equal(warning(tree), undefined);
-  assert.equal(h.button(tree, "Mod INI resolution", "Save resolution").props.children.props.style, undefined);
-});
-
-test("other settings save committed dimensions and preserve resolution drafts", async () => {
-  const h = createSettingsHarness();
-  await h.initialize();
-  let tree = h.render();
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "" } });
-  tree = h.render();
-  h.field(tree, "Local mod archives", "Folder containing *.zip mods")
-    .props.onChange({ currentTarget: { value: "/mods" } });
-  tree = h.render();
-  h.field(tree, "Local mod archives", "Folder containing *.zip mods").props.onBlur();
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(h.calls[0].slice(4), ["1280", "800"]);
-  tree = h.render();
-  assert.equal(h.field(tree, "Mod INI resolution", "Width (pixels, when supported)").props.value, "");
-  await h.button(tree, "Mod INI resolution", "Save resolution").props.onClick();
-  assert.deepEqual(h.calls[1].slice(4), ["", "800"]);
+  await h.commit(RES, WIDTH, "");
   assert.equal(h.errors.length, 1);
   assert.equal(h.settings.ini_resolution_width, 1280);
-  assert.equal(h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)").props.value, "");
+  const tree = h.render();
+  assert.equal(h.field(tree, RES, WIDTH).props.value, "1280");
+  assert.ok(h.find(tree, (item) => item.props?.role === "status" && h.text(item) === "Could not save the resolution."));
+});
+
+test("other settings save with the saved resolution", async () => {
+  const h = createSettingsHarness();
+  await h.initialize();
+  h.showMore();
+  await h.commit("Local mod archives", "Folder containing *.zip mods", "/mods");
+  assert.deepEqual(h.calls[0].slice(3), ["/mods", "1280", "800"]);
+  assert.equal(h.find(h.render(), (item) => item.props?.role === "status" && h.text(item) === "Resolution saved."), undefined);
 });
 
 test("changing the catalog source still refreshes it automatically", async () => {
   const h = createSettingsHarness(undefined, true);
   await h.initialize();
-  let tree = h.render();
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  tree = h.render();
-  h.field(tree, "Mod source (GitHub)", "Branch, tag, or commit")
-    .props.onChange({ currentTarget: { value: "new-branch" } });
-  h.field(h.render(), "Mod source (GitHub)", "Branch, tag, or commit").props.onBlur();
-  await new Promise((resolve) => setImmediate(resolve));
+  h.showMore();
+  await h.commit("Mod source (GitHub)", "Branch, tag, or commit", "new-branch");
+  assert.equal(h.calls[0][1], "new-branch");
   assert.equal(h.catalogUpdateCalls, 1);
-  assert.equal(h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)").props.value, "1920");
   assert.deepEqual(h.errors, []);
 });
 
-test("resetting defaults replaces a pending resolution draft", async () => {
+test("resetting defaults restores the default resolution", async () => {
   const h = createSettingsHarness();
   await h.initialize();
-  let tree = h.render();
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  tree = h.render();
-  await h.button(tree, "Settings", "Reset to defaults").props.onClick();
-  assert.deepEqual(h.calls[0].slice(4), ["1280", "800"]);
-  assert.equal(h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)").props.value, "1280");
+  await h.commit(RES, WIDTH, "1920");
+  h.showMore();
+  await h.button(h.render(), "Settings", "Reset to defaults").props.onClick();
+  assert.deepEqual(h.calls[1].slice(4), ["1280", "800"]);
+  assert.equal(h.field(h.render(), RES, WIDTH).props.value, "1280");
 });
 
-test("update current confirms the saved dimensions and requires confirmation", async () => {
-  const h = createSettingsHarness();
-  await h.initialize();
-  let tree = h.render();
-  h.field(tree, "Mod INI resolution", "Width (pixels, when supported)")
-    .props.onChange({ currentTarget: { value: "1920" } });
-  tree = h.render();
-  h.button(tree, "Mod INI resolution", "Update current").props.onClick();
-  assert.equal(h.updateCalls, 0);
-  assert.match(h.modals[0].props.strDescription, /1280 x 800/);
-  assert.match(h.modals[0].props.strDescription, /not saved and will not be used/);
-  await h.modals[0].props.onOK();
-  assert.equal(h.updateCalls, 1);
-  assert.equal(h.modals[1].props.strTitle, "Update current mods");
-  assert.equal(h.field(h.render(), "Mod INI resolution", "Width (pixels, when supported)").props.value, "1920");
-});
-
-test("update results abbreviate long game names without hiding errors", async () => {
+test("update results show counts and only the mods that need attention", async () => {
   const h = createSettingsHarness({
-    updated: ["1234567890", "12345678901", "🎮1234567890"],
-    unchanged: [],
-    skipped: [],
-    failures: ["Long game name: permission denied"],
-    warnings: ["Other warning"],
+    updated: ["Game A", "Game B", "Game C"],
+    unchanged: ["Game D"],
+    skipped: ["Game E: select the correct mod first."],
+    failures: ["Game F: permission denied"],
   });
   await h.initialize();
-  h.button(h.render(), "Mod INI resolution", "Update current").props.onClick();
+  h.button(h.render(), "Default mod INI resolution", "Update current").props.onClick();
   await h.modals[0].props.onOK();
-  const message = h.modals[1].props.strDescription;
-  assert.match(message, /Updated: 1234567890, 1234567890\.\.\., 🎮123456789\.\.\./u);
-  assert.match(message, /Failed: Long game name: permission denied/);
-  assert.match(message, /Warning: Other warning/);
+  assert.equal(
+    h.modals[1].props.strDescription,
+    "Updated 3 mods. 1 mod already up to date.\nFailed: Game F: permission denied\nSkipped: Game E: select the correct mod first.",
+  );
+  assert.ok(h.find(h.render(), (item) => h.text(item) === "Updated 3 mods. 1 mod already up to date. 2 need attention."));
+});
+
+test("source, archive folder and reset stay hidden until More settings is opened", async () => {
+  const h = createSettingsHarness();
+  await h.initialize();
+  const sections = (tree) => ["Mod source (GitHub)", "Local mod archives", "Settings"]
+    .map((title) => !!h.find(tree, (item) => item.type === "PanelSection" && item.props.title === title));
+  assert.deepEqual(sections(h.render()), [false, false, false]);
+  assert.equal(h.text(h.moreToggle().props.children), "More settings");
+  h.showMore();
+  assert.deepEqual(sections(h.render()), [true, true, true]);
+  assert.equal(h.text(h.moreToggle().props.children), "Hide more settings");
 });

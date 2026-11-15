@@ -1,11 +1,7 @@
 import hashlib
-import io
 import json
-from collections.abc import Generator
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 from installer.apply import apply_mod_files
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
@@ -14,13 +10,12 @@ from store.offline_pack import archive_names, install_pack
 from store.plugin_store import PluginStore, Settings
 from support.builders import write_zip, zip_bytes
 from support.catalog import catalog_document
-from support.fakes import no_network, offline, response_body
+from support.fakes import no_network, offline
 from support.sandbox import SandboxTest
 
 CATALOG_MEMBER = "repo-main/AnyAspectRatioDecky/catalog.json"
 README_MEMBER = "repo-main/Dark Souls III/README.md"
 DS3_FILES = ("d3d11.dll", "dinput8.dll", "DS3_ARFix.asi", "DS3_ARFix.ini")
-RELEASE_REPOSITORY = "TLin-Y/SteamAnyAspectRatioMods"
 PACK_FILES = 3  # catalog, the Dark Souls III archive and its README
 
 
@@ -55,31 +50,6 @@ def split_pack(pack: Pack, folder: Path, version: str = "1.8.0") -> tuple[Path, 
                                   **{member: pack.members[member] for member in group}})
         for name, group in zip(archive_names(version, 2), groups)
     )
-
-
-def release_asset(tag: str, name: str, url: str | None = None) -> dict[str, str]:
-    return {"name": name, "browser_download_url": url or f"https://github.com/{RELEASE_REPOSITORY}/releases/download/{tag}/{name}"}
-
-
-@contextmanager
-def published(tag: str, assets: list[dict[str, str]], download: object) -> Generator[Mock, None, None]:
-    """The latest GitHub release has these assets; downloads return `download` (bytes, bytes per URL, a stream or
-    an exception to raise). Yields the open_url mock."""
-
-    def respond(url: str) -> object:
-        match download:
-            case BaseException():
-                raise download
-            case io.IOBase():
-                return download
-            case _:
-                return io.BytesIO(response_body(download, url))
-
-    with (
-        patch("store.offline_pack.latest_release", return_value=(RELEASE_REPOSITORY, {"assets": assets}, tag)),
-        patch("utils.network.open_url", side_effect=respond) as opener,
-    ):
-        yield opener
 
 
 class StoreTest(SandboxTest):

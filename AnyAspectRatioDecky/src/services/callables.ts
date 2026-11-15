@@ -18,7 +18,7 @@ export const getPluginSettings = callable<[], PluginSettingsInfo>("get_settings"
 
 export const updateCurrentResolution = callable<
   [],
-  { updated: string[]; unchanged: string[]; skipped: string[]; failures: string[]; warnings: string[]; resolution_update_pending: boolean }
+  { updated: string[]; unchanged: string[]; skipped: string[]; failures: string[]; resolution_update_pending: boolean }
 >("update_current_resolution");
 
 export const savePluginSettings = callable<
@@ -57,7 +57,6 @@ export const getCredits = callable<[], CreditsInfo>("get_credits");
 
 export const importOfflinePack = callable<[string], { warning?: string | null }>("import_offline_pack");
 
-export const downloadOfflinePack = callable<[], { version?: string; warning?: string | null }>("download_offline_pack");
 
 export const clearLocalData = callable<[], Record<string, never>>("clear_local_data");
 

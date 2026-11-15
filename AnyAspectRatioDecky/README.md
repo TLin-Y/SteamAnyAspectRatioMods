@@ -16,7 +16,7 @@ Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 2. Put the zip on the Deck (for example in `Downloads`).
 3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
 4. Open **Settings → Developer → Install Plugin from ZIP**, pick the zip, and confirm.
-5. Open **AnyAspectRatio** in the Decky menu and use **Scan Steam libraries**.
+5. Open **AnyAspectRatio** in the Decky menu and press **Scan for supported games**.
 
 On DroidDeck, open Steam **Settings → Plugins → Install from ZIP** and select the plugin zip:
 
@@ -29,6 +29,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 - Fixes by **Lyall** are shipped as-is and haven't all been tested by me. If one misbehaves, press Remove and tell me which game.
 - Some fixes are for specific game versions. If a game updates, a fix may need a new release.
 - Anti-cheat or online games: use fixes at your own risk.
+- This plugin has zero tracking or upload code. Turn on **Settings → Offline mode** to block all of its internet connections.
 - Uninstalling the plugin deletes its downloaded zips and caches, but keeps applied fixes and launch options. Press **Remove** on each game first if you want them gone.
 
 ## What it does
@@ -44,11 +45,11 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 - **Games**: scan for supported games, apply or remove fixes, edit settings, and read instructions.
 - **Mods**: update the catalog, see mod credits, download or import an offline pack, or delete local files and caches. Deleting local files keeps your settings and applied mods.
-- **Settings**: set the resolution written into supported mod INIs when applying (enter both dimensions and choose **Save resolution**). After changing it, **Update current** is highlighted as a reminder to scan installed mods and update supported INIs using the saved resolution. You can also change mod sources, enable offline mode, or check for updates.
+- **Settings**: set the default resolution written into supported mod INIs when applying (select Width or Height to change it). After changing it, **Update current** is highlighted as a reminder to update the INIs of installed mods. You can also turn on offline mode or check for updates.
 
 ### Offline mode and privacy
 
-Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, choose **Mods → Download offline pack**, or download `AnyAspectRatio-Offline-Mods-1.9.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
+Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, download `AnyAspectRatio-Offline-Mods-1.9.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
 
 ## License
 

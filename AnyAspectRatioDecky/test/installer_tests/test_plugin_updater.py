@@ -8,7 +8,6 @@ from support.sandbox import PLUGIN_ROOT, SandboxTest
 
 from helper import PLUGIN_NAME
 from installer import plugin_updater
-from store import github_releases
 
 REPO = "https://github.com/TLin-Y/SteamAnyAspectRatioMods"
 DOWNLOAD = f"{REPO}/releases/download/v1.5.0/AnyAspectRatio-1.5.0.zip"
@@ -35,9 +34,9 @@ class PluginUpdaterTests(SandboxTest):
         self.assertEqual("", plugin_updater.read_installed_version(self.root))
         self.write({"plugin.json": json.dumps({"version": "1.9.0"})})
         self.assertEqual("1.9.0", plugin_updater.read_installed_version(self.root))
-        self.assertEqual((1, 4), github_releases.parse_version("v1.4.0"))
-        self.assertGreater(github_releases.parse_version("1.10"), github_releases.parse_version("1.9.9"))
-        self.assertIsNone(github_releases.parse_version("nightly"))
+        self.assertEqual((1, 4), plugin_updater.parse_version("v1.4.0"))
+        self.assertGreater(plugin_updater.parse_version("1.10"), plugin_updater.parse_version("1.9.9"))
+        self.assertIsNone(plugin_updater.parse_version("nightly"))
 
     def test_only_a_newer_plugin_zip_from_the_same_repository_is_offered(self) -> None:
         other_repository = {**PLUGIN_ZIP, "browser_download_url": "https://github.com/evil/repo/releases/download/v1/x.zip"}
@@ -47,7 +46,7 @@ class PluginUpdaterTests(SandboxTest):
             (release(assets=[other_repository]), True, ""),
         )
         for response, available, download_url in cases:
-            with self.subTest(response=response), mock.patch.object(github_releases, "read_url_limited",
+            with self.subTest(response=response), mock.patch.object(plugin_updater, "read_url_limited",
                                                                     return_value=response):
                 info = plugin_updater.check_for_update(REPO, "1.4.0")
                 self.assertEqual((available, download_url), (info["update_available"], info["download_url"]))
