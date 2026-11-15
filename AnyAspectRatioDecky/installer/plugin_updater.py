@@ -6,15 +6,14 @@ from urllib.parse import urlparse
 
 from helper import PLUGIN_NAME
 from helper.errors import PluginError
+from store.github_releases import MAX_RELEASE_METADATA_BYTES, latest_release, parse_version
 from store.mod_sources import repository_path
 from utils import files, folders, sizes, text_files, zips
-from utils.network import download, read_url_limited
+from utils.network import download
 
-MAX_RELEASE_METADATA_BYTES = 2 * sizes.MIB
 MAX_PLUGIN_ZIP_BYTES = 64 * sizes.MIB
 MAX_PLUGIN_UNPACKED_BYTES = 128 * sizes.MIB
 RESTART_TIMEOUT_SECONDS = 15
-_VERSION_PATTERN = re.compile(r"^v?(\d+(?:\.\d+)*)$")
 _ASSET_PATTERN = re.compile(rf"^{PLUGIN_NAME}-v?(\d+(?:\.\d+)*)\.zip$")
 
 
@@ -25,35 +24,6 @@ def read_installed_version(plugin_dir: Path) -> str:
         return ""
     version = manifest.get("version") if isinstance(manifest, dict) else None
     return version if isinstance(version, str) else ""
-
-
-def parse_version(value: str) -> tuple[int, ...] | None:
-    match = _VERSION_PATTERN.match(value.strip())
-    if match is None:
-        return None
-    parts = [int(part) for part in match.group(1).split(".")]
-    while len(parts) > 1 and parts[-1] == 0:
-        parts.pop()
-    return tuple(parts)
-
-
-def latest_release(repository_url: str) -> tuple[str, dict[str, object], str]:
-    repository = repository_path(repository_url)
-    api_url = f"https://api.github.com/repos/{repository}/releases/latest"
-    try:
-        release = json.loads(
-            read_url_limited(api_url, MAX_RELEASE_METADATA_BYTES, "Release information")
-        )
-    except ValueError as error:
-        raise PluginError("The repository returned unreadable release information") from error
-    if not isinstance(release, dict):
-        raise PluginError("The repository returned unreadable release information")
-
-    latest_text = str(release.get("tag_name") or "")
-    latest = parse_version(latest_text)
-    if latest is None:
-        raise PluginError(f"Latest release tag '{latest_text}' is not a version number")
-    return repository, release, latest_text
 
 
 def check_for_update(repository_url: str, installed_version: str) -> dict[str, object]:

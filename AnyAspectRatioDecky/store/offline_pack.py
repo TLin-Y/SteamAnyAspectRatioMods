@@ -7,7 +7,6 @@ from pathlib import Path
 from helper import PLUGIN_NAME
 from helper.errors import PluginError
 from installer import staging
-from installer.plugin_updater import latest_release
 from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
 from store.dependencies import (
     MAX_CATALOG_SIZE_BYTES,
@@ -15,6 +14,7 @@ from store.dependencies import (
     repository_overrides,
     save_catalog,
 )
+from store.github_releases import latest_release
 from store.mod_sources import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from store.plugin_store import DEFAULT_CATALOG_PATH, PluginStore, Settings
 from utils import files, folders, sizes, zips
