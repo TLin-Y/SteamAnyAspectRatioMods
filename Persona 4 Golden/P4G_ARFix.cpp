@@ -253,6 +253,18 @@ namespace
         return h;
     }
 
+    bool ScreenSampled(const uint8_t* src, uint64_t count, float minX, float maxX, float spanU, bool covers)
+    {
+        if (!(maxX - minX > 1.0f) || !std::isfinite(spanU) || spanU <= 0.0f) return false;
+        float k = spanU / (maxX - minX);
+        if (covers && k < 1.01f) return false;
+        for (uint64_t i = 0; i < count; ++i) {
+            auto v = reinterpret_cast<const float*>(src + i * 0x18);
+            if (std::fabs(v[0] - v[3] * k) > k || std::fabs(v[1] - v[4] * k) > k) return false;
+        }
+        return true;
+    }
+
     void Draw(safetyhook::Context& c)
     {
         if (!current2D) return;
@@ -284,6 +296,7 @@ namespace
         bool solid = minU == maxU && minV == maxV;
         if (covers && (beyond || solid)) return;
         float spanU = maxU - minU, spanV = maxV - minV;
+        if (ScreenSampled(src, count, minX, maxX, spanU, covers)) return;
         bool artwork = covers && std::isfinite(spanU) && std::isfinite(spanV) && spanU >= 64.0f && spanV >= 64.0f &&
             spanU <= 8192.0f && spanV <= 8192.0f;
         bool spanWidth = !artwork && minX <= 1.0f && maxX >= w - 1.0f;
