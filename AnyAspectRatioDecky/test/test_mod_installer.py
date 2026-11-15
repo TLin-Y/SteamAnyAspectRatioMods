@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import ANY, patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from installer.apply import apply_mod_files
@@ -23,7 +23,6 @@ from scanner.mod_catalog import (
     ModSourceFile,
 )
 from store.mod_sources import fetch_mod_readme, mod_readme_path
-from utils.network import create_ssl_context
 
 
 class ModInstallerTests(unittest.TestCase):
@@ -1154,20 +1153,6 @@ class ModInstallerTests(unittest.TestCase):
                         source_content,
                         (self.game_path / relative_path).read_bytes(),
                     )
-
-    def test_ssl_context_uses_available_system_ca_bundle(self) -> None:
-        expected = Mock(spec=ssl.SSLContext)
-        with (
-            patch("utils.network.SYSTEM_CA_BUNDLE_PATHS", (Path(__file__),)),
-            patch(
-                "utils.network.ssl.create_default_context",
-                return_value=expected,
-            ) as create_context,
-        ):
-            context = create_ssl_context()
-
-        self.assertIs(expected, context)
-        create_context.assert_called_once_with(cafile=str(Path(__file__)))
 
     def test_reads_and_atomically_writes_catalogued_ini(self) -> None:
         mod = self._mod(

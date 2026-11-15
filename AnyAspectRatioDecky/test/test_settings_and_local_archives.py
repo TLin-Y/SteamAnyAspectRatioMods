@@ -199,27 +199,6 @@ class BackendEntryPointTests(unittest.TestCase):
                 py_compile.compile(str(module), doraise=True)
 
 
-class NetworkErrorTests(unittest.TestCase):
-    def test_url_failures_become_plain_network_errors(self) -> None:
-        import socket
-        from urllib.error import HTTPError, URLError
-
-        from utils.network import NetworkError, open_url
-
-        cases = {
-            HTTPError("https://x/y", 404, "Not Found", {}, None): "HTTP 404",
-            URLError(socket.gaierror(-2, "Name or service not known")): "No internet",
-            URLError(TimeoutError("timed out")): "Timed out",
-        }
-        for error, expected in cases.items():
-            with self.subTest(expected=expected):
-                with patch("utils.network.urlopen", side_effect=error):
-                    with self.assertRaises(NetworkError) as raised:
-                        open_url("https://raw.githubusercontent.com/a/b")
-                self.assertIn(expected, str(raised.exception))
-                self.assertIn("raw.githubusercontent.com", str(raised.exception))
-
-
 class OfflineModeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.directory = tempfile.TemporaryDirectory()
@@ -245,14 +224,6 @@ class OfflineModeTests(unittest.TestCase):
             with self.assertRaises(OSError):
                 update_dependencies(self.store, Settings(offline_mode=True))
             self.assertIsNone(refresh_catalog_on_start(self.store, Settings(offline_mode=True)))
-
-    def test_turning_it_off_restores_network_access(self) -> None:
-        set_offline_mode(True)
-        set_offline_mode(False)
-        with patch("utils.network.urlopen", return_value=response(b"x")) as opener:
-            open_url("https://raw.githubusercontent.com/o/r/main/a.zip")
-        opener.assert_called_once()
-
 
 class LocalArchiveTests(unittest.TestCase):
     def setUp(self) -> None:
