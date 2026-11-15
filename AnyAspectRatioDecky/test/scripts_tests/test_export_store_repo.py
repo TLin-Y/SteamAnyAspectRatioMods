@@ -1,20 +1,16 @@
-import sys
 import unittest
 from pathlib import Path
 from unittest import mock
 
-PLUGIN_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PLUGIN_ROOT))
-sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
-
-from export_store_repo import (  # noqa: E402
+from export_store_repo import (
     BUILD_FLAVOR,
     PY_PACKAGES,
     SELF_UPDATE_ON,
     store_path,
 )
+from support.sandbox import PLUGIN_ROOT
 
-from scanner import mod_catalog  # noqa: E402
+from scanner import mod_catalog
 
 
 class StoreLayoutTests(unittest.TestCase):

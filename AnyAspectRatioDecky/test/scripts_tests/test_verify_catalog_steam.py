@@ -1,14 +1,10 @@
 import gzip
 import json
 import struct
-import sys
 import unittest
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-import steam_pics  # noqa: E402
-import verify_catalog_steam as verify  # noqa: E402
+import steam_pics
+import verify_catalog_steam as verify
 
 APPINFO = """
 "appinfo"
