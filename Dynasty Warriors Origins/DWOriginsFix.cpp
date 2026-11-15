@@ -247,9 +247,6 @@ namespace
 
     DWORD WINAPI Main(void*)
     {
-        Logging();
-        Configuration();
-        Resolution();
         UncapCutsceneFramerate();
         FOV();
         SPDLOG_INFO("=> DWOriginsFix Initialization Complete.");
@@ -262,6 +259,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID)
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
         thisModule = hModule;
+        Logging();
+        Configuration();
+        Resolution();
         if (HANDLE mainHandle = CreateThread(nullptr, 0, Main, nullptr, 0, nullptr)) {
             SetThreadPriority(mainHandle, THREAD_PRIORITY_HIGHEST);
             CloseHandle(mainHandle);
