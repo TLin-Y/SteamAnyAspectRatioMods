@@ -1,4 +1,4 @@
-# RESIDENT-EVIL-3-Any-Aspect-Ratio
+# RESIDENT-EVIL-3-Any-Aspect-Ratio-and-FOV
 
 Set the in-game resolution to 1280x720 and SteamOS display scaling to "Stretch" for full-screen stretching.
 
@@ -21,12 +21,12 @@ For Winlator / Wine, add the following environment variable to the game or conta
 Name: WINEDLLOVERRIDES
 Value: dinput8=n,b
 
-3. Custom Aspect Ratio
+3. Custom Aspect Ratio & FOV
 
-Open RE3_ARFix.ini with any text editor. Change AspectWidth and AspectHeight to match the aspect ratio you want (e.g., 4:3, 16:10, 21:9). Set EnableARFix to false to disable the fix. This mod does not include an FOV setting.
+Customize the aspect ratio (AspectWidth / AspectHeight) and FOV (FOVScale) in RE3_ARFix.ini.
 
 4. Full-Screen Stretching
 
 Set your SteamOS display scaling to "Stretch" and set the in-game resolution to 1280x720. The stretch mods render at the ratio in the ini, then scale that picture to fill the screen; if the in-game resolution is not 1280x720, it will not stretch. The mod defaults to 16:10; set the target width and height in the ini to the ratio you want.
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-3-Remake-v1.2.0.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-3-Remake-v1.3.0.zip and in the repository root.
