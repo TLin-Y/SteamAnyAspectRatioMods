@@ -41,7 +41,7 @@ from store.dependencies import (
     update_dependencies,
 )
 from store.mod_sources import fetch_mod_readme, set_archive_cache_dir, set_pack_dir
-from store.pack import download_release_pack, install_pack, pack_operation
+from store.offline_pack import download_release_pack, install_pack, pack_operation
 from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,

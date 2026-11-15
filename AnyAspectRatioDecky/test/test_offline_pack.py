@@ -20,7 +20,7 @@ from installer.apply import apply_mod_files
 from scanner.mod_catalog import load_mod_catalog
 from store.dependencies import load_active_catalog, update_dependencies
 from store.mod_sources import fetch_mod_readme, set_pack_dir
-from store.pack import download_release_pack, install_pack
+from store.offline_pack import archive_names, download_release_pack, install_pack, parse_part_name
 from store.plugin_store import PluginStore, Settings
 from utils.network import OfflineModeError, set_offline_mode
 
@@ -53,6 +53,17 @@ class OfflinePackTests(unittest.TestCase):
         self.store = PluginStore(self.root / "data")
         self.store.ensure_directories()
         set_pack_dir(self.store.pack_dir)
+
+    def test_pack_file_names(self) -> None:
+        self.assertEqual(["AnyAspectRatio-Offline-Mods-1.9.0.zip"], archive_names("1.9.0", 1))
+        parts = archive_names("1.9.0-rc-1", 3)
+        self.assertEqual("AnyAspectRatio-Offline-Mods-1.9.0-rc-1-part2-of-3.zip", parts[1])
+        self.assertEqual([("1.9.0-rc-1", index, 3) for index in (1, 2, 3)], [parse_part_name(name) for name in parts])
+        for name in ("AnyAspectRatio-Offline-Mods-1.9.0.zip", "AnyAspectRatio-Offline-Mods--part1-of-2.zip",
+                     "AnyAspectRatio-Offline-Mods-1.9.0-partX-of-2.zip", "Other-1.9.0-part1-of-2.zip",
+                     "AnyAspectRatio-Offline-Mods-1.9.0-part1-of-2.zip.tmp"):
+            with self.subTest(name=name):
+                self.assertIsNone(parse_part_name(name))
 
     def test_install_extracts_only_needed_files_and_works_offline(self) -> None:
         result = install_pack(self.store, Settings(), self.repo_zip)
@@ -266,7 +277,7 @@ class OfflinePackTests(unittest.TestCase):
         url = f"https://github.com/{repository}/releases/download/{tag}/{name}"
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
-            patch("store.pack.latest_release", return_value=(repository, release, tag)),
+            patch("store.offline_pack.latest_release", return_value=(repository, release, tag)),
             patch("utils.network.open_url", return_value=io.BytesIO(self.repo_zip.read_bytes())) as download,
         ):
             result = download_release_pack(self.store, Settings())
@@ -293,7 +304,7 @@ class OfflinePackTests(unittest.TestCase):
             part_contents[url] = path.read_bytes()
 
         with (
-            patch("store.pack.latest_release", return_value=(repository, {"assets": assets}, tag)),
+            patch("store.offline_pack.latest_release", return_value=(repository, {"assets": assets}, tag)),
             patch(
                 "utils.network.open_url",
                 side_effect=lambda url: io.BytesIO(part_contents[url]),
@@ -312,7 +323,7 @@ class OfflinePackTests(unittest.TestCase):
         url = f"https://github.com/{repository}/releases/download/{tag}/{name}"
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
-            patch("store.pack.latest_release", return_value=(repository, release, tag)),
+            patch("store.offline_pack.latest_release", return_value=(repository, release, tag)),
             patch("utils.network.open_url", side_effect=AssertionError("download used")),
         ):
             with self.assertRaisesRegex(ValueError, "incomplete offline pack part set"):
@@ -324,7 +335,7 @@ class OfflinePackTests(unittest.TestCase):
         name = "AnyAspectRatio-Offline-Mods-1.4.0.zip"
         release = {"assets": [{"name": name, "browser_download_url": "https://example.com/pack.zip"}]}
         with (
-            patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
+            patch("store.offline_pack.latest_release", return_value=(repository, release, "v1.4.0")),
             patch("utils.network.open_url", side_effect=AssertionError("download used")),
         ):
             with self.assertRaisesRegex(ValueError, "does not contain"):
@@ -338,7 +349,7 @@ class OfflinePackTests(unittest.TestCase):
         url = f"https://github.com/{repository}/releases/download/v1.4.0/{name}"
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
-            patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
+            patch("store.offline_pack.latest_release", return_value=(repository, release, "v1.4.0")),
             patch("utils.network.open_url", return_value=io.BytesIO(b"invalid")),
         ):
             with self.assertRaises(ValueError):
@@ -346,7 +357,7 @@ class OfflinePackTests(unittest.TestCase):
         self.assertEqual(3, self.store.pack_stats()["file_count"])
 
     def test_offline_mode_prevents_release_lookup(self) -> None:
-        with patch("store.pack.latest_release", side_effect=AssertionError("network used")):
+        with patch("store.offline_pack.latest_release", side_effect=AssertionError("network used")):
             with self.assertRaises(OfflineModeError):
                 download_release_pack(self.store, Settings(offline_mode=True))
 
@@ -357,7 +368,7 @@ class OfflinePackTests(unittest.TestCase):
         url = f"https://github.com/{repository}/releases/download/v1.4.0/{name}"
         release = {"assets": [{"name": name, "browser_download_url": url}]}
         with (
-            patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
+            patch("store.offline_pack.latest_release", return_value=(repository, release, "v1.4.0")),
             patch("utils.network.open_url", return_value=io.BytesIO(self.repo_zip.read_bytes())),
             patch.object(self.store, "load_settings", return_value=Settings(offline_mode=True)),
         ):
@@ -381,7 +392,7 @@ class OfflinePackTests(unittest.TestCase):
                 return super().read(size)
 
         with (
-            patch("store.pack.latest_release", return_value=(repository, release, "v1.4.0")),
+            patch("store.offline_pack.latest_release", return_value=(repository, release, "v1.4.0")),
             patch("utils.network.open_url", return_value=PausedDownload(self.repo_zip.read_bytes())),
             ThreadPoolExecutor(max_workers=1) as executor,
         ):
