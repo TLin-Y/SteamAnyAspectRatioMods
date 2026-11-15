@@ -10,6 +10,14 @@ This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and 
 
 This repository is the Decky Plugin Store build. The mods, their C++ source and the mod catalog live in [SteamAnyAspectRatioMods](https://github.com/TLin-Y/SteamAnyAspectRatioMods), where the plugin is developed.
 
+## About the mods
+
+The mods focus mainly on filling handheld-specific gaps and adapting fixes for devices such as Steam Deck, AYN, and Retroid Pocket.
+
+Each fix is made and tested by hand for one specific game; none of them is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
+
+My goal is fully automated fixes: an ASI loader and an ASI mod that work as soon as you extract them, with no extra .exe tools or complex steps. Huge thanks to [Cheat Engine](https://github.com/cheat-engine/cheat-engine/): about 90% of the games here were investigated with it. LLMs are a useful tool for tracking down values in memory dumps and analysing logs, but the main work of finding, writing and testing each fix is done by me.
+
 ## How it works
 
 ```mermaid
