@@ -1,42 +1,10 @@
 import os
-import struct
 import zlib
 from pathlib import Path
 
-from helper.errors import PluginError
+from scanner import steam_layout
 from scanner.steam_library_scanner import InstalledApp
-from utils import text_files
-
-SHORTCUTS_RELATIVE_PATH = ("config", "shortcuts.vdf")
-_TYPE_MAP, _TYPE_STRING, _TYPE_INT32, _TYPE_END = 0, 1, 2, 8
-
-
-def _read_cstring(data: bytes, index: int) -> tuple[str, int]:
-    end = data.index(b"\x00", index)
-    return data[index:end].decode(text_files.TEXT_ENCODING, errors="replace"), end + 1
-
-
-def parse_binary_vdf(data: bytes) -> dict[str, object]:
-    def parse_map(index: int) -> tuple[dict[str, object], int]:
-        result: dict[str, object] = {}
-        while True:
-            kind = data[index]
-            index += 1
-            if kind == _TYPE_END:
-                return result, index
-            key, index = _read_cstring(data, index)
-            if kind == _TYPE_MAP:
-                result[key], index = parse_map(index)
-            elif kind == _TYPE_STRING:
-                result[key], index = _read_cstring(data, index)
-            elif kind == _TYPE_INT32:
-                result[key] = struct.unpack_from("<I", data, index)[0]
-                index += 4
-            else:
-                raise PluginError(f"Unsupported binary VDF type {kind}")
-
-    parsed, _ = parse_map(0)
-    return parsed
+from utils.steam_vdf import parse_binary_vdf
 
 
 def _unquote(value: str) -> str:
@@ -48,7 +16,8 @@ def _shortcut_app_id(fields: dict[str, object], exe: str, name: str) -> int:
     stored = fields.get("appid")
     if isinstance(stored, int):
         return stored
-    return zlib.crc32(f"{exe}{name}".encode()) | 0x80000000
+    # Older Steam stores no appid, it derives one as CRC32(exe + name) with the top bit set (non-Steam game).
+    return zlib.crc32(f"{exe}{name}".encode()) | 0x80000000 # bare constant applied for non-steam ID
 
 
 def parse_shortcuts(data: bytes) -> list[InstalledApp]:
@@ -57,20 +26,24 @@ def parse_shortcuts(data: bytes) -> list[InstalledApp]:
         (value for key, value in root.items() if key.lower() == "shortcuts"), {}
     )
     apps: list[InstalledApp] = []
+
     if not isinstance(entries, dict):
         return apps
+    
     for entry in entries.values():
         if not isinstance(entry, dict):
             continue
         fields = {key.lower(): value for key, value in entry.items()}
         name = fields.get("appname")
         raw_exe = fields.get("exe")
+
         if not isinstance(name, str) or not isinstance(raw_exe, str):
             continue
         exe = _unquote(raw_exe)
         start_dir = fields.get("startdir")
         folder = _unquote(start_dir) if isinstance(start_dir, str) else ""
         game_path = folder or str(Path(exe).parent)
+
         apps.append(
             InstalledApp(
                 app_id=str(_shortcut_app_id(fields, raw_exe, name)),
@@ -81,19 +54,19 @@ def parse_shortcuts(data: bytes) -> list[InstalledApp]:
                 shortcut_executable=os.path.abspath(exe) if Path(exe).is_absolute() else None,
             )
         )
+
     return apps
 
 
 def scan_non_steam_shortcuts(steam_roots: list[Path]) -> list[InstalledApp]:
     apps: list[InstalledApp] = []
     seen: set[tuple[str, str]] = set()
+    
     for root in steam_roots:
-        for shortcuts_file in sorted(
-            (root / "userdata").glob(f"*/{'/'.join(SHORTCUTS_RELATIVE_PATH)}")
-        ):
+        for shortcuts_file in steam_layout.shortcut_files(root):
             try:
                 found = parse_shortcuts(shortcuts_file.read_bytes())
-            except (OSError, ValueError, IndexError, struct.error):
+            except (OSError, ValueError):
                 continue
             for app in found:
                 key = (app.app_id, app.game_path or "")
