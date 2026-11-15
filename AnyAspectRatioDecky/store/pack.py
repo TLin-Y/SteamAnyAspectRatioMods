@@ -6,8 +6,8 @@ from pathlib import Path
 
 from helper import PLUGIN_NAME
 from helper.errors import PluginError
+from installer.plugin_updater import latest_release
 from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
-from scanner.plugin_updater import latest_release
 from store.dependencies import (
     MAX_CATALOG_SIZE_BYTES,
     repository_for,

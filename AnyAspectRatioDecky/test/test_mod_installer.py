@@ -9,6 +9,11 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from installer.apply import apply_mod_files
+from installer.launcher import setup_complete as launcher_setup_complete
+from installer.mod_ini import read_mod_ini, update_existing_ini_resolution, write_mod_ini
+from installer.mod_logs import existing_mod_logs, read_mod_log
+from installer.remove import remove_mod_files
 from scanner.mod_catalog import (
     IniResolutionPair,
     LauncherReplacement,
@@ -16,16 +21,6 @@ from scanner.mod_catalog import (
     ModDefinition,
     ModSource,
     ModSourceFile,
-)
-from scanner.mod_installer import (
-    apply_mod_files,
-    existing_mod_logs,
-    launcher_setup_complete,
-    read_mod_ini,
-    read_mod_log,
-    remove_mod_files,
-    update_existing_ini_resolution,
-    write_mod_ini,
 )
 from store.mod_sources import fetch_mod_readme, mod_readme_path
 from utils.network import create_ssl_context
@@ -263,8 +258,8 @@ class ModInstallerTests(unittest.TestCase):
         )
 
     def test_zero_custom_windowed_resolution_remains_default(self) -> None:
+        from installer.mod_ini import rewrite_ini_resolution
         from scanner.mod_catalog import load_mod_catalog
-        from scanner.mod_installer import _rewrite_ini_resolution
 
         mod = next(m for m in load_mod_catalog() if m.mod_id == "ffxvifix")
         content = (
@@ -275,20 +270,20 @@ class ModInstallerTests(unittest.TestCase):
 
         self.assertEqual(
             content,
-            _rewrite_ini_resolution(content, 1920, 1080, mod.ini_resolution),
+            rewrite_ini_resolution(content, 1920, 1080, mod.ini_resolution),
         )
 
     def test_undeclared_target_and_duplicate_keys_are_never_changed(self) -> None:
-        from scanner.mod_installer import _rewrite_ini_resolution
+        from installer.mod_ini import rewrite_ini_resolution
         content = (
             b"[Custom Resolution]\nWidth=1280\nWidth=invalid\nHeight=800\n"
             b"TargetWidth=3840\nTargetHeight=2160\n"
         )
         pair = IniResolutionPair("Custom Resolution", "Width", "Height", "pixels")
-        self.assertEqual(content, _rewrite_ini_resolution(content, 1920, 1080, (pair,)))
+        self.assertEqual(content, rewrite_ini_resolution(content, 1920, 1080, (pair,)))
 
     def test_single_key_resolution_string_keeps_quotes_and_auto(self) -> None:
-        from scanner.mod_installer import _rewrite_ini_resolution
+        from installer.mod_ini import rewrite_ini_resolution
         pair = IniResolutionPair("UserSettings", "Resolution", "Resolution", "pixels_string")
         for before, after in (
             (b'Resolution="1280x800" ; comment\r\n', b'Resolution="1920x1080" ; comment\r\n'),
@@ -299,7 +294,7 @@ class ModInstallerTests(unittest.TestCase):
             with self.subTest(before=before):
                 content = b"[UserSettings]\n" + before + b"[Patch:X]\nResolution=1x1\n"
                 expected = b"[UserSettings]\n" + after + b"[Patch:X]\nResolution=1x1\n"
-                self.assertEqual(expected, _rewrite_ini_resolution(content, 1920, 1080, (pair,)))
+                self.assertEqual(expected, rewrite_ini_resolution(content, 1920, 1080, (pair,)))
 
     def test_bulk_update_does_not_overwrite_concurrent_ini_edit(self) -> None:
         mod = self._mod("archive", ("fix.ini",), ini_file="fix.ini")
@@ -333,7 +328,7 @@ class ModInstallerTests(unittest.TestCase):
                 side_effect=lambda url, **kwargs: io.BytesIO(archive_bytes),
             ),
             patch(
-                "scanner.mod_installer._rewrite_ini_resolution",
+                "installer.mod_ini.rewrite_ini_resolution",
                 side_effect=ValueError("unsupported format"),
             ),
         ):
@@ -946,7 +941,7 @@ class ModInstallerTests(unittest.TestCase):
 
         with (
             patch("store.mod_sources.MAX_MOD_FILE_SIZE_BYTES", 4),
-            patch("scanner.mod_installer.MAX_MOD_TOTAL_SIZE_BYTES", 3),
+            patch("installer.staging.MAX_MOD_TOTAL_SIZE_BYTES", 3),
             patch(
                 "utils.network.urlopen",
                 side_effect=lambda url, **kwargs: io.BytesIO(responses[url]),

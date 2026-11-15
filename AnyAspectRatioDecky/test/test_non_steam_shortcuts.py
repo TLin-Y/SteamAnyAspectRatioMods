@@ -11,8 +11,8 @@ from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
+from installer.apply import apply_mod_files
 from scanner.mod_catalog import ModDefinition, ModSource, load_mod_catalog
-from scanner.mod_installer import apply_mod_files
 from scanner.non_steam_shortcuts import parse_shortcuts, scan_non_steam_shortcuts
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
@@ -283,13 +283,13 @@ class NonSteamShortcutTests(unittest.TestCase):
             cached = asyncio.run(plugin.get_cached_scan())["report"]["supported_games"]
             self.assertEqual([], cached[0]["log_files"])
             log_path.write_text("mod log", encoding="utf-8")
-            with patch("scanner.mod_installer._read_source_file", return_value=b"original"):
+            with patch("installer.staging.read_source_file", return_value=b"original"):
                 result = asyncio.run(plugin.set_mod_applied("doa5lrfix", str(self.game), False))
             self.assertEqual(["DOA5LRFix.ini"], result["conflicting_files"])
             self.assertTrue(log_path.is_file())
             self.assertIn(choice["ambiguity_group"], store.load_matched_games())
             self.assertTrue(all((self.game / name).is_file() for name in mod.files))
-            with patch("scanner.mod_installer._read_source_file", return_value=b"original"):
+            with patch("installer.staging.read_source_file", return_value=b"original"):
                 asyncio.run(plugin.set_mod_applied("doa5lrfix", str(self.game), False, None, True))
             self.assertFalse(log_path.exists())
             self.assertEqual(b"modified", (self.game / mod.ini_file).read_bytes())

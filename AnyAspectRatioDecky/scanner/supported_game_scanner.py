@@ -2,9 +2,9 @@ import os
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
+from installer import launcher
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
-from scanner.mod_installer import launcher_setup_complete
 from scanner.non_steam_shortcuts import scan_non_steam_shortcuts
 from scanner.steam_library_scanner import (
     InstalledApp,
@@ -122,14 +122,14 @@ def _build_game(
     missing_files = [path for path in mod.files if path not in present_set]
     launcher_backup_present = False
     if mod.launcher_replacement is not None:
-        launcher = mod.launcher_replacement
+        replacement = mod.launcher_replacement
         launcher_backup_present = (
-            game_path is not None and _is_file(game_path / launcher.backup, file_cache)
+            game_path is not None and _is_file(game_path / replacement.backup, file_cache)
         )
-        if game_path is not None and launcher_setup_complete(mod, game_path):
-            present_files.append(launcher.target)
+        if game_path is not None and launcher.setup_complete(mod, game_path):
+            present_files.append(replacement.target)
         else:
-            missing_files.append(launcher.target)
+            missing_files.append(replacement.target)
     if not present_files and not launcher_backup_present:
         file_status = "not_detected"
     elif missing_files:

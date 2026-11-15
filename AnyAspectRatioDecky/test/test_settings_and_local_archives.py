@@ -7,9 +7,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from zipfile import ZipFile
 
+from installer.apply import apply_mod_files
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModSource, load_mod_catalog
-from scanner.mod_installer import apply_mod_files
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
 from store.dependencies import (

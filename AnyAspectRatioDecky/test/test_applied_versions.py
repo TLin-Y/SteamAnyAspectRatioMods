@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
-from scanner import mod_installer
+from installer import backups
 from scanner.mod_catalog import load_mod_catalog
 from scanner.steam_library_scanner import InstalledApp, SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
@@ -248,7 +248,7 @@ class AppliedVersionTests(unittest.TestCase):
             patch.object(
                 self.main,
                 "remove_mod_files",
-                side_effect=mod_installer.MissingModBackupError(
+                side_effect=backups.MissingModBackupError(
                     "Verify integrity of game files"
                 ),
             ),
