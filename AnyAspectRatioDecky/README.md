@@ -12,6 +12,12 @@ This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and 
 
 Requires a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
+### Recommended: DeckyHub
+
+AnyAspectRatio is available on [DeckyHub](https://deckyhub.com/), a plugin store that runs inside Game Mode. Once DeckyHub is installed, open it from the Decky menu, search for **AnyAspectRatio**, and install it.
+
+### Manual install from ZIP
+
 1. Download `AnyAspectRatio-1.9.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
 2. Put the zip on the Deck (for example in `Downloads`).
 3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
