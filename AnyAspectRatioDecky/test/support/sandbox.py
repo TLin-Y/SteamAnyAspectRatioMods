@@ -46,6 +46,9 @@ class SandboxTest(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(_content(value))
 
+    def touch(self, *paths: str) -> None:
+        self.write(dict.fromkeys(paths, b""))
+
     def read(self, relative: str) -> bytes:
         return (self.workdir / relative).read_bytes()
 
@@ -72,9 +75,6 @@ class GameTest(SandboxTest):
         super().setUp()
         self.game = self.folder("game")
         self.workdir = self.game
-
-    def touch(self, *paths: str) -> None:
-        self.write(dict.fromkeys(paths, b""))
 
     def clear_game(self) -> None:
         shutil.rmtree(self.game)

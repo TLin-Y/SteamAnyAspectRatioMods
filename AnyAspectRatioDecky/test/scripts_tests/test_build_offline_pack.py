@@ -1,10 +1,6 @@
-import sys
 import unittest
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-from build_offline_pack import VERSION_PATTERN, _partition_paths  # noqa: E402
+from build_offline_pack import VERSION_PATTERN, _partition_paths
 
 
 class OfflinePackBuildTests(unittest.TestCase):
