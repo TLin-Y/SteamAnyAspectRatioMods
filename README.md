@@ -22,7 +22,11 @@ Fixes by [Lyall](https://codeberg.org/Lyall) are mirrored here unchanged for the
 
 ## About this collection
 
-Before looking for a fix here, check [Lyall's repository](https://codeberg.org/Lyall): it contains many ready-made fixes for a wide range of games. This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
+This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
+
+Each fix is made and tested by hand for one specific game; none of them is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
+
+My goal is fully automated fixes: an ASI loader and an ASI mod that work as soon as you extract them, with no extra .exe tools or complex steps. Huge thanks to [Cheat Engine](https://github.com/cheat-engine/cheat-engine/): about 90% of the games here were investigated with it. LLMs are a useful tool for tracking down values in memory dumps and analysing logs, but the main work of finding, writing and testing each fix is done by me.
 
 ## Credits
 
@@ -32,6 +36,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 
 - **Lyall** — source code, patterns, and fixes reused or adapted in this repository, including [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix), [NinjaGaidenMCFix](https://codeberg.org/Lyall/NinjaGaidenMCFix), and other [Lyall fixes](https://codeberg.org/Lyall). See the [compiler notes](./compiler/README.md) for the derived-source details and license.
 - **ThirteenAG** — [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader), included by some game mods to load ASI plugins.
+- **Dark Byte (Eric Heijnen)** — [Cheat Engine](https://github.com/cheat-engine/cheat-engine/), the tool used to find the aspect-ratio and FOV values for about 90% of the games here.
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
@@ -57,6 +62,7 @@ The reusable Windows/x64 ASI compiler is in [compiler](./compiler/README.md). It
 The [MIT License](./LICENSE) applies only to original code and documentation authored by TLin-Y, unless a file or directory states otherwise. It does not grant rights to third-party code, game files, or other assets. The compiler's Lyall-derived files and the bundled Ultimate ASI Loader each retain their separate license and attribution.
 
 ## Game Mods
+
 
 | Game | Author | Steam ID | Version | Released | Details |
 |---|---|---|---|---|---|
