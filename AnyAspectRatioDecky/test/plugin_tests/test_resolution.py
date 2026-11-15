@@ -57,6 +57,14 @@ class ResolutionTests(PluginTest):
         self.assertEqual([], skipped["updated"])
         self.assertIn("select the correct mod", skipped["skipped"][0])
 
+    def test_update_reports_only_mods_with_resolution_fields(self) -> None:
+        report = self.installed(catalog_mod("sonic-x-shadow-generations"), b"[Display]\nMode = 1\n")
+        report.warnings.append("Steam library is unavailable: /run/media/deck/SD")
+        with self.scanning(report):
+            result = self.call("update_current_resolution")
+        self.assertEqual(([], [], [], []), (result["updated"], result["unchanged"], result["skipped"], result["failures"]))
+        self.assertNotIn("warnings", result)
+
     def test_update_is_refused_while_a_pack_operation_runs(self) -> None:
         report = self.installed()
         self.remind()
@@ -98,7 +106,7 @@ class ResolutionTests(PluginTest):
             self.assertLogs(LOGGER_NAME, level="WARNING") as logs,
         ):
             result = self.call("update_current_resolution")
-        self.assertEqual((["Game"], [], False), (result["updated"], result["warnings"], result["resolution_update_pending"]))
+        self.assertEqual((["Game"], [], False), (result["updated"], result["failures"], result["resolution_update_pending"]))
         self.assertIn("Could not keep INI file permissions", "\n".join(logs.output))
         self.assert_files({orochi.ini_file: "[AspectRatio]\r\nAspectWidth = 8\r\nAspectHeight = 5\r\n"})
 

@@ -12,7 +12,7 @@ type Options = {
   refresh: () => Promise<string | null>;
 };
 
-/** Line-by-line INI editor for one game. A field saves when it loses focus; saves never overlap. */
+/** Steam OS touchscreen input is buggy (focus issue), so this is as dialog button for editing. */
 export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }: Options) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [lines, setLines] = useState<string[]>([]);
@@ -22,6 +22,7 @@ export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }:
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const savingRef = useRef(false);
+  const latestContent = useRef("");
   const pendingSave = useRef(false);
   const saveRef = useRef<() => Promise<void>>(async () => {});
 
@@ -46,6 +47,7 @@ export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }:
       if (request !== requestId.current) return;
       setLines(ini.content.split(/\r\n|\n|\r/));
       setSavedContent(ini.content);
+      latestContent.current = ini.content;
       setExists(ini.exists);
       setLoaded(true);
     } catch (error) {
@@ -59,7 +61,7 @@ export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }:
       pendingSave.current = true;
       return;
     }
-    const content = lines.join("\n");
+    const content = latestContent.current;
     if (content === savedContent) return;
     const request = requestId.current;
     savingRef.current = true;
@@ -93,18 +95,15 @@ export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }:
   };
   saveRef.current = save;
 
-  const onBlur = () => {
+  const commit = (index: number, value: string) => {
     if (!loaded) return;
-    if (savingRef.current) pendingSave.current = true;
-    else if (lines.join("\n") !== savedContent) void save();
-  };
-
-  const onChange = (index: number, value: string) => {
     const updated = [...lines];
     updated[index] = value;
     setLines(updated);
     setStatus("");
+    latestContent.current = updated.join("\n");
+    void save();
   };
 
-  return { state: { lines, loaded, exists, saving, status }, open, close, onBlur, onChange };
+  return { state: { lines, loaded, exists, saving, status }, open, close, commit };
 }

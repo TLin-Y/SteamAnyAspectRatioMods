@@ -8,20 +8,12 @@ from helper import PLUGIN_NAME
 from helper.errors import PluginError
 from installer import staging
 from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
-from store.dependencies import (
-    MAX_CATALOG_SIZE_BYTES,
-    repository_for,
-    repository_overrides,
-    save_catalog,
-)
-from store.github_releases import latest_release
+from store.dependencies import MAX_CATALOG_SIZE_BYTES, repository_overrides, save_catalog
 from store.mod_sources import MAX_MOD_FILE_SIZE_BYTES, mod_readme_path
 from store.plugin_store import DEFAULT_CATALOG_PATH, PluginStore, Settings
 from utils import files, folders, sizes, zips
-from utils.network import OfflineModeError, download
 
 MAX_PACK_TOTAL_BYTES = 2 * sizes.GIB
-MAX_PACK_DOWNLOAD_BYTES = MAX_PACK_TOTAL_BYTES + 64 * sizes.MIB
 OFFLINE_PACK_NAME = f"{PLUGIN_NAME}-Offline-Mods"
 _pack_lock = threading.RLock()
 
@@ -75,40 +67,6 @@ def wanted_paths(mods: tuple[ModDefinition, ...]) -> tuple[set[str], set[str]]:
     return required, optional
 
 
-def _release_pack_assets(repository: str, release: dict[str, object], tag: str) -> list[tuple[str, str]]:
-    version = tag.removeprefix("v")
-    download_url = f"https://github.com/{repository}/releases/download/{tag}"
-    assets = release.get("assets")
-    if not isinstance(assets, list):
-        raise PluginError(f"Latest release {tag} has no offline pack assets.")
-
-    asset_urls = {
-        asset["name"]: asset["browser_download_url"]
-        for asset in assets
-        if isinstance(asset, dict)
-        and isinstance(asset.get("name"), str)
-        and isinstance(asset.get("browser_download_url"), str)
-    }
-    (single_name,) = archive_names(version, 1)
-    if asset_urls.get(single_name) == f"{download_url}/{single_name}":
-        return [(single_name, asset_urls[single_name])]
-
-    parts: dict[int, tuple[int, str]] = {}
-    for name, url in asset_urls.items():
-        match parse_part_name(name):
-            case (part_version, index, count) if part_version == version:
-                if count < 2 or not 1 <= index <= count or url != f"{download_url}/{name}" or index in parts:
-                    raise PluginError(f"Latest release {tag} has invalid offline pack parts.")
-                parts[index] = (count, name)
-    if not parts:
-        raise PluginError(f"Latest release {tag} does not contain {single_name} or a complete set of parts.")
-
-    count = next(iter(parts.values()))[0]
-    if sorted(parts) != list(range(1, count + 1)) or any(part_count != count for part_count, _ in parts.values()):
-        raise PluginError(f"Latest release {tag} has an incomplete offline pack part set.")
-    return [(parts[index][1], asset_urls[parts[index][1]]) for index in range(1, count + 1)]
-
-
 def _sibling_parts(selected: Path) -> tuple[Path, ...]:
     """Selecting one part of a split pack imports every part, which must sit in the same folder."""
     match parse_part_name(selected.name):
@@ -130,31 +88,6 @@ def _resolve_pack_paths(selection: Path | tuple[Path, ...]) -> tuple[Path, ...]:
     if not paths or any(not path.is_file() for path in paths):
         raise PluginError("An offline pack file is missing.")
     return paths
-
-
-# Asynchronous download of the latest release pack, and GUI end will prevent 2nd attempt.
-@_exclusive_pack_operation
-def download_release_pack(store: PluginStore, settings: Settings) -> dict[str, object]:
-    if settings.offline_mode:
-        raise OfflineModeError("Turn off offline mode before downloading the offline pack.")
-    repository_url, _ = repository_for(settings)
-    repository, release, tag = latest_release(repository_url)
-    assets = _release_pack_assets(repository, release, tag)
-    store.ensure_directories()
-
-    with folders.temporary(store.data_dir) as scratch:
-        archives = []
-        total_downloaded = 0
-        for name, url in assets:
-            archive = scratch / name
-            total_downloaded += download(url, archive, MAX_PACK_DOWNLOAD_BYTES - total_downloaded, "Offline pack download")
-            archives.append(archive)
-        current_settings = store.load_settings()
-        if current_settings.offline_mode or current_settings.source_key() != settings.source_key():
-            raise PluginError("Offline mode or catalog source changed during the download; try again.")
-        result = install_pack(store, settings, tuple(archives))
-
-    return {**result, "version": tag.removeprefix("v")}
 
 
 def _pack_root(names: set[str], catalog_path: str) -> str:

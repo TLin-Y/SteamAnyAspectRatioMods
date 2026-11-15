@@ -24,6 +24,7 @@ import {
   chooseGame,
 } from "../../services/modals";
 import { formatBytes, formatRelativeTime } from "../../services/formatters";
+import { useRemembered } from "../../services/remembered";
 import type { SupportedGameReport, SupportedGame, ModLogResult } from "../../services/types";
 import { applyLaunchOptions } from "../../launch_options/steamLaunchOptions";
 import {
@@ -44,11 +45,12 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [clockTick, setClockTick] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [scanOutdated, setScanOutdated] = useRemembered("games.scanOutdated", false);
   const [updatingMod, setUpdatingMod] = useState(false);
   const [toggleRevision, setToggleRevision] = useState(0);
-  const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
+  const [selectedGameKey, setSelectedGameKey] = useRemembered<string | null>("games.selected", null);
   const [ambiguitySelections, setAmbiguitySelections] = useState<Record<string, string>>({});
-  const [detailView, setDetailView] = useState<"manage" | "readme" | "log">("manage");
+  const [detailView, setDetailView] = useRemembered<"manage" | "readme" | "log">("games.detailView", "manage");
   const [readmeTitle, setReadmeTitle] = useState("");
   const [readmeContent, setReadmeContent] = useState("");
   const [readmeLoading, setReadmeLoading] = useState(false);
@@ -56,6 +58,8 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const detailRequestId = useRef(0);
   const initialRevision = useRef(dataRevision);
   const scanStarted = useRef(false);
+  // After a remount the remembered game's details (INI, ReadMe or log) are loaded again.
+  const restoringDetails = useRef(selectedGameKey !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,12 +95,11 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     return () => window.clearInterval(timer);
   }, []);
 
+  // Scans run only on request: a catalog or settings change just says the list may be out of date.
   useEffect(() => {
     if (dataRevision === initialRevision.current) return;
     initialRevision.current = dataRevision;
-    detailRequestId.current += 1;
-    setSelectedGameKey(null);
-    void scanForSupportedGames();
+    setScanOutdated(true);
   }, [dataRevision]);
 
   const notifyError = (title: string, message: string) => {
@@ -113,6 +116,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     try {
       setReport(await scanSupportedGames());
       setCachedScanTime(new Date().toISOString());
+      setScanOutdated(false);
     } catch (error) {
       notifyError("Steam scan failed", `Supported game scan failed: ${String(error)}`);
     } finally {
@@ -125,6 +129,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     try {
       setReport(await scanSupportedGames());
       setCachedScanTime(new Date().toISOString());
+      setScanOutdated(false);
       return null;
     } catch (error) {
       return String(error);
@@ -304,6 +309,14 @@ Required setting: ${setting}`, refreshError),
     if (requestId === detailRequestId.current) setModLogs(results);
   };
 
+  useEffect(() => {
+    if (!restoringDetails.current || !selectedGame) return;
+    restoringDetails.current = false;
+    if (detailView === "readme") void openGameReadme(selectedGame);
+    else if (detailView === "log") void openGameLog(selectedGame);
+    else void openGameDetails(selectedGame);
+  }, [selectedGame]);
+
   const resetGameChoice = async (game: SupportedGame) => {
     const group = game.ambiguity_group;
     if (!group || !game.game_path) return;
@@ -352,6 +365,11 @@ Required setting: ${setting}`, refreshError),
           </div>
         </PanelSectionRow>
       )}
+      {!selectedGame && report && scanOutdated && (
+        <PanelSectionRow>
+          <div role="status">The catalog or settings changed. Press Scan to refresh this list.</div>
+        </PanelSectionRow>
+      )}
       {!selectedGame && pluginUsageInfo && (
         <PanelSectionRow>
           <div role="status">{pluginUsageInfo}</div>
@@ -376,8 +394,7 @@ Required setting: ${setting}`, refreshError),
             setDetailView("manage");
             setReadmeLoading(false);
           }}
-          onIniBlur={ini.onBlur}
-          onIniChange={ini.onChange}
+          onIniCommit={ini.commit}
         />
       ) : gameGroups.map((group, index, ordered) => {
 

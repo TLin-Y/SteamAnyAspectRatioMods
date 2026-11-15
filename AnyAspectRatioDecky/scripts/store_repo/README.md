@@ -12,13 +12,14 @@ This repository is the Decky Plugin Store build. The mods, their C++ source and 
 
 ## Install
 
-Install **AnyAspectRatio** from the Decky Plugin Store, then open it in the Decky menu and use **Scan Steam libraries**.
+Install **AnyAspectRatio** from the Decky Plugin Store, then open it in the Decky menu and press **Scan for supported games**.
 
 ## Good to know
 
 - Fixes by **Lyall** are shipped as-is and haven't all been tested by me. If one misbehaves, press Remove and tell me which game.
 - Some fixes are for specific game versions. If a game updates, a fix may need a new release.
 - Anti-cheat or online games: use fixes at your own risk.
+- **Privacy:** This plugin has zero tracking or upload code. Turn on **Settings → Offline mode** to block all of its internet connections.
 - Uninstalling the plugin deletes its downloaded zips and caches, but keeps applied fixes and launch options. Press **Remove** on each game first if you want them gone.
 
 ## What it does
@@ -33,21 +34,18 @@ Install **AnyAspectRatio** from the Decky Plugin Store, then open it in the Deck
 ## Tabs
 
 - **Games**: scan for supported games, apply or remove fixes, edit settings, and read instructions.
-- **Mods**: update the catalog, see mod credits, download or import an offline pack, or delete local files and caches. Deleting local files keeps your settings and applied mods.
-- **Settings**: set the resolution written into supported mod INIs when applying (enter both dimensions and choose **Save resolution**). After changing it, **Update current** is highlighted as a reminder to scan installed mods and update supported INIs using the saved resolution. You can also change mod sources or enable offline mode.
+- **Mods**: update the catalog, see mod credits, import an offline pack, or delete local files and caches. Deleting local files keeps your settings and applied mods.
+- **Settings**: set the default resolution written into supported mod INIs when applying (select Width or Height to change it). After changing it, **Update current** is highlighted as a reminder to update the INIs of installed mods. You can also turn on offline mode. **More settings** holds the mod source, the local mod folder and **Reset to defaults**.
 
 ## Network access
 
-The plugin only connects to GitHub, and only for the mod source repository set in **Settings** (default: `TLin-Y/SteamAnyAspectRatioMods`):
-
-- `raw.githubusercontent.com`: the mod catalog (`catalog.json`), mod READMEs, mod zips and loose mod files. Every downloaded zip and file is checked against its SHA-256 checksum in the catalog before anything is written to the game folder.
-- `api.github.com` and `github.com/.../releases/download`: the optional offline mods pack.
+The plugin only connects to `raw.githubusercontent.com`, and only for the mod source repository set in **Settings → More settings** (default: `TLin-Y/SteamAnyAspectRatioMods`): the mod catalog (`catalog.json`), mod READMEs, mod zips and loose mod files. Every downloaded zip and file is checked against its SHA-256 checksum in the catalog before anything is written to the game folder.
 
 Mods contain Windows DLL/ASI files that run inside the game under Proton, not on SteamOS itself. The plugin only copies them into the selected game's folder and can remove them again. Source code for the mods is in the mod repository; third-party mods are credited in the plugin's **Mods** tab.
 
 ### Offline mode and privacy
 
-Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, choose **Mods → Download offline pack**, or download the offline mods zip from the [mod repository releases](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest) and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
+Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, download the offline mods zip from the [mod repository releases](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest) and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
 
 ## License
 

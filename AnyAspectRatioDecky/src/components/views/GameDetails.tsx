@@ -1,7 +1,8 @@
-import { ButtonItem, PanelSectionRow, TextField } from "@decky/ui";
+import { ButtonItem, PanelSectionRow } from "@decky/ui";
 import ReactMarkdown from "react-markdown";
 import { isEditableIniLine } from "../../services/modals";
 import type { ModLogResult, SupportedGame } from "../../services/types";
+import { EditableValue } from "./EditableValue";
 
 export function GameTitle({ game, index, unresolved = false }: {
   game: SupportedGame; index?: number; unresolved?: boolean;
@@ -29,11 +30,10 @@ type Props = {
   logs: ModLogResult[] | null;
   ini: { lines: string[]; loaded: boolean; exists: boolean; saving: boolean; status: string };
   onBack: () => void;
-  onIniBlur: () => void;
-  onIniChange: (index: number, value: string) => void;
+  onIniCommit: (index: number, value: string) => void;
 };
 
-export function GameDetails({ game, view, readme, logs, ini, onBack, onIniBlur, onIniChange }: Props) {
+export function GameDetails({ game, view, readme, logs, ini, onBack, onIniCommit }: Props) {
   return (
     <>
       <PanelSectionRow>
@@ -84,17 +84,16 @@ export function GameDetails({ game, view, readme, logs, ini, onBack, onIniBlur, 
                 <div>
                   {!ini.loaded ? "Loading INI configuration..." : !ini.exists ? "INI file is not installed yet." :
                     ini.saving ? "Saving configuration..." :
-                    "Changes save automatically when a setting field loses focus. Section headers, blank lines, and comments are shown but cannot be edited."}
+                    "Select a line to edit it. It is saved when you press OK. Section headers, blank lines, and comments cannot be edited."}
                 </div>
               </PanelSectionRow>
               {ini.lines.map((line, index) => (
                 <PanelSectionRow key={`${game.mod_id}-ini-line-${index}`}>
                   {isEditableIniLine(line) ? (
-                    <TextField
+                    <EditableValue
                       value={line}
                       disabled={!ini.loaded}
-                      onBlur={onIniBlur}
-                      onChange={(event) => onIniChange(index, event.target.value)}
+                      onCommit={(value) => onIniCommit(index, value)}
                     />
                   ) : (
                     <div style={{ minHeight: "1em", overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>

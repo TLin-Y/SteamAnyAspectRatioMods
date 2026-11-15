@@ -7,6 +7,7 @@ import { definePlugin } from "@decky/api";
 import { useState, useEffect } from "react";
 
 import { PLUGIN_NAME, PLUGIN_VERSION, getOfflineMode } from "./services/callables";
+import { remember, useRemembered } from "./services/remembered";
 import GamesTab from "./components/views/GamesTab";
 import { SettingsTab } from "./components/views/SettingsTab";
 import { ModsTab } from "./components/views/ModsTab";
@@ -14,8 +15,12 @@ import { ModsTab } from "./components/views/ModsTab";
 type TabId = "games" | "mods" | "settings";
 
 function Content() {
-  const [tab, setTab] = useState<TabId>("games");
+  const [tab, setTab] = useRemembered<TabId>("tab", "games");
   const [dataRevision, setDataRevision] = useState(0);
+  const onDataChanged = () => {
+    remember("games.scanOutdated", true);
+    setDataRevision((revision) => revision + 1);
+  };
   const [offlineMode, setOfflineMode] = useState(false);
 
   useEffect(() => {
@@ -73,10 +78,10 @@ function Content() {
         <GamesTab dataRevision={dataRevision} />
       </div>
       {tab === "mods" && (
-        <ModsTab onDataChanged={() => setDataRevision((revision) => revision + 1)} />
+        <ModsTab onDataChanged={onDataChanged} />
       )}
       {tab === "settings" && (
-        <SettingsTab onDataChanged={() => setDataRevision((revision) => revision + 1)} />
+        <SettingsTab onDataChanged={onDataChanged} />
       )}
     </>
   );

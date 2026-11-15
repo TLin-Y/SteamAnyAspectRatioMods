@@ -1,7 +1,5 @@
 import io
 import json
-import threading
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from http.client import IncompleteRead
 from unittest.mock import patch
@@ -14,18 +12,14 @@ from support.packs import (
     PACK_FILES,
     README_MEMBER,
     PackTest,
-    published,
-    release_asset,
     split_pack,
 )
 
 from installer.apply import apply_mod_files
-from scanner.mod_catalog import load_mod_catalog
 from store.dependencies import load_active_catalog, update_dependencies
 from store.mod_sources import fetch_mod_readme
-from store.offline_pack import archive_names, download_release_pack, install_pack, parse_part_name
+from store.offline_pack import archive_names, parse_part_name
 from store.plugin_store import Settings
-from utils.network import OfflineModeError
 
 SINGLE = "AnyAspectRatio-Offline-Mods-1.4.0.zip"
 
@@ -121,68 +115,3 @@ class OfflinePackTests(PackTest):
         self.assertFalse(self.store.catalog_path.exists())
         self.assertTrue(self.store.archive_cache_dir.is_dir())
         self.assertTrue(self.store.settings_path.is_file())
-
-
-class ReleasePackTests(PackTest):
-    def test_downloads_the_latest_release_for_offline_use(self) -> None:
-        with published("v1.4.0", [release_asset("v1.4.0", SINGLE)], self.pack.path.read_bytes()) as download:
-            self.assertEqual("1.4.0", download_release_pack(self.store, Settings())["version"])
-        download.assert_called_once_with(release_asset("v1.4.0", SINGLE)["browser_download_url"])
-        self.assert_works_offline(load_mod_catalog(self.store.catalog_path)[0])
-
-    def test_downloads_every_part_of_a_split_release(self) -> None:
-        parts = split_pack(self.pack, self.folder("parts"))
-        assets = [release_asset("v1.8.0", part.name) for part in parts]
-        contents = {asset["browser_download_url"]: part.read_bytes() for asset, part in zip(assets, parts)}
-        with published("v1.8.0", assets, contents) as download:
-            self.assertEqual("1.8.0", download_release_pack(self.store, Settings())["version"])
-        self.assertEqual(2, download.call_count)
-        self.assertTrue((self.store.pack_dir / self.pack.mod_path).is_file())
-
-    def test_a_rejected_release_keeps_the_existing_pack(self) -> None:
-        self.install()
-        not_downloaded = AssertionError("download used")
-        cases = (
-            ("an incomplete part set", [release_asset("v1.8.0", archive_names("1.8.0", 2)[0])], "v1.8.0",
-             not_downloaded, "incomplete offline pack part set", {}),
-            ("an asset hosted elsewhere", [release_asset("v1.4.0", SINGLE, "https://example.com/pack.zip")], "v1.4.0",
-             not_downloaded, "does not contain", {}),
-            ("a download that is no zip", [release_asset("v1.4.0", SINGLE)], "v1.4.0", b"invalid", "", {}),
-            ("settings changed meanwhile", [release_asset("v1.4.0", SINGLE)], "v1.4.0", self.pack.path.read_bytes(),
-             "changed during the download", {"offline_mode": True}),
-        )
-        for what, assets, tag, download, error, later_settings in cases:
-            with self.subTest(what), published(tag, assets, download):
-                with patch.object(self.store, "load_settings", return_value=Settings(**later_settings)):
-                    with self.assertRaisesRegex(ValueError, error):
-                        download_release_pack(self.store, Settings())
-                self.assertEqual(PACK_FILES, self.pack_files())
-
-    def test_offline_mode_never_looks_up_the_release(self) -> None:
-        with patch("store.offline_pack.latest_release", side_effect=AssertionError("network used")):
-            with self.assertRaises(OfflineModeError):
-                download_release_pack(self.store, Settings(offline_mode=True))
-
-    def test_an_overlapping_import_is_refused_without_harming_the_download(self) -> None:
-        started, proceed = threading.Event(), threading.Event()
-
-        class PausedDownload(io.BytesIO):
-            def read(self, size: int = -1) -> bytes:
-                started.set()
-                if not proceed.wait(5):
-                    raise TimeoutError("Test download did not resume")
-                return super().read(size)
-
-        with (
-            published("v1.4.0", [release_asset("v1.4.0", SINGLE)], PausedDownload(self.pack.path.read_bytes())),
-            ThreadPoolExecutor(max_workers=1) as executor,
-        ):
-            download = executor.submit(download_release_pack, self.store, Settings())
-            try:
-                self.assertTrue(started.wait(5))
-                with self.assertRaisesRegex(ValueError, "operation is in progress"):
-                    install_pack(self.store, Settings(), self.pack.path)
-            finally:
-                proceed.set()
-            self.assertEqual("1.4.0", download.result(timeout=5)["version"])
-        self.assertEqual(PACK_FILES, self.pack_files())

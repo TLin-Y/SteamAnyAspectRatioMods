@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ButtonItem,
   ConfirmModal,
   PanelSection,
   PanelSectionRow,
-  TextField,
   ToggleField,
   showModal,
 } from "@decky/ui";
@@ -21,6 +20,8 @@ import {
 import { showErrorModal } from "../../services/modals";
 import { errorText, formatCatalogUpdate } from "../../services/formatters";
 import { PluginUpdateSection } from "./PluginUpdateSection";
+import { EditableValue } from "./EditableValue";
+import { useRemembered } from "../../services/remembered";
 import type { PluginSettingsInfo, PluginSettingsValues } from "../../services/types";
 
 type SettingsFormValues = PluginSettingsValues & {
@@ -28,17 +29,10 @@ type SettingsFormValues = PluginSettingsValues & {
   ini_resolution_height: string;
 };
 
-type ResolutionValues = Pick<SettingsFormValues, "ini_resolution_width" | "ini_resolution_height">;
+const PENDING_STYLE = { color: "#ff9830", fontWeight: "bold" } as const;
 
-const EMPTY_RESOLUTION: ResolutionValues = {
-  ini_resolution_width: "",
-  ini_resolution_height: "",
-};
-const UNSAVED_RESOLUTION_STYLE = { color: "#ff9830", fontWeight: "bold" } as const;
-
-function abbreviateGameName(name: string): string {
-  const characters = Array.from(name);
-  return characters.length > 10 ? `${characters.slice(0, 10).join("")}...` : name;
+function modCount(count: number): string {
+  return `${count} mod${count === 1 ? "" : "s"}`;
 }
 
 export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
@@ -48,18 +42,13 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     catalog_ref: "",
     catalog_path: "",
     local_archive_dir: "",
-    ...EMPTY_RESOLUTION,
+    ini_resolution_width: "",
+    ini_resolution_height: "",
   });
-  const [resolution, setResolution] = useState<ResolutionValues>(EMPTY_RESOLUTION);
   const [busy, setBusy] = useState(false);
-  const savedValues = useRef("");
   const [status, setStatus] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
-
-  const resolutionUnsaved = !!info && (
-    resolution.ini_resolution_width !== String(info.settings.ini_resolution_width) ||
-    resolution.ini_resolution_height !== String(info.settings.ini_resolution_height)
-  );
+  const [showMore, setShowMore] = useRemembered("settings.showMore", false);
 
   const repositoryLabel = (
     values.catalog_repository_url || "the configured repository"
@@ -71,7 +60,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     showErrorModal(title, message);
   };
 
-  const load = async (syncResolution = false) => {
+  const load = async () => {
     const loaded = await getPluginSettings();
     setInfo(loaded);
     const loadedValues = {
@@ -83,34 +72,27 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
       ini_resolution_width: String(loaded.settings.ini_resolution_width),
       ini_resolution_height: String(loaded.settings.ini_resolution_height),
     };
-    savedValues.current = JSON.stringify(loadedValues);
     setValues(loadedValues);
-    if (syncResolution) {
-      setResolution({
-        ini_resolution_width: loadedValues.ini_resolution_width,
-        ini_resolution_height: loadedValues.ini_resolution_height,
-      });
-    }
   };
 
   useEffect(() => {
-    load(true).catch((error) => showError("Could not load settings", error));
+    load().catch((error) => showError("Could not load settings", error));
   }, []);
 
-  const setValue = (key: keyof PluginSettingsValues, value: string) =>
-    setValues((current) => ({ ...current, [key]: value }));
-
-  const runUpdate = async (syncResolution = false) => {
+  const runUpdate = async () => {
     const result = await updateDependencies();
     setStatus(formatCatalogUpdate(result));
-    await load(syncResolution);
+    await load();
     onDataChanged();
   };
 
-  const save = async (next: SettingsFormValues = values, syncResolution = false) => {
+  const save = async (next: SettingsFormValues) => {
+    const resolutionChanged = next.ini_resolution_width !== values.ini_resolution_width ||
+      next.ini_resolution_height !== values.ini_resolution_height;
+    setValues(next);
     setBusy(true);
     setStatus("");
-    if (syncResolution) setResolutionStatus("");
+    if (resolutionChanged) setResolutionStatus("");
     try {
       const result = await savePluginSettings(
         next.catalog_repository_url,
@@ -122,15 +104,17 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
       );
       if (result.source_changed && !info?.settings.offline_mode) {
         setStatus("Settings saved. Fetching the catalog from the new source...");
-        await runUpdate(syncResolution);
+        await runUpdate();
       } else {
         setStatus("Settings saved.");
-        await load(syncResolution);
-        onDataChanged();
+        const archiveDirChanged = next.local_archive_dir !== info?.settings.local_archive_dir;
+        await load();
+        if (archiveDirChanged) onDataChanged();
       }
-      if (syncResolution) setResolutionStatus("Resolution saved.");
+      if (resolutionChanged) setResolutionStatus("Resolution saved.");
     } catch (error) {
-      if (syncResolution) setResolutionStatus("Could not save or refresh resolution.");
+      await load().catch(() => undefined);
+      if (resolutionChanged) setResolutionStatus("Could not save the resolution.");
       showError("Could not save settings", error);
     } finally {
       setBusy(false);
@@ -149,17 +133,20 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           ini_resolution_update_pending: result.resolution_update_pending,
         },
       });
-      const details = [
-        `Updated: ${result.updated.length}; unchanged or unsupported values: ${result.unchanged.length}.`,
-        ...(result.updated.length ? [`Updated: ${result.updated.map(abbreviateGameName).join(", ")}`] : []),
-        ...result.skipped.map((message) => `Skipped: ${message}`),
+      const summary = `Updated ${modCount(result.updated.length)}.` +
+        (result.unchanged.length ? ` ${modCount(result.unchanged.length)} already up to date.` : "");
+      const problems = [
         ...result.failures.map((message) => `Failed: ${message}`),
-        ...result.warnings.map((message) => `Warning: ${message}`),
+        ...result.skipped.map((message) => `Skipped: ${message}`),
       ];
-      setResolutionStatus(details.join("\n"));
-      onDataChanged();
+      setResolutionStatus(problems.length ? `${summary} ${problems.length} need attention.` : summary);
       showModal(
-        <ConfirmModal bAlertDialog strTitle="Update current mods" strDescription={details.join("\n")} strOKButtonText="OK" />,
+        <ConfirmModal
+          bAlertDialog
+          strTitle="Update current mods"
+          strDescription={[summary, ...problems].join("\n")}
+          strOKButtonText="OK"
+        />,
       );
     } catch (error) {
       setResolutionStatus("Could not update current mods.");
@@ -172,7 +159,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const confirmUpdateCurrent = () => showModal(
     <ConfirmModal
       strTitle="Update current mods?"
-      strDescription={`Scan installed mods and update catalogued INI resolution values to ${info?.settings.ini_resolution_width} x ${info?.settings.ini_resolution_height}. Other settings and zero values are kept. This overwrites any existing resolution values in those fields.${resolutionUnsaved ? " Your edited resolution is not saved and will not be used." : ""}`}
+      strDescription={`Scan installed mods and update catalogued INI resolution values to ${info?.settings.ini_resolution_width} x ${info?.settings.ini_resolution_height}. Other settings and zero values are kept. This overwrites any existing resolution values in those fields.`}
       strOKButtonText="Update current"
       onOK={updateCurrent}
     />,
@@ -186,9 +173,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         false,
         true,
       );
-      const next = { ...values, local_archive_dir: picked.realpath || picked.path };
-      setValues(next);
-      await save(next);
+      await save({ ...values, local_archive_dir: picked.realpath || picked.path });
     } catch {
       // Picker was dismissed.
     }
@@ -202,8 +187,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
       ini_resolution_width: String(info.defaults.ini_resolution_width),
       ini_resolution_height: String(info.defaults.ini_resolution_height),
     };
-    setValues(next);
-    await save(next, true);
+    await save(next);
   };
 
   const viewLog = async () => {
@@ -257,36 +241,15 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
     }
   };
 
-  const field = (label: string, key: keyof PluginSettingsValues) => (
+  const field = (label: string, key: keyof SettingsFormValues, numeric = false) => (
     <PanelSectionRow>
-      <div style={{ width: "100%" }}>
-        <div style={{ fontSize: "0.85em", opacity: 0.8 }}>{label}</div>
-        <TextField
-          value={values[key]}
-          disabled={busy || !info}
-          onBlur={() => {
-            if (info && savedValues.current !== JSON.stringify(values)) void save();
-          }}
-          onChange={(e) => setValue(key, e.currentTarget.value)}
-        />
-      </div>
-    </PanelSectionRow>
-  );
-
-  const resolutionField = (label: string, key: keyof ResolutionValues) => (
-    <PanelSectionRow>
-      <div style={{ width: "100%" }}>
-        <div style={{ fontSize: "0.85em", opacity: 0.8 }}>{label}</div>
-        <TextField
-          value={resolution[key]}
-          disabled={busy || !info}
-          onChange={(e) => {
-            const value = e.currentTarget.value;
-            setResolutionStatus("");
-            setResolution((current) => ({ ...current, [key]: value }));
-          }}
-        />
-      </div>
+      <EditableValue
+        label={label}
+        value={values[key]}
+        numeric={numeric}
+        disabled={busy || !info}
+        onCommit={(value) => void save({ ...values, [key]: value })}
+      />
     </PanelSectionRow>
   );
 
@@ -296,44 +259,26 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         <PanelSectionRow>
           <ToggleField
             label="Offline mode"
-            description="Locks the plugin so it never connects to the internet. Mods then install only from an imported offline pack or your local mod folder."
+            description="Blocks all internet connections from this plugin. This plugin has zero tracking or upload code."
             checked={info?.settings.offline_mode ?? false}
             disabled={busy || !info}
             onChange={changeOfflineMode}
           />
         </PanelSectionRow>
       </PanelSection>
-      <PanelSection title="Mod INI resolution">
-        {resolutionField("Width (pixels, when supported)", "ini_resolution_width")}
-        {resolutionField("Height (pixels, when supported)", "ini_resolution_height")}
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            disabled={busy || !info}
-            onClick={() => save({ ...values, ...resolution }, true)}
-          >
-            <span style={resolutionUnsaved ? UNSAVED_RESOLUTION_STYLE : undefined}>
-              Save resolution{resolutionUnsaved ? " *" : ""}
-            </span>
-          </ButtonItem>
-        </PanelSectionRow>
-        {resolutionUnsaved && (
-          <PanelSectionRow>
-            <div role="status" style={UNSAVED_RESOLUTION_STYLE}>
-              Unsaved resolution. Save before applying or updating mods.
-            </div>
-          </PanelSectionRow>
-        )}
+      <PanelSection title="Default mod INI resolution">
+        {field("Width (pixels)", "ini_resolution_width", true)}
+        {field("Height (pixels)", "ini_resolution_height", true)}
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={busy || !info} onClick={confirmUpdateCurrent}>
-            <span style={info?.settings.ini_resolution_update_pending ? UNSAVED_RESOLUTION_STYLE : undefined}>
+            <span style={info?.settings.ini_resolution_update_pending ? PENDING_STYLE : undefined}>
               Update current{info?.settings.ini_resolution_update_pending ? " *" : ""}
             </span>
           </ButtonItem>
         </PanelSectionRow>
         {info?.settings.ini_resolution_update_pending && (
           <PanelSectionRow>
-            <div role="status" style={UNSAVED_RESOLUTION_STYLE}>
+            <div role="status" style={PENDING_STYLE}>
               Saved resolution has not been used to update current mods. Select Update current to apply it.
             </div>
           </PanelSectionRow>
@@ -345,8 +290,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
         )}
         <PanelSectionRow>
           <div style={{ fontSize: "0.8em", opacity: 0.8 }}>
-            Save both dimensions before applying mod files or using Update current.
-            Only catalogued fields are adjusted; zero-valued defaults are left unchanged.
+            Only some mods support this.
           </div>
         </PanelSectionRow>
       </PanelSection>
@@ -365,72 +309,83 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
-      <PanelSection title="Mod source (GitHub)">
-        {field("Repository", "catalog_repository_url")}
-        {field("Branch, tag, or commit", "catalog_ref")}
-        {field("Catalog file path", "catalog_path")}
+      <PanelSection>
         <PanelSectionRow>
-          <div role="status" style={{ overflowWrap: "anywhere" }}>
-            {info
-              ? info.catalog.origin === "cache"
-                ? `Using downloaded catalog (${info.catalog.mod_count} mods, fetched ${
-                    info.catalog.fetched_at
-                      ? new Date(info.catalog.fetched_at).toLocaleString()
-                      : "earlier"
-                  }).`
-                : `Using the catalog bundled with the plugin (${info.catalog.mod_count} mods). Update it from the Mods tab.`
-              : "Loading settings..."}
-          </div>
-        </PanelSectionRow>
-        {info?.catalog.warning && (
-          <PanelSectionRow>
-            <div role="status">{info.catalog.warning}</div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
-      <PanelSection title="Local mod archives">
-        {field("Folder containing *.zip mods", "local_archive_dir")}
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={chooseFolder} disabled={busy || !info}>
-            Choose folder...
+          <ButtonItem layout="below" onClick={() => setShowMore(!showMore)}>
+            {showMore ? "Hide more settings" : "More settings"}
           </ButtonItem>
         </PanelSectionRow>
-        <PanelSectionRow>
-          <div role="status" style={{ overflowWrap: "anywhere" }}>
-            Name each zip after its game (for example "Game Name-v1.0.zip") or include its
-            Steam app ID in brackets. Contents are extracted next to the game's executable.
-            {info && info.settings.local_archive_dir
-              ? ` ${info.local_archives.count} valid archive(s) found.`
-              : ""}
-          </div>
-        </PanelSectionRow>
-        {info?.local_archives.warnings.map((warning, index) => (
-          <PanelSectionRow key={`${index}-${warning}`}>
-            <div role="status" style={{ overflowWrap: "anywhere" }}>{warning}</div>
-          </PanelSectionRow>
-        ))}
       </PanelSection>
-      <PanelSection title="Settings">
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={resetToDefaults} disabled={busy || !info}>
-            Reset to defaults
-          </ButtonItem>
-        </PanelSectionRow>
-        {status && (
-          <PanelSectionRow>
-            <div role="status" style={{ overflowWrap: "anywhere" }}>{status}</div>
-          </PanelSectionRow>
-        )}
-        {info && (
-          <PanelSectionRow>
-            <div style={{ overflowWrap: "anywhere", fontSize: "0.8em", opacity: 0.7 }}>
-              Data and cache: {info.paths.data_dir}
-              <br />
-              Log file: {info.paths.log_file}
-            </div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
+      {showMore && (
+        <>
+          <PanelSection title="Mod source (GitHub)">
+            {field("Repository", "catalog_repository_url")}
+            {field("Branch, tag, or commit", "catalog_ref")}
+            {field("Catalog file path", "catalog_path")}
+            <PanelSectionRow>
+              <div role="status" style={{ overflowWrap: "anywhere" }}>
+                {info
+                  ? info.catalog.origin === "cache"
+                    ? `Using downloaded catalog (${info.catalog.mod_count} mods, fetched ${
+                        info.catalog.fetched_at
+                          ? new Date(info.catalog.fetched_at).toLocaleString()
+                          : "earlier"
+                      }).`
+                    : `Using the catalog bundled with the plugin (${info.catalog.mod_count} mods). Update it from the Mods tab.`
+                  : "Loading settings..."}
+              </div>
+            </PanelSectionRow>
+            {info?.catalog.warning && (
+              <PanelSectionRow>
+                <div role="status">{info.catalog.warning}</div>
+              </PanelSectionRow>
+            )}
+          </PanelSection>
+          <PanelSection title="Local mod archives">
+            {field("Folder containing *.zip mods", "local_archive_dir")}
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={chooseFolder} disabled={busy || !info}>
+                Choose folder...
+              </ButtonItem>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <div role="status" style={{ overflowWrap: "anywhere" }}>
+                Name each zip after its game (for example "Game Name-v1.0.zip") or include its
+                Steam app ID in brackets. Contents are extracted next to the game's executable.
+                {info && info.settings.local_archive_dir
+                  ? ` ${info.local_archives.count} valid archive(s) found.`
+                  : ""}
+              </div>
+            </PanelSectionRow>
+            {info?.local_archives.warnings.map((warning, index) => (
+              <PanelSectionRow key={`${index}-${warning}`}>
+                <div role="status" style={{ overflowWrap: "anywhere" }}>{warning}</div>
+              </PanelSectionRow>
+            ))}
+          </PanelSection>
+          <PanelSection title="Settings">
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={resetToDefaults} disabled={busy || !info}>
+                Reset to defaults
+              </ButtonItem>
+            </PanelSectionRow>
+            {status && (
+              <PanelSectionRow>
+                <div role="status" style={{ overflowWrap: "anywhere" }}>{status}</div>
+              </PanelSectionRow>
+            )}
+            {info && (
+              <PanelSectionRow>
+                <div style={{ overflowWrap: "anywhere", fontSize: "0.8em", opacity: 0.7 }}>
+                  Data and cache: {info.paths.data_dir}
+                  <br />
+                  Log file: {info.paths.log_file}
+                </div>
+              </PanelSectionRow>
+            )}
+          </PanelSection>
+        </>
+      )}
     </>
   );
 }

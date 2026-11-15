@@ -4,6 +4,10 @@
 
 - **New fixes:** Apollo Justice: Ace Attorney Trilogy, Daemon X Machina: Titanic Scion, Dead Cells, Devil May Cry 5, FINAL FANTASY RESONANCE, FINAL FANTASY X/X-2 HD Remaster, KINGDOM HEARTS -HD 1.5+2.5 ReMIX-, KINGDOM HEARTS III, Nioh: Complete Edition, PRAGMATA, Persona 4 Golden, Phoenix Wright: Ace Attorney Trilogy, RESONANCE OF FATE/END OF ETERNITY ENHANCED REMASTER, Yakuza 0 and Yakuza Kiwami (Legacy).
 - **Updated:** the DragonTweak fixes for the Yakuza, Like a Dragon and Judgment games, AI: THE SOMNIUM FILES, DAVE THE DIVER, Final Fantasy XIII, Master Detective Archives: RAIN CODE Plus, Ninja Gaiden Sigma 2, Ori and the Blind Forest, Pentiment, Persona 5 Royal, SANABI, Trials of Mana and Ys VIII: Lacrimosa of DANA.
+- **Touch-friendly editing.** Settings values and INI lines now open in a dialog, so the on-screen keyboard no longer drops key presses, and the panel stays where you were after the dialog closes.
+- **Tidier Settings.** The mod source, local mod folder and Reset to defaults moved under **More settings**. **Update current** shows a short summary and only lists mods that need attention.
+- **Simpler offline setup.** The in-plugin offline pack download is gone. Download the offline pack from the release page and use **Mods → Import offline mods pack**.
+- **Scans only when you ask.** Changing settings or updating the catalog no longer rescans your games; the Games tab tells you when a new scan would show changes.
 - **Cleaner uninstall.** Uninstalling the plugin deletes its downloaded offline pack and caches. Your settings and the fixes installed in your games stay.
 - **Under the hood.** A large clean-up of the plugin's backend and faster archive caching. Nothing changes in how you use it.
 
@@ -58,7 +62,7 @@ You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
 4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-1.9.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
-5. Press **Scan Steam libraries**.
+5. Press **Scan for supported games**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
 

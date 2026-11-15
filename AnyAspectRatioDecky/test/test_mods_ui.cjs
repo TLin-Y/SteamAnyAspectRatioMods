@@ -12,8 +12,9 @@ function createHarness(offline = false) {
   let creditCalls = 0;
   let changed = 0;
   let resolveUpdate;
+  let rejectUpdate;
   const errors = [];
-  const pending = new Promise((resolve) => { resolveUpdate = resolve; });
+  const pending = new Promise((resolve, reject) => { resolveUpdate = resolve; rejectUpdate = reject; });
   const credits = { mod_count: 1, offline_mode: offline, authors: [], pack: { file_count: 0, size_bytes: 0 } };
   const hooks = {
     useState(initial) {
@@ -75,7 +76,7 @@ function createHarness(offline = false) {
     return undefined;
   };
   return {
-    render, find, errors, resolveUpdate,
+    render, find, errors, resolveUpdate, rejectUpdate,
     get updateCalls() { return updateCalls; },
     get creditCalls() { return creditCalls; },
     get changed() { return changed; },
@@ -123,7 +124,7 @@ test("catalog update errors are surfaced without reporting success", async () =>
   const h = createHarness();
   await h.load();
   const operation = h.render().props.children[0].props.children.props.onClick();
-  h.resolveUpdate({ error: "Network unavailable" });
+  h.rejectUpdate(new Error("Network unavailable"));
   await operation;
   assert.deepEqual(h.errors, [["Update failed", "Network unavailable"]]);
   assert.equal(h.changed, 0);

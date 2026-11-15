@@ -67,7 +67,6 @@ $runtimeFiles = @(
     "scanner\supported_game_scanner.py",
     "store\__init__.py",
     "store\dependencies.py",
-    "store\github_releases.py",
     "store\mod_sources.py",
     "store\offline_pack.py",
     "store\plugin_store.py",

@@ -14,6 +14,7 @@ function renderGames(report, options = {}) {
   let hook = 0;
   let modal;
   const calls = [];
+  const cleanups = [];
   let choice;
   const element = (type, props) => ({ type, props: props || {} });
   const react = {
@@ -31,7 +32,15 @@ function renderGames(report, options = {}) {
       if (!(index in states)) states[index] = { current: initial };
       return states[index];
     },
-    useEffect() { hook++; },
+    useEffect(effect, deps) {
+      const index = hook++;
+      if (!options.runEffects) return;
+      const previous = states[index];
+      if (previous && deps && deps.every((value, i) => Object.is(value, previous[i]))) return;
+      states[index] = deps;
+      const cleanup = effect();
+      if (typeof cleanup === "function") cleanups.push(cleanup);
+    },
   };
   const ui = new Proxy({}, {
     get: (_, name) => name === "showModal"
@@ -95,6 +104,7 @@ function renderGames(report, options = {}) {
         if (name === "@decky/ui") return ui;
         if (name === "@decky/api") return api;
         if (name === "react-markdown") return { __esModule: true, default: "ReactMarkdown" };
+        if (name === "./EditableValue") return { EditableValue: "EditableValue" };
         if (name.endsWith("/steamLaunchOptions")) return {
           prepareLaunchOptions: async () => null,
           removeLaunchOptions: options.removeLaunchOptions,
@@ -111,10 +121,10 @@ function renderGames(report, options = {}) {
     return module.exports;
   };
   const GamesTab = load(path.join(src, "components", "views", "GamesTab.tsx")).default;
-  const render = () => {
+  const render = (dataRevision = 0) => {
     states = gameStates;
     hook = 0;
-    return expand(GamesTab({ dataRevision: 0 }));
+    return expand(GamesTab({ dataRevision }));
   };
   render.modal = () => {
     states = modalStates;
@@ -123,6 +133,13 @@ function renderGames(report, options = {}) {
   };
   render.closeModal = () => modal.options?.fnOnClose?.();
   render.calls = calls;
+  render.unmount = () => cleanups.splice(0).forEach((cleanup) => cleanup());
+  // Steam unmounts the panel while a dialog is open: React state starts over, modules stay loaded.
+  render.remount = () => {
+    render.unmount();
+    gameStates.length = 0;
+    gameStates[0] = report;
+  };
   return render;
 }
 
@@ -427,7 +444,7 @@ test("manual fix logs share the manual install row", async () => {
   assert.equal(findElements(tree, "ToggleField").length, 0);
 });
 
-test("INI edits save on blur and never overlap", async () => {
+test("INI edits save each committed line and never overlap", async () => {
   const tick = () => new Promise((resolve) => setImmediate(resolve));
   const game = {
     mod_id: "wo3", mod_name: "WO3 Fix", app_name: "WO3", steam_app_id: "1", game_path: "/games/WO3",
@@ -447,16 +464,14 @@ test("INI edits save on blur and never overlap", async () => {
   const edit = findElements(render(), "DialogButton").find((button) => JSON.stringify(button.props.children).includes("Edit"));
   edit.props.onClick();
   await tick();
-  const fields = () => findElements(render(), "TextField");
+  const fields = () => findElements(render(), "EditableValue");
   assert.equal(fields().length, 2);
 
-  fields()[0].props.onChange({ target: { value: "Width=3" } });
-  fields()[0].props.onBlur();
+  fields()[0].props.onCommit("Width=3");
   await tick();
   assert.deepEqual(saves, ["Width=3\nHeight=2"]);
 
-  fields()[1].props.onChange({ target: { value: "Height=4" } });
-  fields()[1].props.onBlur();
+  fields()[1].props.onCommit("Height=4");
   await tick();
   assert.equal(saves.length, 1, "a second save waits for the first");
 
@@ -466,4 +481,49 @@ test("INI edits save on blur and never overlap", async () => {
   finishSave();
   await new Promise((resolve) => setTimeout(resolve, 10));
   assert.ok(JSON.stringify(render()).includes("Configuration saved."));
+});
+
+test("catalog or settings changes never rescan; they ask for a manual scan", async () => {
+  const tick = () => new Promise((resolve) => setImmediate(resolve));
+  const report = { steam_scan: { apps_scanned: 1, libraries_scanned: 1 }, catalogued_mods: 0, supported_games: [], warnings: [] };
+  const render = renderGames(report, { runEffects: true });
+  const hint = (tree) => JSON.stringify(tree).includes("Press Scan to refresh");
+  const scans = () => render.calls.filter((call) => call.name === "scan_supported_games").length;
+
+  assert.equal(hint(render(0)), false);
+  render(1);
+  await tick();
+  assert.equal(scans(), 0);
+  assert.equal(hint(render(1)), true);
+
+  const scan = findElements(render(1), "ButtonItem").find((button) => JSON.stringify(button.props.children).includes("Scan for"));
+  await scan.props.onClick();
+  assert.equal(scans(), 1);
+  assert.equal(hint(render(1)), false);
+  render.unmount();
+});
+
+test("the open game and its INI come back after the panel is remounted", async () => {
+  const tick = () => new Promise((resolve) => setImmediate(resolve));
+  const game = {
+    mod_id: "wo3", mod_name: "WO3 Fix", app_name: "WO3", steam_app_id: "1", game_path: "/games/WO3",
+    manual: false, source_kind: "archive", wine_dll_overrides: [], mod_files: ["fix.ini"],
+    file_status: "complete", files_present: ["fix.ini"], files_missing: [], ini_file: "fix.ini", log_files: [],
+  };
+  const report = { steam_scan: { apps_scanned: 1, libraries_scanned: 1 }, catalogued_mods: 1, supported_games: [game], warnings: [] };
+  const render = renderGames(report, { runEffects: true, handlers: {
+    get_mod_ini: async () => ({ ini_file: "fix.ini", content: "Width=1", exists: true }),
+  } });
+  const iniLoads = () => render.calls.filter((call) => call.name === "get_mod_ini").length;
+  const edit = findElements(render(), "DialogButton").find((button) => JSON.stringify(button.props.children).includes("Edit"));
+  edit.props.onClick();
+  await tick();
+  assert.equal(iniLoads(), 1);
+
+  render.remount();
+  render();
+  await tick();
+  assert.equal(iniLoads(), 2);
+  assert.equal(findElements(render(), "EditableValue")[0].props.value, "Width=1");
+  render.unmount();
 });

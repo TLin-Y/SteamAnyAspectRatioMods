@@ -10,16 +10,16 @@ import {
 } from "@decky/ui";
 import { openFilePicker } from "@decky/api";
 import type { FileSelectionType } from "@decky/api";
-import { getCredits, importOfflinePack, downloadOfflinePack, clearLocalData, updateDependencies, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
+import { getCredits, importOfflinePack, clearLocalData, updateDependencies, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
 import { showErrorModal } from "../../services/modals";
 import { formatBytes, formatCatalogUpdate } from "../../services/formatters";
 import type { CreditsInfo } from "../../services/types";
 
-type ActionState = { busy: boolean; downloading: boolean; status: string; completions: number };
+type ActionState = { busy: boolean; status: string; completions: number };
 
 // Lives outside the component: the tab unmounts when switching tabs or closing the menu,
-// but a running download must keep showing its progress when the tab is shown again.
-let actionState: ActionState = { busy: false, downloading: false, status: "", completions: 0 };
+// but a running import must keep showing its progress when the tab is shown again.
+let actionState: ActionState = { busy: false, status: "", completions: 0 };
 const actionListeners = new Set<() => void>();
 
 const updateActionState = (patch: Partial<ActionState>) => {
@@ -42,10 +42,9 @@ async function runAction<T extends { warning?: string | null; [key: string]: unk
   doneMessage: string | ((result: T) => string),
   onDone: () => void,
   pendingMessage = "Working...",
-  downloading = false,
 ) {
   if (actionState.busy) return;
-  updateActionState({ busy: true, downloading, status: pendingMessage });
+  updateActionState({ busy: true, status: pendingMessage });
   try {
     const result = await action();
     const message = typeof doneMessage === "function" ? doneMessage(result) : doneMessage;
@@ -55,14 +54,14 @@ async function runAction<T extends { warning?: string | null; [key: string]: unk
     updateActionState({ status: "" });
     showErrorModal(title, reason instanceof Error ? reason.message : String(reason));
   } finally {
-    updateActionState({ busy: false, downloading: false, completions: actionState.completions + 1 });
+    updateActionState({ busy: false, completions: actionState.completions + 1 });
   }
 }
 
 export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const [credits, setCredits] = useState<CreditsInfo | null>(null);
   const [error, setError] = useState("");
-  const { busy, downloading, status, completions } = useSyncExternalStore(subscribeActionState, getActionState);
+  const { busy, status, completions } = useSyncExternalStore(subscribeActionState, getActionState);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,23 +110,6 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
         strDescription="Removes the imported repository zip, the downloaded catalog, caches, and plugin logs. Settings and mods already applied to games are kept."
         strOKButtonText="Delete"
         onOK={() => runAction("Delete failed", clearLocalData, "Local files and caches deleted.", onDataChanged)}
-      />,
-    );
-
-  const confirmDownloadOfflinePack = () =>
-    showModal(
-      <ConfirmModal
-        strTitle="Download offline pack (5 mins)?"
-        strDescription="Downloads the offline pack from the latest release. Large packs may have multiple parts (up to 800 MB each); all parts are downloaded and imported together, replacing the current offline pack and catalog."
-        strOKButtonText="Download"
-        onOK={() => runAction(
-          "Download failed",
-          downloadOfflinePack,
-          (result) => `Offline pack ${result.version ?? ""} downloaded and imported.`,
-          onDataChanged,
-          "Downloading and importing the offline pack. This may take several minutes...",
-          true,
-        )}
       />,
     );
 
@@ -192,15 +174,6 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
       })}
       <PanelSectionRow>
         <div style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.25)", margin: "8px 0" }} />
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={busy || !credits || credits.offline_mode}
-          onClick={confirmDownloadOfflinePack}
-        >
-          {downloading ? "Downloading..." : "Download offline pack (5 mins)"}
-        </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem layout="below" disabled={busy} onClick={importRepositoryZip}>

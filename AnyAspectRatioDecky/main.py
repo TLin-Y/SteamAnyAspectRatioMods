@@ -42,7 +42,7 @@ from store.dependencies import (
     update_dependencies,
 )
 from store.mod_sources import fetch_mod_readme, set_archive_cache_dir, set_pack_dir
-from store.offline_pack import download_release_pack, install_pack, pack_operation
+from store.offline_pack import install_pack, pack_operation
 from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
     PluginStore,
@@ -306,13 +306,6 @@ class Plugin:
         warning = await self._refresh_online_catalog(store)
         return {**result, "warning": warning}
 
-    async def download_offline_pack(self) -> dict[str, object]:
-        store = get_store()
-        with log.on_error("Offline pack download failed"):
-            result = await asyncio.to_thread(download_release_pack, store, store.load_settings())
-        warning = await self._refresh_online_catalog(store)
-        return {**result, "warning": warning}
-
     @staticmethod
     async def _refresh_online_catalog(store: PluginStore) -> str | None:
         def refresh():
@@ -490,8 +483,6 @@ class Plugin:
             if not game.game_path or game.manual:
                 continue
             if not mod.ini_resolution:
-                if game.ini_path and game.file_status == "complete":
-                    skipped.append(f"{game.app_name}: no catalogued resolution fields.")
                 continue
             if game.ambiguity_group and not game.match_locked:
                 skipped.append(f"{game.app_name}: select the correct mod first.")
@@ -517,10 +508,14 @@ class Plugin:
             ):
                 latest = replace(latest, ini_resolution_update_pending=False)
                 store.save_settings(latest)
-        log.info("Resolution update completed")
+        log.info(
+            "Resolution update completed: %d updated, %d unchanged, %d skipped, %d failed",
+            len(updated), len(unchanged), len(skipped), len(failures),
+        )
+        for message in skipped:
+            log.info("Resolution update skipped: %s", message)
         return {
-            "updated": updated, "unchanged": unchanged, "skipped": skipped,
-            "failures": failures, "warnings": list(report.warnings),
+            "updated": updated, "unchanged": unchanged, "skipped": skipped, "failures": failures,
             "resolution_update_pending": latest.ini_resolution_update_pending,
         }
 
