@@ -1,14 +1,21 @@
+import ast
+import json
 import unittest
 from pathlib import Path
 from unittest import mock
 
 from export_store_repo import (
     BUILD_FLAVOR,
+    FORBIDDEN_PYTHON,
     PY_PACKAGES,
+    SELF_UPDATE_OFF,
     SELF_UPDATE_ON,
+    UPDATER,
+    UPDATER_STUB,
     store_path,
+    verify_export,
 )
-from support.sandbox import PLUGIN_ROOT
+from support.sandbox import PLUGIN_ROOT, SandboxTest
 
 from scanner import mod_catalog
 
@@ -48,6 +55,83 @@ class StoreLayoutTests(unittest.TestCase):
                 self.assertEqual(
                     (root / "catalog.json").resolve(), mod_catalog.bundled_catalog_path()
                 )
+
+
+def functions(path: Path) -> dict[str, list[str]]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    return {
+        node.name: [arg.arg for arg in node.args.args]
+        for node in tree.body if isinstance(node, ast.FunctionDef)
+    }
+
+
+class UpdaterStubTests(unittest.TestCase):
+    def test_stub_replaces_every_updater_function_main_uses(self) -> None:
+        tree = ast.parse((PLUGIN_ROOT / "main.py").read_text(encoding="utf-8"))
+        imported = {
+            alias.name for node in tree.body
+            if isinstance(node, ast.ImportFrom) and node.module == "installer.plugin_updater"
+            for alias in node.names
+        }
+        real = functions(PLUGIN_ROOT / "installer" / "plugin_updater.py")
+        stub = functions(UPDATER_STUB)
+        self.assertTrue(imported)
+        for name in imported:
+            with self.subTest(name=name):
+                self.assertEqual(real[name], stub[name])
+
+    def test_no_module_besides_main_imports_the_updater(self) -> None:
+        users = [
+            path.relative_to(PLUGIN_ROOT).as_posix()
+            for package in PY_PACKAGES
+            for path in (PLUGIN_ROOT / package).rglob("*.py")
+            if "plugin_updater" in path.read_text(encoding="utf-8")
+        ]
+        self.assertEqual([], users)
+
+    def test_stub_passes_the_store_checks(self) -> None:
+        text = UPDATER_STUB.read_text(encoding="utf-8")
+        self.assertEqual([], [word for word in FORBIDDEN_PYTHON if word in text])
+
+
+class VerifyExportTests(SandboxTest):
+    def setUp(self) -> None:
+        super().setUp()
+        self.write({
+            "LICENSE": (PLUGIN_ROOT.parent / "LICENSE").read_text(encoding="utf-8")
+            + (PLUGIN_ROOT / "LICENSE-Decky-Plugin-Template.txt").read_text(encoding="utf-8"),
+            "package.json": json.dumps({"version": "1.8.1", "scripts": {"build": "rollup -c"}}),
+            "plugin.json": json.dumps({"name": "AnyAspectRatio", "version": "1.8.1"}),
+            "pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+            BUILD_FLAVOR: SELF_UPDATE_OFF + "\n",
+            UPDATER: UPDATER_STUB.read_bytes(),
+            "py_modules/utils/files.py": "import os\n",
+            "node_modules/x/addon.so": "",
+        })
+
+    def assert_rejected(self, tree: dict, problem: str) -> None:
+        self.write(tree)
+        with self.assertRaises(SystemExit) as raised:
+            verify_export(self.root)
+        self.assertIn(problem, str(raised.exception))
+
+    def test_a_clean_export_passes(self) -> None:
+        self.assertEqual("1.8.1", verify_export(self.root))
+
+    def test_self_update_code_is_rejected(self) -> None:
+        self.assert_rejected({BUILD_FLAVOR: SELF_UPDATE_ON + "\n"}, "must say")
+        self.assert_rejected({UPDATER: "import subprocess\n"}, "contains 'subprocess'")
+
+    def test_binaries_and_unexpected_folders_are_rejected(self) -> None:
+        self.assert_rejected({"defaults/mod.dll": ""}, "binary or archive file: defaults/mod.dll")
+        self.assert_rejected({"assets/icon.png": ""}, "assets/ must not exist")
+        self.assert_rejected({"scripts/x.py": ""}, "unexpected top-level entries")
+
+    def test_manifest_problems_are_rejected(self) -> None:
+        self.assert_rejected({"plugin.json": json.dumps({"version": "1.8.0"})}, "!= plugin.json version")
+        self.assert_rejected({"package.json": json.dumps({"version": "1.8.1", "remote_binary": []})},
+                             "remote_binary")
+        self.assert_rejected({"pnpm-lock.yaml": "lockfileVersion: '6.0'\n"}, "lockfileVersion")
 
 
 if __name__ == "__main__":
