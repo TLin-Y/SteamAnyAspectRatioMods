@@ -2,6 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from installer.apply import apply_mod_files
+from installer.remove import remove_mod_files
+from scanner.mod_catalog import ModDefinition
 from store import mod_sources
 from utils import files, network
 
@@ -16,12 +19,16 @@ def _content(value: bytes | str) -> bytes:
 
 
 class SandboxTest(unittest.TestCase):
-    """Every test gets an empty self.root; plugin-wide state is reset after it."""
+    """Every test gets an empty self.root; plugin-wide state is reset after it.
+
+    write and assert_files work relative to self.workdir (self.root unless a subclass moves it).
+    """
 
     def setUp(self) -> None:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name).resolve()
+        self.workdir = self.root
         self.addCleanup(network.set_offline_mode, False)
         self.addCleanup(mod_sources.set_pack_dir, None)
         self.addCleanup(mod_sources.set_archive_cache_dir, None)
@@ -34,13 +41,16 @@ class SandboxTest(unittest.TestCase):
 
     def write(self, tree: Tree, root: Path | None = None) -> None:
         for relative, value in tree.items():
-            path = (root or self.root) / relative
+            path = (root or self.workdir) / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(_content(value))
 
+    def read(self, relative: str) -> bytes:
+        return (self.workdir / relative).read_bytes()
+
     def assert_files(self, expected: Tree, root: Path | None = None) -> None:
         """Each file has the given content (or is absent for None), and no staged temp file was left behind."""
-        base = root or self.root
+        base = root or self.workdir
         for relative, value in expected.items():
             with self.subTest(file=relative):
                 path = base / relative
@@ -51,4 +61,19 @@ class SandboxTest(unittest.TestCase):
         self.assert_no_leftovers(base)
 
     def assert_no_leftovers(self, root: Path | None = None) -> None:
-        self.assertEqual([], list((root or self.root).rglob(f"{files.TEMPORARY_PREFIX}*")))
+        self.assertEqual([], list((root or self.workdir).rglob(f"{files.TEMPORARY_PREFIX}*")))
+
+
+class GameTest(SandboxTest):
+    """self.game is an installed game's folder; write, assert_files, apply and remove act on it."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.game = self.folder("game")
+        self.workdir = self.game
+
+    def apply(self, mod: ModDefinition, **options: object) -> list[str]:
+        return apply_mod_files(mod, str(self.game), **options)
+
+    def remove(self, mod: ModDefinition, **options: object) -> list[str]:
+        return remove_mod_files(mod, str(self.game), **options)
