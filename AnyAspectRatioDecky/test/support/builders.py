@@ -1,4 +1,5 @@
 import io
+import struct
 from dataclasses import replace
 from functools import cache
 from pathlib import Path
@@ -67,3 +68,17 @@ def catalog_mod(mod_id: str) -> ModDefinition:
 
 def app_for(entry: ModDefinition, game: Path, name: str = "Test") -> InstalledApp:
     return InstalledApp(entry.steam_app_id, name, entry.install_dir, "", str(game))
+
+
+def shortcuts_vdf(*shortcuts: tuple[int, str, str, str]) -> bytes:
+    """Steam's binary shortcuts.vdf for (app id, name, exe, start folder) entries."""
+
+    def text(key: str, value: str) -> bytes:
+        return b"\x01" + key.encode() + b"\x00" + value.encode() + b"\x00"
+
+    entries = b"".join(
+        f"\x00{index}\x00".encode() + b"\x02appid\x00" + struct.pack("<I", app_id)
+        + text("AppName", name) + text("Exe", f'"{exe}"') + text("StartDir", f'"{start_dir}"') + b"\x08"
+        for index, (app_id, name, exe, start_dir) in enumerate(shortcuts)
+    )
+    return b"\x00shortcuts\x00" + entries + b"\x08\x08"

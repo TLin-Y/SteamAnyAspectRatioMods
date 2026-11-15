@@ -9,12 +9,10 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
-from zipfile import ZipFile
 
-from installer.apply import apply_mod_files
 from scanner.mod_catalog import ModDefinition, ModSource, load_mod_catalog
-from scanner.non_steam_shortcuts import parse_shortcuts, scan_non_steam_shortcuts
-from scanner.steam_library_scanner import InstalledApp, SteamScanReport
+from scanner.non_steam_shortcuts import parse_shortcuts
+from scanner.steam_library_scanner import SteamScanReport
 from scanner.supported_game_scanner import match_supported_games
 from store.dependencies import CatalogSource
 from store.plugin_store import PluginStore
@@ -64,123 +62,6 @@ class NonSteamShortcutTests(unittest.TestCase):
                 str(self.game / self.mod.executable), str(start_dir),
             )
         )
-
-    def test_parses_shortcut_with_unsigned_app_id(self) -> None:
-        executable = str(self.root / "x.sh")
-        data = _shortcuts_vdf(3000000001, "Black Myth GOG", executable, str(self.game))
-        (app,) = parse_shortcuts(data)
-        self.assertEqual(app.app_id, "3000000001")
-        self.assertEqual(app.name, "Black Myth GOG")
-        self.assertEqual(app.game_path, str(self.game))
-        self.assertEqual(app.shortcut_executable, executable)
-
-    def test_shortcut_matches_mod_by_executable_path(self) -> None:
-        self._write_shortcuts(self.game)
-        shortcuts = scan_non_steam_shortcuts([self.root / "steam"])
-        scan = SteamScanReport(0, 0, [], [], shortcuts)
-        report = match_supported_games(scan, (self.mod,))
-        (game,) = report.supported_games
-        self.assertEqual(game.steam_app_id, "3000000001")
-        self.assertEqual(game.mod_id, "wukongtweak")
-        self.assertTrue(game.executable_found)
-
-    def test_shortcut_without_matching_executable_is_ignored(self) -> None:
-        other_exe = self.game / "other.exe"
-        other_exe.touch()
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Other", str(other_exe), str(self.game))
-        )
-        report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (self.mod,))
-        self.assertEqual(report.supported_games, [])
-
-    def test_nested_shortcut_resolves_catalog_game_root(self) -> None:
-        executable = self.game / self.mod.executable
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Black Myth GOG", str(executable), str(executable.parent))
-        )
-        report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (self.mod,))
-        (game,) = report.supported_games
-        self.assertEqual(game.game_path, str(self.game))
-        self.assertEqual(game.executable_path, str(executable))
-
-    def test_nested_shortcut_apply_uses_catalog_game_root(self) -> None:
-        executable = self.game / self.mod.executable
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Game", str(executable), str(executable.parent))
-        )
-        archive_path = self.root / "mod.zip"
-        with ZipFile(archive_path, "w") as archive:
-            archive.writestr(self.mod.files[0], b"mod contents")
-        mod = replace(self.mod, source=replace(self.mod.source, kind="local_archive", path=str(archive_path)))
-        report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (mod,))
-        (game,) = report.supported_games
-        self.assertEqual([], apply_mod_files(mod, game.game_path))
-        self.assertEqual((self.game / self.mod.files[0]).read_bytes(), b"mod contents")
-
-    def test_wrapper_shortcut_is_not_matched_from_start_directory(self) -> None:
-        wrapper = self.game / "run.sh"
-        wrapper.touch()
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Other", str(wrapper), str(self.game))
-        )
-        report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (self.mod,))
-        self.assertEqual([], report.supported_games)
-
-    def test_elden_ring_launcher_shortcuts_match_only_with_game_executable(self) -> None:
-        mod = next(mod for mod in load_mod_catalog() if mod.mod_id == "elden-ring-ultrawide-fix")
-        root = self.root / "localGames" / "ELDEN RING"
-        folder = root / "Game"
-        folder.mkdir(parents=True)
-        executable = folder / "eldenring.exe"
-        for name in (
-            "modengine2_launcher.exe", "start_protected_game.exe",
-            "start_game_in_offline_mode.exe", "start_protected_game-old.exe",
-        ):
-            with self.subTest(launcher=name):
-                executable.unlink(missing_ok=True)
-                wrapper = folder / name
-                wrapper.touch()
-                shortcuts = parse_shortcuts(_shortcuts_vdf(
-                    3000000001, "Elden Ring custom", str(wrapper), str(folder)
-                ))
-                scan = SteamScanReport(0, 0, [], [], shortcuts)
-                self.assertEqual([], match_supported_games(scan, (mod,)).supported_games)
-                executable.write_bytes(b"game")
-                games = match_supported_games(scan, (mod,)).supported_games
-                if name == "start_protected_game-old.exe":
-                    self.assertEqual([], games)
-                    continue
-                (game,) = games
-                self.assertEqual(str(root), game.game_path)
-                self.assertEqual("elden-ring-ultrawide-fix", game.mod_id)
-                self.assertTrue(game.offline_only)
-                self.assertTrue(game.matched_by_executable)
-                self.assertEqual("3000000001", game.steam_app_id)
-
-    def test_shortcut_with_ambiguous_basename_requires_selection(self) -> None:
-        executable = self.game / self.mod.executable
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Game", str(executable), str(self.game))
-        )
-        other = replace(self.mod, mod_id="other", executable="elsewhere/b1.exe")
-        report = match_supported_games(
-            SteamScanReport(0, 0, [], [], shortcuts), (self.mod, other)
-        )
-        (game,) = report.supported_games
-        self.assertEqual(self.mod.mod_id, game.mod_id)
-        self.assertIsNotNone(game.ambiguity_group)
-
-    def test_same_mod_with_ambiguous_root_requires_selection(self) -> None:
-        executable = self.game / self.mod.executable
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Game", str(executable), str(self.game))
-        )
-        mod = replace(self.mod, executable_alternatives=("b1.exe",))
-        report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (mod,))
-        self.assertEqual(2, len(report.supported_games))
-        self.assertEqual({str(self.game), str(executable.parent)}, {g.game_path for g in report.supported_games})
-        self.assertEqual(1, len({g.ambiguity_group for g in report.supported_games}))
-        self.assertIsNotNone(report.supported_games[0].ambiguity_group)
 
     def test_shared_game_exe_offers_all_three_choices(self) -> None:
         executable = self.game / "game.exe"
@@ -310,13 +191,6 @@ class NonSteamShortcutTests(unittest.TestCase):
             asyncio.run(plugin.clear_matched_game(choice["ambiguity_group"], choice["mod_id"], choice["game_path"]))
             self.assertNotIn(choice["ambiguity_group"], store.load_matched_games())
 
-    def test_relative_shortcut_executable_is_not_matched(self) -> None:
-        shortcuts = parse_shortcuts(
-            _shortcuts_vdf(3000000001, "Game", self.mod.executable, str(self.game))
-        )
-        report = match_supported_games(SteamScanReport(0, 0, [], [], shortcuts), (self.mod,))
-        self.assertEqual([], report.supported_games)
-
     def test_manual_choice_can_be_cleared_even_when_files_exist(self) -> None:
         executable = self.game / self.mod.executable
         shortcuts = parse_shortcuts(
@@ -345,19 +219,6 @@ class NonSteamShortcutTests(unittest.TestCase):
             self.assertEqual({}, store.load_matched_games())
             self.assertEqual(b"existing", target.read_bytes())
             self.assertEqual(2, len(asyncio.run(plugin.scan_supported_games())["supported_games"]))
-
-    def test_steam_install_in_same_folder_is_not_listed_twice(self) -> None:
-        self._write_shortcuts(self.game)
-        shortcuts = scan_non_steam_shortcuts([self.root / "steam"])
-        steam_app = InstalledApp(
-            "2358720", "Black Myth: Wukong", "BlackMythWukong", "", str(self.game)
-        )
-        report = match_supported_games(
-            SteamScanReport(1, 1, [steam_app], [], shortcuts), (self.mod,)
-        )
-        self.assertEqual(len(report.supported_games), 1)
-        self.assertEqual(report.supported_games[0].steam_app_id, "2358720")
-
 
 if __name__ == "__main__":
     unittest.main()
