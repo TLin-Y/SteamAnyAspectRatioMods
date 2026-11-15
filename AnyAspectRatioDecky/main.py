@@ -49,7 +49,8 @@ from store.plugin_store import (
     Settings,
     validate_settings,
 )
-from utils.network import NetworkError, set_offline_mode
+from utils.network import NetworkError, is_not_found, set_offline_mode
+from utils.retry import retry_once
 
 log.bind(decky.logger)
 _store: PluginStore | None = None
@@ -138,6 +139,11 @@ def _record_outcome(
     if not applied and complete:
         with errors.wrap(f"{outcome} the saved game match could not be cleared"):
             store.remove_matched_game(mod.mod_id, game_path)
+
+
+def _fetch_online_catalog(store: PluginStore) -> bool | None:
+    with pack_operation():
+        return refresh_catalog_on_start(store, store.load_settings())
 
 
 def _is_chosen(game: SupportedGame, choices: dict[str, dict[str, str]]) -> bool:
@@ -308,12 +314,8 @@ class Plugin:
 
     @staticmethod
     async def _refresh_online_catalog(store: PluginStore) -> str | None:
-        def refresh():
-            with pack_operation():
-                return refresh_catalog_on_start(store, store.load_settings())
-
         try:
-            await asyncio.to_thread(refresh)
+            await asyncio.to_thread(_fetch_online_catalog, store)
         except (OSError, ValueError) as error:
             log.warning("Catalog refresh failed")
             return f"Could not refresh the online catalog: {error}"
@@ -575,12 +577,21 @@ class Plugin:
             settings = store.load_settings()
             resolution = (settings.ini_resolution_width, settings.ini_resolution_height)
             if applied:
-                conflicts = apply_mod_files(
-                    mod, path,
-                    replace_existing_files=replace_existing_files,
-                    ini_resolution=resolution,
-                    ini_adjustment_warnings=ini_warnings,
-                )
+                def apply() -> list[str]:
+                    return apply_mod_files(
+                        mod, path,
+                        replace_existing_files=replace_existing_files,
+                        ini_resolution=resolution,
+                        ini_adjustment_warnings=ini_warnings,
+                    )
+
+                def refresh_stale_catalog() -> None:
+                    nonlocal mod
+                    log.warning("Mod archive not found, refreshing the catalog: %s", mod_id)
+                    _fetch_online_catalog(store)
+                    mod, _ = self._resolve_mod_game(mod_id, game_path)
+
+                conflicts = retry_once(apply, is_not_found, refresh_stale_catalog)
                 awaiting = bool(conflicts) and replace_existing_files is None
                 kept = sum(file in mod.files for file in conflicts) if replace_existing_files is False else 0
                 copied = 0 if awaiting else len(mod.files) - kept
@@ -686,13 +697,8 @@ class Plugin:
     async def _refresh_catalog(store: PluginStore) -> None:
         """Fetch the newest catalog in the background; the bundled or cached one stays in use on failure."""
         log.info("Startup catalog refresh started")
-
-        def refresh():
-            with pack_operation():
-                return refresh_catalog_on_start(store, store.load_settings())
-
         try:
-            changed = await asyncio.to_thread(refresh)
+            changed = await asyncio.to_thread(_fetch_online_catalog, store)
         except Exception:
             log.warning("Startup catalog refresh failed")
             return

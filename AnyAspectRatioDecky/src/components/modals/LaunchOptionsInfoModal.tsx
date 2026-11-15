@@ -1,6 +1,7 @@
 import { ConfirmModal, DialogButton } from "@decky/ui";
 import { useState } from "react";
 import { copyToClipboard } from "../../services/clipboard";
+import { errorText } from "../../services/formatters";
 import type { LaunchOptionsDisplay } from "../../services/types";
 
 export function LaunchOptionsInfoModal({
@@ -46,7 +47,7 @@ export function LaunchOptionsInfoModal({
                 await copyToClipboard(value);
                 setCopyStatus(`${label} copied.`);
               } catch (error) {
-                setCopyStatus(`Copy failed: ${String(error)}`);
+                setCopyStatus(`Copy failed: ${errorText(error)}`);
               }
             }}
           >

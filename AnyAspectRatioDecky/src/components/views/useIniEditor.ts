@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { getModIni, saveModIni } from "../../services/callables";
+import { errorText } from "../../services/formatters";
 import type { SupportedGame } from "../../services/types";
 
 type Options = {
@@ -51,7 +52,7 @@ export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }:
       setExists(ini.exists);
       setLoaded(true);
     } catch (error) {
-      if (request === requestId.current) notifyError("Could not load configuration", String(error));
+      if (request === requestId.current) notifyError("Could not load configuration", errorText(error));
     }
   };
 
@@ -76,7 +77,7 @@ export function useIniEditor({ game, gameKey, requestId, notifyError, refresh }:
         ? "Configuration saved."
         : "Configuration saved, but this filesystem could not preserve the file permissions.");
     } catch (error) {
-      if (request === requestId.current) notifyError("Could not save configuration", String(error));
+      if (request === requestId.current) notifyError("Could not save configuration", errorText(error));
       return;
     } finally {
       if (request === requestId.current) {

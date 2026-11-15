@@ -1,6 +1,8 @@
 import hashlib
 from dataclasses import replace
+from email.message import Message
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 from support.builders import app_for, catalog_mod, write_zip
 from support.plugin import PluginTest
@@ -8,6 +10,7 @@ from support.plugin import PluginTest
 from installer import backups
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
 from store.mod_sources import set_pack_dir
+from utils.network import NetworkError
 
 HASHED = next(mod for mod in load_mod_catalog() if mod.source.sha256 and not mod.file_backups)
 
@@ -49,6 +52,27 @@ class AppliedVersionTests(PluginTest):
         self.assertIn(updated.mod_id, self.applied_hashes()[str(self.game)])
         self.set_applied(updated, False, [])
         self.assertEqual({}, self.applied_hashes())
+
+    def test_missing_archive_refreshes_the_catalog_once_and_applies_the_new_entry(self) -> None:
+        refreshed = replace(HASHED, source=replace(HASHED.source, sha256="b" * 64))
+        game = (str(self.game),)
+        for code, applies in ((404, [HASHED, refreshed]), (500, [HASHED])):
+            failure = NetworkError(f"HTTP {code}")
+            failure.__cause__ = HTTPError("https://example.com", code, "", Message(), None)
+            with (
+                self.subTest(code=code),
+                patch.object(self.main.Plugin, "_resolve_mod_game", side_effect=[(HASHED, *game), (refreshed, *game)]),
+                patch.object(self.main, "apply_mod_files", side_effect=[failure, []]) as apply,
+                patch.object(self.main, "refresh_catalog_on_start") as refresh,
+            ):
+                if code == 404:
+                    self.call("set_mod_applied", HASHED.mod_id, str(self.game), True)
+                    self.assertEqual("b" * 64, self.applied_hashes()[str(self.game)][HASHED.mod_id])
+                else:
+                    with self.assertRaisesRegex(NetworkError, "HTTP 500"):
+                        self.call("set_mod_applied", HASHED.mod_id, str(self.game), True)
+                self.assertEqual(applies, [call.args[0] for call in apply.call_args_list])
+                self.assertEqual(code == 404, refresh.called)
 
     def test_lost_backup_is_reported_and_the_mod_is_no_longer_counted_as_applied(self) -> None:
         undertale = catalog_mod("undertale")

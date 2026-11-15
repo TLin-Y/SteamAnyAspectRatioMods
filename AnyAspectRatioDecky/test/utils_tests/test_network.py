@@ -45,6 +45,14 @@ class NetworkTests(SandboxTest):
                 with failing(error), self.assertRaisesRegex(network.NetworkError, f"^{re.escape(message)}$"):
                     network.open_url(URL)
 
+    def test_only_a_missing_file_counts_as_not_found(self) -> None:
+        for code, expected in ((404, True), (500, False)):
+            with self.subTest(code=code), failing(HTTPError(URL, code, "", Message(), None)):
+                with self.assertRaises(network.NetworkError) as caught:
+                    network.open_url(URL)
+                self.assertEqual(expected, network.is_not_found(caught.exception))
+        self.assertFalse(network.is_not_found(network.NetworkError("No internet connection")))
+
     def test_offline_mode_blocks_every_request_until_turned_off(self) -> None:
         with offline(), no_network():
             self.assertTrue(network.is_offline_mode())

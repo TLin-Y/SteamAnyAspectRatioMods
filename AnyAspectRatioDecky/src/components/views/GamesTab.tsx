@@ -23,7 +23,7 @@ import {
   showLaunchOptionsInfo,
   chooseGame,
 } from "../../services/modals";
-import { formatBytes, formatRelativeTime } from "../../services/formatters";
+import { errorText, formatBytes, formatRelativeTime } from "../../services/formatters";
 import { useRemembered } from "../../services/remembered";
 import type { SupportedGameReport, SupportedGame, ModLogResult } from "../../services/types";
 import { applyLaunchOptions } from "../../launch_options/steamLaunchOptions";
@@ -83,7 +83,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
         setPluginUsageInfo(`Plugin disk usage: ${formatBytes(bytes)}`);
       })
       .catch((error) => {
-        if (!cancelled) setPluginUsageInfo(`Disk usage unavailable: ${String(error)}`);
+        if (!cancelled) setPluginUsageInfo(`Disk usage unavailable: ${errorText(error)}`);
       });
     return () => {
       cancelled = true;
@@ -118,7 +118,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       setCachedScanTime(new Date().toISOString());
       setScanOutdated(false);
     } catch (error) {
-      notifyError("Steam scan failed", `Supported game scan failed: ${String(error)}`);
+      notifyError("Steam scan failed", `Supported game scan failed: ${errorText(error)}`);
     } finally {
       setScanning(false);
     }
@@ -132,7 +132,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       setScanOutdated(false);
       return null;
     } catch (error) {
-      return String(error);
+      return errorText(error);
     }
   };
 
@@ -184,7 +184,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
           const action = applied ? "apply" : "remove";
           notifyError(
             `${applied ? "Apply" : "Remove"} failed`,
-            withRefreshError(`Could not ${action} ${game.mod_name}: ${String(error)}`, refreshError),
+            withRefreshError(`Could not ${action} ${game.mod_name}: ${errorText(error)}`, refreshError),
           );
         }
         return;
@@ -213,7 +213,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
         try {
           await applyLaunchOptions(launch.plan, game.wine_dll_overrides);
         } catch (error) {
-          notice = `Steam launch options could not be updated: ${String(error)}. Mod files were still applied.`;
+          notice = `Steam launch options could not be updated: ${errorText(error)}. Mod files were still applied.`;
         }
       }
       const refreshError = await refresh();
@@ -283,7 +283,7 @@ Required setting: ${setting}`, refreshError),
       setReadmeContent(readme.content);
     } catch (error) {
       if (requestId === detailRequestId.current) {
-        notifyError("Could not load ReadMe", String(error));
+        notifyError("Could not load ReadMe", errorText(error));
       }
     } finally {
       if (requestId === detailRequestId.current) {
@@ -303,7 +303,7 @@ Required setting: ${setting}`, refreshError),
       try {
         return await getModLog(game.mod_id, gamePath, name);
       } catch (error) {
-        return { name, error: String(error) };
+        return { name, error: errorText(error) };
       }
     }));
     if (requestId === detailRequestId.current) setModLogs(results);
@@ -334,7 +334,7 @@ Required setting: ${setting}`, refreshError),
         notifyError("Status refresh failed", `Choice cleared; scan again: ${refreshError}`);
       }
     } catch (error) {
-      notifyError("Could not clear game choice", String(error));
+      notifyError("Could not clear game choice", errorText(error));
     } finally {
       setUpdatingMod(false);
     }
@@ -417,7 +417,7 @@ Required setting: ${setting}`, refreshError),
           try {
             await selectMatchedGame(groupId, chosen.mod_id, chosen.game_path);
           } catch (error) {
-            notifyError("Game selection failed", String(error));
+            notifyError("Game selection failed", errorText(error));
             setToggleRevision((revision) => revision + 1);
             return;
           }
