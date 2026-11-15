@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <inipp/inipp.h>
+#include <safetyhook.hpp>
 #include <cmath>
 #include <cstring>
 #include <windows.h>
@@ -29,6 +30,9 @@ bool bEnableARFix = true;
 int iAspectWidth = 4;
 int iAspectHeight = 3;
 float fTargetARValue = 1.3333333f;
+
+bool bEnableFOVFix = true;
+float fFOVScale = 1.0f;
 
 template<typename T>
 T GetConfigAndLog(inipp::Ini<char>& ini, const std::string& section, const std::string& key, T defaultValue) {
@@ -77,6 +81,13 @@ void Configuration() {
         fTargetARValue = static_cast<float>(iAspectWidth) / static_cast<float>(iAspectHeight);
     }
     SPDLOG_INFO("Target Aspect Ratio: {} / {} = {:.6f}", iAspectWidth, iAspectHeight, fTargetARValue);
+
+    bEnableFOVFix = GetConfigAndLog(ini, "FOV", "EnableFOVFix", true);
+    fFOVScale = GetConfigAndLog(ini, "FOV", "FOVScale", 1.0f);
+    if (!(fFOVScale > 0.0f && fFOVScale <= 2.0f)) {
+        SPDLOG_ERROR("FOVScale {} out of range (0 - 2.0); using 1.0.", fFOVScale);
+        fFOVScale = 1.0f;
+    }
 }
 
 void AspectRatio() {
@@ -126,6 +137,29 @@ void AspectRatio() {
     }
 }
 
+void FOV() {
+    if (!bEnableFOVFix || fFOVScale == 1.0f) return;
+
+    auto hits = Memory::PatternScanAll(exeModule, "F3 0F 11 41 38 48 8B 43 50 48 8B 48 18 48");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Camera FOV writer found {} times (expected 1); FOV not changed.", hits.size());
+        return;
+    }
+
+    static SafetyHookMid FOVHook{};
+    FOVHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+        float fov = ctx.xmm0.f32[0] * fFOVScale;
+        if (fov < 1.0f) fov = 1.0f;
+        if (fov > 179.0f) fov = 179.0f;
+        ctx.xmm0.f32[0] = fov;
+    });
+    if (FOVHook) {
+        SPDLOG_INFO("FOV hook installed at 0x{:X}", reinterpret_cast<uintptr_t>(hits[0]));
+    } else {
+        SPDLOG_ERROR("FOV hook could not be installed.");
+    }
+}
+
 DWORD __stdcall Main(void*) {
     Sleep(1000);
 
@@ -133,6 +167,7 @@ DWORD __stdcall Main(void*) {
     Configuration();
 
     AspectRatio();
+    FOV();
 
     return 1;
 }
