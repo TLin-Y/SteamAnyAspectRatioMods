@@ -30,10 +30,16 @@ namespace
     float* pLayout = nullptr;
     uint8_t** pModeLists = nullptr;
     uint8_t** pMonitors = nullptr;
+    int32_t* pScreenMode = nullptr;
+    HWND gameWindow = nullptr;
 
     bool current2D = false;
     std::unordered_map<uintptr_t, uint64_t> adjusted;
     std::vector<SafetyHookMid> hooks;
+    SafetyHookInline createWindowHook;
+    SafetyHookInline setStyleHook;
+    SafetyHookInline adjustRectHook;
+    SafetyHookInline setPosHook;
 
     struct Section
     {
@@ -212,10 +218,76 @@ namespace
         for (size_t i = 0; i < count && i < 16; ++i) AddMode(lists[i]);
     }
 
+    bool Forced()
+    {
+        return iWidth > 0 && iHeight > 0;
+    }
+
+    DWORD Borderless(DWORD style)
+    {
+        return (style & ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)) | WS_POPUP;
+    }
+
+    HWND WINAPI CreateWindowExWHook(DWORD exStyle, LPCWSTR className, LPCWSTR windowName, DWORD style, int x, int y,
+        int width, int height, HWND parent, HMENU menu, HINSTANCE instance, LPVOID param)
+    {
+        bool main = !parent && (style & WS_CAPTION) == WS_CAPTION;
+        if (main) style = Borderless(style);
+        HWND window = createWindowHook.stdcall<HWND>(exStyle, className, windowName, style, x, y, width, height, parent,
+            menu, instance, param);
+        if (main && window && !gameWindow) gameWindow = window;
+        return window;
+    }
+
+    LONG WINAPI SetWindowLongWHook(HWND window, int index, LONG value)
+    {
+        if (window == gameWindow && index == GWL_STYLE) value = static_cast<LONG>(Borderless(static_cast<DWORD>(value)));
+        return setStyleHook.stdcall<LONG>(window, index, value);
+    }
+
+    BOOL WINAPI AdjustWindowRectHook(LPRECT rect, DWORD style, BOOL menu)
+    {
+        return rect != nullptr;
+    }
+
+    BOOL WINAPI SetWindowPosHook(HWND window, HWND after, int x, int y, int cx, int cy, UINT flags)
+    {
+        if (window == gameWindow && !(flags & SWP_NOSIZE)) {
+            cx = iWidth;
+            cy = iHeight;
+            MONITORINFO info{ sizeof(info) };
+            if (GetMonitorInfoW(MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST), &info)) {
+                x = info.rcMonitor.left + (info.rcMonitor.right - info.rcMonitor.left - cx) / 2;
+                y = info.rcMonitor.top + (info.rcMonitor.bottom - info.rcMonitor.top - cy) / 2;
+                flags &= ~SWP_NOMOVE;
+            }
+        }
+        return setPosHook.stdcall<BOOL>(window, after, x, y, cx, cy, flags);
+    }
+
+    void BorderlessWindow()
+    {
+        auto user32 = GetModuleHandleW(L"user32.dll");
+        if (!user32) user32 = LoadLibraryW(L"user32.dll");
+        if (!user32) return;
+        createWindowHook = safetyhook::create_inline(GetProcAddress(user32, "CreateWindowExW"), CreateWindowExWHook);
+        setStyleHook = safetyhook::create_inline(GetProcAddress(user32, "SetWindowLongW"), SetWindowLongWHook);
+        adjustRectHook = safetyhook::create_inline(GetProcAddress(user32, "AdjustWindowRect"), AdjustWindowRectHook);
+        setPosHook = safetyhook::create_inline(GetProcAddress(user32, "SetWindowPos"), SetWindowPosHook);
+        if (createWindowHook && setStyleHook && adjustRectHook && setPosHook) spdlog::info("Borderless window: enabled");
+        else spdlog::error("Borderless window: hook failed");
+    }
+
+    void ScreenMode(safetyhook::Context& c)
+    {
+        if (Forced() && static_cast<int32_t>(c.rbx) == 1) c.rbx = 0;
+    }
+
     void WindowSize(safetyhook::Context& c)
     {
-        if (iWidth <= 0 || iHeight <= 0) return;
+        if (!Forced()) return;
         AddModes();
+        if (pScreenMode && *pScreenMode == 1) *pScreenMode = 0;
         c.xmm7.f32[0] = static_cast<float>(iWidth);
         c.xmm6.f32[0] = static_cast<float>(iHeight);
     }
@@ -335,6 +407,7 @@ namespace
         auto binder = ScanOne("2D binder", "49 8B F9 49 8B D8 E8 ? ? ? ? 48 8B 43 08 0F 57 F6 F3 0F 10 3D ? ? ? ?");
         auto draw = ScanOne("2D draw", "4C 8B 44 24 70 49 8B C6 4C 8B 74 24 48 41 B9 18 00 00 00 48 89 44 24 20 0F BA E7 17");
         auto layout = ScanOne("2D layout", "F3 0F 2C 05 ? ? ? ? 0F 5B E4 66 0F 6E D8 0F 5B DB");
+        auto mode = ScanOne("Screen mode", "8B D9 48 8D 0D ? ? ? ? E8 ? ? ? ? 8B 05 ? ? ? ? 3B C3 0F 84 ? ? ? ? 33 C9 89 1D ? ? ? ? 83 F8 FF 0F 44 C1");
         if (!win || !composite) {
             spdlog::error("Disabled: a required pattern is missing");
             return;
@@ -342,6 +415,11 @@ namespace
         pWinWidth = Rip<float*>(win + 8, 4, 8);
         pWinHeight = Rip<float*>(win + 24, 4, 8);
 
+        if (Forced() && mode) {
+            pScreenMode = Rip<int32_t*>(mode + 14, 2, 6);
+            if (Mid(mode + 14, ScreenMode)) spdlog::info("Screen mode: window");
+            BorderlessWindow();
+        }
         if (store && Mid(store, WindowSize)) spdlog::info("Window size: enabled");
         if (Mid(composite, Composite)) spdlog::info("Composite: fills the window");
         if (camera && Mid(camera + 11, Camera)) spdlog::info("Camera: enabled");
