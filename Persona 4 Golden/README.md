@@ -13,10 +13,10 @@ Launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`
 ## 3. Custom Aspect Ratio
 
 Edit `Width` and `Height` in `[Resolution]` in `P4G_ARFix.ini`. The default is
-1280x800 (16:10, Steam Deck). The game starts at this resolution, even if your
-monitor does not list it (use Screen Mode "Window" for sizes such as 32:9 on a
-16:9 monitor). `Width = 0` and `Height = 0` keep the resolution chosen in
-Config > Display.
+1280x800 (16:10, Steam Deck). The game starts at this resolution in a borderless
+window centred on the screen, even if your monitor does not list it (use your
+monitor's resolution for borderless fullscreen). `Width = 0` and `Height = 0`
+keep the resolution and Screen Mode chosen in Config > Display.
 
 The 3D scene fills the whole screen: taller screens (16:10, 4:3) show more above
 and below, wider ones (21:9, 32:9) show more to the sides. Menus, text boxes,
