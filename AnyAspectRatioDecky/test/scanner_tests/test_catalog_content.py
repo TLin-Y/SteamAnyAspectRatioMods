@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 43, 40, 1, 2, 67
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 44, 41, 1, 2, 68
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -255,8 +255,8 @@ README_MENTIONS = {
 STRETCHED = {
     "devil-may-cry-5", "dynasty-warriors-7-xtreme-legends-definitive-edition",
     "dynasty-warriors-8-xtreme-legends-complete-edition", "monster-hunter-rise", "rayman-legends", "resident-evil-2",
-    "resident-evil-3", "resident-evil-4", "resident-evil-7", "resident-evil-village", "samurai-warriors-spirit-of-sanada",
-    "warriors-orochi-3-ultimate", "warriors-orochi-4-ultimate", "ultrawidefix-lrff13",
+    "resident-evil-3", "resident-evil-4", "resident-evil-7", "resident-evil-village", "resident-evil-requiem",
+    "samurai-warriors-spirit-of-sanada", "warriors-orochi-3-ultimate", "warriors-orochi-4-ultimate", "ultrawidefix-lrff13",
 }
 
 

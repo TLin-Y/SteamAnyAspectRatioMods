@@ -966,6 +966,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "resident-evil-requiem",
+      "name": "Resident Evil Requiem - Custom Aspect Ratio",
+      "steam_app_id": "3764200",
+      "install_dir": "RESIDENT EVIL requiem BIOHAZARD requiem",
+      "executable": "re9.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Resident Evil Requiem/Resident-Evil-Requiem-v1.0.0.zip",
+        "sha256": "e03b5ae3df2d1150e187b7f2fa7694e8fecc0a21a07f3644e120d069e9fbf0e8"
+      },
+      "files": ["dinput8.dll", "RE9_ARFix.asi", "RE9_ARFix.ini"],
+      "ini_file": "RE9_ARFix.ini",
+      "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
+      "display_tags": ["stretch"],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "tales-of-arise",
       "name": "Tales of Arise - Custom Aspect Ratio",
       "steam_app_id": "740130",
