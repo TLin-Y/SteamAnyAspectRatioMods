@@ -12,7 +12,7 @@ Content = bytes | dict[str, bytes] | Callable[[str], bytes]
 """What a download returns: the same bytes, bytes per repository path, or bytes per URL."""
 
 
-def _body(content: Content, url: str) -> bytes:
+def response_body(content: Content, url: str) -> bytes:
     match content:
         case bytes():
             return content
@@ -25,7 +25,7 @@ def _body(content: Content, url: str) -> bytes:
 @contextmanager
 def serving(content: Content) -> Generator[Mock, None, None]:
     """Downloads return content; yields the urlopen mock to inspect the requests."""
-    with patch("utils.network.urlopen", side_effect=lambda url, **_: io.BytesIO(_body(content, url))) as opener:
+    with patch("utils.network.urlopen", side_effect=lambda url, **_: io.BytesIO(response_body(content, url))) as opener:
         yield opener
 
 
