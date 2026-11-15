@@ -110,7 +110,7 @@ def open_archive(source: ModSource) -> Generator[Path, None, None]:
     packed = _pack_file(source.path)
     if packed is not None:
         if source.sha256:
-            if files.sha256(packed) == source.sha256:
+            if files.matches_sha256(packed, source.sha256):
                 yield packed
                 return
             if is_offline_mode():
@@ -141,13 +141,15 @@ def _open_downloaded_archive(source: ModSource) -> Generator[Path, None, None]:
     )
     cached_path = _cached_archive_path(archive_url, source.sha256)
     if cached_path is not None and cached_path.is_file() and (source.sha256 or is_offline_mode()):
-        if source.sha256 and files.sha256(cached_path) != source.sha256:
+        if source.sha256 and not files.matches_sha256(cached_path, source.sha256):
             cached_path.unlink(missing_ok=True)
         else:
             try:
                 yield cached_path
             except BaseException:
-                cached_path.unlink(missing_ok=True)
+                # The failure is the caller's unless the cached file is no longer a readable zip.
+                if not zips.is_zip(cached_path):
+                    cached_path.unlink(missing_ok=True)
                 raise
             return
 
@@ -160,7 +162,7 @@ def _open_downloaded_archive(source: ModSource) -> Generator[Path, None, None]:
     )
 
     try:
-        if source.sha256 and files.sha256(archive_path) != source.sha256:
+        if source.sha256 and not files.matches_sha256(archive_path, source.sha256):
             raise PluginError(
                 "The downloaded mod archive does not match the catalog checksum. "
                 "Update the catalog and try again."

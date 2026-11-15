@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -464,6 +465,33 @@ class LocalArchiveTests(unittest.TestCase):
             apply_mod_files(mod, str(self.game))
             self.assertEqual(b"new", (self.game / "mod.dll").read_bytes())
             self.assertEqual(2, opener.call_count)
+
+    def test_failed_apply_keeps_a_verified_cached_archive(self) -> None:
+        cache = self.root / "cache"
+        archive = self.root / "m.zip"
+        write_zip(archive, {"bin/mod.dll": b"new"})
+        content = archive.read_bytes()
+        mod = load_mod_catalog()[0].__class__(
+            mod_id="m", name="m", steam_app_id="1", install_dir="x", executable="x.exe",
+            source=ModSource(
+                "archive", "pkg/m.zip", "", (), "https://github.com/o/r", "main",
+                hashlib.sha256(content).hexdigest(),
+            ),
+            files=("bin/mod.dll",), ini_file=None, wine_dll_overrides=(),
+        )
+        set_archive_cache_dir(cache)
+        installed = self.game / "bin" / "mod.dll"
+        with patch("utils.network.urlopen", side_effect=lambda *a, **k: response(content)) as opener:
+            apply_mod_files(mod, str(self.game))
+            shutil.rmtree(installed.parent)
+            installed.parent.write_bytes(b"")  # staging beside the target fails while the archive is open
+            with self.assertRaises(OSError):
+                apply_mod_files(mod, str(self.game))
+            self.assertEqual(1, len(list(cache.glob("*.zip"))))
+            installed.parent.unlink()
+            apply_mod_files(mod, str(self.game))
+            self.assertEqual(1, opener.call_count)
+        self.assertEqual(b"new", installed.read_bytes())
 
 
 if __name__ == "__main__":

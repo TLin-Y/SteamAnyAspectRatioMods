@@ -124,6 +124,20 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+# Mod archives are checked on every use; a file unchanged since its last check is not hashed again.
+_known_hashes: dict[Path, tuple[tuple[int, int, int], str]] = {}
+
+
+def matches_sha256(path: Path, expected: str) -> bool:
+    status = path.stat()
+    signature = (status.st_ino, status.st_size, status.st_mtime_ns)
+    known = _known_hashes.get(path)
+    if known is None or known[0] != signature:
+        known = (signature, sha256(path))
+        _known_hashes[path] = known
+    return known[1] == expected
+
+
 def equal(first: Path, second: Path) -> bool:
     if first.stat().st_size != second.stat().st_size:
         return False
