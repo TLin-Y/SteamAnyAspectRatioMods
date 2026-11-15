@@ -232,6 +232,9 @@ INI_DEFAULTS = {
         "Window": {"Width": 1280, "Height": 800}, "Resolution": {"Enabled": True}, "FOV": {"Enabled": True},
     },
     "dynasty-warriors-7-xtreme-legends-definitive-edition": {"Resolution": {"Width": 1280, "Height": 800}},
+    "dynasty-warriors-origins": {
+        "Custom Resolution": {"Width": 1280, "Height": 800, "TargetWidth": 3840, "TargetHeight": 2160}, "FOV": {"FOVScale": 0},
+    },
     "dynasty-warriors-8-xtreme-legends-complete-edition": {
         "Resolution": {"Width": 1280, "Height": 800}, "Camera": {"FovMultiplier": 1.1},
     },

@@ -14,7 +14,19 @@ Edit `DWOriginsFix.ini`. `Width` and `Height` are the resolution to use; the def
 
 ![Ultrawide gameplay demonstration](demo2-ultrawide.jpg)
 
-## 3. Steam Deck launch option
+In the game's graphics options, select the top resolution entry (the replaced `3840x2160`). It now shows your custom resolution.
+
+## 3. Field of view
+
+`FOVScale` in the `[FOV]` section of `DWOriginsFix.ini`:
+
+- `0` (default): automatic. On screens narrower than 16:9 (16:10, 4:3), the field of view is widened so you see as much to the sides as at 16:9. 16:9 and wider screens are unchanged.
+- `0.5` to `2.0`: multiply the game's field of view by this value, for example `1.2` for 20% wider.
+- Any other value turns the FOV change off.
+
+Only the main 3D camera is changed; the HUD keeps its layout.
+
+## 4. Steam Deck launch option
 
 In the game's **Properties > General > Launch Options**, enter:
 
