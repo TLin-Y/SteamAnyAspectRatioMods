@@ -2,7 +2,7 @@
 
 ## New in 1.9.0
 
-- **New fixes:** Apollo Justice: Ace Attorney Trilogy, Daemon X Machina: Titanic Scion, Dead Cells, Devil May Cry 5, FINAL FANTASY RESONANCE, FINAL FANTASY X/X-2 HD Remaster, KINGDOM HEARTS -HD 1.5+2.5 ReMIX-, KINGDOM HEARTS III, Nioh: Complete Edition, PRAGMATA, Persona 4 Golden, Phoenix Wright: Ace Attorney Trilogy, RESONANCE OF FATE/END OF ETERNITY ENHANCED REMASTER, Yakuza 0 and Yakuza Kiwami (Legacy).
+- **New fixes:** Apollo Justice: Ace Attorney Trilogy, Daemon X Machina: Titanic Scion, Dead Cells, Devil May Cry 5, FINAL FANTASY RESONANCE, FINAL FANTASY X/X-2 HD Remaster, KINGDOM HEARTS -HD 1.5+2.5 ReMIX-, KINGDOM HEARTS III, Nioh: Complete Edition, PRAGMATA, Persona 4 Golden, Phoenix Wright: Ace Attorney Trilogy, Yakuza 0 and Yakuza Kiwami (Legacy).
 - **Updated:** the DragonTweak fixes for the Yakuza, Like a Dragon and Judgment games, AI: THE SOMNIUM FILES, DAVE THE DIVER, Final Fantasy XIII, Master Detective Archives: RAIN CODE Plus, Ninja Gaiden Sigma 2, Ori and the Blind Forest, Pentiment, Persona 5 Royal, SANABI, Trials of Mana and Ys VIII: Lacrimosa of DANA.
 - **Touch-friendly editing.** Settings values and INI lines now open in a dialog, so the on-screen keyboard no longer drops key presses, and the panel stays where you were after the dialog closes.
 - **Tidier Settings.** The mod source, local mod folder and Reset to defaults moved under **More settings**. **Update current** shows a short summary and only lists mods that need attention.
