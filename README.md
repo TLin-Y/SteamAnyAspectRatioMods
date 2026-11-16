@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 147 game mods](https://img.shields.io/badge/Game%20mods-147-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 148 game mods](https://img.shields.io/badge/Game%20mods-148-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -151,6 +151,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | OCTOPATH TRAVELER 0 | Lyall | [3014320](https://store.steampowered.com/app/3014320) | [v0.0.4](./external/Lyall/Octopath0Fix/Octopath0Fix_0.0.4.zip) | 2026-03-05 | [Octopath0Fix](https://codeberg.org/Lyall/Octopath0Fix) |
 | OCTOPATH TRAVELER II | Lyall | [1971650](https://store.steampowered.com/app/1971650) | [v0.9.0](./external/Lyall/Octopath2Fix/Octopath2Fix_0.9.0.zip) | 2025-06-08 | [Octopath2Fix](https://codeberg.org/Lyall/Octopath2Fix) |
 | ONE PIECE: PIRATE WARRIORS 4 | Lyall | [1089090](https://store.steampowered.com/app/1089090) | [v0.0.4](./external/Lyall/OPPW4Fix/OPPW4Fix_0.0.4.zip) | 2025-06-05 | [OPPW4Fix](https://codeberg.org/Lyall/OPPW4Fix) |
+| Onimusha: Way of the Sword | TLin-Y | [2638890](https://store.steampowered.com/app/2638890) | [v1.0.0](./Onimusha%20Way%20of%20the%20Sword/Onimusha-Way-of-the-Sword-v1.0.0.zip) | 2026-11-15 | [README](./Onimusha%20Way%20of%20the%20Sword/README.md) |
 | Ori and the Blind Forest: Definitive Edition | TLin-Y | [387290](https://store.steampowered.com/app/387290) | [V2 (v1.0.0)](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition) · [resolution pack](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/ForceWindowSize-v1.0.0.zip) | 2026-11-07 | [README](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/README.md) |
 | Ori and the Will of the Wisps | TLin-Y | [1057090](https://store.steampowered.com/app/1057090) | [v1.1.0](./Ori%20and%20the%20Will%20of%20the%20Wisps/Ori-and-the-Will-of-the-Wisps-v1.1.0.zip) | 2026-11-03 | [README](./Ori%20and%20the%20Will%20of%20the%20Wisps/README.md) |
 | Palworld | TLin-Y | [1623730](https://store.steampowered.com/app/1623730) | [v1.0.0](./Palworld/Palworld-v1.0.0.zip) | 2026-11-06 | [README](./Palworld/README.md) |

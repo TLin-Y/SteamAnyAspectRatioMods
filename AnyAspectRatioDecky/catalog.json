@@ -559,6 +559,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "onimusha-way-of-the-sword",
+      "name": "Onimusha: Way of the Sword - Custom Aspect Ratio",
+      "steam_app_id": "2638890",
+      "install_dir": "OnimushaWotS",
+      "executable": "OnimushaWotS.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Onimusha Way of the Sword/Onimusha-Way-of-the-Sword-v1.0.0.zip",
+        "sha256": "42248a62c2af4065b6b7cbc9dff7ecf5d90aafec4a2a5f08b24aad48e47d75fb"
+      },
+      "files": ["dinput8.dll", "OnimushaWotS_ARFix.asi", "OnimushaWotS_ARFix.ini"],
+      "ini_file": "OnimushaWotS_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "ori-and-the-blind-forest-definitive-edition",
       "name": "Ori and the Blind Forest: Definitive Edition - V2 Fix",
       "steam_app_id": "387290",
