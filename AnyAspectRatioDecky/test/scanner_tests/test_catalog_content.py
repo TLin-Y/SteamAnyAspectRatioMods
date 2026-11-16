@@ -23,16 +23,17 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 46, 43, 1, 2, 70
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 47, 44, 1, 2, 70
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
     "dark-souls-iii": {"README.txt"},
     "warriors-orochi-4-ultimate": {"README.txt"},
+    "brotato": {"LICENSE"},
     "final-fantasy-xiii": {"FF13Fix_Licences/FF13Fix_LICENSE.txt", "FF13Fix_Licences/MinHook_LICENSE.txt"},
     "warriors-orochi-3-ultimate": {"WO3U_ARFix.log", "mods/fix/log.txt"},  # runtime logs packaged by mistake
 }
-NO_LOADER_LICENSE = {"ai-the-somnium-files", "phoenix-wright-ace-attorney-trilogy"}
+NO_LOADER_LICENSE = {"ai-the-somnium-files", "brotato", "phoenix-wright-ace-attorney-trilogy"}
 NO_ZIP_README = {"final-fantasy-xiii"}  # its README ships in the separate release zip
 
 
@@ -152,6 +153,11 @@ PINNED = {
         "files": ("winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"), "ini_file": "Dave_ARFix.ini",
         "wine_dll_overrides": ("winmm=n,b",), "source.kind": "archive",
         "source.path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.1.0.zip",
+    },
+    "brotato": {
+        "steam_app_id": "1942280", "install_dir": "Brotato", "executable": "Brotato.exe",
+        "files": ("override.cfg", "AnyAspectRatio.gd"), "ini_file": None, "wine_dll_overrides": (),
+        "source.kind": "archive", "source.path": "Brotato/Brotato-v1.0.0.zip",
     },
     "pentiment": {
         "steam_app_id": "1205520", "install_dir": "Pentiment", "executable": "Pentiment.exe",
