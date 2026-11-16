@@ -58,6 +58,21 @@
       "wine_dll_overrides": ["winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"]
     },
     {
+      "id": "brotato",
+      "name": "Brotato - Any Aspect Ratio",
+      "steam_app_id": "1942280",
+      "install_dir": "Brotato",
+      "executable": "Brotato.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Brotato/Brotato-v1.0.0.zip",
+        "sha256": "ccb7da5143e43d3afcce042777e5eea188f0480660b8b50934df8c9fecdde702"
+      },
+      "files": ["override.cfg", "AnyAspectRatio.gd"],
+      "ini_file": null,
+      "wine_dll_overrides": []
+    },
+    {
       "id": "dragonsword-awakening",
       "name": "DragonSword: Awakening - Custom Aspect Ratio",
       "steam_app_id": "4570720",
