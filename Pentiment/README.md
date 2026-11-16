@@ -1,6 +1,6 @@
 # Pentiment-Any-Aspect-Ratio
 
-Aspect-ratio fix v0.1.0 for Pentiment
+Aspect-ratio fix v0.2.1 for Pentiment
 
 ## Demo
 
@@ -10,7 +10,7 @@ Aspect-ratio fix v0.1.0 for Pentiment
 
 ## Install
 
-1. Extract `Pentiment-v0.1.0.zip` into the game folder containing `Pentiment.exe`.
+1. Extract `Pentiment-v0.2.1.zip` into the game folder containing `Pentiment.exe`.
 2. On SteamOS / Proton, set the Steam launch option to:
    `WINEDLLOVERRIDES="winhttp=n,b" %command%`
 3. On Winlator, add the environment variable `WINEDLLOVERRIDES` with value `winhttp=n,b`.

@@ -122,15 +122,24 @@ namespace
         return matches;
     }
 
-    std::uint8_t* FindUnique(HMODULE module, const char* name, std::string_view pattern, std::ptrdiff_t offset)
+    struct PatternForm
     {
-        const auto matches = FindPattern(module, pattern);
+        std::string_view pattern;
+        std::ptrdiff_t offset;
+    };
+
+    std::uint8_t* FindUnique(HMODULE module, const char* name, std::initializer_list<PatternForm> forms)
+    {
+        std::vector<std::uint8_t*> matches;
+        for (const auto& form : forms)
+            for (auto* match : FindPattern(module, form.pattern))
+                matches.push_back(match + form.offset);
         if (matches.size() != 1)
         {
             SPDLOG_ERROR("{} pattern: expected 1 match, found {}.", name, matches.size());
             return nullptr;
         }
-        auto* address = matches.front() + offset;
+        auto* address = matches.front();
         SPDLOG_INFO("{} found at +{:X}.", name, address - reinterpret_cast<std::uint8_t*>(module));
         return address;
     }
@@ -367,7 +376,7 @@ namespace
             MessageBoxA(nullptr, error.what(), "Pentiment ARFix: Logging failed", MB_OK | MB_ICONERROR);
             return false;
         }
-        SPDLOG_INFO("Pentiment ARFix v0.1.0: experimental fix for 1.3.1842.");
+        SPDLOG_INFO("Pentiment ARFix v0.2.1.");
         if (!ReadConfig(directory))
             return false;
         SPDLOG_INFO("Enabled={}, resolution={}x{} (0/0 keeps game settings), Borderless={}.",
@@ -393,14 +402,15 @@ namespace
             safetyhook::MidHookFn callback;
             const char* name;
         };
-        auto* lens = FindUnique(assembly, "Lens",
-            "F3 0F 10 4B 04 45 33 C0 48 8B CF E8 ?? ?? ?? ?? F3 0F 10 0B 45 33 C0 48 8B CF E8 ?? ?? ?? ?? F3 0F 10 43 1C", 0);
+        auto* lens = FindUnique(assembly, "Lens", {
+            { "F3 0F 10 4B 04 45 33 C0 48 8B CF E8 ?? ?? ?? ?? F3 0F 10 0B 45 33 C0 48 8B CF E8 ?? ?? ?? ?? F3 0F 10 ?? 1C", 0 } });
         const std::array sites{
-            HookSite{ FindUnique(assembly, "Startup 16:9 clamp",
-                "F3 0F 10 15 ?? ?? ?? ?? 45 33 C9 F3 0F 10 0D ?? ?? ?? ?? 0F 28 C7 E8 ?? ?? ?? ?? 0F 28 7C 24 50 84 C0 0F 85", 27),
+            HookSite{ FindUnique(assembly, "Startup 16:9 clamp", {
+                { "F3 0F 10 15 ?? ?? ?? ?? 45 33 C9 F3 0F 10 0D ?? ?? ?? ?? 0F 28 C7 E8 ?? ?? ?? ?? 0F 28 7C 24 50 84 C0 0F 85", 27 } }),
                 KeepStartingResolution, "startup 16:9 clamp" },
-            HookSite{ FindUnique(assembly, "Resolution list filter",
-                "F3 0F 5E C1 45 33 C9 F3 0F 10 15 ?? ?? ?? ?? F3 0F 10 4C 24 3C E8 ?? ?? ?? ?? 84 C0 0F 84", 26),
+            HookSite{ FindUnique(assembly, "Resolution list filter", {
+                { "F3 0F 5E C1 45 33 C9 F3 0F 10 15 ?? ?? ?? ?? F3 0F 10 4C 24 3C E8 ?? ?? ?? ?? 84 C0 0F 84", 26 },
+                { "F3 0F 5E C1 45 33 C9 0F 28 D6 F3 0F 10 4C 24 3C E8 ?? ?? ?? ?? 84 C0 0F 84", 21 } }),
                 AllowResolution, "resolution list filter" },
             HookSite{ lens ? lens + 5 : nullptr,
                 [](SafetyHookContext& ctx) { AdjustLens(ctx, false); }, "orthographic lens" },
