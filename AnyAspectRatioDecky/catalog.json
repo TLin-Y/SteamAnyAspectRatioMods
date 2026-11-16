@@ -713,8 +713,8 @@
       "executable": "Pentiment.exe",
       "source": {
         "kind": "archive",
-        "path": "Pentiment/Pentiment-v0.2.0.zip",
-        "sha256": "7bf3cd75cde831eba2b05e7686117f8eb08e74b4f2973379e6f149a54f581624"
+        "path": "Pentiment/Pentiment-v0.2.1.zip",
+        "sha256": "2383ea4ada9ab2df49b235e19fc2c5d22574f37ab195c632b9ec9c003fb25bef"
       },
       "files": ["winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"],
       "ini_file": "Pentiment_ARFix.ini",

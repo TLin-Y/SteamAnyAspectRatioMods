@@ -156,7 +156,7 @@ PINNED = {
     "pentiment": {
         "steam_app_id": "1205520", "install_dir": "Pentiment", "executable": "Pentiment.exe",
         "files": ("winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"), "ini_file": "Pentiment_ARFix.ini",
-        "wine_dll_overrides": ("winhttp=n,b",), "source.kind": "archive", "source.path": "Pentiment/Pentiment-v0.2.0.zip",
+        "wine_dll_overrides": ("winhttp=n,b",), "source.kind": "archive", "source.path": "Pentiment/Pentiment-v0.2.1.zip",
         "ini_resolution": (IniResolutionPair("Resolution", "Width", "Height", "pixels"),),
     },
     "sanabi": {
