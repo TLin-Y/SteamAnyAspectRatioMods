@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 44, 41, 1, 2, 68
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 45, 42, 1, 2, 69
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -114,6 +114,14 @@ PINNED = {
         "ini_file": f"BloodstainedRotN/{WIN64}/BloodstainedARFix.ini",
         "wine_dll_overrides": ("winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"),
         "source.path": "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
+    },
+    "dragonsword-awakening": {
+        "steam_app_id": "4570720", "install_dir": "DragonSword  Awakening",
+        "executable": f"DS/{WIN64}/DSClient-Win64-Shipping.exe", "executable_alternatives": ("DSClient.exe",),
+        "source.destination": f"DS/{WIN64}",
+        "files": _in(f"DS/{WIN64}", "winmm.dll", "DSClient_ARFix.asi", "DSClient_ARFix.ini"),
+        "ini_file": f"DS/{WIN64}/DSClient_ARFix.ini", "wine_dll_overrides": ("winmm=n,b",),
+        "source.path": "DragonSword Awakening/DragonSword-Awakening-v1.0.0.zip",
     },
     "sonic-x-shadow-generations": {
         "steam_app_id": "2513280", "install_dir": "SONIC_X_SHADOW_GENERATIONS",
@@ -239,6 +247,7 @@ INI_DEFAULTS = {
         "Resolution": {"Width": 1280, "Height": 800}, "Camera": {"FovMultiplier": 1.1},
     },
     "bloodstained-ritual-of-the-night": {"Resolution": {"Width": 1280, "Height": 800}, "Camera": {"FOVPercent": 100}},
+    "dragonsword-awakening": {"Resolution": {"Width": 1280, "Height": 800}, "FOV": {"KeepHorizontalFOV": True}},
     "sonic-x-shadow-generations": {
         "Shadow": {"CameraCorrection": True, "RemoveLetterbox": True},
         "Generations": {"CameraCorrection": True, "RemoveLetterbox": True},

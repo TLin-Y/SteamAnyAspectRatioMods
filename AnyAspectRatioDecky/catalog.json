@@ -58,6 +58,24 @@
       "wine_dll_overrides": ["winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"]
     },
     {
+      "id": "dragonsword-awakening",
+      "name": "DragonSword: Awakening - Custom Aspect Ratio",
+      "steam_app_id": "4570720",
+      "install_dir": "DragonSword  Awakening",
+      "executable": "DS/Binaries/Win64/DSClient-Win64-Shipping.exe",
+      "executable_alternatives": ["DSClient.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "DragonSword Awakening/DragonSword-Awakening-v1.0.0.zip",
+        "sha256": "a42cf114116cf454bf5d4f1a12c52ed55f06c7aaf1293b5c15c63f60db699907",
+        "destination": "DS/Binaries/Win64"
+      },
+      "files": ["DS/Binaries/Win64/winmm.dll", "DS/Binaries/Win64/DSClient_ARFix.asi", "DS/Binaries/Win64/DSClient_ARFix.ini"],
+      "ini_file": "DS/Binaries/Win64/DSClient_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "sonic-x-shadow-generations",
       "name": "SONIC X SHADOW GENERATIONS - Custom Aspect Ratio",
       "steam_app_id": "2513280",
