@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 146 game mods](https://img.shields.io/badge/Game%20mods-146-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 147 game mods](https://img.shields.io/badge/Game%20mods-147-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -98,6 +98,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | DRAGON QUEST VII Reimagined | Lyall | [2499860](https://store.steampowered.com/app/2499860) | [v0.0.5](./external/Lyall/DQ7RFix/DQ7RFix_0.0.5.zip) | 2026-03-10 | [DQ7RFix](https://codeberg.org/Lyall/DQ7RFix) |
 | DRAGON QUEST XI S: Echoes of an Elusive Age - Definitive Edition | Lyall | [1295510](https://store.steampowered.com/app/1295510) | [v0.9.3](./external/Lyall/DQXISFix/DQXISFix_0.9.3.zip) | 2026-01-18 | [DQXISFix](https://codeberg.org/Lyall/DQXISFix) |
 | Dragon's Dogma: Dark Arisen | Lyall | [367500](https://store.steampowered.com/app/367500) | [v0.9.1](./external/Lyall/DDDAFix/DDDAFix_0.9.1.zip) | 2025-06-21 | [DDDAFix](https://codeberg.org/Lyall/DDDAFix) |
+| DragonSword: Awakening | TLin-Y | [4570720](https://store.steampowered.com/app/4570720) | [v1.0.0](./DragonSword%20Awakening/DragonSword-Awakening-v1.0.0.zip) | 2026-11-15 | [README](./DragonSword%20Awakening/README.md) |
 | Dynasty Warriors 3: Complete Edition Remastered | TLin-Y | [3841510](https://store.steampowered.com/app/3841510) | [v1.1.0](./Dynasty%20Warriors%203%20Remastered/DW3RE-v1.1.0.zip) | 2026-11-03 | [README](./Dynasty%20Warriors%203%20Remastered/README.md) |
 | DYNASTY WARRIORS 7: Xtreme Legends Definitive Edition | TLin-Y | [968790](https://store.steampowered.com/app/968790) | [v1.0.0](./DYNASTY%20WARRIORS%207%20Xtreme%20Legends%20Definitive%20Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.0.0.zip) | 2026-11-09 | [README](./DYNASTY%20WARRIORS%207%20Xtreme%20Legends%20Definitive%20Edition/README.md) |
 | DYNASTY WARRIORS 8: Xtreme Legends Complete Edition | TLin-Y | [278080](https://store.steampowered.com/app/278080) | [v1.0.0](./DYNASTY%20WARRIORS%208%20Xtreme%20Legends%20Complete%20Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.0.0.zip) | 2026-11-10 | [README](./DYNASTY%20WARRIORS%208%20Xtreme%20Legends%20Complete%20Edition/README.md) |
