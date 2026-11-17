@@ -26,6 +26,7 @@ namespace
     float fAlignX = 0.0f;
     float fAlignY = 0.0f;
     bool bAnchorHud = true;
+    int iTvFilter = 1;
 
     float* pWinWidth = nullptr;
     float* pWinHeight = nullptr;
@@ -38,7 +39,17 @@ namespace
     bool current2D = false;
     uint64_t frame = 0;
     uint64_t dateFrame = 0;
+    uint64_t whiteFrame = 0;
+    uint64_t movieFrame = 0;
+    uint64_t indexFrame = 0;
+    int drawIndex = 0;
+    int dateIndex = -100;
     uint64_t boxFrame = 0;
+    uint64_t boxTopFrame = 0;
+    float boxTop = 0.0f;
+    float boxTopNow = 0.0f;
+    uint64_t groupFrame = 0;
+    float groupTop = 0.0f;
 
     struct Portrait
     {
@@ -202,6 +213,7 @@ namespace
             inipp::get_value(ini.sections["Interface"], "VerticalAlign", alignY);
             inipp::get_value(ini.sections["Interface"], "HorizontalAlign", alignX);
             inipp::get_value(ini.sections["Interface"], "AnchorHUD", bAnchorHud);
+            inipp::get_value(ini.sections["Interface"], "TVFilter", iTvFilter);
         }
         fAlignY = Align(alignY, "top", "bottom");
         fAlignX = Align(alignX, "left", "right");
@@ -209,6 +221,7 @@ namespace
         else spdlog::info("Resolution: game setting");
         spdlog::info("Interface align: vertical {:.2f}, horizontal {:.2f}", fAlignY, fAlignX);
         spdlog::info("Anchor HUD: {}", bAnchorHud);
+        spdlog::info("TV filter: {}", iTvFilter ? "shown" : "hidden");
     }
 
     struct Mode
@@ -338,6 +351,10 @@ namespace
 
     void Composite(safetyhook::Context& c)
     {
+        if (movieFrame != 0 && frame - movieFrame <= 1) {
+            ++frame;
+            return;
+        }
         auto stack = reinterpret_cast<float*>(c.rsp);
         c.xmm1.f32[0] = 0.0f;
         c.xmm2.f32[0] = 0.0f;
@@ -403,16 +420,40 @@ namespace
     float HudAnchor(uint64_t count, uint32_t colour, float minX, float minY, float maxX, float maxY, float spanU, float spanV,
         float w, float h)
     {
-        if (count == 4 && Near(minX, 842.0f) && Near(minY, -2.0f) && Near(maxX, 1082.0f) && Near(maxY, 122.0f))
+        if (indexFrame != frame) {
+            indexFrame = frame;
+            drawIndex = 0;
+        }
+        int index = drawIndex++;
+        if (count == 4 && Near(minX, 842.0f) && Near(minY, -2.0f) && Near(maxX, 1082.0f) && Near(maxY, 122.0f)) {
             dateFrame = frame;
+            dateIndex = index;
+        }
         uint32_t rgb = colour & 0x00FFFFFF;
         if (count >= 32 && (rgb == 0x2DEAFF || rgb == 0x1084FF || rgb == 0x567F93)) {
+            if (boxTopFrame != frame) {
+                boxTopFrame = frame;
+                boxTopNow = minY;
+            } else {
+                boxTopNow = (std::min)(boxTopNow, minY);
+            }
+            boxTop = boxTopNow;
             boxFrame = frame;
             return 1.0f;
         }
-        if (Recent(dateFrame) && minX >= 690.0f && minY >= -5.0f && maxY <= 135.0f) return -1.0f;
+        if (Recent(dateFrame) && index >= dateIndex - 2 && index <= dateIndex + 16 && minX >= 690.0f && minY >= -5.0f &&
+            maxY <= 135.0f)
+            return -1.0f;
         if (Recent(boxFrame)) {
-            if (minY >= h * 0.42f && maxY <= h + 10.0f) return 1.0f;
+            if (rgb == 0x7FFFFF || rgb == 0x00A1F9 || rgb == 0x007CEC) return fAlignY;
+            if (count >= 32 && rgb == 0x11181B && minY < boxTop - 16.0f && minY >= h * 0.25f && maxY >= boxTop - 16.0f && maxY <= h + 10.0f) {
+                groupTop = minY;
+                groupFrame = frame;
+                return 1.0f;
+            }
+            float top = boxTop - 16.0f;
+            if (Recent(groupFrame)) top = (std::min)(top, groupTop - 2.0f);
+            if (minY >= top && maxY <= h + 10.0f) return 1.0f;
             bool portrait = count == 4 && maxY >= h - 2.0f && maxX - minX >= 256.0f && maxY - minY >= 256.0f &&
                 spanU >= 512.0f && spanV >= 512.0f;
             if (portrait) {
@@ -451,9 +492,24 @@ namespace
         bool beyond = minX < -1.0f || minY < -1.0f || maxX > w + 1.0f || maxY > h + 5.0f;
         bool covers = minX <= 1.0f && minY <= 1.0f && maxX >= w - 1.0f && maxY >= h - 1.0f;
         bool solid = minU == maxU && minV == maxV;
+        if (covers && count == 576 && *reinterpret_cast<const uint32_t*>(src + 8) == 0x00FFFFFF) {
+            if (!iTvFilter) {
+                for (uint64_t i = 0; i < count; ++i) {
+                    auto v = reinterpret_cast<float*>(src + i * stride);
+                    v[3] = 0.0f;
+                    v[4] = 0.0f;
+                }
+            }
+            return;
+        }
+        if (covers && solid && *reinterpret_cast<const uint32_t*>(src + 8) == 0xFFFFFFFF) whiteFrame = frame;
         if (covers && (beyond || solid)) return;
+        if (maxX - minX <= 16.0f && maxY - minY <= 16.0f && minX < 0.0f && minY < 0.0f) return;
         float spanU = maxU - minU, spanV = maxV - minV;
-        if (ScreenSampled(src, count, minX, maxX, spanU, covers)) return;
+        if (ScreenSampled(src, count, minX, maxX, spanU, covers)) {
+            if (covers && whiteFrame == frame) movieFrame = frame;
+            return;
+        }
         bool artwork = covers && std::isfinite(spanU) && std::isfinite(spanV) && spanU >= 64.0f && spanV >= 64.0f &&
             spanU <= 8192.0f && spanV <= 8192.0f;
         bool spanWidth = !artwork && minX <= 1.0f && maxX >= w - 1.0f;
