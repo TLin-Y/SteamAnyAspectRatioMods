@@ -901,8 +901,8 @@
       "executable": "P4G.exe",
       "source": {
         "kind": "archive",
-        "path": "Persona 4 Golden/Persona-4-Golden-v1.1.2.zip",
-        "sha256": "809b4412622e32672b71365d596fc943a8509e5fc647fb9ba0c5929f8e7aca60"
+        "path": "Persona 4 Golden/Persona-4-Golden-v1.3.0.zip",
+        "sha256": "4a96d1f980d0b2af18170b95e85aa92353d7281604d24cd067b5c2cb409005f7"
       },
       "files": ["dinput8.dll", "P4G_ARFix.asi", "P4G_ARFix.ini"],
       "ini_file": "P4G_ARFix.ini",

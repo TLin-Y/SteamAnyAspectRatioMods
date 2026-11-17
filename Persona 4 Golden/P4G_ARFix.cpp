@@ -13,7 +13,6 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace
@@ -24,6 +23,9 @@ namespace
 
     int iWidth = 0;
     int iHeight = 0;
+    float fAlignX = 0.0f;
+    float fAlignY = 0.0f;
+    bool bAnchorHud = true;
 
     float* pWinWidth = nullptr;
     float* pWinHeight = nullptr;
@@ -34,7 +36,26 @@ namespace
     HWND gameWindow = nullptr;
 
     bool current2D = false;
-    std::unordered_map<uintptr_t, uint64_t> adjusted;
+    uint64_t frame = 0;
+    uint64_t dateFrame = 0;
+    uint64_t boxFrame = 0;
+
+    struct Portrait
+    {
+        uint64_t frame;
+        float minX, minY, maxX, maxY;
+    };
+
+    Portrait portraits[8] = {};
+    size_t nextPortrait = 0;
+
+    struct Adjusted
+    {
+        uintptr_t key;
+        uint64_t hash;
+    };
+
+    Adjusted adjusted[4096] = {};
     std::vector<SafetyHookMid> hooks;
     SafetyHookInline createWindowHook;
     SafetyHookInline setStyleHook;
@@ -153,18 +174,41 @@ namespace
         } catch (...) {}
     }
 
+    float Align(const std::string& text, const char* low, const char* high)
+    {
+        std::string s;
+        for (char ch : text) {
+            if (ch != ' ' && ch != '\t' && ch != '"') s += static_cast<char>(tolower(static_cast<unsigned char>(ch)));
+        }
+        if (s.empty() || s == "center" || s == "centre" || s == "default") return 0.0f;
+        if (s == low) return -1.0f;
+        if (s == high) return 1.0f;
+        char* end = nullptr;
+        float v = strtof(s.c_str(), &end);
+        if (end == s.c_str() || !std::isfinite(v)) return 0.0f;
+        return (std::clamp)(v, -1.0f, 1.0f);
+    }
+
     void Configuration()
     {
         inipp::Ini<char> ini;
         std::ifstream file(fixPath / "P4G_ARFix.ini");
+        std::string alignX, alignY;
         if (file) {
             ini.parse(file);
             ini.strip_trailing_comments();
             inipp::get_value(ini.sections["Resolution"], "Width", iWidth);
             inipp::get_value(ini.sections["Resolution"], "Height", iHeight);
+            inipp::get_value(ini.sections["Interface"], "VerticalAlign", alignY);
+            inipp::get_value(ini.sections["Interface"], "HorizontalAlign", alignX);
+            inipp::get_value(ini.sections["Interface"], "AnchorHUD", bAnchorHud);
         }
+        fAlignY = Align(alignY, "top", "bottom");
+        fAlignX = Align(alignX, "left", "right");
         if (iWidth > 0 && iHeight > 0) spdlog::info("Resolution: {}x{}", iWidth, iHeight);
         else spdlog::info("Resolution: game setting");
+        spdlog::info("Interface align: vertical {:.2f}, horizontal {:.2f}", fAlignY, fAlignX);
+        spdlog::info("Anchor HUD: {}", bAnchorHud);
     }
 
     struct Mode
@@ -299,6 +343,7 @@ namespace
         c.xmm2.f32[0] = 0.0f;
         c.xmm3.f32[0] = stack[0x30 / 4];
         stack[0x28 / 4] = stack[0x38 / 4];
+        ++frame;
     }
 
     void Camera(safetyhook::Context& c)
@@ -318,11 +363,19 @@ namespace
     uint64_t Hash(const uint8_t* data, size_t size)
     {
         uint64_t h = 1469598103934665603ull;
-        for (size_t i = 0; i < size; ++i) {
-            h ^= data[i];
+        auto words = reinterpret_cast<const uint64_t*>(data);
+        for (size_t i = 0; i < size / 8; ++i) {
+            h ^= words[i];
             h *= 1099511628211ull;
+            h ^= h >> 29;
         }
         return h;
+    }
+
+    Adjusted& Slot(uintptr_t key)
+    {
+        uint64_t x = key * 0x9E3779B97F4A7C15ull;
+        return adjusted[(x >> 52) & (std::size(adjusted) - 1)];
     }
 
     bool ScreenSampled(const uint8_t* src, uint64_t count, float minX, float maxX, float spanU, bool covers)
@@ -337,15 +390,47 @@ namespace
         return true;
     }
 
-    void Draw(safetyhook::Context& c)
+    bool Recent(uint64_t seen)
     {
-        if (!current2D) return;
-        float f = Factor();
-        if (std::fabs(f - 1.0f) < 0.001f) return;
-        uint64_t count = c.r14;
-        auto src = *reinterpret_cast<const uint8_t**>(c.rsp + 0x70);
+        return seen != 0 && frame - seen <= 1;
+    }
+
+    bool Near(float a, float b)
+    {
+        return std::fabs(a - b) <= 2.0f;
+    }
+
+    float HudAnchor(uint64_t count, uint32_t colour, float minX, float minY, float maxX, float maxY, float spanU, float spanV,
+        float w, float h)
+    {
+        if (count == 4 && Near(minX, 842.0f) && Near(minY, -2.0f) && Near(maxX, 1082.0f) && Near(maxY, 122.0f))
+            dateFrame = frame;
+        uint32_t rgb = colour & 0x00FFFFFF;
+        if (count >= 32 && (rgb == 0x2DEAFF || rgb == 0x1084FF || rgb == 0x567F93)) {
+            boxFrame = frame;
+            return 1.0f;
+        }
+        if (Recent(dateFrame) && minX >= 690.0f && minY >= -5.0f && maxY <= 135.0f) return -1.0f;
+        if (Recent(boxFrame)) {
+            if (minY >= h * 0.42f && maxY <= h + 10.0f) return 1.0f;
+            bool portrait = count == 4 && maxY >= h - 2.0f && maxX - minX >= 256.0f && maxY - minY >= 256.0f &&
+                spanU >= 512.0f && spanV >= 512.0f;
+            if (portrait) {
+                portraits[nextPortrait++ % std::size(portraits)] = { frame, minX, minY, maxX, maxY };
+                return 1.0f;
+            }
+            for (const auto& p : portraits) {
+                if (Recent(p.frame) && minX >= p.minX - 1.0f && maxX <= p.maxX + 1.0f && minY >= p.minY - 1.0f &&
+                    maxY <= p.maxY + 1.0f)
+                    return 1.0f;
+            }
+        }
+        return fAlignY;
+    }
+
+    void Remap(uint8_t* src, uint64_t count, float f)
+    {
         constexpr size_t stride = 0x18;
-        if (!src || count == 0 || count > 65536 || IsBadReadPtr(src, count * stride)) return;
 
         float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
         float minU = 1e9f, minV = 1e9f, maxU = -1e9f, maxV = -1e9f;
@@ -375,23 +460,40 @@ namespace
         bool spanHeight = !artwork && minY <= 1.0f && maxY >= h - 1.0f;
 
         auto key = reinterpret_cast<uintptr_t>(src) ^ (static_cast<uintptr_t>(count) << 1);
-        auto found = adjusted.find(key);
-        if (found != adjusted.end() && found->second == Hash(src, count * stride)) return;
-        auto dst = const_cast<uint8_t*>(src);
-        if (IsBadWritePtr(dst, count * stride)) return;
-        float cx = w * 0.5f, cy = h * 0.5f;
+        auto& slot = Slot(key);
+        if (slot.key == key && slot.hash == Hash(src, count * stride)) return;
+        auto dst = src;
+        float cx = w * 0.5f + fAlignX * (w - w * f) * 0.5f;
+        float ay = fAlignY;
+        if (bAnchorHud && f > 1.0f) {
+            ay = HudAnchor(count, *reinterpret_cast<const uint32_t*>(src + 8), minX, minY, maxX, maxY, spanU, spanV, w, h);
+        }
+        float cy = h * 0.5f + ay * (h - h / f) * 0.5f;
         for (uint64_t i = 0; i < count; ++i) {
             auto v = reinterpret_cast<float*>(dst + i * stride);
             if (f > 1.0f) {
                 if (spanWidth && (v[4] <= 0.5f || v[4] >= h - 0.5f)) continue;
-                v[4] = cy + (v[4] - cy) / f;
+                v[4] = cy + (v[4] - h * 0.5f) / f;
             } else {
                 if (spanHeight && (v[3] <= 0.5f || v[3] >= w - 0.5f)) continue;
-                v[3] = cx + (v[3] - cx) * f;
+                v[3] = cx + (v[3] - w * 0.5f) * f;
             }
         }
-        if (adjusted.size() > 8192) adjusted.clear();
-        adjusted[key] = Hash(dst, count * stride);
+        slot = { key, Hash(dst, count * stride) };
+    }
+
+    void Draw(safetyhook::Context& c)
+    {
+        if (!current2D) return;
+        float f = Factor();
+        if (std::fabs(f - 1.0f) < 0.001f) return;
+        uint64_t count = c.r14;
+        auto src = *reinterpret_cast<uint8_t**>(c.rsp + 0x70);
+        if (!src || count == 0 || count > 65536) return;
+        __try {
+            Remap(src, count, f);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+        }
     }
 
     void Install()

@@ -20,8 +20,14 @@ keep the resolution and Screen Mode chosen in Config > Display.
 
 The 3D scene fills the whole screen: taller screens (16:10, 4:3) show more above
 and below, wider ones (21:9, 32:9) show more to the sides. Menus, text boxes,
-portraits and the HUD keep their original 16:9 shape in the centre of the
-screen, so nothing is stretched. Screen tints and fades cover the whole screen.
+portraits and the HUD keep their original 16:9 shape, so nothing is stretched.
+Set `VerticalAlign` in `[Interface]` to `Top`, `Center` (default) or `Bottom` to
+move them. Screen tints and fades cover the whole screen.
+
+On taller screens the dialogue box, character portraits and the date/weather
+indicator are moved to the screen edges (dialogue to the bottom, date to the top
+right). Set `AnchorHUD = false` in `[Interface]` to keep them with the rest of
+the interface.
 
 The game saves the resolution it last ran at in its own settings. After
 removing the mod, pick your resolution again in Config > Display.
