@@ -36,6 +36,7 @@ namespace
     int eventBars = 0;
     float fFov = 1.0f;
     float fTextScale = 1.0f;
+    bool hideArrow = true;
 
     std::vector<SafetyHookMid> hooks;
     SafetyHookInline createVertexShader;
@@ -810,6 +811,7 @@ namespace
             inipp::get_value(ini.sections["Interface"], "EventBars", eventBars);
             inipp::get_value(ini.sections["Camera"], "FOV", fFov);
             inipp::get_value(ini.sections["Interface"], "TextScale", fTextScale);
+            inipp::get_value(ini.sections["Interface"], "HideNextArrow", hideArrow);
         }
         for (auto& ch : align) ch = static_cast<char>(tolower(static_cast<unsigned char>(ch)));
         if (align == "top") {
@@ -829,6 +831,7 @@ namespace
         if (!(fTextScale >= 0.5f && fTextScale <= 2.0f)) fTextScale = 1.0f;
         spdlog::info("HUD align: {}", align);
         spdlog::info("Text scale: {:.2f}", fTextScale);
+        spdlog::info("Dialogue next arrow: {}", hideArrow ? "hidden" : "shown");
         spdlog::info("Event bars: {}", eventBars ? "shown" : "hidden");
         spdlog::info("FOV: {:.2f}", fFov);
         if (iWidth <= 0 || iHeight <= 0) {
@@ -909,6 +912,8 @@ namespace
         void** table = nullptr;
         void* vsSetShader = nullptr;
         void* drawIndexed = nullptr;
+        void* map = nullptr;
+        void* setVertexBuffers = nullptr;
     };
     ContextTable contextTables[16];
     volatile LONG contextTableCount = 0;
@@ -918,7 +923,15 @@ namespace
     {
         ID3D11DeviceContext* context;
         ID3D11VertexShader* shader;
+        ID3D11Buffer* vb;
+        UINT stride, vbOffset;
     };
+    struct MappedBuffer
+    {
+        ID3D11Resource* resource;
+        void* data;
+    };
+    MappedBuffer mappedBuffers[64] = {};
     ContextShader contextShaders[64];
     volatile LONG contextShaderCount = 0;
     ID3D11VertexShader* colourShaders[4] = {};
@@ -927,6 +940,8 @@ namespace
 
     using VSSetShaderFn = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11VertexShader*, ID3D11ClassInstance* const*, UINT);
     using DrawIndexedFn = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, INT);
+    using MapFn = HRESULT(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
+    using SetVertexBuffersFn = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, ID3D11Buffer* const*, const UINT*, const UINT*);
     using CreateDeferredFn = HRESULT(STDMETHODCALLTYPE*)(ID3D11Device*, UINT, ID3D11DeviceContext**);
     CreateDeferredFn originalCreateDeferred = nullptr;
 
@@ -946,6 +961,7 @@ namespace
         LONG i = InterlockedIncrement(&contextShaderCount) - 1;
         if (i >= 64) return nullptr;
         contextShaders[i].shader = nullptr;
+        contextShaders[i].vb = nullptr;
         contextShaders[i].context = c;
         return &contextShaders[i];
     }
@@ -956,21 +972,88 @@ namespace
         reinterpret_cast<VSSetShaderFn>(TableOf(c)->vsSetShader)(c, s, ci, n);
     }
 
+    HRESULT STDMETHODCALLTYPE MapHook(ID3D11DeviceContext* c, ID3D11Resource* r, UINT sub, D3D11_MAP type, UINT flags, D3D11_MAPPED_SUBRESOURCE* m)
+    {
+        HRESULT hr = reinterpret_cast<MapFn>(TableOf(c)->map)(c, r, sub, type, flags, m);
+        if (SUCCEEDED(hr) && m && (type == D3D11_MAP_WRITE_DISCARD || type == D3D11_MAP_WRITE_NO_OVERWRITE)) {
+            auto& e = mappedBuffers[(reinterpret_cast<uintptr_t>(r) >> 4) & 63];
+            e.resource = r;
+            e.data = m->pData;
+        }
+        return hr;
+    }
+
+    void STDMETHODCALLTYPE SetVertexBuffersHook(ID3D11DeviceContext* c, UINT first, UINT n, ID3D11Buffer* const* vbs, const UINT* strides, const UINT* offsets)
+    {
+        if (first == 0 && n > 0 && vbs && strides && offsets)
+            if (auto slot = ShaderSlot(c)) {
+                slot->vb = vbs[0];
+                slot->stride = strides[0];
+                slot->vbOffset = offsets[0];
+            }
+        reinterpret_cast<SetVertexBuffersFn>(TableOf(c)->setVertexBuffers)(c, first, n, vbs, strides, offsets);
+    }
+
+    const uint8_t* MappedData(ID3D11Resource* r)
+    {
+        const auto& e = mappedBuffers[(reinterpret_cast<uintptr_t>(r) >> 4) & 63];
+        return e.resource == r ? static_cast<const uint8_t*>(e.data) : nullptr;
+    }
+
+    bool IsColourShader(ID3D11VertexShader* s)
+    {
+        for (LONG i = 0; i < colourShaderCount; ++i)
+            if (colourShaders[i] == s) return true;
+        return false;
+    }
+
+    // Vertices 0..3 of a 12-vertex shape are its opaque corners (8 transparent edge vertices follow).
+    // The arrow is a near-triangle: two corners almost meet. Selection highlights are plain quads.
+    bool ArrowShape(const uint8_t* v)
+    {
+        __try {
+            if (*reinterpret_cast<const uint32_t*>(v + 12) != 0xFFFFFFFFu) return false;
+            float x[4], y[4];
+            for (int i = 0; i < 4; ++i) {
+                x[i] = reinterpret_cast<const float*>(v + i * 16)[0];
+                y[i] = reinterpret_cast<const float*>(v + i * 16)[1];
+            }
+            float lo = 1e30f, hi = 0.0f;
+            for (int i = 0; i < 4; ++i)
+                for (int j = i + 1; j < 4; ++j) {
+                    float d = (x[i] - x[j]) * (x[i] - x[j]) + (y[i] - y[j]) * (y[i] - y[j]);
+                    lo = (std::min)(lo, d);
+                    hi = (std::max)(hi, d);
+                }
+            return hi > 0.0f && lo < 0.04f * hi;
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return false;
+        }
+    }
+
+    // Next-line arrow of the dialogue box. Its dark outline is a separate mesh and stays.
+    // The game's 2D vertices stay readable in the persistently mapped buffer after Unmap.
+    bool ArrowMesh(ID3D11DeviceContext* c, UINT count, INT base)
+    {
+        if (!hideArrow || count != 42) return false;
+        auto slot = ShaderSlot(c);
+        if (!slot || slot->stride != 16 || !slot->vb || !IsColourShader(slot->shader)) return false;
+        auto vertices = MappedData(slot->vb);
+        return vertices && ArrowShape(vertices + slot->vbOffset + static_cast<size_t>(base) * 16);
+    }
+
     const UINT kBarMeshes[] = { 525, 651, 687, 705, 759, 876, 1245, 1398, 1452, 1533, 1812, 2190 };
 
     bool BarMesh(ID3D11DeviceContext* c, UINT count)
     {
-        if (std::find(std::begin(kBarMeshes), std::end(kBarMeshes), count) == std::end(kBarMeshes)) return false;
+        if (eventBars || std::find(std::begin(kBarMeshes), std::end(kBarMeshes), count) == std::end(kBarMeshes)) return false;
         auto slot = ShaderSlot(c);
-        if (!slot) return false;
-        for (LONG i = 0; i < colourShaderCount; ++i)
-            if (colourShaders[i] == slot->shader) return true;
-        return false;
+        return slot && IsColourShader(slot->shader);
     }
 
     void STDMETHODCALLTYPE DrawIndexedHook(ID3D11DeviceContext* c, UINT count, UINT start, INT base)
     {
-        if (BarMesh(c, count)) return;
+        if (BarMesh(c, count) || ArrowMesh(c, count, base)) return;
         reinterpret_cast<DrawIndexedFn>(TableOf(c)->drawIndexed)(c, count, start, base);
     }
 
@@ -993,9 +1076,15 @@ namespace
             entry.table = vt;
             entry.vsSetShader = vt[11];
             entry.drawIndexed = vt[12];
+            entry.map = vt[14];
+            entry.setVertexBuffers = vt[18];
             InterlockedIncrement(&contextTableCount);
             PatchSlot(vt, 11, reinterpret_cast<void*>(&VSSetShaderHook));
             PatchSlot(vt, 12, reinterpret_cast<void*>(&DrawIndexedHook));
+            if (hideArrow) {
+                PatchSlot(vt, 14, reinterpret_cast<void*>(&MapHook));
+                PatchSlot(vt, 18, reinterpret_cast<void*>(&SetVertexBuffersHook));
+            }
             spdlog::info("Event bars: context hooked");
         }
         ReleaseSRWLockExclusive(&tableLock);
@@ -1010,7 +1099,7 @@ namespace
 
     void HookGameContext(ID3D11Device* device)
     {
-        if (eventBars || gameContextHooked || !device) return;
+        if ((eventBars && !hideArrow) || gameContextHooked || !device) return;
         gameContextHooked = true;
         ID3D11DeviceContext* c = nullptr;
         device->GetImmediateContext(&c);
@@ -1063,7 +1152,7 @@ namespace
                 spdlog::error("UI: CreateVertexShader hook failed");
             }
         }
-        if (!eventBars) {
+        if (!eventBars || hideArrow) {
             originalCreateDeferred = reinterpret_cast<CreateDeferredFn>(vtable[27]);
             PatchSlot(vtable, 27, reinterpret_cast<void*>(&CreateDeferredHook));
         }

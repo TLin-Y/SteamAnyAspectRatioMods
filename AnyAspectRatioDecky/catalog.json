@@ -885,8 +885,8 @@
       "executable": "P5R.exe",
       "source": {
         "kind": "archive",
-        "path": "Persona 5 Royal/Persona-5-Royal-v2.3.0.zip",
-        "sha256": "f2fce0057d0fcd855d85ac69d511a5d27400e589c63c01a2fa35e406e9ac97b8"
+        "path": "Persona 5 Royal/Persona-5-Royal-v2.4.0.zip",
+        "sha256": "7336fb6719d2a6b552f18a2283e98ded3d9b3de0448839490cc4d21b36edd752"
       },
       "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
       "display_tags": ["set-window-mode"],
