@@ -903,7 +903,7 @@
       "source": {
         "kind": "archive",
         "path": "Persona 4 Golden/Persona-4-Golden-v1.3.1.zip",
-        "sha256": "4bedba9ff4f487c072e795b51dcaa0c827697f0c9db08384fbff3bdc04d74362"
+        "sha256": "9a83fde98ce5e3f582c9e9a45eb2c1319ad2fd77358c9a57903dc689ff6b13dc"
       },
       "files": ["dinput8.dll", "P4G_ARFix.asi", "P4G_ARFix.ini"],
       "ini_file": "P4G_ARFix.ini",
