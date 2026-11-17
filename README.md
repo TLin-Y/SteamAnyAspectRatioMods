@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 150 game mods](https://img.shields.io/badge/Game%20mods-150-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 151 game mods](https://img.shields.io/badge/Game%20mods-151-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -92,6 +92,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Deus Ex: Mankind Divided | Lyall | [337000](https://store.steampowered.com/app/337000) | [v0.0.4](./external/Lyall/DeusExMDFix/DeusExMDFix_0.0.4.zip) | 2025-06-02 | [DeusExMDFix](https://codeberg.org/Lyall/DeusExMDFix) |
 | Devil May Cry 4 Special Edition | TLin-Y | [329050](https://store.steampowered.com/app/329050) | [v1.0.0](./Devil%20May%20Cry%204%20Special%20Edition/Devil-May-Cry-4-Special-Edition-v1.0.0.zip) | 2026-11-17 | [README](./Devil%20May%20Cry%204%20Special%20Edition/README.md) |
 | Devil May Cry 5 | TLin-Y | [601150](https://store.steampowered.com/app/601150) | [v1.0.0](./Devil%20May%20Cry%205/Devil-May-Cry-5-v1.0.0.zip) | 2026-11-14 | [README](./Devil%20May%20Cry%205/README.md) |
+| DmC Devil May Cry | TLin-Y | [220440](https://store.steampowered.com/app/220440) | [v1.0.0](./DmC%20Devil%20May%20Cry/DmC-Devil-May-Cry-v1.0.0.zip) | 2026-11-17 | [README](./DmC%20Devil%20May%20Cry/README.md) |
 | Dragon Age II | Lyall | [1238040](https://store.steampowered.com/app/1238040) | [v0.0.3](./external/Lyall/DAFix/DAFix_0.0.3.zip) | 2025-06-04 | [DAFix](https://codeberg.org/Lyall/DAFix) |
 | Dragon Age: Origins | Lyall | [47810](https://store.steampowered.com/app/47810) | [v0.0.3](./external/Lyall/DAFix/DAFix_0.0.3.zip) | 2025-06-04 | [DAFix](https://codeberg.org/Lyall/DAFix) |
 | DRAGON BALL XENOVERSE 2 | Lyall | [454650](https://store.steampowered.com/app/454650) | [v0.0.2](./external/Lyall/DBXV2Fix/DBXV2Fix_0.0.2.zip) | 2026-01-23 | [DBXV2Fix](https://codeberg.org/Lyall/DBXV2Fix) (manual install) |
