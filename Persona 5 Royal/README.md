@@ -30,8 +30,12 @@ The black event bars are hidden; set `EventBars = 1` to keep them. `FOV` in
 
 ## 4. Text Size
 
-`TextScale` in `[Interface]` sets the game text size (default 1.25, range 0.5
-to 2.0; 1.0 is the original size). Message boxes grow with the text. Text drawn as
-images (button hints, menu titles) keeps its size.
+`TextScale` in `[Interface]` sets the game text size (default 1.3, range 0.5
+to 2.0; 1.0 is the original size). Text drawn as images (button hints, menu titles)
+keeps its size.
+
+`HideNextArrow = true` (default) hides the big white arrow at the right of the
+dialogue box, which covers the end of long lines of large text. Set it to `false`
+to keep the arrow.
 
 No SteamOS "Stretch" scaling is needed any more (it was required by v1.0.0).
