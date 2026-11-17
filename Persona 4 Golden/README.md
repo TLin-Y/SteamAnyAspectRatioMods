@@ -29,8 +29,9 @@ indicator are moved to the screen edges (dialogue to the bottom, date to the top
 right). Set `AnchorHUD = false` in `[Interface]` to keep them with the rest of
 the interface.
 
-The TV-world static and scanlines cover the whole screen; set `TVFilter = 0` in
-`[Interface]` to turn them off. Movies keep their 16:9 shape with black bars.
+The TV-world static and scanline effect is off by default; set `TVFilter = 1` in
+`[Interface]` to show it across the whole screen. Movies keep their 16:9 shape
+with black bars.
 
 The game saves the resolution it last ran at in its own settings. After
 removing the mod, pick your resolution again in Config > Display.
