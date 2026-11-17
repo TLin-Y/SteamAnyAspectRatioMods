@@ -885,10 +885,11 @@
       "executable": "P5R.exe",
       "source": {
         "kind": "archive",
-        "path": "Persona 5 Royal/Persona-5-Royal-v2.0.1.zip",
-        "sha256": "6dc7dc9b4d523e90e0ca2eea1053727f7ce76226814ebd9880648e8811c95be3"
+        "path": "Persona 5 Royal/Persona-5-Royal-v2.3.0.zip",
+        "sha256": "f2fce0057d0fcd855d85ac69d511a5d27400e589c63c01a2fa35e406e9ac97b8"
       },
       "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
+      "display_tags": ["set-window-mode"],
       "ini_file": "P5R_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
