@@ -27,6 +27,7 @@ namespace
     float fAlignY = 0.0f;
     bool bAnchorHud = true;
     int iTvFilter = 1;
+    float fFov = 1.0f;
 
     float* pWinWidth = nullptr;
     float* pWinHeight = nullptr;
@@ -214,6 +215,7 @@ namespace
             inipp::get_value(ini.sections["Interface"], "HorizontalAlign", alignX);
             inipp::get_value(ini.sections["Interface"], "AnchorHUD", bAnchorHud);
             inipp::get_value(ini.sections["Interface"], "TVFilter", iTvFilter);
+            inipp::get_value(ini.sections["Camera"], "FOV", fFov);
         }
         fAlignY = Align(alignY, "top", "bottom");
         fAlignX = Align(alignX, "left", "right");
@@ -222,6 +224,8 @@ namespace
         spdlog::info("Interface align: vertical {:.2f}, horizontal {:.2f}", fAlignY, fAlignX);
         spdlog::info("Anchor HUD: {}", bAnchorHud);
         spdlog::info("TV filter: {}", iTvFilter ? "shown" : "hidden");
+        if (!(fFov >= 0.5f && fFov <= 2.0f)) fFov = 1.0f;
+        spdlog::info("FOV: {:.2f}", fFov);
     }
 
     struct Mode
@@ -368,6 +372,8 @@ namespace
         float f = Factor();
         if (f > 1.0f) c.xmm0.f32[0] *= f;
         else if (f < 1.0f) c.xmm2.f32[0] /= f;
+        c.xmm0.f32[0] *= fFov;
+        c.xmm2.f32[0] *= fFov;
     }
 
     void Binder(safetyhook::Context& c)
