@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 47, 44, 1, 2, 70
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 48, 45, 1, 2, 71
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -241,6 +241,10 @@ INI_DEFAULTS = {
     "ai-the-somnium-files": {"Resolution": {"Width": 1280, "Height": 800, "PreserveHUDAspect": True}},
     "apollo-justice-ace-attorney-trilogy": {"Window": {"Width": 1280, "Height": 800}, "Scene": {"BackgroundHeight": 1280}},
     "dead-cells": {"Window": {"Width": 1280, "Height": 800}, "AspectRatio": {"Enabled": True}},
+    "devil-may-cry-4-special-edition": {
+        "Resolution": {"Width": 1280, "Height": 800, "Borderless": True},
+        "AspectRatio": {"Enabled": True, "EventBars": False}, "Camera": {"FOV": 1.0},
+    },
     "devil-may-cry-5": {"AspectRatio": {"EnableARFix": True, "AspectWidth": 16, "AspectHeight": 10}},
     "phoenix-wright-ace-attorney-trilogy": {"Resolution": {"Width": 1280, "Height": 800}},
     "final-fantasy-xii-the-zodiac-age": {

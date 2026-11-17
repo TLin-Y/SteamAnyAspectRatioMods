@@ -830,6 +830,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "devil-may-cry-4-special-edition",
+      "name": "Devil May Cry 4 Special Edition - Custom Aspect Ratio",
+      "steam_app_id": "329050",
+      "install_dir": "Special Edition",
+      "executable": "DevilMayCry4SpecialEdition.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Devil May Cry 4 Special Edition/Devil-May-Cry-4-Special-Edition-v1.0.0.zip",
+        "sha256": "401a5ae685ee9a0ca42e900b84f93bc9fcf3a51f9692155b677524c8b0b97a0e"
+      },
+      "files": ["dinput8.dll", "DevilMayCry4SpecialEdition_ARFix.asi", "DevilMayCry4SpecialEdition_ARFix.ini"],
+      "ini_file": "DevilMayCry4SpecialEdition_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "devil-may-cry-5",
       "name": "Devil May Cry 5 - Custom Aspect Ratio",
       "steam_app_id": "601150",
