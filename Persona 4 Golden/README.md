@@ -24,9 +24,9 @@ portraits and the HUD keep their original 16:9 shape, so nothing is stretched.
 Set `VerticalAlign` in `[Interface]` to `Top`, `Center` (default) or `Bottom` to
 move them. Screen tints and fades cover the whole screen.
 
-On taller screens the dialogue box, character portraits and the date/weather
-indicator are moved to the screen edges (dialogue to the bottom, date to the top
-right). Set `AnchorHUD = false` in `[Interface]` to keep them with the rest of
+On taller screens the dialogue box, character portraits, the date/weather
+indicator and the party icons are moved to the screen edges (dialogue to the
+bottom, date and party icons up). Set `AnchorHUD = false` in `[Interface]` to keep them with the rest of
 the interface.
 
 The TV-world static and scanline effect is off by default; set `TVFilter = 1` in

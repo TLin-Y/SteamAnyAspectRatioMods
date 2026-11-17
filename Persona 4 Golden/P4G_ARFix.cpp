@@ -441,6 +441,10 @@ namespace
             boxFrame = frame;
             return 1.0f;
         }
+        bool partyIcon = count == 4 && minX >= 868.0f && maxX <= 962.0f && maxX - minX >= 80.0f && maxX - minX <= 90.0f &&
+            minY >= 220.0f && maxY <= 582.0f && (rgb == 0xFFFFFF || rgb == 0x13A9FF || rgb == 0x1FFFF9);
+        bool partyBars = count >= 26 && rgb == 0x2D2D2D && minX >= 880.0f && maxX <= 950.0f && minY >= 260.0f && maxY <= 582.0f;
+        if (partyIcon || partyBars) return -1.0f;
         if (Recent(dateFrame) && index >= dateIndex - 2 && index <= dateIndex + 16 && minX >= 690.0f && minY >= -5.0f &&
             maxY <= 135.0f)
             return -1.0f;
