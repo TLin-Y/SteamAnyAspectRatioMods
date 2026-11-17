@@ -33,6 +33,9 @@ The TV-world static and scanline effect is off by default; set `TVFilter = 1` in
 `[Interface]` to show it across the whole screen. Movies keep their 16:9 shape
 with black bars.
 
+`FOV` in `[Camera]` scales the field of view (default 1.0, lower zooms in, higher
+zooms out, 0.5 to 2.0).
+
 The game saves the resolution it last ran at in its own settings. After
 removing the mod, pick your resolution again in Config > Display.
 
