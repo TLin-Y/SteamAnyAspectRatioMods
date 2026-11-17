@@ -16,10 +16,11 @@ Aspect-ratio fix v1.0.0 for Brotato (game version 1.2.0.3). Runs fill any screen
 
 1. Extract `Brotato-v1.0.0.zip` into the game folder containing `Brotato.exe`.
 2. No launch option is needed on SteamOS / Proton or Winlator: the game loads the fix itself through `override.cfg` (no DLL override).
+3. In the game, turn on **Options > Video > Fullscreen**. In windowed mode the game keeps a 16:9 window, so the screen still shows bars.
 
 ## Custom Aspect Ratio
 
-There is no INI. The fix follows the game window: in fullscreen it matches your display, in windowed mode any window size works.
+There is no INI. The fix follows the game window: in fullscreen it matches your display; on a desktop, a resized window works too.
 
 ## Uninstall
 
