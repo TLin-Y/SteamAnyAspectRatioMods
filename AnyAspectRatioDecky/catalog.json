@@ -863,6 +863,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "dmc-devil-may-cry",
+      "name": "DmC Devil May Cry - Custom Aspect Ratio",
+      "steam_app_id": "220440",
+      "install_dir": "DmC Devil May Cry",
+      "executable": "Binaries/Win32/DMC-DevilMayCry.exe",
+      "source": {
+        "kind": "archive",
+        "path": "DmC Devil May Cry/DmC-Devil-May-Cry-v1.0.0.zip",
+        "sha256": "990c276326490e39fed2d862056db56156f284187adc22ec146eea5af561b4f5",
+        "destination": "Binaries/Win32"
+      },
+      "files": ["Binaries/Win32/dinput8.dll", "Binaries/Win32/DMC-DevilMayCry_ARFix.asi", "Binaries/Win32/DMC-DevilMayCry_ARFix.ini"],
+      "ini_file": "Binaries/Win32/DMC-DevilMayCry_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "sanabi",
       "name": "SANABI - Custom Aspect Ratio",
       "steam_app_id": "1562700",
