@@ -157,6 +157,7 @@ PINNED = {
     "brotato": {
         "steam_app_id": "1942280", "install_dir": "Brotato", "executable": "Brotato.exe",
         "files": ("override.cfg", "AnyAspectRatio.gd"), "ini_file": None, "wine_dll_overrides": (),
+        "display_tags": ("fullscreen",),
         "source.kind": "archive", "source.path": "Brotato/Brotato-v1.0.0.zip",
     },
     "pentiment": {

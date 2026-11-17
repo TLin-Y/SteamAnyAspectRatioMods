@@ -66,10 +66,11 @@
       "source": {
         "kind": "archive",
         "path": "Brotato/Brotato-v1.0.0.zip",
-        "sha256": "ccb7da5143e43d3afcce042777e5eea188f0480660b8b50934df8c9fecdde702"
+        "sha256": "ba239f05764936e40d7719caf710e44298cea73909a9df7b9cb5024ad01ab151"
       },
       "files": ["override.cfg", "AnyAspectRatio.gd"],
       "ini_file": null,
+      "display_tags": ["fullscreen"],
       "wine_dll_overrides": []
     },
     {
