@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 151 game mods](https://img.shields.io/badge/Game%20mods-151-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 152 game mods](https://img.shields.io/badge/Game%20mods-152-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -89,6 +89,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | DEAD OR ALIVE 6 | Lyall | [838380](https://store.steampowered.com/app/838380) | [v0.0.1](./external/Lyall/DOA6Fix/DOA6Fix_0.0.1.zip) | 2025-12-08 | [DOA6Fix](https://codeberg.org/Lyall/DOA6Fix) |
 | DEATH STRANDING 2: ON THE BEACH | Lyall | [3280350](https://store.steampowered.com/app/3280350) | [v0.0.5](./external/Lyall/DeathStranding2Fix/DeathStranding2Fix_0.0.5.zip) | 2026-06-12 | [DeathStranding2Fix](https://codeberg.org/Lyall/DeathStranding2Fix) |
 | DEATH STRANDING DIRECTOR'S CUT | Lyall | [1850570](https://store.steampowered.com/app/1850570) | [v0.0.2](./external/Lyall/DeathStrandingDCFix/DeathStrandingDCFix_0.0.2.zip) | 2025-07-04 | [DeathStrandingDCFix](https://codeberg.org/Lyall/DeathStrandingDCFix) |
+| Detroit: Become Human | TLin-Y | [1222140](https://store.steampowered.com/app/1222140) | [v1.0.0](./Detroit%20Become%20Human/Detroit-Become-Human-v1.0.0.zip) | 2026-11-17 | [README](./Detroit%20Become%20Human/README.md) |
 | Deus Ex: Mankind Divided | Lyall | [337000](https://store.steampowered.com/app/337000) | [v0.0.4](./external/Lyall/DeusExMDFix/DeusExMDFix_0.0.4.zip) | 2025-06-02 | [DeusExMDFix](https://codeberg.org/Lyall/DeusExMDFix) |
 | Devil May Cry 4 Special Edition | TLin-Y | [329050](https://store.steampowered.com/app/329050) | [v1.0.0](./Devil%20May%20Cry%204%20Special%20Edition/Devil-May-Cry-4-Special-Edition-v1.0.0.zip) | 2026-11-17 | [README](./Devil%20May%20Cry%204%20Special%20Edition/README.md) |
 | Devil May Cry 5 | TLin-Y | [601150](https://store.steampowered.com/app/601150) | [v1.0.0](./Devil%20May%20Cry%205/Devil-May-Cry-5-v1.0.0.zip) | 2026-11-14 | [README](./Devil%20May%20Cry%205/README.md) |

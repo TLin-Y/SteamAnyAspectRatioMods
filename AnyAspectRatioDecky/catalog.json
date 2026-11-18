@@ -880,6 +880,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "detroit-become-human",
+      "name": "Detroit: Become Human - Custom Aspect Ratio",
+      "steam_app_id": "1222140",
+      "install_dir": "Detroit Become Human",
+      "executable": "DetroitBecomeHuman.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Detroit Become Human/Detroit-Become-Human-v1.0.0.zip",
+        "sha256": "3c5756bf61c63f7edf491c4d25bfb6c81f0976a8b4afd14aa1ee6d864c6c5f81"
+      },
+      "files": ["dinput8.dll", "DetroitBecomeHuman_ARFix.asi", "DetroitBecomeHuman_ARFix.ini"],
+      "ini_file": "DetroitBecomeHuman_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "sanabi",
       "name": "SANABI - Custom Aspect Ratio",
       "steam_app_id": "1562700",
