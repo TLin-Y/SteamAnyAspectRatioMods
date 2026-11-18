@@ -589,6 +589,7 @@
       ],
       "ini_file": "NinjaGaidenMCFix.ini",
       "ini_resolution": [{"section": "Custom Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["large-download-158mb"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
