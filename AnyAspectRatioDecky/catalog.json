@@ -935,8 +935,8 @@
       "executable": "Pal/Binaries/Win64/Palworld-Win64-Shipping.exe",
       "source": {
         "kind": "archive",
-        "path": "Palworld/Palworld-v1.0.0.zip",
-        "sha256": "b3fe133b223b7d2da2822bfafee745e20a95e4e387b3fef3f0c60450add49ff6",
+        "path": "Palworld/Palworld-v1.1.0.zip",
+        "sha256": "13f5423e55c7a2d7f459d63dbd2a43f74ac4cc883497668d2b6cee806b2d400e",
         "destination": "Pal/Binaries/Win64"
       },
       "files": ["Pal/Binaries/Win64/winmm.dll", "Pal/Binaries/Win64/Palworld_ARFix.asi", "Pal/Binaries/Win64/Palworld_ARFix.ini"],
