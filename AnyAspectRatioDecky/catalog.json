@@ -74,6 +74,23 @@
       "wine_dll_overrides": []
     },
     {
+      "id": "code-vein",
+      "name": "CODE VEIN - Custom Aspect Ratio",
+      "steam_app_id": "678960",
+      "install_dir": "CODE VEIN",
+      "executable": "CodeVein/Binaries/Win64/CodeVein-Win64-Shipping.exe",
+      "executable_alternatives": ["CodeVein.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "CODE VEIN/CODE-VEIN-v1.0.0.zip",
+        "sha256": "91d751ed9ea97caa5d322f0634041559d8835aac1667eb54a9f8c271ac5ae03a",
+        "destination": "CodeVein/Binaries/Win64"
+      },
+      "files": ["CodeVein/Binaries/Win64/winhttp.dll", "CodeVein/Binaries/Win64/CodeVein_ARFix.asi", "CodeVein/Binaries/Win64/CodeVein_ARFix.ini"],
+      "ini_file": "CodeVein/Binaries/Win64/CodeVein_ARFix.ini",
+      "wine_dll_overrides": ["winhttp=n,b"]
+    },
+    {
       "id": "dragonsword-awakening",
       "name": "DragonSword: Awakening - Custom Aspect Ratio",
       "steam_app_id": "4570720",
