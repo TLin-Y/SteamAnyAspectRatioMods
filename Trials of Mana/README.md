@@ -7,9 +7,7 @@ This mod started from the [Steam community ultrawide workaround](https://steamco
 ## Install
 
 Extract `TrialsOfMana_ARFix.asi`, `TrialsOfMana_ARFix.ini`, and `dxgi.dll` into `Trials of Mana\Trials of Mana\Binaries\Win64`
-(beside `Trials of Mana-Win64-Shipping.exe`). Pick your screen resolution in the game's Options.
-
-The game only lists resolutions with the same shape as your desktop (1280x800 on Steam Deck).
+(beside `Trials of Mana-Win64-Shipping.exe`).
 
 ## SteamOS / Winlator
 
@@ -24,6 +22,10 @@ WINEDLLOVERRIDES="dxgi=n,b" %command%
 Edit `TrialsOfMana_ARFix.ini` and restart the game:
 
 ```ini
+[Resolution]
+Width = 1280
+Height = 800
+
 [FOV]
 Multiplier = 1.0
 
@@ -31,8 +33,9 @@ Multiplier = 1.0
 Borderless = false
 ```
 
+`Width` and `Height` set the game window size and aspect ratio (default 1280x800, 16:10). Set both to `0` to use the in-game resolution instead.
 `Multiplier` scales the camera field of view (0.5 to 2.0), cutscenes included.
-`Borderless = true` removes the title bar in windowed mode and centres the window.
+`Borderless = true` removes the title bar when `Width` and `Height` are `0`; a custom size is always borderless.
 
 ## Known issues
 

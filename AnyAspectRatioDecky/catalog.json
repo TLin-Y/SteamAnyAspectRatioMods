@@ -1128,12 +1128,13 @@
       "executable": "Trials of Mana/Binaries/Win64/Trials of Mana-Win64-Shipping.exe",
       "source": {
         "kind": "archive",
-        "path": "Trials of Mana/Trials-of-Mana-v1.0.0.zip",
-        "sha256": "cb6ea7cbc77736dbdddcf331209317736e0ce3a91c6401e447a532a6fd067581",
+        "path": "Trials of Mana/Trials-of-Mana-v1.0.1.zip",
+        "sha256": "1dbd8343dbca320d87d72b02744a20906c849e0719f0334268ada3ba91d033cf",
         "destination": "Trials of Mana/Binaries/Win64"
       },
       "files": ["Trials of Mana/Binaries/Win64/dxgi.dll", "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.asi", "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.ini"],
       "ini_file": "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
