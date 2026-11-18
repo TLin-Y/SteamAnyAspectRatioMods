@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 51, 48, 1, 2, 73
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 51, 49, 1, 1, 72
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -137,6 +137,13 @@ PINNED = {
         "files": _in(f"VisionsofMana/{WIN64}", "dxgi.dll", "VoM_ARFix.asi", "VoM_ARFix.ini"),
         "ini_file": f"VisionsofMana/{WIN64}/VoM_ARFix.ini",
     },
+    "trials-of-mana": {
+        "install_dir": "Trials of Mana", "executable": f"Trials of Mana/{WIN64}/Trials of Mana-Win64-Shipping.exe",
+        "source.destination": f"Trials of Mana/{WIN64}",
+        "files": _in(f"Trials of Mana/{WIN64}", "dxgi.dll", "TrialsOfMana_ARFix.asi", "TrialsOfMana_ARFix.ini"),
+        "ini_file": f"Trials of Mana/{WIN64}/TrialsOfMana_ARFix.ini", "wine_dll_overrides": ("dxgi=n,b",),
+        "source.path": "Trials of Mana/Trials-of-Mana-v1.0.0.zip",
+    },
     "palworld": {
         "install_dir": "Palworld", "executable": f"Pal/{WIN64}/Palworld-Win64-Shipping.exe",
         "files": _in(f"Pal/{WIN64}", "winmm.dll", "Palworld_ARFix.asi", "Palworld_ARFix.ini"),
@@ -231,7 +238,6 @@ PINNED = {
     },
     "ninja-gaiden-sigma-2": {"source.kind": "directory"},
     "ori-and-the-blind-forest-definitive-edition": {"source.kind": "files", "source.files": 1, "ini_file": None},
-    "trials-of-mana": {"source.kind": "files", "source.files": 3},
     "wildheartsfix": {"manual": True, "executable": ""},
     "dbxv2fix": {"manual": True},
 }

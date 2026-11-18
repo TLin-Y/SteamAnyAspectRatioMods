@@ -1122,39 +1122,18 @@
     },
     {
       "id": "trials-of-mana",
-      "name": "Trials of Mana - WIP Aspect Ratio Fix",
+      "name": "Trials of Mana - Custom Aspect Ratio",
       "steam_app_id": "924980",
       "install_dir": "Trials of Mana",
       "executable": "Trials of Mana/Binaries/Win64/Trials of Mana-Win64-Shipping.exe",
       "source": {
-        "kind": "files",
-        "file_hashes": {
-          "Trials of Mana/Binaries/Win64/dxgi.dll": "fa266e3513d02c08a1b808f28c10538a489eaffaa4b0707f7cc1066e71b5afd7",
-          "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.asi": "02e4cb5dd71ab266300f8cf20aeed592a6d5b44163285096e2f175bf772c6f0e",
-          "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini": "90cc22eaea40d8a59c2157b3e55f6fad7b0494dddb5813fe2a170f490e7dd3b8"
-        },
-        "files": [
-          {
-            "path": "Trials of Mana (WIP)/dxgi.dll",
-            "destination": "Trials of Mana/Binaries/Win64/dxgi.dll"
-          },
-          {
-            "path": "Trials of Mana (WIP)/TrailsOfMana_ARFix.asi",
-            "destination": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.asi"
-          },
-          {
-            "path": "Trials of Mana (WIP)/TrailsOfMana_ARFix.ini",
-            "destination": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini"
-          }
-        ]
+        "kind": "archive",
+        "path": "Trials of Mana/Trials-of-Mana-v1.0.0.zip",
+        "sha256": "cb6ea7cbc77736dbdddcf331209317736e0ce3a91c6401e447a532a6fd067581",
+        "destination": "Trials of Mana/Binaries/Win64"
       },
-      "files": [
-        "Trials of Mana/Binaries/Win64/dxgi.dll",
-        "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.asi",
-        "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini"
-      ],
-      "ini_file": "Trials of Mana/Binaries/Win64/TrailsOfMana_ARFix.ini",
-      "ini_resolution": [{"section": "Resolution", "width": "TargetWidth", "height": "TargetHeight", "kind": "pixels"}],
+      "files": ["Trials of Mana/Binaries/Win64/dxgi.dll", "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.asi", "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.ini"],
+      "ini_file": "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.ini",
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
