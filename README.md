@@ -14,17 +14,22 @@ Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3
 
 ![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg?v=4556e8ed)
 
+To use other mods together with these fixes:
+
+- **Other ASI mods:** one ASI loader loads every `.asi` in the game folder. Keep a single loader DLL (for example `dinput8.dll`) and add the other mods' `.asi` and `.ini` files beside it.
+- **Other proxy DLLs** (ReShade `dxgi.dll`, a mod using `winmm.dll`, ...): list every proxy DLL in the launch option, e.g. `WINEDLLOVERRIDES="dinput8,winmm,dxgi=n,b" %command%`.
+
 ## Support
 
 If these fixes make your games better, you can [support the author on Ko-fi](https://ko-fi.com/lin66961).
-
-Fixes by [Lyall](https://codeberg.org/Lyall) are mirrored here unchanged for the Decky plugin; please support him too: [Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)
 
 ## About this collection
 
 This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
 
 Each fix is made and tested by hand for one specific game; none of them is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
+
+My mods are mostly made from my earlier separate repositories, Cheat Engine patches I made years ago, or new reverse engineering that took anywhere from a few hours to several weeks for that game.
 
 My goal is fully automated fixes: an ASI loader and an ASI mod that work as soon as you extract them, with no extra .exe tools or complex steps. Huge thanks to [Cheat Engine](https://github.com/cheat-engine/cheat-engine/): about 90% of the games here were investigated with it. LLMs are a useful tool for tracking down values in memory dumps and analysing logs, but the main work of finding, writing and testing each fix is done by me.
 
@@ -34,7 +39,7 @@ This repository includes original fixes as well as work based on and distributed
 
 Our thanks to the creators of the external mods are in [external/THANKS.md](./external/THANKS.md).
 
-- **Lyall** — source code, patterns, and fixes reused or adapted in this repository, including [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix), [NinjaGaidenMCFix](https://codeberg.org/Lyall/NinjaGaidenMCFix), and other [Lyall fixes](https://codeberg.org/Lyall). See the [compiler notes](./compiler/README.md) for the derived-source details and license.
+- **Lyall** — source code, patterns, and fixes reused or adapted in this repository, including [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix), [NinjaGaidenMCFix](https://codeberg.org/Lyall/NinjaGaidenMCFix), and other [Lyall fixes](https://codeberg.org/Lyall). See the [compiler notes](./compiler/README.md) for the derived-source details and license. His fixes are mirrored here unchanged for the Decky plugin; please support him too: [Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9).
 - **ThirteenAG** — [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader), included by some game mods to load ASI plugins.
 - **Dark Byte (Eric Heijnen)** — [Cheat Engine](https://github.com/cheat-engine/cheat-engine/), the tool used to find the aspect-ratio and FOV values for about 90% of the games here.
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
@@ -164,7 +169,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Pentiment | TLin-Y | [1205520](https://store.steampowered.com/app/1205520) | [v0.2.1](./Pentiment/Pentiment-v0.2.1.zip) | 2026-11-16 | [README](./Pentiment/README.md) |
 | Persona 3 Reload | Lyall | [2161700](https://store.steampowered.com/app/2161700) | [v1.2.4](./external/Lyall/P3RFix/P3RFix_1.2.4.zip) | 2025-06-05 | [P3RFix](https://codeberg.org/Lyall/P3RFix) |
 | Persona 4 Golden | TLin-Y | [1113000](https://store.steampowered.com/app/1113000) | [v1.3.3](./Persona%204%20Golden/Persona-4-Golden-v1.3.3.zip) | 2026-11-17 | [README](./Persona%204%20Golden/README.md) |
-| Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v2.4.0](./Persona%205%20Royal/Persona-5-Royal-v2.4.0.zip) | 2026-11-17 | [README](./Persona%205%20Royal/README.md) |
+| Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v2.4.3](./Persona%205%20Royal/Persona-5-Royal-v2.4.3.zip) | 2026-11-18 | [README](./Persona%205%20Royal/README.md) |
 | Persona 5 Strikers | Lyall | [1382330](https://store.steampowered.com/app/1382330) | [v1.0.2](./external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip) | 2026-08-21 | [P5StrikersFix](https://codeberg.org/Lyall/P5StrikersFix) |
 | Phoenix Wright: Ace Attorney Trilogy | TLin-Y | [787480](https://store.steampowered.com/app/787480) | [v1.0.1](./Phoenix%20Wright%20Ace%20Attorney%20Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.1.zip) | 2026-11-13 | [README](./Phoenix%20Wright%20Ace%20Attorney%20Trilogy/README.md) |
 | PRAGMATA | TLin-Y | [3357650](https://store.steampowered.com/app/3357650) | [v1.0.0](./PRAGMATA/PRAGMATA-v1.0.0.zip) | 2026-11-13 | [README](./PRAGMATA/README.md) |

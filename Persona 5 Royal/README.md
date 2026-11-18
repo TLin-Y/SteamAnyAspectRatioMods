@@ -24,6 +24,7 @@ and below, wider ones (21:9, 32:9) show more to the sides. Menus, text boxes,
 portraits and the HUD keep their original 16:9 shape, so nothing is stretched.
 Set `VerticalAlign` in `[Interface]` to `Top`, `Center` (default) or `Bottom` to
 move them. Menu backgrounds, screen tints and fades cover the whole screen.
+Movies keep their 16:9 shape, centred with black bars.
 
 The black event bars are hidden; set `EventBars = 1` to keep them. `FOV` in
 `[Camera]` scales the field of view (default 1.0, lower zooms in).
