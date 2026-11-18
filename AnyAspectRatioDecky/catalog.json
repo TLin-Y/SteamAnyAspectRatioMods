@@ -40,6 +40,23 @@
       "wine_dll_overrides": []
     },
     {
+      "id": "astlibra-revision",
+      "name": "ASTLIBRA Revision - Custom Aspect Ratio",
+      "steam_app_id": "1718570",
+      "install_dir": "ASTLIBRA",
+      "executable": "ASTLIBRA.exe",
+      "source": {
+        "kind": "archive",
+        "path": "ASTLIBRA Revision/ASTLIBRA-Revision-v1.0.0.zip",
+        "sha256": "099e42ac2d897215da5146c38d8352653485e3372ff440f2b145732569d3f51c"
+      },
+      "files": ["xinput1_4.dll", "ASTLIBRA_ARFix.asi", "ASTLIBRA_ARFix.ini"],
+      "ini_file": "ASTLIBRA_ARFix.ini",
+      "ini_resolution": [{"section": "Display", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "display_tags": ["ultrawide-wip"],
+      "wine_dll_overrides": ["xinput1_4=n,b"]
+    },
+    {
       "id": "bloodstained-ritual-of-the-night",
       "name": "Bloodstained: Ritual of the Night - Custom Aspect Ratio",
       "steam_app_id": "692850",
