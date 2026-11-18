@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 51, 49, 1, 1, 72
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 51, 49, 1, 1, 73
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -142,7 +142,7 @@ PINNED = {
         "source.destination": f"Trials of Mana/{WIN64}",
         "files": _in(f"Trials of Mana/{WIN64}", "dxgi.dll", "TrialsOfMana_ARFix.asi", "TrialsOfMana_ARFix.ini"),
         "ini_file": f"Trials of Mana/{WIN64}/TrialsOfMana_ARFix.ini", "wine_dll_overrides": ("dxgi=n,b",),
-        "source.path": "Trials of Mana/Trials-of-Mana-v1.0.0.zip",
+        "source.path": "Trials of Mana/Trials-of-Mana-v1.0.1.zip",
     },
     "palworld": {
         "install_dir": "Palworld", "executable": f"Pal/{WIN64}/Palworld-Win64-Shipping.exe",

@@ -29,11 +29,9 @@ namespace
     uintptr_t imageBase = 0;
     size_t imageSize = 0;
     float fovMultiplier = 1.0f;
-    bool logStats = false;
     bool borderless = false;
-    std::atomic<uint64_t> calls{0}, constrainedCalls{0};
-    std::atomic<uint32_t> lastWidth{0}, lastHeight{0}, lastAxis{0}, lastConstrain{0};
-    std::atomic<float> lastAspect{0}, lastFovIn{0}, lastFovOut{0};
+    LONG targetWidth = 0;
+    LONG targetHeight = 0;
 
     void Notify(const char* message)
     {
@@ -158,36 +156,6 @@ namespace
         const float tanOut = horizontalAxis ? tanHorizontal : tanHorizontal / screenAspect;
         const float fovOut = (std::min)(2.0f * std::atan(tanOut) / degToRad, 175.0f);
         ctx.xmm1.f32[0] = fovOut;
-
-        if (logStats)
-        {
-            calls.fetch_add(1, std::memory_order_relaxed);
-            if (constrained)
-                constrainedCalls.fetch_add(1, std::memory_order_relaxed);
-            lastWidth = width;
-            lastHeight = height;
-            lastAxis = axis;
-            lastConstrain = constrained;
-            lastAspect = cameraAspect;
-            lastFovIn = fovIn;
-            lastFovOut = fovOut;
-        }
-    }
-
-    DWORD WINAPI StatsLoop(void*)
-    {
-        uint64_t previous = 0, previousConstrained = 0;
-        for (;;)
-        {
-            Sleep(5000);
-            const auto now = calls.load();
-            const auto nowConstrained = constrainedCalls.load();
-            logFile->info("Projection calls={} constrained={} view={}x{} cameraAR={:.4f} constrain={} axis={} fov {:.2f} -> {:.2f}",
-                          now - previous, nowConstrained - previousConstrained, lastWidth.load(), lastHeight.load(),
-                          lastAspect.load(), lastConstrain.load(), lastAxis.load(), lastFovIn.load(), lastFovOut.load());
-            previous = now;
-            previousConstrained = nowConstrained;
-        }
     }
 
     BOOL CALLBACK FindWindowCallback(HWND window, LPARAM parameter)
@@ -204,47 +172,49 @@ namespace
         return FALSE;
     }
 
-    void MakeBorderless(HWND window)
+    void FixWindow(HWND window)
     {
         constexpr LONG_PTR frame = WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
         constexpr LONG_PTR frameEx = WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE;
-        const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
-        if (style & WS_MAXIMIZE)
+        const bool forceSize = targetWidth > 0 && targetHeight > 0;
+        LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
+        if ((style & WS_MAXIMIZE) && !forceSize)
             return;
-        const bool framed = (style & frame) != 0;
         RECT client{};
         if (!GetClientRect(window, &client) || client.right <= 0 || client.bottom <= 0)
             return;
+        const LONG width = forceSize ? targetWidth : client.right;
+        const LONG height = forceSize ? targetHeight : client.bottom;
         MONITORINFO info{sizeof(info)};
         if (!GetMonitorInfoW(MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST), &info))
             return;
         const LONG monitorWidth = info.rcMonitor.right - info.rcMonitor.left;
         const LONG monitorHeight = info.rcMonitor.bottom - info.rcMonitor.top;
-        const LONG x = info.rcMonitor.left + (std::max)(0L, (monitorWidth - client.right) / 2);
-        const LONG y = info.rcMonitor.top + (std::max)(0L, (monitorHeight - client.bottom) / 2);
+        const LONG x = info.rcMonitor.left + (std::max)(0L, (monitorWidth - width) / 2);
+        const LONG y = info.rcMonitor.top + (std::max)(0L, (monitorHeight - height) / 2);
+        const bool framed = (style & frame) != 0;
         RECT current{};
-        if (!framed && GetWindowRect(window, &current) && current.left == x && current.top == y &&
-            current.right - current.left == client.right && current.bottom - current.top == client.bottom)
+        if (!framed && client.right == width && client.bottom == height && GetWindowRect(window, &current) &&
+            current.left == x && current.top == y && current.right - current.left == width &&
+            current.bottom - current.top == height)
             return;
-        if (framed)
-        {
-            SetWindowLongPtrW(window, GWL_STYLE, style & ~frame);
-            SetWindowLongPtrW(window, GWL_EXSTYLE, GetWindowLongPtrW(window, GWL_EXSTYLE) & ~frameEx);
-        }
-        SetWindowPos(window, nullptr, x, y, client.right, client.bottom,
-                     SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-        if (framed)
-            logFile->info("Borderless window {}x{} at {},{}", client.right, client.bottom, x, y);
+        if (style & WS_MAXIMIZE)
+            ShowWindow(window, SW_RESTORE);
+        style = GetWindowLongPtrW(window, GWL_STYLE);
+        SetWindowLongPtrW(window, GWL_STYLE, style & ~frame);
+        SetWindowLongPtrW(window, GWL_EXSTYLE, GetWindowLongPtrW(window, GWL_EXSTYLE) & ~frameEx);
+        SetWindowPos(window, nullptr, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        logFile->info("Window {}x{} at {},{}", width, height, x, y);
     }
 
-    DWORD WINAPI BorderlessLoop(void*)
+    DWORD WINAPI WindowLoop(void*)
     {
         for (;;)
         {
             HWND window = nullptr;
             EnumWindows(FindWindowCallback, reinterpret_cast<LPARAM>(&window));
             if (window && !IsIconic(window))
-                MakeBorderless(window);
+                FixWindow(window);
             Sleep(1000);
         }
     }
@@ -308,14 +278,17 @@ namespace
             logFile->warn("FOV Multiplier must be 0.5-2.0; using 1.0");
             fovMultiplier = 1.0f;
         }
-        logStats = GetPrivateProfileIntW(L"Debug", L"LogStats", 0, ini.c_str()) != 0;
+        targetWidth = static_cast<LONG>(GetPrivateProfileIntW(L"Resolution", L"Width", 1280, ini.c_str()));
+        targetHeight = static_cast<LONG>(GetPrivateProfileIntW(L"Resolution", L"Height", 800, ini.c_str()));
+        if (targetWidth <= 0 || targetHeight <= 0 || targetWidth > 16384 || targetHeight > 16384)
+            targetWidth = targetHeight = 0;
         wchar_t flag[16]{};
         GetPrivateProfileStringW(L"Display", L"Borderless", L"false", flag, static_cast<DWORD>(std::size(flag)), ini.c_str());
         borderless = _wcsicmp(flag, L"true") == 0 || std::wcscmp(flag, L"1") == 0;
-        logFile->info("{} {}.{}.{}: FOV Multiplier={:.3f}, Borderless={}", fixName, VERSION_MAJOR, VERSION_MINOR,
-                      VERSION_PATCH, fovMultiplier, borderless);
-        if (borderless)
-            if (const HANDLE thread = CreateThread(nullptr, 0, BorderlessLoop, nullptr, 0, nullptr))
+        logFile->info("{} {}.{}.{}: Resolution={}x{}, FOV Multiplier={:.3f}, Borderless={}", fixName, VERSION_MAJOR,
+                      VERSION_MINOR, VERSION_PATCH, targetWidth, targetHeight, fovMultiplier, borderless);
+        if (borderless || targetWidth > 0)
+            if (const HANDLE thread = CreateThread(nullptr, 0, WindowLoop, nullptr, 0, nullptr))
                 CloseHandle(thread);
 
         imageBase = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
@@ -329,9 +302,6 @@ namespace
             Notify("TrialsOfMana_ARFix: unsupported game version. See TrialsOfMana_ARFix.log.");
             return 0;
         }
-        if (logStats)
-            if (const HANDLE thread = CreateThread(nullptr, 0, StatsLoop, nullptr, 0, nullptr))
-                CloseHandle(thread);
         return 0;
     }
 }
