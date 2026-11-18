@@ -3363,7 +3363,7 @@
       "source": {
         "kind": "archive",
         "path": "external/Lyall/NinjaGaidenMCFix/NinjaGaidenMCFix_0.0.1.zip",
-        "sha256": "081cdf37ca7479541c167fbf018bfb375ae5c013535122ae17ca808ea24cc50f"
+        "sha256": "921b436dd8e1121f82184a7adb388e0738ba016ff9bdbff93584d41eebae5c94"
       },
       "files": [
         "NinjaGaidenMCFix.asi",
@@ -3373,6 +3373,7 @@
       "wine_dll_overrides": [
         "winmm=n,b"
       ],
+      "display_tags": ["select-3840x2160-in-game"],
       "credits": [
         {
           "name": "Lyall",
@@ -3401,7 +3402,7 @@
       "source": {
         "kind": "archive",
         "path": "external/Lyall/NinjaGaidenMCFix/NinjaGaidenMCFix_0.0.1.zip",
-        "sha256": "081cdf37ca7479541c167fbf018bfb375ae5c013535122ae17ca808ea24cc50f"
+        "sha256": "921b436dd8e1121f82184a7adb388e0738ba016ff9bdbff93584d41eebae5c94"
       },
       "files": [
         "NinjaGaidenMCFix.asi",
@@ -3411,6 +3412,7 @@
       "wine_dll_overrides": [
         "winmm=n,b"
       ],
+      "display_tags": ["select-3840x2160-in-game"],
       "credits": [
         {
           "name": "Lyall",
