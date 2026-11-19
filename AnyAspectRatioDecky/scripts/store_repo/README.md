@@ -8,7 +8,7 @@ This Decky Loader plugin finds supported games, applies aspect-ratio fixes, and 
 | -------------------------------------------- | ---------------------------------------------- |
 | ![Games tab](screenshots/games-tab.jpg)      | ![Editing a fix's INI](screenshots/edit-ini.jpg) |
 
-This repository is the Decky Plugin Store build. The mods, their C++ source and the mod catalog live in [SteamAnyAspectRatioMods](https://github.com/TLin-Y/SteamAnyAspectRatioMods), where the plugin is developed.
+This repository is the Decky Plugin Store build. The mods, their C++ source and the mod catalog live in [SteamAnyAspectRatioMods](https://github.com/TLin-Y/SteamAnyAspectRatioMods), where the plugin is developed. The same plugin is also a [desktop app for Windows, macOS and Linux](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
 
 ## About the mods
 
@@ -24,7 +24,7 @@ My goal is fully automated fixes: an ASI loader and an ASI mod that work as soon
 flowchart LR
   Catalog["Mod repo<br/>catalog.json + mod zips"] -- "download + SHA-256 check" --> Backend
   Pack["Offline pack zip"] -- import --> Backend
-  Steam["Steam libraries<br/>+ non-Steam shortcuts"] -- scan --> Backend
+  Steam["Steam libraries<br/>+ non-Steam shortcuts<br/>+ game folders"] -- scan --> Backend
   Backend["Plugin backend<br/>(Python)"] -- "apply / remove / edit INI" --> Game["Game folder"]
   UI["Plugin UI"] <--> Backend
   UI -- "WINEDLLOVERRIDES" --> Launch["Steam launch options"]
@@ -47,15 +47,15 @@ Install **AnyAspectRatio** from the Decky Plugin Store, then open it in the Deck
 - **100+ games supported.**
 - **Made for the SteamOS.** My fixes default to **16:10 (1280x800)**, matching the SteamDeck screen.
 - **Finds your games everywhere.** Scans every Steam library, including the microSD card.
-- **Non-Steam games work too.** It is matched by its exe name.
+- **Non-Steam games work too.** It is matched by its exe name. Games outside Steam: add their folder under **Settings → Game folders**.
 - **Edit settings in the plugin.** Change resolution, aspect ratio or FOV right from **Game Mode**. Changes save automatically.
 - **Offline friendly.** Import the repository zip once, or point it at a folder of your own mod zips.
 
 ## Tabs
 
-- **Games**: scan for supported games, apply or remove fixes, edit settings, and read instructions.
+- **Games**: scan for supported games, filter them by name, apply or remove fixes, edit settings, and read instructions.
 - **Mods**: update the catalog, see mod credits, import an offline pack, or delete local files and caches. Deleting local files keeps your settings and applied mods.
-- **Settings**: set the default resolution written into supported mod INIs when applying (select Width or Height to change it). After changing it, **Update current** is highlighted as a reminder to update the INIs of installed mods. You can also turn on offline mode. **More settings** holds the mod source, the local mod folder and **Reset to defaults**.
+- **Settings**: set the default resolution written into supported mod INIs when applying (select Width or Height to change it). After changing it, **Update current** is highlighted as a reminder to update the INIs of installed mods. You can also add game folders or turn on offline mode. **More settings** holds the mod source, the local mod folder and **Reset to defaults**.
 
 ## Network access
 
