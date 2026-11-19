@@ -1057,7 +1057,6 @@
       "files": ["dinput8.dll", "RE4_ARFix.asi", "RE4_ARFix.ini"],
       "ini_file": "RE4_ARFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
