@@ -284,7 +284,7 @@ README_MENTIONS = {
 STRETCHED = {
     "devil-may-cry-5", "dynasty-warriors-7-xtreme-legends-definitive-edition",
     "dynasty-warriors-8-xtreme-legends-complete-edition", "rayman-legends",
-    "resident-evil-4", "resident-evil-7", "resident-evil-village", "resident-evil-requiem",
+    "resident-evil-7", "resident-evil-village", "resident-evil-requiem",
     "samurai-warriors-spirit-of-sanada", "warriors-orochi-3-ultimate", "warriors-orochi-4-ultimate", "ultrawidefix-lrff13",
 }
 
