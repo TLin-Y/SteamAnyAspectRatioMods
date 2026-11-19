@@ -1035,13 +1035,12 @@
       "executable": "re3.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.3.0.zip",
-        "sha256": "17136ee1f421e4454576c01928c0087d1ba4c0b92c1d3a8bd240ddb58cafb3dc"
+        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.4.0.zip",
+        "sha256": "289092f6e3ccbcf79f8834c0535494234766ecfb3253d3f9596189d65f78f234"
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
