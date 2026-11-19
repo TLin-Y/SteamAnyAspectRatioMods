@@ -87,6 +87,21 @@ namespace
         return address;
     }
 
+    bool RunningOnMacOS()
+    {
+        using HostVersion = void (CDECL*)(const char**, const char**);
+        const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+        const auto getHostVersion = ntdll
+            ? reinterpret_cast<HostVersion>(GetProcAddress(ntdll, "wine_get_host_version"))
+            : nullptr;
+        if (!getHostVersion)
+            return false;
+        const char* sysname = nullptr;
+        const char* release = nullptr;
+        getHostVersion(&sysname, &release);
+        return sysname && std::strcmp(sysname, "Darwin") == 0;
+    }
+
     bool ValidResolution(int width, int height)
     {
         return (width == 0 && height == 0) || (width > 0 && height > 0);
@@ -215,6 +230,13 @@ namespace
                 targetWidth, targetHeight);
             return false;
         }
+        if (targetWidth > 0 && RunningOnMacOS())
+        {
+            SPDLOG_INFO("macOS host: ignoring {}x{}; keeping the game's resolution and fullscreen settings.",
+                targetWidth, targetHeight);
+            targetWidth = 0;
+            targetHeight = 0;
+        }
         SPDLOG_INFO("Enabled={}. VSync, camera zoom and canvas scaling remain game-controlled.",
             enabled);
         SPDLOG_INFO("Custom resolution: {}x{} (0/0 = game settings; positive values = Unity windowed mode).",
@@ -279,8 +301,18 @@ namespace
         return true;
     }
 
+    bool IsGameProcess()
+    {
+        wchar_t path[MAX_PATH]{};
+        const DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
+        return length > 0 && length < MAX_PATH &&
+            _wcsicmp(std::filesystem::path(path).filename().c_str(), L"DaveTheDiver.exe") == 0;
+    }
+
     DWORD WINAPI Main(void*)
     {
+        if (!IsGameProcess())
+            return 0;
         return Initialize() ? 0 : 1;
     }
 }

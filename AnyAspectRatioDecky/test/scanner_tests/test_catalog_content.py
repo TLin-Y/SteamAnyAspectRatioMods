@@ -159,7 +159,7 @@ PINNED = {
         "steam_app_id": "1868140", "install_dir": "Dave the Diver", "executable": "DaveTheDiver.exe",
         "files": ("winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"), "ini_file": "Dave_ARFix.ini",
         "wine_dll_overrides": ("winmm=n,b",), "source.kind": "archive",
-        "source.path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.1.0.zip",
+        "source.path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.2.0.zip",
     },
     "brotato": {
         "steam_app_id": "1942280", "install_dir": "Brotato", "executable": "Brotato.exe",
