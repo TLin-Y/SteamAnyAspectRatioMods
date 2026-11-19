@@ -21,6 +21,8 @@ class Settings:
     ini_resolution_width: int = 1280
     ini_resolution_height: int = 800
     ini_resolution_update_pending: bool = False
+    # Folders outside Steam: each one, and each folder directly inside it, is checked for catalogued games.
+    custom_game_dirs: tuple[str, ...] = ()
 
     def source_key(self) -> tuple[str, str, str]:
         return (self.catalog_repository_url, self.catalog_ref, self.catalog_path)
@@ -66,6 +68,18 @@ def validate_settings(settings: Settings) -> Settings:
     )
 
 
+MAX_CUSTOM_GAME_DIRS = 32
+
+
+def validate_custom_game_dir(folder: str) -> str:
+    folder = folder.strip()
+    if not folder or "\0" in folder or not os.path.isabs(folder):
+        raise PluginError("Game folder must be an absolute path")
+    if not Path(folder).is_dir():
+        raise PluginError("Game folder does not exist")
+    return str(Path(folder))
+
+
 def read_json(path: Path) -> object | None:
     try:
         return text_files.load_json(path)
@@ -104,11 +118,14 @@ class PluginStore:
         if not isinstance(document, dict):
             return Settings()
         field_types = {item.name: item.default for item in fields(Settings)}
+        folders_value = document.pop("custom_game_dirs", None)
         values = {
             key: value
             for key, value in document.items()
             if key in field_types and type(value) is type(field_types[key])
         }
+        if isinstance(folders_value, list) and all(isinstance(folder, str) for folder in folders_value):
+            values["custom_game_dirs"] = tuple(folders_value)
         for key in ("ini_resolution_width", "ini_resolution_height"):
             if key in values and not Validator.Settings.resolution(values[key]):
                 del values[key]

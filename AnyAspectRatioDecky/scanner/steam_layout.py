@@ -1,3 +1,6 @@
+import os
+import re
+import sys
 from pathlib import Path
 
 from helper.validator import Validator
@@ -7,9 +10,80 @@ ROOTS = (
     ".steam/steam",  # legacy symlink to the root
     ".var/app/com.valvesoftware.Steam/.local/share/Steam",  # Flatpak
     "Steam",
+    "Library/Application Support/Steam",  # macOS
 )
 
+# macOS runs Windows games through Windows Steam inside a Wine bottle.
+_MACOS_BOTTLES = (
+    "Library/Application Support/CrossOver/Bottles",
+    "Library/Containers/com.isaacmarovitz.Whisky/Bottles",
+)
+_BOTTLE_STEAM_DIRS = ("drive_c/Program Files (x86)/Steam", "drive_c/Program Files/Steam")
+_WINDOWS_DRIVE_PATH = re.compile(r"^([A-Za-z]):[\\/]*(.*)$")
+
 ROOT_ENVIRONMENT = "STEAM_COMPAT_CLIENT_INSTALL_PATH"
+
+_WINDOWS_REGISTRY_ROOTS = (
+    ("HKEY_CURRENT_USER", r"Software\Valve\Steam", "SteamPath"),
+    ("HKEY_LOCAL_MACHINE", r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath"),
+    ("HKEY_LOCAL_MACHINE", r"SOFTWARE\Valve\Steam", "InstallPath"),
+)
+
+
+def system_roots(platform: str = sys.platform, home: Path | None = None) -> list[Path]:
+    """Steam roots outside the fixed home-relative ROOTS: the Windows registry, or Steam in macOS Wine bottles."""
+    if platform == "darwin":
+        return bottle_roots(Path.home() if home is None else home)
+    if platform != "win32":
+        return []
+    return _windows_roots()
+
+
+def bottle_roots(home: Path) -> list[Path]:
+    return [
+        steam
+        for bottles in _MACOS_BOTTLES
+        for bottle in sorted((home / bottles).glob("*"))
+        for steam in (bottle / relative for relative in _BOTTLE_STEAM_DIRS)
+        if steam.is_dir()
+    ]
+
+
+def wine_drive_path(raw_path: str, steam_root: Path, platform: str = sys.platform) -> Path | None:
+    """A Windows library path such as D:\\Games, read by a Steam that runs inside a Wine prefix, mapped to the host.
+
+    Wine exposes drive letters as dosdevices/<letter>: links in the prefix that holds drive_c.
+    """
+    match = _WINDOWS_DRIVE_PATH.match(raw_path)
+    if platform == "win32" or not match:
+        return None
+    prefix = next((folder.parent for folder in (steam_root, *steam_root.parents) if folder.name.lower() == "drive_c"), None)
+    if prefix is None:
+        return None
+    letter = match[1].lower()
+    drive = Path(f"{prefix}/dosdevices/{letter}:")  # joined as text: a Windows test host reads "x:" as a drive
+    if letter == "c" and not drive.exists():
+        drive = prefix / "drive_c"
+    parts = [part for part in re.split(r"[\\/]+", match[2]) if part]
+    return drive.joinpath(*parts)
+
+
+def _windows_roots() -> list[Path]:
+    import winreg
+
+    roots: list[Path] = []
+    for hive, key, value in _WINDOWS_REGISTRY_ROOTS:
+        try:
+            with winreg.OpenKey(getattr(winreg, hive), key) as handle:
+                path, _ = winreg.QueryValueEx(handle, value)
+        except OSError:
+            continue
+        if isinstance(path, str) and path:
+            roots.append(Path(path))
+    program_files = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+    if program_files:
+        roots.append(Path(program_files) / "Steam")
+    return roots
 
 _MANIFEST_PREFIX, _MANIFEST_SUFFIX = "appmanifest_", ".acf"
 

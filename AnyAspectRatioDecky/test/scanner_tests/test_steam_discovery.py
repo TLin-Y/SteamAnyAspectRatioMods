@@ -34,9 +34,34 @@ class SteamLibraryTests(SandboxTest):
     def test_steam_roots_come_from_known_folders_and_steam_itself(self) -> None:
         native = self.folder(".local/share/Steam")
         environment = {"STEAM_COMPAT_CLIENT_INSTALL_PATH": str(native)}
-        self.assertEqual([native.resolve()], find_steam_roots(home=self.root, environment=environment))
+        self.assertEqual([native.resolve()], find_steam_roots(home=self.root, environment=environment, system_roots=()))
         flatpak = self.folder(".var/app/com.valvesoftware.Steam/.local/share/Steam")
-        self.assertEqual([native.resolve(), flatpak.resolve()], find_steam_roots(home=self.root, environment={}))
+        self.assertEqual(
+            [native.resolve(), flatpak.resolve()], find_steam_roots(home=self.root, environment={}, system_roots=())
+        )
+
+    def test_system_steam_roots_come_first_and_missing_ones_are_skipped(self) -> None:
+        native = self.folder(".local/share/Steam")
+        registry = self.folder("Program Files/Steam")
+        roots = find_steam_roots(home=self.root, environment={}, system_roots=(registry, self.root / "missing"))
+        self.assertEqual([registry.resolve(), native.resolve()], roots)
+
+    def test_macos_finds_windows_steam_in_crossover_and_whisky_bottles(self) -> None:
+        crossover = self.folder("Library/Application Support/CrossOver/Bottles/Steam/drive_c/Program Files (x86)/Steam")
+        whisky = self.folder("Library/Containers/com.isaacmarovitz.Whisky/Bottles/Games/drive_c/Program Files/Steam")
+        self.folder("Library/Application Support/CrossOver/Bottles/Empty/drive_c")
+        self.assertEqual([crossover, whisky], steam_layout.system_roots("darwin", self.root))
+        self.assertEqual([], steam_layout.system_roots("linux", self.root))
+
+    def test_windows_library_paths_inside_a_wine_prefix_map_to_its_drives(self) -> None:
+        prefix = self.folder("bottle")
+        steam = self.folder("bottle/drive_c/Program Files (x86)/Steam")
+        mapped = steam_layout.wine_drive_path("D:\\\\SteamLibrary", steam, "darwin")
+        self.assertEqual(Path(f"{prefix}/dosdevices/d:/SteamLibrary"), mapped)
+        self.assertEqual(prefix / "drive_c" / "Games", steam_layout.wine_drive_path("C:\\Games", steam, "darwin"))
+        self.assertIsNone(steam_layout.wine_drive_path("D:\\SteamLibrary", steam, "win32"))
+        self.assertIsNone(steam_layout.wine_drive_path("/home/deck/SteamLibrary", steam, "linux"))
+        self.assertIsNone(steam_layout.wine_drive_path("D:\\SteamLibrary", self.folder("native/Steam"), "linux"))
 
     def test_manifest_app_id_needs_the_exact_manifest_name(self) -> None:
         for name, expected in (("appmanifest_123.acf", "123"), ("appmanifest_.acf", None), ("appmanifest_12a.acf", None),

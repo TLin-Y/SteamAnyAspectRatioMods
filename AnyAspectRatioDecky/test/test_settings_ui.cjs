@@ -86,7 +86,7 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
     "react/jsx-runtime": { jsx: element, jsxs: element, Fragment: "Fragment" },
     "@decky/ui": {
       ...Object.fromEntries(
-        ["ButtonItem", "ConfirmModal", "PanelSection", "PanelSectionRow", "ToggleField"]
+        ["ButtonItem", "ConfirmModal", "DialogButton", "PanelSection", "PanelSectionRow", "ToggleField"]
           .map((name) => [name, name]),
       ),
       showModal: (modal) => modals.push(modal),
@@ -100,6 +100,8 @@ function createSettingsHarness(updateResult = { updated: ["Game"], unchanged: []
     },
     "./PluginUpdateSection": { PluginUpdateSection: "PluginUpdateSection" },
     "./EditableValue": { EditableValue: "EditableValue" },
+    "./GameFoldersSection": { GameFoldersSection: "GameFoldersSection" },
+    "../../services/platform": { DESKTOP_ACTIONS: null },
     "../../services/remembered": { useRemembered: (_key, initial) => hooks.useState(initial) },
   };
   const source = fs.readFileSync(path.join(__dirname, "../src/components/views/SettingsTab.tsx"), "utf8");

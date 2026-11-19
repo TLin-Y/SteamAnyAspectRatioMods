@@ -204,7 +204,7 @@ test("Apply confirms exactly one matching game before installing it", async () =
     assert.deepEqual(Array.from(apply.args), [games[index].mod_id, "/games/DOA5", true, null, null]);
     tree = render();
     assert.ok(JSON.stringify(findElements(tree, "strong")).includes("(.exe)"));
-    assert.equal(findElements(tree, "DialogButton").length, 2);
+    assert.equal(findElements(tree, "DialogButton").filter((button) => button.props.children !== "Filter games by name").length, 2);
     const status = findElements(tree, "div").find((node) =>
       Array.isArray(node.props.children) && node.props.children[0] === "Selected fix: ",
     );
@@ -526,4 +526,62 @@ test("the open game and its INI come back after the panel is remounted", async (
   assert.equal(iniLoads(), 2);
   assert.equal(findElements(render(), "EditableValue")[0].props.value, "Width=1");
   render.unmount();
+});
+
+test("the name filter keeps matching games with their list numbers and can be cleared", async () => {
+  const games = ["Dead Cells", "Persona 4 Golden", "Persona 5 Royal"].map((name, index) => ({
+    mod_id: `mod${index}`, mod_name: `${name} Fix`, app_name: name, steam_app_id: String(100 + index),
+    game_path: `/games/${index}`, manual: false, source_kind: "archive", wine_dll_overrides: [], mod_files: [],
+    file_status: "none", files_present: [], files_missing: [],
+  }));
+  const render = renderGames({
+    steam_scan: { apps_scanned: 3, libraries_scanned: 1 }, catalogued_mods: 3, supported_games: games, warnings: [],
+  });
+  const titles = (tree) => findElements(tree, "strong").map((node) => node.props.children.slice(0, 2).join(""));
+  const filterButton = (tree) => findElements(tree, "DialogButton")
+    .find((button) => String(button.props.children).startsWith("Filter"));
+  let tree = render();
+  assert.deepEqual(titles(tree), ["1. Dead Cells", "2. Persona 4 Golden", "3. Persona 5 Royal"]);
+
+  filterButton(tree).props.onClick();
+  findElements(render.modal(), "TextField")[0].props.onChange({ currentTarget: { value: "  PERSONA 5 " } });
+  render.modal().props.onOK();
+  await new Promise((resolve) => setImmediate(resolve));
+  tree = render();
+  assert.deepEqual(titles(tree), ["3. Persona 5 Royal"]);
+  assert.equal(filterButton(tree).props.children, "Filter: PERSONA 5");
+  assert.ok(JSON.stringify(tree).includes("Showing 1 of 3 games."));
+
+  findElements(tree, "DialogButton").find((button) => button.props.children === "Clear").props.onClick();
+  tree = render();
+  assert.equal(titles(tree).length, 3);
+  assert.equal(filterButton(tree).props.children, "Filter games by name");
+});
+
+test("games from a game folder never touch Steam launch options", async () => {
+  const game = {
+    mod_id: "folder-mod", mod_name: "Folder mod", app_name: "Folder Game", steam_app_id: "custom",
+    game_path: "/games/Folder Game", manual: false, source_kind: "archive", wine_dll_overrides: ["dinput8=n,b"],
+    mod_files: ["fix.asi"], file_status: "not_detected", files_present: [], files_missing: ["fix.asi"],
+    matched_by_executable: true,
+  };
+  const render = renderGames({
+    steam_scan: { apps_scanned: 0, libraries_scanned: 0 }, catalogued_mods: 1, supported_games: [game], warnings: [],
+  });
+  const tree = render();
+  assert.ok(JSON.stringify(findElements(tree, "strong")).includes("(Folder)"));
+  findElements(tree, "ToggleField")[0].props.onChange(true);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  let modal = render.modal();
+  assert.equal(modal.props.strTitle, "Launch options not updated");
+  assert.match(modal.props.strDescription, /not in Steam/);
+  assert.match(modal.props.strDescription, /WINEDLLOVERRIDES="dinput8=n,b" %command%/);
+  assert.deepEqual(render.calls.find((call) => call.name === "set_mod_applied").args.slice(0, 3),
+    ["folder-mod", "/games/Folder Game", true]);
+
+  findElements(render(), "ToggleField")[0].props.onChange(false);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  modal = render.modal();
+  assert.equal(modal.props.strTitle, "Mod files removed");
+  assert.match(modal.props.strDescription, /you can remove it now/);
 });

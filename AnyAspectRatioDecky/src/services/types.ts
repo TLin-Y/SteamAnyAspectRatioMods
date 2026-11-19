@@ -47,6 +47,7 @@ export type PluginSettingsInfo = {
     ini_resolution_width: number;
     ini_resolution_height: number;
     ini_resolution_update_pending: boolean;
+    custom_game_dirs: string[];
   };
   defaults: Omit<PluginSettingsValues, "local_archive_dir"> & {
     ini_resolution_width: number;

@@ -18,7 +18,7 @@ export function GameTitle({ game, index, unresolved = false }: {
       {game.offline_only && " (Offline)"}
       {game.source_kind === "local_archive" && " (Custom)"}
       {game.update_available && " (New)"}
-      {(unresolved || game.matched_by_executable) && " (.exe)"}
+      {game.steam_app_id === "custom" ? " (Folder)" : (unresolved || game.matched_by_executable) && " (.exe)"}
     </strong>
   );
 }
