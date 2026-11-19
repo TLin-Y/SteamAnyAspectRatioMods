@@ -1,4 +1,6 @@
-# WARRIORS-OROCHI-4-Ultimate-Any-Aspect-Ratio-Force-stretch-UI-mode-for-handheld-
+# WARRIORS-OROCHI-4-Ultimate-Any-Aspect-Ratio
+
+Works in any mode: Fullscreen, Windowed with the last in-game resolution (it shows your screen size, e.g. 1280x800 on Steam Deck), or the old way (1280x720 with SteamOS display scaling set to "Stretch"). The 3D always fills the screen; the HUD keeps its 16:9 layout stretched to the screen.
 
 # Install
 Extract the mod files directly into your Steam game.exe folder.
@@ -12,4 +14,6 @@ Name: WINEDLLOVERRIDES
 Value: dinput8=n,b
 
 # Custom Aspect Ratio
-Open .ini with any text editor. You can easily change TargetWidth and TargetHeight to match any screen ratio you want (e.g., 4:3, 16:10, 21:9).
+Open WO4U_ARFix.ini with any text editor. Set TargetWidth and TargetHeight to your screen ratio (e.g., 4:3, 16:10, 21:9). WO4U_ARFix.log shows it, for example "Adjust aspect ratio to 8:5 for 1280x800."
+
+Under [Custom Resolution], Width and Height 0 use your screen size. [Stretch] fills the screen in Fullscreen mode, where the game would otherwise add black bars; set Enabled = false to turn it off.

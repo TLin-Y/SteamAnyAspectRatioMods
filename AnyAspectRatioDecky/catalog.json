@@ -1198,8 +1198,8 @@
       "executable": "WO3U.exe",
       "source": {
         "kind": "archive",
-        "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.1.0.zip",
-        "sha256": "b7413040c5079b64f550b5f81ecdd82d6ff71acfdd3c8e3e68ce2141d60021e8"
+        "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.2.0.zip",
+        "sha256": "ee84fc425611900f67887906c2dae757f2c5d8980555692faec05dcad74e5238"
       },
       "files": [
         "dinput8.dll",
@@ -1212,7 +1212,6 @@
       ],
       "ini_file": "WO3U_ARFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -1223,13 +1222,12 @@
       "executable": "WO4.exe",
       "source": {
         "kind": "archive",
-        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.1.0.zip",
-        "sha256": "df8d7a74555dee06228dfa7b012972eb7aec617804a0027e9641f468197c587f"
+        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.2.0.zip",
+        "sha256": "f8292daba0b653a673e32421e78543cbc450dd42bc39e30fed17c853db7ed5b4"
       },
       "files": ["dinput8.dll", "WO4U_ARFix.asi", "WO4U_ARFix.ini"],
       "ini_file": "WO4U_ARFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
