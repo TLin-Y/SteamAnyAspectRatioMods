@@ -293,3 +293,18 @@ html, body {
 .aar-disk-bar { display: block; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
 .aar-disk-bar > span { display: block; height: 100%; background: var(--accent); }
 .aar-legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* ReadMe and log views: on the Deck they scroll inside a 60vh box; here the page scrolls and the text uses the window. */
+.aar-content .aar-scroll-pane { max-height: none !important; overflow: visible !important; }
+.aar-content > div > .aar-section:has(.aar-scroll-pane) { max-width: 1000px; }
+.aar-readme { line-height: 1.6; }
+.aar-readme h1 { font-size: 26px; margin: 18px 0 10px; }
+.aar-readme h2 { font-size: 20px; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.aar-readme h3 { font-size: 16px; margin: 18px 0 6px; }
+.aar-readme a { color: var(--accent); }
+.aar-readme img { max-width: 100%; border-radius: 6px; }
+.aar-readme code { padding: 1px 5px; background: var(--bg); border-radius: 4px; font-size: 0.92em; }
+.aar-readme pre { line-height: 1.35; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow-x: auto; }
+.aar-readme pre code { padding: 0; background: none; }
+.aar-readme table { border-collapse: collapse; }
+.aar-readme th, .aar-readme td { padding: 4px 10px; border: 1px solid var(--border); }

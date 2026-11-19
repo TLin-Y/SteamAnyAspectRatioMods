@@ -42,7 +42,7 @@ export function GameDetails({ game, view, readme, logs, ini, onBack, onIniCommit
       <PanelSectionRow><GameTitle game={game} /></PanelSectionRow>
       {view === "readme" ? (
         <PanelSectionRow>
-          <div style={{ maxHeight: "60vh", overflowY: "auto", overflowWrap: "anywhere" }}>
+          <div className="aar-scroll-pane aar-readme" style={{ maxHeight: "60vh", overflowY: "auto", overflowWrap: "anywhere" }}>
             {readme.loading ? "Loading ReadMe..." : (
               <>
                 <div style={{ opacity: 0.7, fontSize: "0.85em" }}>
@@ -56,7 +56,7 @@ export function GameDetails({ game, view, readme, logs, ini, onBack, onIniCommit
         </PanelSectionRow>
       ) : view === "log" ? (
         <PanelSectionRow>
-          <div style={{ maxHeight: "60vh", overflowY: "auto", overflowWrap: "anywhere", width: "100%" }}>
+          <div className="aar-scroll-pane" style={{ maxHeight: "60vh", overflowY: "auto", overflowWrap: "anywhere", width: "100%" }}>
             {logs ? logs.map((entry) => (
               <div key={entry.name}>
                 <strong>{entry.name}</strong>
