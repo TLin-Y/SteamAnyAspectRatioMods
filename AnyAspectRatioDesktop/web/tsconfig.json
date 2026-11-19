@@ -16,8 +16,7 @@
       "@decky/ui": ["src/decky-ui.tsx"],
       "@decky/api": ["src/decky-api.ts"],
       "react": ["node_modules/@types/react"],
-      "react/*": ["node_modules/@types/react/*"],
-      "react-markdown": ["../../AnyAspectRatioDecky/node_modules/react-markdown"]
+      "react/*": ["node_modules/@types/react/*"]
     }
   },
   "include": ["src"]

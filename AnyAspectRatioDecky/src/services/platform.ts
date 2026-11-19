@@ -7,7 +7,7 @@ export const INLINE_TEXT_INPUT = false;
 /** Extra game-card buttons that only make sense on a desktop. */
 export type DesktopActions = {
   openFolder: (game: SupportedGame) => void;
-  showWineOverrides: ((game: SupportedGame) => void) | null;
+  showWineOverrides: (game: SupportedGame) => void;
   /** Resolutions this computer runs games at, offered as one-click INI defaults. */
   resolutionChoices: () => Promise<ResolutionChoice[]>;
 };

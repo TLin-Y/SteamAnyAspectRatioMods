@@ -9,14 +9,20 @@ import sys
 from functools import cache
 from pathlib import Path
 
+from helper.errors import PluginError
 from scanner import steam_layout
+from scanner.supported_game_scanner import CUSTOM_APP_ID
+
+from backend import system_environment
 
 _RESOLUTION = re.compile(r"^\s*(\d{3,5})\s*x\s*(\d{3,5})\s*$")
 
 
 def _run(*command: str) -> str:
     try:
-        return subprocess.run(command, capture_output=True, text=True, errors="replace", timeout=10).stdout
+        return subprocess.run(
+            command, capture_output=True, text=True, errors="replace", env=system_environment(), timeout=10
+        ).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
 
@@ -101,9 +107,7 @@ _LINUX_DATA_FILESYSTEMS = {"ext4", "ext3", "btrfs", "xfs", "f2fs", "vfat", "exfa
 
 def _mount_points() -> list[str]:
     if sys.platform == "win32":
-        return [str(drive) for drive in os.listdrives()] if hasattr(os, "listdrives") else [
-            f"{letter}:\\" for letter in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{letter}:\\").exists()
-        ]
+        return os.listdrives()
     if sys.platform == "darwin":
         volumes = sorted(str(path) for path in Path("/Volumes").glob("*") if path.is_dir() and not path.is_symlink())
         return ["/", *volumes]
@@ -132,11 +136,16 @@ def disks() -> list[dict[str, object]]:
 
 
 def game_counts(cached_scan: dict | None) -> dict[str, int] | None:
-    """Supported game folders (one per folder, whatever the number of mods) out of the installed Steam apps."""
+    """Supported games (one per folder, whatever the number of mods) out of the installed ones.
+
+    Games from Settings > Game folders are not Steam apps, so they count on both sides.
+    """
     try:
         report = cached_scan["report"]
-        supported = len({game["game_path"] for game in report["supported_games"] if game.get("game_path")})
-        return {"supported": supported, "installed": int(report["steam_scan"]["apps_scanned"])}
+        games = [game for game in report["supported_games"] if game.get("game_path")]
+        folder_games = {game["game_path"] for game in games if game.get("steam_app_id") == CUSTOM_APP_ID}
+        installed = int(report["steam_scan"]["apps_scanned"]) + len(folder_games)
+        return {"supported": len({game["game_path"] for game in games}), "installed": installed}
     except (TypeError, KeyError, ValueError):
         return None
 
@@ -155,14 +164,12 @@ def virtual_desktops(home: Path | None = None) -> list[dict[str, object]]:
     for root in steam_layout.system_roots(sys.platform, home):
         try:
             bottle = bottle_for(root, home)
-        except Exception:  # A bottle tool that is missing just has nothing to report.
+            desktop = bottle and bottle.read(r"HKCU\Software\Wine\Explorer").get("desktop")
+            if not desktop:
+                continue
+            size = parse_resolution(bottle.read(r"HKCU\Software\Wine\Explorer\Desktops").get(desktop.lower(), ""))
+        except PluginError:  # The bottle's Wine is missing or failed; that bottle has nothing to report.
             continue
-        if bottle is None:
-            continue
-        desktop = bottle.read(r"HKCU\Software\Wine\Explorer").get("desktop")
-        if not desktop:
-            continue
-        size = parse_resolution(bottle.read(r"HKCU\Software\Wine\Explorer\Desktops").get(desktop.lower(), ""))
         if size:
             found.append({"label": f"{bottle.prefix.name} virtual desktop", "width": size[0], "height": size[1]})
     return found

@@ -50,11 +50,34 @@ def _drop_wine_overrides(method: str, result: object) -> None:
             game["wine_dll_overrides"] = []
 
 
+# The packaged app's unpacked files (PyInstaller); None when run from a checkout.
+BUNDLE_DIR = getattr(sys, "_MEIPASS", None)
+
+
+_BUNDLED_QT_VARIABLES = (
+    "LD_LIBRARY_PATH", "QT_PLUGIN_PATH", "QML2_IMPORT_PATH", "QT_STYLE_OVERRIDE", "QTWEBENGINE_CHROMIUM_FLAGS",
+)
+
+
+def system_environment() -> dict[str, str]:
+    """The environment for programs of the system (xdg-open, wine).
+
+    On Linux the packaged app points LD_LIBRARY_PATH (the user's value kept in LD_LIBRARY_PATH_ORIG) and
+    Qt's variables at its own bundled Qt; a system file manager or browser must not load those.
+    """
+    environment = dict(os.environ)
+    if BUNDLE_DIR and sys.platform.startswith("linux"):
+        original = environment.pop("LD_LIBRARY_PATH_ORIG", None)
+        for name in _BUNDLED_QT_VARIABLES:
+            environment.pop(name, None)
+        if original is not None:
+            environment["LD_LIBRARY_PATH"] = original
+    return environment
+
+
 def plugin_root() -> Path:
-    bundled = getattr(sys, "_MEIPASS", None)
-    if bundled:
-        return Path(bundled) / "AnyAspectRatioDecky"
-    return Path(__file__).resolve().parents[1] / "AnyAspectRatioDecky"
+    """The Decky plugin folder; the packaged app keeps its catalog.json at the bundle root."""
+    return Path(BUNDLE_DIR) if BUNDLE_DIR else Path(__file__).resolve().parents[1] / "AnyAspectRatioDecky"
 
 
 def default_data_dir(platform: str = sys.platform, environment=os.environ, home: Path | None = None) -> Path:
@@ -138,6 +161,7 @@ class DesktopBackend:
     def games_by_folder(self) -> list[dict[str, object]]:
         """Every installed Steam game and folder game, grouped by the folder that holds them."""
         from scanner.steam_library_scanner import discover_steam_apps
+        from scanner.supported_game_scanner import CUSTOM_APP_ID
 
         cached = self._main.get_store().load_last_scan() or {}
         scanned = cached.get("report", {}).get("supported_games", []) if isinstance(cached, dict) else []
@@ -145,7 +169,7 @@ class DesktopBackend:
         games = [(app.name, app.game_path) for app in discover_steam_apps().apps if app.game_path]
         games += [
             (game.get("app_name", ""), game["game_path"]) for game in scanned
-            if isinstance(game, dict) and game.get("steam_app_id") == "custom" and game.get("game_path")
+            if isinstance(game, dict) and game.get("steam_app_id") == CUSTOM_APP_ID and game.get("game_path")
         ]
         groups: dict[str, dict[str, dict[str, object]]] = {}
         for name, path in games:
@@ -177,14 +201,12 @@ class DesktopBackend:
             _drop_wine_overrides(method, result)
         return result
 
-    def start_catalog_refresh(self) -> threading.Thread:
+    def start_catalog_refresh(self) -> None:
         store = self._main.get_store()
         self._main.log.info("Desktop app started")
-        thread = threading.Thread(
+        threading.Thread(
             target=lambda: asyncio.run(self._plugin._refresh_catalog(store)), name="catalog-refresh", daemon=True
-        )
-        thread.start()
-        return thread
+        ).start()
 
     def stop(self) -> None:
         self._main.log.info("Desktop app stopped")

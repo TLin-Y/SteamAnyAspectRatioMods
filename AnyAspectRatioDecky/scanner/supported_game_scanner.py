@@ -345,8 +345,10 @@ class _GameMatcher:
         A folder Steam already knows is skipped: its games are matched by app id, and an exe-name
         match there would only add other mods' false positives.
         """
-        if _folder_key(folder) in steam_folders:
+        key = _folder_key(folder)
+        if key in steam_folders:
             return
+        steam_folders.add(key)  # A folder reached twice (nested or repeated game folders) is matched once.
         app = InstalledApp(CUSTOM_APP_ID, folder.name, folder.name, str(folder.parent), str(folder))
         for mod, ambiguous in _match_by_executable(app, self.catalog, self.index, self.file_cache, self.warnings):
             self.add_game(mod, app, True, f"{CUSTOM_APP_ID}:{folder}" if ambiguous else None)

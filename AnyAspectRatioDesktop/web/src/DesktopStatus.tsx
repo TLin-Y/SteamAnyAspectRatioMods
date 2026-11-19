@@ -95,7 +95,7 @@ export function DesktopStatus() {
       {games && (
         <Dropdown
           label={`${games.supported}/${games.installed} games`}
-          title={`${games.supported} of the ${games.installed} installed Steam games have a mod (last scan)`}
+          title={`${games.supported} of the ${games.installed} installed games have a mod (last scan)`}
           onOpen={() => void gamesByFolder().then(setFolders).catch(() => setFolders([]))}
         >
           <GamesList folders={folders} />

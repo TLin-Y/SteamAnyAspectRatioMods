@@ -49,6 +49,11 @@ def bottle_roots(home: Path) -> list[Path]:
     ]
 
 
+def wine_prefix(path: Path) -> Path | None:
+    """The Wine prefix (the folder holding drive_c) that contains path, if any."""
+    return next((folder.parent for folder in (path, *path.parents) if folder.name.lower() == "drive_c"), None)
+
+
 def wine_drive_path(raw_path: str, steam_root: Path, platform: str = sys.platform) -> Path | None:
     """A Windows library path such as D:\\Games, read by a Steam that runs inside a Wine prefix, mapped to the host.
 
@@ -57,7 +62,7 @@ def wine_drive_path(raw_path: str, steam_root: Path, platform: str = sys.platfor
     match = _WINDOWS_DRIVE_PATH.match(raw_path)
     if platform == "win32" or not match:
         return None
-    prefix = next((folder.parent for folder in (steam_root, *steam_root.parents) if folder.name.lower() == "drive_c"), None)
+    prefix = wine_prefix(steam_root)
     if prefix is None:
         return None
     letter = match[1].lower()

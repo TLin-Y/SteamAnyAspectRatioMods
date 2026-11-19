@@ -184,9 +184,12 @@ export function ConfirmModal({
     onCancel?.();
     closeModal?.();
   };
+  const dialog = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      // Only the top dialog answers Escape; the ones under it stay open.
+      const top = [...document.querySelectorAll(".aar-modal")].pop();
+      if (event.key !== "Escape" || dialog.current !== top) return;
       (onEscKeypress ?? onCancel)?.();
       closeModal?.();
     };
@@ -194,7 +197,7 @@ export function ConfirmModal({
     return () => window.removeEventListener("keydown", onKey);
   });
   return (
-    <div className="aar-modal" role="dialog" aria-modal="true">
+    <div ref={dialog} className="aar-modal" role="dialog" aria-modal="true">
       {strTitle && <h2 className="aar-modal-title">{strTitle}</h2>}
       {strDescription && <div className="aar-modal-description">{strDescription}</div>}
       {children && <div className="aar-modal-body">{children}</div>}

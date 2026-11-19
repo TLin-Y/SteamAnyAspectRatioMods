@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 
@@ -16,9 +17,11 @@ from helper.errors import PluginError
 from scanner import steam_layout
 from scanner.steam_library_scanner import _library_roots
 
+from backend import system_environment
+
 MODES = {"n": "native", "b": "builtin"}
 _REG_VALUE = re.compile(r"^\s+(\S+)\s+REG_SZ\s+(.*?)\s*$")
-_CROSSOVER_APPS = ("Applications/CrossOver.app", "/Applications/CrossOver.app")
+_CROSSOVER_APPS = ("Applications/CrossOver.app", "/Applications/CrossOver.app")  # Per user, then system wide.
 _CROSSOVER_WINE = "Contents/SharedSupport/CrossOver/bin/wine"
 _WHISKY_WINE = "Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"
 LINUX_MANUAL = (
@@ -64,14 +67,19 @@ class Bottle:
     tool: str = "Wine"
 
     def reg(self, *args: str) -> subprocess.CompletedProcess:
-        environment = {**os.environ, **dict(self.environment)}
-        try:
-            return subprocess.run(
-                [*self.command, "reg", *args], capture_output=True, text=True, errors="replace",
-                env=environment, timeout=60,
-            )
-        except (OSError, subprocess.TimeoutExpired) as error:
-            raise PluginError(f"Could not run Wine for the bottle {self.prefix.name}: {error}") from error
+        environment = {**system_environment(), **dict(self.environment)}
+        # stderr goes to a file: Wine's background processes inherit it and would hold a pipe open for seconds.
+        with tempfile.TemporaryFile() as errors:
+            try:
+                result = subprocess.run(
+                    [*self.command, "reg", *args], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=errors,
+                    text=True, errors="replace", env=environment, timeout=60,
+                )
+            except (OSError, subprocess.TimeoutExpired) as error:
+                raise PluginError(f"Could not run Wine for the bottle {self.prefix.name}: {error}") from error
+            errors.seek(0)
+            result.stderr = errors.read().decode(errors="replace")
+        return result
 
     def read(self, key: str) -> dict[str, str]:
         result = self.reg("query", key)
@@ -93,14 +101,14 @@ class Bottle:
 
 def _crossover_command(prefix: Path, home: Path) -> tuple[str, ...] | None:
     for app in _CROSSOVER_APPS:
-        wine = (home / app if not app.startswith("/") else Path(app)) / _CROSSOVER_WINE
+        wine = home / app / _CROSSOVER_WINE  # An absolute app path replaces home.
         if wine.is_file():
             return (str(wine), "--bottle", prefix.name)
     return None
 
 
 def bottle_for(steam_root: Path, home: Path) -> Bottle | None:
-    prefix = next((folder.parent for folder in (steam_root, *steam_root.parents) if folder.name == "drive_c"), None)
+    prefix = steam_layout.wine_prefix(steam_root)
     if prefix is None:
         return None
     if prefix.parent.parent.name == "CrossOver":
@@ -123,6 +131,9 @@ class LaunchSetup:
         self._home = Path.home() if home is None else home
 
     def _bottle(self, game_path: str) -> Bottle:
+        if self._platform != "darwin":
+            # Elsewhere a prefix belongs to its own runner (Proton, Lutris); system Wine could upgrade it.
+            raise PluginError(LINUX_MANUAL)
         game = Path(game_path).resolve()
         inside = bottle_for(game, self._home)  # A game installed in the bottle's own drive_c.
         if inside is not None:
@@ -133,9 +144,7 @@ class LaunchSetup:
                 bottle = bottle_for(root, self._home)
                 if bottle is not None:
                     return bottle
-        if self._platform == "darwin":
-            raise PluginError("The game's Steam is not inside a CrossOver or Whisky bottle.")
-        raise PluginError(LINUX_MANUAL)
+        raise PluginError("The game's Steam is not inside a CrossOver or Whisky bottle.")
 
     @staticmethod
     def _key(executable_path: str) -> str:
@@ -160,17 +169,15 @@ class LaunchSetup:
 
     def info(self, game_path: str, executable_path: str, groups: list[str]) -> dict[str, object]:
         required = parse_overrides(groups)
-        launch_option = f'WINEDLLOVERRIDES="{";".join(groups)}" %command%'
         try:
             bottle = self._bottle(game_path)
         except PluginError as error:
-            return {"bottle": None, "message": str(error), "launch_option": launch_option, "required": describe(required)}
+            return {"bottle": None, "message": str(error), "required": describe(required)}
         current = bottle.read(self._key(executable_path))
         return {
             "bottle": {"name": bottle.prefix.name, "tool": bottle.tool},
             "current": describe(current),
             "required": describe(required),
-            "launch_option": launch_option,
         }
 
     def set_overrides(self, game_path: str, executable_path: str, text: str) -> str:
@@ -196,7 +203,7 @@ class LaunchSetup:
         bottle, key = self._bottle(game_path), self._key(executable_path)
         current = bottle.read(key)
         records = self._load()
-        record = records.get(record_key) or {"bottle": str(bottle.prefix), "key": key, "previous": {}, "added": {}}
+        record = records.get(record_key) or {"previous": {}, "added": {}}
         updated = dict(current)
         for dll, value in parse_overrides(groups).items():
             if current.get(dll) == value:
@@ -223,7 +230,7 @@ class LaunchSetup:
             if current.get(dll) != value:
                 continue  # Changed by the user since; theirs to keep.
             previous = record["previous"].get(dll)
-            bottle.write(record.get("key", key), dll, previous)
+            bottle.write(key, dll, previous)
             if previous is None:
                 updated.pop(dll, None)
             else:

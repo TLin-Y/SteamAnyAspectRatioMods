@@ -54,11 +54,7 @@ def validate_settings(settings: Settings) -> Settings:
 
     local_dir = settings.local_archive_dir.strip()
     if local_dir:
-        if "\0" in local_dir or not os.path.isabs(local_dir):
-            raise PluginError("Local mod folder must be an absolute path")
-        if not Path(local_dir).is_dir():
-            raise PluginError("Local mod folder does not exist")
-        local_dir = str(Path(local_dir))
+        local_dir = _existing_folder(local_dir, "Local mod folder")
     return replace(
         settings,
         catalog_repository_url=url,
@@ -71,13 +67,16 @@ def validate_settings(settings: Settings) -> Settings:
 MAX_CUSTOM_GAME_DIRS = 32
 
 
-def validate_custom_game_dir(folder: str) -> str:
-    folder = folder.strip()
-    if not folder or "\0" in folder or not os.path.isabs(folder):
-        raise PluginError("Game folder must be an absolute path")
+def _existing_folder(folder: str, label: str) -> str:
+    if "\0" in folder or not os.path.isabs(folder):
+        raise PluginError(f"{label} must be an absolute path")
     if not Path(folder).is_dir():
-        raise PluginError("Game folder does not exist")
+        raise PluginError(f"{label} does not exist")
     return str(Path(folder))
+
+
+def validate_custom_game_dir(folder: str) -> str:
+    return _existing_folder(folder.strip(), "Game folder")
 
 
 def read_json(path: Path) -> object | None:

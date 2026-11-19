@@ -40,6 +40,12 @@ class CustomGameFolderTests(GameTest):
         self.assertEqual([(MOD.steam_app_id, str(self.game))],
                          [(game.steam_app_id, game.game_path) for game in report.supported_games])
 
+    def test_a_folder_added_twice_or_nested_is_matched_once(self) -> None:
+        library = self.folder("Games")
+        self.write({"bin/game.exe": ""}, self.folder("Games/First"))
+        report = self.match(str(library), str(library / "First"), str(library))
+        self.assertEqual([str(library / "First")], [game.game_path for game in report.supported_games])
+
     def test_a_missing_folder_is_a_warning(self) -> None:
         missing = self.root / "unplugged"
         report = self.match(str(missing))

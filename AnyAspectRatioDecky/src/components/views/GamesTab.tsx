@@ -48,7 +48,9 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [scanning, setScanning] = useState(false);
   const [scanOutdated, setScanOutdated] = useRemembered("games.scanOutdated", false);
-  const [updatingMod, setUpdatingMod] = useState(false);
+  // The step a running mod change is on, shown on that game's card; null when nothing runs.
+  const [modProgress, setModProgress] = useState<{ key: string; step: string } | null>(null);
+  const updatingMod = modProgress !== null;
   const [toggleRevision, setToggleRevision] = useState(0);
   const [selectedGameKey, setSelectedGameKey] = useRemembered<string | null>("games.selected", null);
   const [ambiguitySelections, setAmbiguitySelections] = useState<Record<string, string>>({});
@@ -170,7 +172,13 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     if (!game.game_path) return;
     const target = { ...game, game_path: game.game_path };
     const hasOverrides = game.wine_dll_overrides.length > 0;
-    setUpdatingMod(true);
+    const step = (text: string) => setModProgress({ key: gameKey(game), step: text });
+    const refreshStatus = () => {
+      step("Refreshing status");
+      return refresh();
+    };
+    const filesStep = applied ? "Copying mod files" : "Removing mod files";
+    step(applied && hasOverrides ? "Reading launch options" : filesStep);
     setErrorMessage("");
     try {
       if (applied && game.offline_only && !await confirmOfflineMod(game.app_name)) return;
@@ -178,9 +186,10 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
 
       let outcome: Awaited<ReturnType<typeof setModFiles>>;
       try {
+        step(filesStep);
         outcome = await setModFiles(target, applied);
       } catch (error) {
-        const refreshError = await refresh();
+        const refreshError = await refreshStatus();
         if (!applied && hasOverrides) {
           await showRemovalFailure(game, error, refreshError);
         } else {
@@ -194,7 +203,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       }
       if (outcome.warning) {
         showErrorModal("Mod removal needs attention", outcome.warning);
-        await refresh();
+        await refreshStatus();
         return;
       }
       if (outcome.conflicts.length === 0) {
@@ -204,7 +213,8 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       if (outcome.iniWarning) setErrorMessage(outcome.iniWarning);
 
       if (!applied) {
-        const refreshError = hasOverrides ? await removeModLaunchOptions(game, refresh) : await refresh();
+        if (hasOverrides) step("Removing launch options");
+        const refreshError = hasOverrides ? await removeModLaunchOptions(game, refreshStatus) : await refreshStatus();
         if (refreshError && hasOverrides) setErrorMessage(`Status refresh failed: ${refreshError}`);
         else if (refreshError) {
           notifyError("Status refresh failed", `Operation completed, but refreshing status failed: ${refreshError}`);
@@ -214,12 +224,13 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
       let notice = launch.notice;
       if (launch.plan) {
         try {
+          step("Setting launch options");
           await applyLaunchOptions(launch.plan, game.wine_dll_overrides);
         } catch (error) {
           notice = `Steam launch options could not be updated: ${errorText(error)}. Mod files were still applied.`;
         }
       }
-      const refreshError = await refresh();
+      const refreshError = await refreshStatus();
       if (notice) {
         const setting = requiredLaunchOption(game);
         showLaunchOptionsInfo(
@@ -234,7 +245,7 @@ Required setting: ${setting}`, refreshError),
       }
     } finally {
       setToggleRevision((revision) => revision + 1);
-      setUpdatingMod(false);
+      setModProgress(null);
     }
   };
 
@@ -327,7 +338,7 @@ Required setting: ${setting}`, refreshError),
   const resetGameChoice = async (game: SupportedGame) => {
     const group = game.ambiguity_group;
     if (!group || !game.game_path) return;
-    setUpdatingMod(true);
+    setModProgress({ key: gameKey(game), step: "Clearing game choice" });
     try {
       await clearMatchedGame(group, game.mod_id, game.game_path);
       setAmbiguitySelections((current) => {
@@ -343,7 +354,7 @@ Required setting: ${setting}`, refreshError),
     } catch (error) {
       notifyError("Could not clear game choice", errorText(error));
     } finally {
-      setUpdatingMod(false);
+      setModProgress(null);
     }
   };
 
@@ -465,6 +476,7 @@ Required setting: ${setting}`, refreshError),
               groupId={groupId}
               toggleRevision={toggleRevision}
               updating={updatingMod}
+              progress={game && modProgress?.key === gameKey(game) ? modProgress.step : null}
               readmeLoading={readmeLoading}
               onSelect={() => void selectGame()}
               onApply={(selected, applied) => void changeModApplied(selected, applied)}

@@ -18,7 +18,7 @@ AnyAspectRatio is available on [DeckyHub](https://deckyhub.com/), a plugin store
 
 ### Manual install from ZIP
 
-1. Download `AnyAspectRatio-1.9.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
+1. Download `AnyAspectRatio-2.0.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest).
 2. Put the zip on the Deck (for example in `Downloads`).
 3. In Game Mode, open Decky (`...` button), then **Settings → General** and turn on **Developer mode**.
 4. Open **Settings → Developer → Install Plugin from ZIP**, pick the zip, and confirm.
@@ -55,7 +55,7 @@ To update, install the newer zip the same way. To remove, uninstall from the Dec
 
 ### Offline mode and privacy
 
-Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, download `AnyAspectRatio-Offline-Mods-1.9.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
+Turn on **Settings → Offline mode** to prevent the plugin from connecting to the internet. Before going offline, download `AnyAspectRatio-Offline-Mods-2.0.0.zip` from the release page and use **Mods → Import offline mods pack**. You can also use your own local mod archives. Offline mode applies to this plugin only, not Decky Loader or Steam.
 
 ## License
 

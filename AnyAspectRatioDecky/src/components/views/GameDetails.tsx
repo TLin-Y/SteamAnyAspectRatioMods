@@ -1,7 +1,7 @@
 import { ButtonItem, PanelSectionRow } from "@decky/ui";
 import ReactMarkdown from "react-markdown";
 import { isEditableIniLine } from "../../services/modals";
-import type { ModLogResult, SupportedGame } from "../../services/types";
+import { isFolderGame, type ModLogResult, type SupportedGame } from "../../services/types";
 import { EditableValue } from "./EditableValue";
 
 export function GameTitle({ game, index, unresolved = false }: {
@@ -18,7 +18,7 @@ export function GameTitle({ game, index, unresolved = false }: {
       {game.offline_only && " (Offline)"}
       {game.source_kind === "local_archive" && " (Custom)"}
       {game.update_available && " (New)"}
-      {game.steam_app_id === "custom" ? " (Folder)" : (unresolved || game.matched_by_executable) && " (.exe)"}
+      {isFolderGame(game) ? " (Folder)" : (unresolved || game.matched_by_executable) && " (.exe)"}
     </strong>
   );
 }

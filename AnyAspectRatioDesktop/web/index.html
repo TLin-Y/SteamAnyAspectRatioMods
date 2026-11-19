@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- No remote images (some mod ReadMes link them): only the backend goes online, so Offline mode blocks everything. -->
+    <meta http-equiv="Content-Security-Policy" content="img-src 'self' data: file:" />
     <title>AnyAspectRatio</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
