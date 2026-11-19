@@ -12,6 +12,8 @@ Launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`
 
 ## 3. Custom Aspect Ratio
 
+Set the game's display mode to **Windowed** (required). In fullscreen the game does not start with this fix.
+
 Edit `Width` and `Height` in `[Resolution]` in `DMC-DevilMayCry_ARFix.ini`.
 The default is 1280x800 (16:10, Steam Deck). Use your screen resolution.
 `Width = 0` and `Height = 0` use the resolution selected in the game.
