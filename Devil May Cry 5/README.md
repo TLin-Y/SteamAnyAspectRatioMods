@@ -1,6 +1,6 @@
 # DEVIL-MAY-CRY-5-Any-Aspect-Ratio
 
-Set the in-game resolution to 1280x720 and SteamOS display scaling to "Stretch" for full-screen stretching.
+Set the in-game resolution to your screen resolution (Steam Deck: 1280x800). The game now fills the whole screen with no black bars; no SteamOS display scaling needed.
 
 Why?
 - REFramework is incompatible with ARM64EC containers and can crash when its x86 instrumentation is dispatched. This mod applies the aspect-ratio fix without relying on REFramework.
@@ -21,10 +21,12 @@ Value: dinput8=n,b
 
 3. Custom Aspect Ratio
 
-Open DevilMayCry5_ARFix.ini with any text editor. Change AspectWidth and AspectHeight to match the aspect ratio you want (e.g., 4:3, 16:10, 21:9). These are ratio values, not pixel dimensions. Set EnableARFix to false to disable the fix. This mod does not include an FOV setting.
+Open DevilMayCry5_ARFix.ini with any text editor. The mod defaults to 16:10 (Steam Deck). On other screens, set AspectWidth and AspectHeight to your screen's ratio (e.g., 4:3, 21:9; ratio values, not pixel dimensions), or set EnableARFix to false: the full-screen mode already matches the picture to your screen. This mod does not include an FOV setting.
 
-4. Full-Screen Stretching
+4. Full-Screen Stretching (old way)
 
-Set your SteamOS display scaling to "Stretch" and set the in-game resolution to 1280x720. The stretch mods render at the ratio in the ini, then scale that picture to fill the screen; if the in-game resolution is not 1280x720, it will not stretch. The mod defaults to 16:10; set the target width and height in the ini to the ratio you want.
+The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works; keep EnableARFix = true with the ratio of your screen. To go back to the game's own black bars, set Enabled = false under [FitScreen].
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Devil-May-Cry-5-v1.0.0.zip and in the repository root.
+On macOS (CrossOver), use Fullscreen or Borderless at your screen resolution.
+
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Devil-May-Cry-5-v1.1.0.zip and in the repository root.

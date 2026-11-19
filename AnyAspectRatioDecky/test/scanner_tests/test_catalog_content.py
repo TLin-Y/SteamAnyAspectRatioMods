@@ -74,7 +74,7 @@ PINNED = {
     },
     "devil-may-cry-5": {
         "steam_app_id": "601150", "install_dir": "Devil May Cry 5", "executable": "DevilMayCry5.exe",
-        "wine_dll_overrides": ("dinput8=n,b",), "display_tags": ("stretch",),
+        "wine_dll_overrides": ("dinput8=n,b",), "display_tags": (),
     },
     "phoenix-wright-ace-attorney-trilogy": {
         "steam_app_id": "787480", "install_dir": "Phoenix Wright Ace Attorney Trilogy", "executable": "PWAAT.exe",
@@ -281,7 +281,7 @@ README_MENTIONS = {
 }
 
 STRETCHED = {
-    "devil-may-cry-5", "dynasty-warriors-7-xtreme-legends-definitive-edition",
+    "dynasty-warriors-7-xtreme-legends-definitive-edition",
     "dynasty-warriors-8-xtreme-legends-complete-edition", "rayman-legends",
     "resident-evil-requiem",
     "samurai-warriors-spirit-of-sanada", "ultrawidefix-lrff13",

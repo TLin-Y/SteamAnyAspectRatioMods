@@ -887,13 +887,12 @@
       "executable": "DevilMayCry5.exe",
       "source": {
         "kind": "archive",
-        "path": "Devil May Cry 5/Devil-May-Cry-5-v1.0.0.zip",
-        "sha256": "2c9b9168573ed117dea18f27689f5c81a62cf965227ec9eda25acf8fba9e25c9"
+        "path": "Devil May Cry 5/Devil-May-Cry-5-v1.1.0.zip",
+        "sha256": "f32f5c38ce92485783649d149d1f91a3efa3087ee283c75164f3e022390d493b"
       },
       "files": ["dinput8.dll", "DevilMayCry5_ARFix.asi", "DevilMayCry5_ARFix.ini"],
       "ini_file": "DevilMayCry5_ARFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
