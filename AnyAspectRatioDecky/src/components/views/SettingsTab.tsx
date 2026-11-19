@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   ButtonItem,
   ConfirmModal,
+  DialogButton,
   PanelSection,
   PanelSectionRow,
   ToggleField,
@@ -21,6 +22,8 @@ import { showErrorModal } from "../../services/modals";
 import { errorText, formatCatalogUpdate } from "../../services/formatters";
 import { PluginUpdateSection } from "./PluginUpdateSection";
 import { EditableValue } from "./EditableValue";
+import { GameFoldersSection } from "./GameFoldersSection";
+import { DESKTOP_ACTIONS, type ResolutionChoice } from "../../services/platform";
 import { useRemembered } from "../../services/remembered";
 import type { PluginSettingsInfo, PluginSettingsValues } from "../../services/types";
 
@@ -49,6 +52,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
   const [status, setStatus] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
   const [showMore, setShowMore] = useRemembered("settings.showMore", false);
+  const [resolutionChoices, setResolutionChoices] = useState<ResolutionChoice[]>([]);
 
   const repositoryLabel = (
     values.catalog_repository_url || "the configured repository"
@@ -77,6 +81,7 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
 
   useEffect(() => {
     load().catch((error) => showError("Could not load settings", error));
+    DESKTOP_ACTIONS?.resolutionChoices().then(setResolutionChoices).catch(() => undefined);
   }, []);
 
   const runUpdate = async () => {
@@ -269,6 +274,26 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
       <PanelSection title="Default mod INI resolution">
         {field("Width (pixels)", "ini_resolution_width", true)}
         {field("Height (pixels)", "ini_resolution_height", true)}
+        {resolutionChoices.length > 0 && (
+          <PanelSectionRow>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", width: "100%" }}>
+              {resolutionChoices.map((choice) => (
+                <DialogButton
+                  key={`${choice.label}-${choice.width}x${choice.height}`}
+                  style={{ flex: "1 1 auto", width: "auto", minWidth: 0, padding: "6px 12px" }}
+                  disabled={busy || !info}
+                  onClick={() => void save({
+                    ...values,
+                    ini_resolution_width: String(choice.width),
+                    ini_resolution_height: String(choice.height),
+                  })}
+                >
+                  {`Use ${choice.label}: ${choice.width} x ${choice.height}`}
+                </DialogButton>
+              ))}
+            </div>
+          </PanelSectionRow>
+        )}
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={busy || !info} onClick={confirmUpdateCurrent}>
             <span style={info?.settings.ini_resolution_update_pending ? PENDING_STYLE : undefined}>
@@ -294,6 +319,15 @@ export function SettingsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </div>
         </PanelSectionRow>
       </PanelSection>
+      <GameFoldersSection
+        folders={info?.settings.custom_game_dirs ?? []}
+        disabled={busy || !info}
+        onChanged={async () => {
+          await load();
+          onDataChanged();
+        }}
+        onError={showError}
+      />
       {info?.self_update_enabled && (
         <PluginUpdateSection
           busy={busy}

@@ -1,4 +1,5 @@
 import os
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
@@ -12,6 +13,9 @@ from scanner.steam_library_scanner import (
     discover_steam_apps,
     find_steam_roots,
 )
+
+# Stands in for a Steam app id on games found in the user's own game folders.
+CUSTOM_APP_ID = "custom"
 
 
 @dataclass(frozen=True)
@@ -335,11 +339,46 @@ class _GameMatcher:
             if (game.game_path, mod.mod_id) not in self.known:
                 self.add_game(mod, game, True, f"{shortcut.app_id}:{executable}" if ambiguous else None)
 
+    def match_folder(self, folder: Path, steam_folders: set[str]) -> None:
+        """Match a game installed outside Steam by the catalogued executables in its folder.
+
+        A folder Steam already knows is skipped: its games are matched by app id, and an exe-name
+        match there would only add other mods' false positives.
+        """
+        if _folder_key(folder) in steam_folders:
+            return
+        app = InstalledApp(CUSTOM_APP_ID, folder.name, folder.name, str(folder.parent), str(folder))
+        for mod, ambiguous in _match_by_executable(app, self.catalog, self.index, self.file_cache, self.warnings):
+            self.add_game(mod, app, True, f"{CUSTOM_APP_ID}:{folder}" if ambiguous else None)
+
+
+def _folder_key(folder: Path | str) -> str:
+    return os.path.normcase(os.path.realpath(folder))
+
+
+def _custom_game_folders(custom_game_dirs: Sequence[str], warnings: list[str]) -> list[Path]:
+    """Each configured folder and the folders directly inside it (a folder of games, or one game)."""
+    found: list[Path] = []
+    for configured in custom_game_dirs:
+        folder = Path(configured)
+        try:
+            with os.scandir(folder) as entries:
+                children = sorted(
+                    Path(entry.path) for entry in entries
+                    if entry.is_dir(follow_symlinks=False) and not entry.name.startswith(".")
+                )
+        except OSError as error:
+            warnings.append(f"Game folder is unavailable: {folder} ({error.strerror or error})")
+            continue
+        found += [folder, *children]
+    return found
+
 
 def match_supported_games(
     steam_scan: SteamScanReport,
     catalog: tuple[ModDefinition, ...],
     local_mods: tuple[ModDefinition, ...] = (),
+    custom_game_dirs: Sequence[str] = (),
 ) -> SupportedGameScanReport:
     mods_by_app_id: dict[str, list[ModDefinition]] = {}
     for mod in (*local_mods, *catalog):
@@ -350,6 +389,11 @@ def match_supported_games(
         matcher.match_app(app, mods_by_app_id.get(app.app_id, []))
     for shortcut in steam_scan.shortcuts:
         matcher.match_shortcut(shortcut)
+    steam_folders = {
+        _folder_key(app.game_path) for app in (*steam_scan.apps, *steam_scan.shortcuts) if app.game_path
+    } | {_folder_key(game_path) for game_path, _ in matcher.known if game_path}
+    for folder in _custom_game_folders(custom_game_dirs, matcher.warnings):
+        matcher.match_folder(folder, steam_folders)
 
     return SupportedGameScanReport(
         steam_scan=steam_scan,
@@ -366,6 +410,7 @@ def scan_supported_games(
     *,
     local_archive_dir: str | None = None,
     local_index_path: Path | None = None,
+    custom_game_dirs: Sequence[str] = (),
 ) -> SupportedGameScanReport:
     steam_scan = discover_steam_apps()
     steam_scan.shortcuts = scan_non_steam_shortcuts(find_steam_roots())
@@ -378,7 +423,7 @@ def scan_supported_games(
         {mod.steam_app_id for mod in catalog},
     )
     
-    report = match_supported_games(steam_scan, catalog, local_mods)
+    report = match_supported_games(steam_scan, catalog, local_mods, custom_game_dirs)
     report.warnings.extend([*archive_warnings, *match_warnings])
 
     return report

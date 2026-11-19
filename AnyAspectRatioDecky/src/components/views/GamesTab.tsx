@@ -6,7 +6,9 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { GameDetails } from "./GameDetails";
 import { GameCard } from "./GameCard";
+import { GameFilter } from "./GameFilter";
 import { useIniEditor } from "./useIniEditor";
+import { gameMatchesFilter } from "../../services/gameFilter";
 
 import {
   scanSupportedGames,
@@ -55,6 +57,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [readmeContent, setReadmeContent] = useState("");
   const [readmeLoading, setReadmeLoading] = useState(false);
   const [modLogs, setModLogs] = useState<ModLogResult[] | null>(null);
+  const [filter, setFilter] = useRemembered("games.filter", "");
   const detailRequestId = useRef(0);
   const initialRevision = useRef(dataRevision);
   const scanStarted = useRef(false);
@@ -259,6 +262,10 @@ Required setting: ${setting}`, refreshError),
     }
     group.push(game);
   }
+  // Cards keep their position in the full list as their number, so a filtered card reads the same.
+  const shownGroups = gameGroups
+    .map((group, position) => ({ group, position }))
+    .filter(({ group }) => group.some((game) => gameMatchesFilter(game, filter)));
 
   const openGameDetails = async (game: SupportedGame) => {
     const requestId = ++detailRequestId.current;
@@ -375,6 +382,20 @@ Required setting: ${setting}`, refreshError),
           <div role="status">{pluginUsageInfo}</div>
         </PanelSectionRow>
       )}
+      {!selectedGame && gameGroups.length > 0 && (
+        <PanelSectionRow>
+          <GameFilter value={filter} onChange={setFilter} />
+        </PanelSectionRow>
+      )}
+      {!selectedGame && filter.trim() && (
+        <PanelSectionRow>
+          <div role="status">
+            {shownGroups.length
+              ? `Showing ${shownGroups.length} of ${gameGroups.length} games.`
+              : `No games match "${filter.trim()}".`}
+          </div>
+        </PanelSectionRow>
+      )}
       {report?.supported_games.length === 0 && (
         <PanelSectionRow>
           <div role="status">No catalogued games were found in the scanned Steam libraries.</div>
@@ -396,7 +417,7 @@ Required setting: ${setting}`, refreshError),
           }}
           onIniCommit={ini.commit}
         />
-      ) : gameGroups.map((group, index, ordered) => {
+      ) : shownGroups.map(({ group, position: index }, shownIndex, ordered) => {
 
         const first = group[0];
         const groupId = first.ambiguity_group;
@@ -430,7 +451,7 @@ Required setting: ${setting}`, refreshError),
         };
         return (
           <Fragment key={groupId ?? gameKey(first)}>
-            {first.manual && !ordered[index - 1]?.[0].manual && (
+            {first.manual && !ordered[shownIndex - 1]?.group[0].manual && (
               <PanelSection title="Manual fixes">
                 <PanelSectionRow>
                   <div>These fixes cannot be installed automatically. Open the ReadMe for the steps.</div>

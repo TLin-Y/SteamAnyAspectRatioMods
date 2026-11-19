@@ -49,6 +49,7 @@ function Content() {
             {tabs.map((t) => (
               <button
                 key={t.id}
+                aria-pressed={tab === t.id}
                 onClick={() => setTab(t.id)}
                 style={{
                   flex: 1,

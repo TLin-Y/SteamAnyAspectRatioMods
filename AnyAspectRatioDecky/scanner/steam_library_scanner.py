@@ -46,6 +46,7 @@ class SteamScanReport:
 def find_steam_roots(
     home: Path | None = None,
     environment: Mapping[str, str] | None = None,
+    system_roots: Sequence[Path] | None = None,
 ) -> list[Path]:
     env = os.environ if environment is None else environment
     user_home = Path.home() if home is None else home
@@ -53,6 +54,7 @@ def find_steam_roots(
     configured_root = env.get(steam_layout.ROOT_ENVIRONMENT)
     if configured_root:
         candidates.append(Path(configured_root).expanduser())
+    candidates.extend(steam_layout.system_roots() if system_roots is None else system_roots)
     candidates.extend(user_home / relative_path for relative_path in steam_layout.ROOTS)
 
     roots: list[Path] = []
@@ -95,7 +97,7 @@ def _library_roots(steam_root: Path) -> tuple[list[Path], list[str]]:
                 f"Library {index} has no valid path in {config_path}"
             )
             continue
-        library_path = Path(raw_path).expanduser()
+        library_path = steam_layout.wine_drive_path(raw_path, steam_root) or Path(raw_path).expanduser()
         if not library_path.is_absolute():
             warnings.append(
                 f"Library {index} path is not absolute in {config_path}"

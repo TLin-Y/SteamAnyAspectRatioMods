@@ -45,8 +45,10 @@ from store.mod_sources import fetch_mod_readme, set_archive_cache_dir, set_pack_
 from store.offline_pack import install_pack, pack_operation
 from store.plugin_store import (
     DEFAULT_CATALOG_PATH,
+    MAX_CUSTOM_GAME_DIRS,
     PluginStore,
     Settings,
+    validate_custom_game_dir,
     validate_settings,
 )
 from utils.network import NetworkError, is_not_found, set_offline_mode
@@ -203,6 +205,7 @@ class Plugin:
             source.mods,
             local_archive_dir=settings.local_archive_dir or None,
             local_index_path=store.local_index_path,
+            custom_game_dirs=settings.custom_game_dirs,
         )
         hashes = _load_applied_hashes(store, report.warnings) or {}
         games = [
@@ -399,6 +402,7 @@ class Plugin:
                 catalog_ref=unless_default(requested.catalog_ref, default_ref),
                 catalog_path=unless_default(requested.catalog_path, DEFAULT_CATALOG_PATH),
                 offline_mode=previous.offline_mode,
+                custom_game_dirs=previous.custom_game_dirs,
                 ini_resolution_update_pending=(
                     previous.ini_resolution_update_pending
                     or (requested.ini_resolution_width, requested.ini_resolution_height)
@@ -415,6 +419,33 @@ class Plugin:
                 store.clear_local_index()
         log.info("Settings saved (mod source changed: %s)", source_changed)
         return {"saved": True, "source_changed": source_changed}
+
+    async def add_custom_game_dir(self, folder: str) -> dict[str, object]:
+        store = get_store()
+        with log.on_error("Adding a game folder failed"):
+            if not isinstance(folder, str):
+                raise PluginError("Game folder must be a path")
+            folder = validate_custom_game_dir(folder)
+            settings = store.load_settings()
+            if folder in settings.custom_game_dirs:
+                return {"custom_game_dirs": list(settings.custom_game_dirs)}
+            if len(settings.custom_game_dirs) >= MAX_CUSTOM_GAME_DIRS:
+                raise PluginError(f"At most {MAX_CUSTOM_GAME_DIRS} game folders can be added")
+            settings = replace(settings, custom_game_dirs=(*settings.custom_game_dirs, folder))
+            store.save_settings(settings)
+            store.clear_last_scan()
+        log.info("Game folder added (%d configured)", len(settings.custom_game_dirs))
+        return {"custom_game_dirs": list(settings.custom_game_dirs)}
+
+    async def remove_custom_game_dir(self, folder: str) -> dict[str, object]:
+        store = get_store()
+        settings = store.load_settings()
+        remaining = tuple(item for item in settings.custom_game_dirs if item != folder)
+        if remaining != settings.custom_game_dirs:
+            store.save_settings(replace(settings, custom_game_dirs=remaining))
+            store.clear_last_scan()
+            log.info("Game folder removed (%d configured)", len(remaining))
+        return {"custom_game_dirs": list(remaining)}
 
     async def get_offline_mode(self) -> bool:
         return get_store().load_settings().offline_mode

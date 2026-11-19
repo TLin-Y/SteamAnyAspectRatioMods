@@ -1,0 +1,295 @@
+:root {
+  color-scheme: dark;
+  --bg: #0e141b;
+  --panel: #1a2330;
+  --panel-raised: #23303f;
+  --border: rgba(255, 255, 255, 0.14);
+  --text: #e6ebf0;
+  --muted: #9aa7b4;
+  --accent: #1a9fff;
+  --accent-text: #ffffff;
+  --header-height: 52px;
+}
+
+* { box-sizing: border-box; }
+
+html { scrollbar-gutter: stable; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 "Segoe UI", system-ui, sans-serif;
+}
+
+.aar-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+  padding: 0 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.aar-title { font-size: 18px; font-weight: 600; }
+
+.aar-content { max-width: 1180px; margin: 0 auto; padding: 0 16px 32px; }
+
+.aar-section {
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Tab bar (index.tsx styles it inline for the Deck): a segmented control pinned under the header. */
+.aar-content > .aar-section:first-child {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 5;
+  margin: 0 -16px;
+  padding: 10px 16px;
+  background: var(--bg);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+.aar-content > .aar-section:first-child .aar-row > div:has(> button) {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 3px;
+  gap: 3px !important;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.aar-content > .aar-section:first-child button {
+  padding: 6px 12px !important;
+  color: var(--muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  font: inherit !important;
+  font-weight: 600 !important;
+}
+.aar-content > .aar-section:first-child button:hover { color: var(--text) !important; }
+.aar-content > .aar-section:first-child button[aria-pressed="true"] {
+  color: var(--accent-text) !important;
+  background: var(--accent) !important;
+}
+.aar-content > .aar-section:first-child [role="status"] { text-align: center; margin-top: 6px; }
+
+/* A section holding other sections (the game list, the advanced settings) lays them out as a grid of cards. */
+.aar-section:has(> .aar-section) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.aar-section:has(> .aar-section) > :not(.aar-section),
+.aar-section:has(> .aar-section) > .aar-section:not(:has(.aar-toggle, .aar-button)) {
+  grid-column: 1 / -1;
+}
+.aar-section:has(> .aar-section) > .aar-section { margin: 0; height: 100%; }
+
+/* Single-column panels (Mods, Settings, game details) read best at about the Deck panel's proportions. */
+.aar-content > .aar-section:not(:first-child):not(:has(> .aar-section)),
+.aar-content > div > .aar-section:not(:has(> .aar-section)) {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.aar-content > .aar-section:has(> .aar-section) > :not(.aar-section) {
+  max-width: 760px;
+  width: 100%;
+  justify-self: center;
+}
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #2f3c4b; border: 3px solid var(--bg); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #3e4e61; }
+
+.aar-section-title {
+  margin: 2px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.aar-row { padding: 4px 0; overflow-wrap: anywhere; }
+
+.aar-field { display: flex; flex-direction: column; gap: 4px; }
+.aar-field-label { font-weight: 600; }
+.aar-field-description { font-size: 12px; color: var(--muted); }
+
+.aar-button {
+  min-height: 32px;
+  padding: 6px 14px;
+  color: var(--text);
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+.aar-button:hover:not(:disabled) { background: #2d3d50; }
+.aar-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.aar-button:disabled { opacity: 0.45; cursor: default; }
+.aar-button-wide { width: 100%; }
+.aar-button-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.aar-button-primary:hover:not(:disabled) { background: #3aaeff; }
+
+.aar-toggle, .aar-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.aar-toggle-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.aar-disabled { opacity: 0.5; cursor: default; }
+
+.aar-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.aar-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 22px;
+  background: #3b4756;
+  border-radius: 11px;
+  transition: background 0.15s;
+}
+.aar-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.15s;
+}
+.aar-toggle input:checked + .aar-switch { background: var(--accent); }
+.aar-toggle input:checked + .aar-switch::after { transform: translateX(20px); }
+.aar-toggle input:focus-visible + .aar-switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.aar-checkbox input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+.aar-input {
+  width: 100%;
+  padding: 6px 10px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+}
+.aar-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+.aar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.aar-modal {
+  width: min(640px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.aar-modal-title { margin: 0 0 10px; font-size: 18px; }
+.aar-modal-description { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+.aar-modal-body { margin-top: 12px; }
+.aar-modal-body img { max-width: 100%; }
+.aar-modal-body a { color: var(--accent); }
+.aar-modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.aar-modal-buttons .aar-button { min-width: 110px; }
+
+.aar-info-line { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 3px 0; overflow-wrap: anywhere; }
+.aar-info-status { margin-top: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.aar-button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.aar-header { gap: 16px; }
+.aar-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 14px;
+  min-width: 0;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+.aar-status > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.aar-status > span + span::before { content: "·"; margin-right: 14px; opacity: 0.6; }
+
+.aar-dropdown { position: relative; overflow: visible !important; cursor: default; outline: none; }
+.aar-dropdown::before { display: inline-block; }
+.aar-dropdown-label { text-decoration: underline dotted; }
+.aar-dropdown:focus-visible .aar-dropdown-label { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+/* The menu starts right under the label (its padding bridges the gap), so the pointer can move into it. */
+.aar-dropdown-menu { display: none; position: absolute; top: 100%; right: 0; z-index: 50; padding-top: 8px; }
+.aar-dropdown:hover .aar-dropdown-menu, .aar-dropdown:focus-within .aar-dropdown-menu { display: block; }
+.aar-dropdown-panel {
+  display: grid;
+  gap: 10px;
+  width: max-content;
+  min-width: 300px;
+  max-width: min(560px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  white-space: normal;
+}
+.aar-game-group { display: grid; gap: 1px; }
+.aar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.aar-menu-item:hover, .aar-menu-item:focus-visible { background: rgba(255, 255, 255, 0.08); outline: none; }
+.aar-menu-heading { color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
+.aar-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--muted); }
+.aar-dot-on { background: var(--accent); border-color: var(--accent); }
+.aar-disk { display: grid; gap: 4px; }
+.aar-disk-path { font-weight: 600; overflow-wrap: anywhere; }
+.aar-disk-bar { display: block; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.aar-disk-bar > span { display: block; height: 100%; background: var(--accent); }
+.aar-legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

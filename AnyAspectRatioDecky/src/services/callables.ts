@@ -26,7 +26,11 @@ export const savePluginSettings = callable<
   { saved: boolean; source_changed: boolean }
 >("save_settings");
 
-export const setOfflineMode = callable<[boolean], { offline_mode: boolean; warning?: string | null }>("set_offline_mode");
+export const addCustomGameDir = callable<[string], { custom_game_dirs: string[] }>("add_custom_game_dir");
+
+export const removeCustomGameDir = callable<[string], { custom_game_dirs: string[] }>("remove_custom_game_dir");
+
+export const setOfflineMode =callable<[boolean], { offline_mode: boolean; warning?: string | null }>("set_offline_mode");
 
 export const checkForPluginUpdate = callable<[], PluginUpdateInfo>("check_plugin_update");
 
