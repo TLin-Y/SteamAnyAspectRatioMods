@@ -350,13 +350,12 @@
       "executable": "MonsterHunterRise.exe",
       "source": {
         "kind": "archive",
-        "path": "Monster Hunter Rise/Monster-Hunter-Rise-v1.1.0.zip",
-        "sha256": "ed980b2058221d087adc2dc2b746ef9d9a411643d66caa04b1defc14840b5ae5"
+        "path": "Monster Hunter Rise/Monster-Hunter-Rise-v1.2.0.zip",
+        "sha256": "1339e4ba1a0b2d79a16f460198710a373585e166586a7243e854de8faef42806"
       },
       "files": ["dinput8.dll", "MHRiseFix.asi", "MHRiseFix.ini"],
       "ini_file": "MHRiseFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "TargetWidth", "height": "TargetHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
