@@ -1,4 +1,14 @@
-# AnyAspectRatio for Steam Deck v1.9.0: play at full-screen 16:10, one tap per game
+# AnyAspectRatio v2.0.0: one tap per game on Steam Deck, now also on Windows, macOS and Linux
+
+## New in 2.0.0
+
+- **Desktop app.** The same plugin as an app for Windows, macOS (Apple silicon) and Linux. Download one file and run it; nothing else to install. On macOS it sets the Wine override inside your CrossOver or Whisky bottle for you. See the [desktop guide](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
+- **New fixes:** ASTLIBRA Revision, Brotato, CODE VEIN, Detroit: Become Human, Devil May Cry 4 Special Edition, DmC Devil May Cry, DragonSword: Awakening, Onimusha: Way of the Sword and Resident Evil Requiem.
+- **Updated:** Dynasty Warriors: Origins, Monster Hunter Rise, NINJA GAIDEN Sigma, Ninja Gaiden Sigma 2, NINJA GAIDEN 3: Razor's Edge, Palworld, Pentiment, Persona 4 Golden, Persona 5 Royal, Resident Evil 2/3/4/7/Village and Trials of Mana.
+- **Removed:** the RESONANCE OF FATE/END OF ETERNITY ENHANCED REMASTER fix.
+- **Game folders.** Games outside Steam can be added under **Settings → Game folders**: a game's folder, or a folder that holds several games.
+- **Filter games by name** in the Games tab.
+- **See each step.** While a fix is applied or removed, the game's card shows what it is doing.
 
 ## New in 1.9.0
 
@@ -58,13 +68,15 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-1.9.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-2.0.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-1.9.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-2.0.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
 5. Press **Scan for supported games**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
+
+On Windows, macOS or Linux, download **AnyAspectRatio-Desktop-2.0.0** for your system from the Assets instead and follow the [desktop guide](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
 
 ## Good to know
 
@@ -78,6 +90,6 @@ To update, install the newer zip the same way. To remove, uninstall it from the 
 
 ## Credits and support
 
-Huge thanks to [Lyall](https://codeberg.org/Lyall) ([Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)), ThirteenAG (Ultimate ASI Loader), and all the mod authors who make this possible. See our [thanks to external mod authors](../external/THANKS.md).
+Huge thanks to [Lyall](https://codeberg.org/Lyall) ([Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)), ThirteenAG (Ultimate ASI Loader), and all the mod authors who make this possible. See our [thanks to external mod authors](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/external/THANKS.md).
 
 If this helps you, you can support me on [Ko-fi](https://ko-fi.com/lin66961). Bug reports and game requests: open an issue on [GitHub](https://github.com/TLin-Y/SteamAnyAspectRatioMods/issues).

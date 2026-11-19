@@ -13,6 +13,8 @@ type Props = {
   groupId: string | null | undefined;
   toggleRevision: number;
   updating: boolean;
+  /** The step this game's mod change is on, while it runs. */
+  progress: string | null;
   readmeLoading: boolean;
   onSelect: () => void;
   onApply: (game: SupportedGame, applied: boolean) => void;
@@ -23,7 +25,7 @@ type Props = {
 };
 
 export function GameCard({
-  first, game, index, groupId, toggleRevision, updating, readmeLoading,
+  first, game, index, groupId, toggleRevision, updating, progress, readmeLoading,
   onSelect, onApply, onClear, onEdit, onReadme, onLog,
 }: Props) {
   if (!game) {
@@ -100,10 +102,10 @@ export function GameCard({
           >
             ReadMe
           </DialogButton>
-          {DESKTOP_ACTIONS?.showWineOverrides && game.wine_dll_overrides.length > 0 && (
+          {DESKTOP_ACTIONS && game.wine_dll_overrides.length > 0 && (
             <DialogButton
               style={DESKTOP_BUTTON_STYLE}
-              onClick={() => DESKTOP_ACTIONS?.showWineOverrides?.(game)}
+              onClick={() => DESKTOP_ACTIONS?.showWineOverrides(game)}
               disabled={!game.game_path}
             >
               Wine
@@ -138,8 +140,10 @@ export function GameCard({
             </PanelSectionRow>
           )}
           <PanelSectionRow>
-            <div>
-              {game.file_status === "complete"
+            <div role="status" style={progress ? { color: "#ffd84d" } : undefined}>
+              {progress
+                ? `${progress}...`
+                : game.file_status === "complete"
                 ? `Applied ${game.files_present.length} mod files`
                 : game.file_status === "partial"
                   ? `* Incomplete — ${game.files_present.length}/${game.files_present.length + game.files_missing.length} mod files present`

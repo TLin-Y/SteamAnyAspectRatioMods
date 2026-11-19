@@ -90,4 +90,7 @@ export type LaunchOptionsDisplay = {
 
 export type SupportedGame = SupportedGameReport["supported_games"][number];
 
+/** Games found in Settings > Game folders carry this in place of a Steam app id (CUSTOM_APP_ID in the scanner). */
+export const isFolderGame = (game: SupportedGame) => game.steam_app_id === "custom";
+
 export type ModLogResult = { name: string; content: string; truncated: boolean } | { name: string; error: string };

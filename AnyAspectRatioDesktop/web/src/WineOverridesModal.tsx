@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { copyToClipboard } from "../../../AnyAspectRatioDecky/src/services/clipboard";
 import { errorText } from "../../../AnyAspectRatioDecky/src/services/formatters";
 import { showErrorModal } from "../../../AnyAspectRatioDecky/src/services/modals";
+import { requiredLaunchOption } from "../../../AnyAspectRatioDecky/src/services/modToggle";
 import type { SupportedGame } from "../../../AnyAspectRatioDecky/src/services/types";
 import { launchAction } from "./decky-api";
 import { ConfirmModal, DialogButton, TextField } from "./decky-ui";
@@ -11,7 +12,6 @@ type WineInfo = {
   message?: string;
   current?: string;
   required: string;
-  launch_option: string;
 };
 
 /** The one thing to get right under Wine: which DLLs the game loads from its own folder. */
@@ -36,12 +36,13 @@ export function WineOverridesModal({ game, closeModal }: { game: SupportedGame; 
   };
 
   if (info && !info.bottle) {
+    const launchOption = requiredLaunchOption(game);
     return (
       <ConfirmModal bAlertDialog strTitle={`Wine DLL overrides: ${game.app_name}`} strOKButtonText="Close"
         strDescription={info.message} closeModal={closeModal}>
-        <div className="aar-info-status">{info.launch_option}</div>
+        <div className="aar-info-status">{launchOption}</div>
         <div className="aar-button-row">
-          <DialogButton onClick={() => void copyToClipboard(info.launch_option).then(() => setStatus("Copied."))}>
+          <DialogButton onClick={() => void copyToClipboard(launchOption).then(() => setStatus("Copied."))}>
             Copy
           </DialogButton>
         </div>

@@ -25,8 +25,10 @@ class SystemInfoTests(unittest.TestCase):
     def test_supported_game_folders_count_once_against_installed_apps(self) -> None:
         scan = {"report": {"steam_scan": {"apps_scanned": 32}, "supported_games": [
             {"game_path": "/a"}, {"game_path": "/a"}, {"game_path": "/b"}, {"game_path": None},
+            {"game_path": "/c", "steam_app_id": "custom"}, {"game_path": "/c", "steam_app_id": "custom"},
         ]}}
-        self.assertEqual({"supported": 2, "installed": 32}, system_info.game_counts(scan))
+        # The folder game /c is not among Steam's 32 apps, so it is installed as well as supported.
+        self.assertEqual({"supported": 3, "installed": 33}, system_info.game_counts(scan))
         self.assertIsNone(system_info.game_counts(None))
         self.assertIsNone(system_info.game_counts({"report": {"supported_games": []}}))
 

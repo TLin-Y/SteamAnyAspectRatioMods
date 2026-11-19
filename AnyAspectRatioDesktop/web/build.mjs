@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
-const decky = resolve(here, "../../AnyAspectRatioDecky");
 
 const desktopPlatform = {
   name: "desktop-platform",
@@ -18,7 +17,7 @@ const desktopPlatform = {
 };
 
 // The Decky sources are bundled unchanged; Steam-only modules are swapped for desktop versions,
-// and every React import resolves to this project's single copy.
+// and every package (React included) resolves from this project's node_modules.
 await build({
   entryPoints: [resolve(here, "src/main.tsx")],
   outfile: resolve(here, "dist/app.js"),
@@ -28,13 +27,13 @@ await build({
   jsx: "automatic",
   minify: process.argv.includes("--minify"),
   sourcemap: !process.argv.includes("--minify"),
-  nodePaths: [resolve(decky, "node_modules")],
   plugins: [desktopPlatform],
   alias: {
     "@decky/ui": resolve(here, "src/decky-ui.tsx"),
     "@decky/api": resolve(here, "src/decky-api.ts"),
     "react": dirname(require.resolve("react/package.json")),
     "react-dom": dirname(require.resolve("react-dom/package.json")),
+    "react-markdown": resolve(here, "node_modules/react-markdown"),
   },
   define: { "process.env.NODE_ENV": '"production"' },
   logLevel: "info",

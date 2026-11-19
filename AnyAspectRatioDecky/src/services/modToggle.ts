@@ -5,7 +5,7 @@ import {
   confirmModifiedIniRemoval,
   showLaunchOptionsInfo,
 } from "./modals";
-import type { SupportedGame } from "./types";
+import { isFolderGame, type SupportedGame } from "./types";
 import {
   type LaunchOptionsPlan,
   prepareLaunchOptions,
@@ -17,17 +17,14 @@ import {
 export const requiredLaunchOption = (game: SupportedGame) =>
   `WINEDLLOVERRIDES="${game.wine_dll_overrides.join(";")}" %command%`;
 
-/** Games found in the user's own game folders have no Steam app, so no launch options to manage. */
-const inSteam = (game: SupportedGame) => /^\d+$/.test(game.steam_app_id);
-
 const NOT_IN_STEAM =
   "This game was found in a game folder, not in Steam, so its launch options are not set automatically. Set this launch option wherever you start the game (for example, after adding it to Steam as a non-Steam game).";
 
-export const withRefreshError =(message: string, refreshError: string | null) =>
+export const withRefreshError = (message: string, refreshError: string | null) =>
   refreshError ? `${message} Status refresh failed: ${refreshError}` : message;
 
 async function currentLaunchOptions(game: SupportedGame): Promise<{ value: string; note: string }> {
-  if (!inSteam(game)) return { value: "", note: "" };
+  if (isFolderGame(game)) return { value: "", note: "" };
   try {
     return { value: await readCurrentLaunchOptions(Number(game.steam_app_id)), note: "" };
   } catch (error) {
@@ -39,7 +36,7 @@ async function currentLaunchOptions(game: SupportedGame): Promise<{ value: strin
 export async function planLaunchOptions(
   game: SupportedGame,
 ): Promise<{ plan: LaunchOptionsPlan | null; notice: string }> {
-  if (!inSteam(game)) return { plan: null, notice: NOT_IN_STEAM };
+  if (isFolderGame(game)) return { plan: null, notice: NOT_IN_STEAM };
   try {
     const plan = await prepareLaunchOptions(Number(game.steam_app_id), game.mod_id, game.wine_dll_overrides);
     if (plan && !plan.canWrite && plan.proposedOptions !== plan.currentOptions) {
@@ -97,7 +94,7 @@ export async function removeModLaunchOptions(
   game: SupportedGame,
   refresh: () => Promise<string | null>,
 ): Promise<string | null> {
-  if (!inSteam(game)) {
+  if (isFolderGame(game)) {
     const refreshError = await refresh();
     showLaunchOptionsInfo(
       "Mod files removed",

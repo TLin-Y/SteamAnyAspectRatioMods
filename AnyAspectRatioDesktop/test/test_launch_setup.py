@@ -10,6 +10,7 @@ from backend import plugin_root
 sys.path.insert(0, str(plugin_root()))
 
 from helper.errors import PluginError
+
 from launch_setup import LINUX_MANUAL, LaunchSetup, bottle_for, describe, parse_overrides
 
 KEY = r"HKCU\Software\Wine\AppDefaults\Game.exe\DllOverrides"
@@ -93,8 +94,7 @@ class LaunchSetupTests(unittest.TestCase):
         with self.assertRaisesRegex(PluginError, "Launch Options"):
             setup.read("/games/Game", "Game.exe")
         info = setup.info("/games/Game", "Game.exe", ["dinput8=n,b"])
-        self.assertEqual((None, LINUX_MANUAL, 'WINEDLLOVERRIDES="dinput8=n,b" %command%'),
-                         (info["bottle"], info["message"], info["launch_option"]))
+        self.assertEqual((None, LINUX_MANUAL), (info["bottle"], info["message"]))
 
     def test_info_shows_the_bottle_what_is_set_and_what_the_mod_needs(self) -> None:
         bottle = FakeBottle({"winmm": "native,builtin"})
@@ -119,8 +119,10 @@ class LaunchSetupTests(unittest.TestCase):
         home = Path(tempfile.mkdtemp())
         game = home / "prefix/drive_c/Games/Game"
         game.mkdir(parents=True)
-        bottle = LaunchSetup(self.records, "linux", home)._bottle(str(game))
+        bottle = LaunchSetup(self.records, "darwin", home)._bottle(str(game))
         self.assertEqual(game.parents[2].resolve(), bottle.prefix.resolve())
+        with self.assertRaisesRegex(PluginError, "Launch Options"):
+            LaunchSetup(self.records, "linux", home)._bottle(str(game))
 
 
 class BottleTests(unittest.TestCase):

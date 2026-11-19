@@ -36,6 +36,10 @@ html, body {
 
 .aar-title { font-size: 18px; font-weight: 600; }
 
+.aar-brand { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.aar-brand:hover .aar-title { color: var(--accent); }
+.aar-brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+
 .aar-content { max-width: 1180px; margin: 0 auto; padding: 0 16px 32px; }
 
 .aar-section {

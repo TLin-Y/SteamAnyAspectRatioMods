@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- The app icon. icon.png is this file rendered at 1024 x 1024 on a transparent background. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22324a"/>
+      <stop offset="1" stop-color="#0e141b"/>
+    </linearGradient>
+  </defs>
+  <rect x="80" y="80" width="864" height="864" rx="196" fill="url(#tile)"/>
+  <g fill="none" stroke="#1a9fff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M196 352 V268 H300"/>
+    <path d="M724 268 H828 V352"/>
+    <path d="M828 672 V756 H724"/>
+    <path d="M300 756 H196 V672"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" transform="translate(-19 0)">
+    <path d="M282 664 L392 360 L502 664"/>
+    <path d="M322 566 H462"/>
+    <path d="M592 664 V360 H676 A92 92 0 0 1 676 544 H592"/>
+    <path d="M664 544 L760 664"/>
+  </g>
+</svg>
