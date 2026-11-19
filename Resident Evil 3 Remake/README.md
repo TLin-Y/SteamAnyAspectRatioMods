@@ -23,12 +23,12 @@ Value: dinput8=n,b
 
 3. Custom Aspect Ratio & FOV
 
-Customize the aspect ratio (AspectWidth / AspectHeight) and FOV (FOVScale) in RE3_ARFix.ini. The mod defaults to 16:10. Set the ratio of your screen; RE3_ARFix.log shows it, for example "Adjust aspect ratio to 16:10 for 1280x800."
+Customize the aspect ratio (AspectWidth / AspectHeight) and FOV (FOVScale) in RE3_ARFix.ini. The mod defaults to 16:10. Set the ratio of your screen; RE3_ARFix.log shows it, for example "Adjust aspect ratio to 8:5 for 1280x800." (8:5 is the same as 16:10).
 
 4. Full-Screen Stretching
 
-The game draws a 16:9 picture with black bars on other screens. The mod stretches that picture to fill the whole screen. To turn this off, set Enabled = false under [Stretch] in RE3_ARFix.ini.
+The game draws a 16:9 picture with black bars on other screens. The mod stretches that picture to fill the whole screen. To turn this off, set Enabled = false under [Stretch] in RE3_ARFix.ini. The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works as before.
 
-On macOS (CrossOver), use Borderless Window mode and set the ratio shown in RE3_ARFix.log (for example 1728:1117 on a MacBook Pro 16").
+On macOS (CrossOver), use DirectX 12 and Borderless Window mode, and set the ratio shown in RE3_ARFix.log (for example 1728:1117 on a MacBook Pro 16").
 
 The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-3-Remake-v1.4.0.zip and in the repository root.
