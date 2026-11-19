@@ -28,10 +28,9 @@ OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 52, 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
     "dark-souls-iii": {"README.txt"},
-    "warriors-orochi-4-ultimate": {"README.txt"},
     "brotato": {"LICENSE"},
     "final-fantasy-xiii": {"FF13Fix_Licences/FF13Fix_LICENSE.txt", "FF13Fix_Licences/MinHook_LICENSE.txt"},
-    "warriors-orochi-3-ultimate": {"WO3U_ARFix.log", "mods/fix/log.txt"},  # runtime logs packaged by mistake
+    "warriors-orochi-3-ultimate": {"mods/fix/log.txt", "LICENSE-WO3UFix.txt"},
 }
 NO_LOADER_LICENSE = {"ai-the-somnium-files", "brotato", "phoenix-wright-ace-attorney-trilogy"}
 NO_ZIP_README = {"final-fantasy-xiii"}  # its README ships in the separate release zip
@@ -285,7 +284,7 @@ STRETCHED = {
     "devil-may-cry-5", "dynasty-warriors-7-xtreme-legends-definitive-edition",
     "dynasty-warriors-8-xtreme-legends-complete-edition", "rayman-legends",
     "resident-evil-7", "resident-evil-village", "resident-evil-requiem",
-    "samurai-warriors-spirit-of-sanada", "warriors-orochi-3-ultimate", "warriors-orochi-4-ultimate", "ultrawidefix-lrff13",
+    "samurai-warriors-spirit-of-sanada", "ultrawidefix-lrff13",
 }
 
 
