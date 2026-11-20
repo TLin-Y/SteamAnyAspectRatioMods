@@ -1139,11 +1139,26 @@ namespace
         return slot && IsColourShader(slot->shader);
     }
 
+    // Logs each distinct large texture seen at a movie-sized draw once, so user logs show what the decoder allocated.
+    void LogMoviePlane(const D3D11_TEXTURE2D_DESC& d, DXGI_FORMAT view, bool movie)
+    {
+        static uint64_t seen[16] = {};
+        static volatile LONG count = 0;
+        uint64_t key = (static_cast<uint64_t>(d.Width) << 32) | (static_cast<uint64_t>(d.Height) << 16) | (static_cast<uint64_t>(d.Format) << 8) | static_cast<uint8_t>(view);
+        LONG n = count;
+        for (LONG i = 0; i < n && i < 16; ++i)
+            if (seen[i] == key) return;
+        LONG i = InterlockedIncrement(&count) - 1;
+        if (i >= 16) return;
+        seen[i] = key;
+        spdlog::info("Movie plane {}x{} tex {} view {}: {}", d.Width, d.Height, static_cast<int>(d.Format), static_cast<int>(view), movie ? "fitted" : "ignored");
+    }
+
     bool MoviePlane(ID3D11ShaderResourceView* srv)
     {
         D3D11_SHADER_RESOURCE_VIEW_DESC vd;
         srv->GetDesc(&vd);
-        if (vd.ViewDimension != D3D11_SRV_DIMENSION_TEXTURE2D || (vd.Format != DXGI_FORMAT_R8_UNORM && vd.Format != DXGI_FORMAT_R8_TYPELESS)) return false;
+        if (vd.ViewDimension != D3D11_SRV_DIMENSION_TEXTURE2D) return false;
         ID3D11Resource* r = nullptr;
         srv->GetResource(&r);
         if (!r) return false;
@@ -1153,7 +1168,10 @@ namespace
         if (dim == D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
             D3D11_TEXTURE2D_DESC d;
             static_cast<ID3D11Texture2D*>(r)->GetDesc(&d);
-            wide = d.Width * 9 == d.Height * 16;
+            bool r8 = vd.Format == DXGI_FORMAT_R8_UNORM || vd.Format == DXGI_FORMAT_R8_TYPELESS;
+            // Decoders can pad the surface (e.g. 1920x1088), so allow a few rows/columns of padding.
+            wide = r8 && d.Width >= 640 && d.Height > 0 && std::fabs(static_cast<float>(d.Width) / d.Height - 16.0f / 9.0f) < 0.06f;
+            if (d.Width >= 640) LogMoviePlane(d, vd.Format, wide);
         }
         r->Release();
         return wide;
