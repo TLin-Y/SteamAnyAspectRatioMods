@@ -1016,8 +1016,8 @@
       "executable": "re2.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 2 Remake/Resident-Evil-2-Remake-v1.3.0.zip",
-        "sha256": "93100dee96a2df555e86de8a60b518bcc1e7baaa57cbff0c74fa9fd24f14ba0c"
+        "path": "Resident Evil 2 Remake/Resident-Evil-2-Remake-v1.4.0.zip",
+        "sha256": "1b8885075d66c637b928c114f52cfd5c9a9760bb5e4843d5913c655534704d15"
       },
       "files": ["dinput8.dll", "RE2_ARFix.asi", "RE2_ARFix.ini"],
       "ini_file": "RE2_ARFix.ini",
@@ -1032,8 +1032,8 @@
       "executable": "re3.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.4.0.zip",
-        "sha256": "e5000c2cdede16fa9fd973fd0721c2417d910c17612ad280b57ccb1d3d993cc4"
+        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.5.0.zip",
+        "sha256": "baeb633c3234631e216afdec3e29585866432d781a0eea706440e0d4da11efef"
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",

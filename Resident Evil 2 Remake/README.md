@@ -1,6 +1,6 @@
 # RESIDENT-EVIL-2-Any-Aspect-Ratio
 
-Set the in-game resolution to your screen resolution (Steam Deck: 1280x800). The mod stretches the picture to fill the screen; no SteamOS display scaling needed.
+Set the in-game resolution to your screen resolution (Steam Deck: 1280x800). The game now fills the whole screen natively with no black bars; no SteamOS display scaling needed.
 
 Supports both the DX11 and DX12 versions of the game.
 
@@ -23,12 +23,12 @@ Value: dinput8=n,b
 
 3. Custom Aspect Ratio & FOV
 
-Open RE2_ARFix.ini with any text editor. Set AspectWidth and AspectHeight to the ratio of your screen (for example, 16 and 10 for 16:10, or 21 and 9 for 21:9). These are ratio values, not pixel dimensions. The mod defaults to 16:10; RE2_ARFix.log shows the ratio for your screen, for example "Adjust aspect ratio to 8:5 for 1280x800." (8:5 is the same as 16:10).
+Open RE2_ARFix.ini with any text editor. Set AspectWidth and AspectHeight to the ratio of your screen (for example, 16 and 10 for 16:10, or 21 and 9 for 21:9). These are ratio values, not pixel dimensions. The mod defaults to 16:10; set the ratio of your screen.
 
-4. Full-Screen Stretching
+4. Full Screen
 
-The game draws a 16:9 picture with black bars on other screens. The mod stretches that picture to fill the whole screen. To turn this off, set Enabled = false under [Stretch] in RE2_ARFix.ini. The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works as before.
+The mod removes the game's black bars so the picture fills any screen at full resolution. To go back to the game's own black bars, set Enabled = false under [FitScreen] in RE2_ARFix.ini. The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works as before.
 
-On macOS (CrossOver), use DirectX 12 and Borderless Window mode, and set the ratio shown in RE2_ARFix.log (for example 1728:1117 on a MacBook Pro 16").
+On macOS (CrossOver), use DirectX 12 and Fullscreen or Borderless Window at your screen resolution, and set the ratio of your screen in RE2_ARFix.ini (for example 1728:1117 on a MacBook Pro 16").
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-2-Remake-v1.3.0.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-2-Remake-v1.4.0.zip and in the repository root.
