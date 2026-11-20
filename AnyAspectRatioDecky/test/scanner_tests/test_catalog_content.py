@@ -277,11 +277,12 @@ README_MENTIONS = {
                                          b"SteamOS / Winlator", b"FOV fixes are enabled by default"),
     "dynasty-warriors-7-xtreme-legends-definitive-edition": (b"1280x720", b"[Stretch]"),
     "dynasty-warriors-8-xtreme-legends-complete-edition": (b"1280x720", b"[Stretch]", b"FovMultiplier"),
+    "samurai-warriors-spirit-of-sanada": (b"1280x720", b"[Stretch]"),
 }
 
 STRETCHED = {
     "rayman-legends",
-    "samurai-warriors-spirit-of-sanada", "ultrawidefix-lrff13",
+    "ultrawidefix-lrff13",
 }
 
 

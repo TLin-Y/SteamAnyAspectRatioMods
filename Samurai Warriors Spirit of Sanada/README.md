@@ -1,6 +1,6 @@
 # SAMURAI-WARRIORS-Spirit-of-Sanada-Any-Aspect-Ratio
 
-# Set the in-game resolution to 1280x720 and the SteamOS display scaling to "Stretch" so the picture fills the screen (larger text on handhelds)
+Set the in-game resolution to your screen resolution (Steam Deck: 1280x800 or Fullscreen). The game draws a 16:9 picture with black bars on other screens; the mod stretches that picture to fill the whole screen, so no SteamOS display scaling is needed. The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works. To turn the mod's stretching off, set Enabled = false under [Stretch].
 
 # Install
 Extract the mod files directly into your Steam game folder (where SWSanada.exe is located).
