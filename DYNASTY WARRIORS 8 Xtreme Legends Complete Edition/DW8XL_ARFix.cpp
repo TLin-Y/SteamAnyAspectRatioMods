@@ -8,6 +8,10 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <d3d9.h>
+#include <cmath>
+#include <cstring>
+#include <mutex>
 
 #if !defined(_M_IX86)
 #error Dynasty Warriors 8 XL is a 32-bit game. Compile this project as x86.
@@ -31,6 +35,7 @@ namespace
     static double g_EngineAR = 1.6;
 
     float fFovMultiplier = 1.0f; // 1.0 = 100%
+    bool bStretch = true;
 
     struct dw8_camera_state {
         float min_distance;
@@ -155,6 +160,7 @@ namespace
         }
 
         inipp::get_value(ini.sections["Camera"], "FovMultiplier", fFovMultiplier);
+        inipp::get_value(ini.sections["Stretch"], "Enabled", bStretch);
 
         if (fFovMultiplier < 0.1f) fFovMultiplier = 0.1f;
         if (fFovMultiplier > 5.0f) fFovMultiplier = 5.0f;
@@ -235,10 +241,204 @@ namespace
         SPDLOG_INFO("Deployment complete.");
     }
 
+    namespace Stretch
+    {
+        std::mutex mtx;
+        bool failed = false;
+        IDirect3DSurface9* temp = nullptr;
+        UINT tempW = 0, tempH = 0;
+        D3DFORMAT tempFormat = D3DFMT_UNKNOWN;
+        UINT seenW = 0, seenH = 0;
+        SafetyHookInline hkCreateDevice, hkPresent, hkReset, hkCreateSwapChain, hkSwapChainPresent;
+        bool borderless = false;
+        HWND borderlessWindow = nullptr;
+
+        void* VFunc(void* obj, size_t index) { return (*reinterpret_cast<void***>(obj))[index]; }
+
+        bool RunningOnMacOS()
+        {
+            using HostVersion = void (CDECL*)(const char**, const char**);
+            const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+            const auto getHostVersion = ntdll
+                ? reinterpret_cast<HostVersion>(GetProcAddress(ntdll, "wine_get_host_version"))
+                : nullptr;
+            if (!getHostVersion) return false;
+            const char* sysname = nullptr;
+            const char* release = nullptr;
+            getHostVersion(&sysname, &release);
+            return sysname && std::strcmp(sysname, "Darwin") == 0;
+        }
+
+        void MakeWindowed(D3DPRESENT_PARAMETERS* pp, HWND focus)
+        {
+            if (!borderless || !pp || pp->Windowed) return;
+            pp->Windowed = TRUE;
+            pp->FullScreen_RefreshRateInHz = 0;
+            borderlessWindow = pp->hDeviceWindow ? pp->hDeviceWindow : focus;
+            SPDLOG_INFO("Fullscreen {}x{} switched to a borderless window covering the screen.", pp->BackBufferWidth, pp->BackBufferHeight);
+        }
+
+        void CoverScreen()
+        {
+            if (!borderlessWindow) return;
+            MONITORINFO mi{ sizeof(mi) };
+            if (!GetMonitorInfoW(MonitorFromWindow(borderlessWindow, MONITOR_DEFAULTTONEAREST), &mi)) return;
+            RECT wr{};
+            GetWindowRect(borderlessWindow, &wr);
+            constexpr LONG edgeStyles = WS_OVERLAPPEDWINDOW | WS_BORDER | WS_DLGFRAME;
+            constexpr LONG edgeExStyles = WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE | WS_EX_DLGMODALFRAME;
+            LONG style = GetWindowLongW(borderlessWindow, GWL_STYLE);
+            LONG exStyle = GetWindowLongW(borderlessWindow, GWL_EXSTYLE);
+            if (EqualRect(&wr, &mi.rcMonitor) && !(style & edgeStyles) && !(exStyle & edgeExStyles)) return;
+            SetWindowLongW(borderlessWindow, GWL_STYLE, (style & ~edgeStyles) | WS_POPUP | WS_VISIBLE);
+            SetWindowLongW(borderlessWindow, GWL_EXSTYLE, exStyle & ~edgeExStyles);
+            SetWindowPos(borderlessWindow, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        }
+
+        bool ContentRect(UINT w, UINT h, RECT& r)
+        {
+            if (!w || !h) return false;
+            double ratio = static_cast<double>(w) / h, native = 16.0 / 9.0;
+            if (std::abs(ratio - native) / native < 0.005) return false;
+            LONG cw = w, ch = h;
+            if (ratio < native) ch = static_cast<LONG>(std::lround(w * 9.0 / 16.0));
+            else cw = static_cast<LONG>(std::lround(h * 16.0 / 9.0));
+            r.left = (static_cast<LONG>(w) - cw) / 2;
+            r.top = (static_cast<LONG>(h) - ch) / 2;
+            r.right = r.left + cw;
+            r.bottom = r.top + ch;
+            return cw > 0 && ch > 0;
+        }
+
+        void ReleaseTemp()
+        {
+            if (temp) { temp->Release(); temp = nullptr; }
+            tempW = tempH = 0;
+        }
+
+        void Apply(IDirect3DDevice9* device, IDirect3DSurface9* bb)
+        {
+            D3DSURFACE_DESC desc{};
+            bb->GetDesc(&desc);
+            RECT src{};
+            bool stretch = desc.MultiSampleType == D3DMULTISAMPLE_NONE && ContentRect(desc.Width, desc.Height, src);
+            if (desc.Width != seenW || desc.Height != seenH) {
+                seenW = desc.Width;
+                seenH = desc.Height;
+                SPDLOG_INFO("Back buffer {}x{}: {}.", desc.Width, desc.Height,
+                            stretch ? "stretching the 16:9 picture to fill it" : "no stretch needed");
+            }
+            if (!stretch) return;
+            UINT cw = src.right - src.left, ch = src.bottom - src.top;
+            if (!temp || tempW != cw || tempH != ch || tempFormat != desc.Format) {
+                ReleaseTemp();
+                HRESULT hr = device->CreateRenderTarget(cw, ch, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &temp, nullptr);
+                if (FAILED(hr)) {
+                    failed = true;
+                    SPDLOG_ERROR("Stretch disabled: CreateRenderTarget failed (0x{:08X}).", static_cast<unsigned>(hr));
+                    return;
+                }
+                tempW = cw; tempH = ch; tempFormat = desc.Format;
+            }
+            HRESULT hr = device->StretchRect(bb, &src, temp, nullptr, D3DTEXF_NONE);
+            if (SUCCEEDED(hr)) hr = device->StretchRect(temp, nullptr, bb, nullptr, D3DTEXF_LINEAR);
+            if (FAILED(hr)) {
+                failed = true;
+                SPDLOG_ERROR("Stretch disabled: StretchRect failed (0x{:08X}).", static_cast<unsigned>(hr));
+            }
+        }
+
+        HRESULT STDMETHODCALLTYPE Present(IDirect3DDevice9* self, const RECT* s, const RECT* d, HWND w, const RGNDATA* r)
+        {
+            CoverScreen();
+            if (!failed) {
+                std::lock_guard lk(mtx);
+                IDirect3DSurface9* bb = nullptr;
+                if (SUCCEEDED(self->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &bb)) && bb) {
+                    Apply(self, bb);
+                    bb->Release();
+                }
+            }
+            return hkPresent.stdcall<HRESULT>(self, s, d, w, r);
+        }
+
+        HRESULT STDMETHODCALLTYPE SwapChainPresent(IDirect3DSwapChain9* self, const RECT* s, const RECT* d, HWND w,
+                                                   const RGNDATA* r, DWORD flags)
+        {
+            if (!failed) {
+                std::lock_guard lk(mtx);
+                IDirect3DDevice9* device = nullptr;
+                if (SUCCEEDED(self->GetDevice(&device)) && device) {
+                    IDirect3DSurface9* bb = nullptr;
+                    if (SUCCEEDED(self->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &bb)) && bb) {
+                        Apply(device, bb);
+                        bb->Release();
+                    }
+                    device->Release();
+                }
+            }
+            return hkSwapChainPresent.stdcall<HRESULT>(self, s, d, w, r, flags);
+        }
+
+        HRESULT STDMETHODCALLTYPE Reset(IDirect3DDevice9* self, D3DPRESENT_PARAMETERS* pp)
+        {
+            {
+                std::lock_guard lk(mtx);
+                ReleaseTemp();
+            }
+            MakeWindowed(pp, nullptr);
+            return hkReset.stdcall<HRESULT>(self, pp);
+        }
+
+        HRESULT STDMETHODCALLTYPE CreateAdditionalSwapChain(IDirect3DDevice9* self, D3DPRESENT_PARAMETERS* pp,
+                                                            IDirect3DSwapChain9** out)
+        {
+            HRESULT hr = hkCreateSwapChain.stdcall<HRESULT>(self, pp, out);
+            if (SUCCEEDED(hr) && out && *out && !hkSwapChainPresent) {
+                hkSwapChainPresent = safetyhook::create_inline(VFunc(*out, 3), &SwapChainPresent);
+            }
+            return hr;
+        }
+
+        HRESULT STDMETHODCALLTYPE CreateDevice(IDirect3D9* self, UINT adapter, D3DDEVTYPE type, HWND focus, DWORD flags,
+                                               D3DPRESENT_PARAMETERS* pp, IDirect3DDevice9** out)
+        {
+            MakeWindowed(pp, focus);
+            HRESULT hr = hkCreateDevice.stdcall<HRESULT>(self, adapter, type, focus, flags, pp, out);
+            if (SUCCEEDED(hr) && out && *out && !hkPresent) {
+                hkPresent = safetyhook::create_inline(VFunc(*out, 17), &Present);
+                hkReset = safetyhook::create_inline(VFunc(*out, 16), &Reset);
+                hkCreateSwapChain = safetyhook::create_inline(VFunc(*out, 13), &CreateAdditionalSwapChain);
+                SPDLOG_INFO("Stretch hooks: {}.", hkPresent && hkReset ? "installed" : "failed");
+            }
+            return hr;
+        }
+
+        void Install()
+        {
+            if (!bStretch) return;
+            borderless = RunningOnMacOS();
+            if (borderless) SPDLOG_INFO("macOS host: fullscreen will use a borderless window.");
+            HMODULE d3d9 = LoadLibraryW(L"d3d9.dll");
+            auto create = d3d9 ? reinterpret_cast<IDirect3D9*(WINAPI*)(UINT)>(GetProcAddress(d3d9, "Direct3DCreate9")) : nullptr;
+            IDirect3D9* d3d = create ? create(D3D_SDK_VERSION) : nullptr;
+            if (!d3d) {
+                SPDLOG_ERROR("Stretch disabled: Direct3DCreate9 failed.");
+                return;
+            }
+            hkCreateDevice = safetyhook::create_inline(VFunc(d3d, 16), &CreateDevice);
+            d3d->Release();
+            if (!hkCreateDevice) SPDLOG_ERROR("Stretch disabled: CreateDevice hook failed.");
+        }
+    }
+
     DWORD WINAPI SetupThread(void*)
     {
         if (!InitializeLogging()) return 1;
         if (!LoadConfiguration()) return 1;
+        Stretch::Install();
         Sleep(2000);
         ApplyResolutionAndCameraPatches();
         return 0;

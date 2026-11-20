@@ -200,13 +200,12 @@
       "executable_alternatives": ["SM6JP.exe", "SM6TC.exe"],
       "source": {
         "kind": "archive",
-        "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.0.0.zip",
-        "sha256": "7afb2330652cf1513a2fe02c5f443b4128f8774a753aa1db684d463767ca3a09"
+        "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.1.0.zip",
+        "sha256": "bb9cb07c97f04987004c7d7fb59faa6166b13bbf19a9cc53f97c6aa03f7040b8"
       },
       "files": ["dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"],
       "ini_file": "DW7XL_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -217,13 +216,12 @@
       "executable": "Launch.exe",
       "source": {
         "kind": "archive",
-        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.0.0.zip",
-        "sha256": "ac2ecc1da38648b14505bc34cf2078452840fd345ae6fa5ff4d46dd4591304d6"
+        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.1.0.zip",
+        "sha256": "b3697c333520fde5044ec35c779aa2801bfee29c8d3a98877f5956933126bdaf"
       },
       "files": ["dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"],
       "ini_file": "DW8XL_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
