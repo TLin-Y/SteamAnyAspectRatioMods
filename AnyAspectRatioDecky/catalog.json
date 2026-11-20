@@ -968,10 +968,9 @@
       "source": {
         "kind": "archive",
         "path": "Persona 5 Royal/Persona-5-Royal-v2.4.4.zip",
-        "sha256": "0ad1af0dc11218dee2e01dd1b80f288135d265937407b449947c6f8218ff8bb7"
+        "sha256": "45c9265f1e00f94e89952e592f96d76ee2e2a1537858639c4304cec9c105af4f"
       },
       "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
-      "display_tags": ["set-window-mode"],
       "ini_file": "P5R_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
