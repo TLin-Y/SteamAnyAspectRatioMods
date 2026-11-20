@@ -30,5 +30,9 @@
   "visions-of-mana": {
     "steam_launch": ["VisionsofMana.exe"],
     "reason": "Unreal bootstrap exe; the mod targets the Win64 Shipping exe."
+  },
+  "wildheartsfix": {
+    "steam_launch": ["steam2ea://launchgame/1938010?platform=steam&theme=BOhni"],
+    "reason": "Steam hands off to the EA app; the fix sits beside 00_game/target_origin/ex/WILD HEARTS.exe."
   }
 }

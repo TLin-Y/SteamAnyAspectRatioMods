@@ -89,13 +89,13 @@ class CatalogInstallTests(GameTest):
                 (self.game / executable).unlink()
 
     def test_manual_mods_are_listed_but_never_installed(self) -> None:
-        wild_hearts = catalog_mod("wildheartsfix")
-        (game,) = match_supported_games(SteamScanReport(1, 1, [app_for(wild_hearts, self.game)], []), (wild_hearts,)
+        manual = catalog_mod("dbxv2fix")
+        (game,) = match_supported_games(SteamScanReport(1, 1, [app_for(manual, self.game)], []), (manual,)
                                         ).supported_games
         self.assertEqual((True, []), (game.to_dict()["manual"], game.to_dict()["display_tags"]))
         for operation in (self.apply, self.remove):
             with self.subTest(operation=operation.__name__), self.assertRaisesRegex(ValueError, "manually"):
-                operation(wild_hearts)
+                operation(manual)
         self.assertEqual([], list(self.game.iterdir()))
 
     def test_asi_logs_use_the_real_mod_file_names(self) -> None:

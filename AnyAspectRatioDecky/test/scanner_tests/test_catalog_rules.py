@@ -21,7 +21,9 @@ class CatalogRuleTests(CatalogEditTest):
 
     def test_executable_is_required_unless_manual_and_alternatives_are_checked(self) -> None:
         first = self.document["mods"][0]
-        self.assert_rejected(self.only("wildheartsfix"), "manual", [False, "yes"])
+        manual = self.only("dbxv2fix")
+        del manual["executable"]
+        self.assert_rejected(manual, "manual", [False, "yes"])
         self.document["mods"] = [first]
         self.assert_rejected(first, "executable_alternatives",
                              ["other.exe", [""], [123], ["../outside.exe"], [first["executable"]]])
