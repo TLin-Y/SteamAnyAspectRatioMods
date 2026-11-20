@@ -1048,8 +1048,8 @@
       "executable": "re4.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 4 Remake/Resident-Evil-4-Remake-v1.3.0.zip",
-        "sha256": "604fd750beb3708e1602136b75319dceb6d9cddddd5d59c40e578c5e2430ab04"
+        "path": "Resident Evil 4 Remake/Resident-Evil-4-Remake-v1.4.0.zip",
+        "sha256": "6ac05bd2d50562e334b840d0f8691bbbaa2f72413dd7d92bfb0696242dc5ece8"
       },
       "files": ["dinput8.dll", "RE4_ARFix.asi", "RE4_ARFix.ini"],
       "ini_file": "RE4_ARFix.ini",
