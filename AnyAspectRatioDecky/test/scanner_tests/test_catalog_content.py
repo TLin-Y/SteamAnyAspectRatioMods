@@ -237,7 +237,7 @@ PINNED = {
     },
     "ninja-gaiden-sigma-2": {"source.kind": "directory"},
     "ori-and-the-blind-forest-definitive-edition": {"source.kind": "files", "source.files": 1, "ini_file": None},
-    "wildheartsfix": {"manual": True, "executable": ""},
+    "wildheartsfix": {"manual": False, "executable": "00_game/target_origin/ex/WILD HEARTS.exe"},
     "dbxv2fix": {"manual": True},
 }
 

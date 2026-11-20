@@ -5875,7 +5875,7 @@
       "name": "WILD HEARTS - WildHeartsFix",
       "steam_app_id": "1938010",
       "install_dir": "WILD HEARTS",
-      "manual": true,
+      "executable": "00_game/target_origin/ex/WILD HEARTS.exe",
       "source": {
         "kind": "archive",
         "path": "external/Lyall/WildHeartsFix/WildHeartsFix_0.0.1.zip",
