@@ -1283,6 +1283,30 @@ namespace
         return originalCreateVertexShader(device, code, size, linkage, shader);
     }
 
+    bool Patchable(void* target)
+    {
+        DWORD old = 0;
+        if (!VirtualProtect(target, 16, PAGE_EXECUTE_READWRITE, &old)) return false;
+        bool ok = true;
+        __try {
+            auto b = static_cast<volatile uint8_t*>(target);
+            b[0] = b[0];
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            ok = false;
+        }
+        VirtualProtect(target, 16, old, &old);
+        return ok;
+    }
+
+    void LogTarget(void* target)
+    {
+        HMODULE m = nullptr;
+        wchar_t name[MAX_PATH] = {};
+        if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, static_cast<LPCWSTR>(target), &m))
+            GetModuleFileNameW(m, name, MAX_PATH);
+        spdlog::info("UI: CreateVertexShader at {:X} ({})", reinterpret_cast<uintptr_t>(target), std::filesystem::path(name).filename().string());
+    }
+
     void HookShaders()
     {
         ID3D11Device* device = nullptr;
@@ -1293,7 +1317,9 @@ namespace
             return;
         }
         auto vtable = *reinterpret_cast<void***>(device);
-        createVertexShader = safetyhook::create_inline(vtable[12], reinterpret_cast<void*>(&CreateVertexShaderHook));
+        LogTarget(vtable[12]);
+        // SafetyHook retries a faulting patch write forever (CrossOver D3DMetal), so only inline-hook writable code.
+        if (Patchable(vtable[12])) createVertexShader = safetyhook::create_inline(vtable[12], reinterpret_cast<void*>(&CreateVertexShaderHook));
         if (createVertexShader) {
             originalCreateVertexShader = createVertexShader.original<CreateVertexShaderFn>();
             spdlog::info("UI: CreateVertexShader hooked");

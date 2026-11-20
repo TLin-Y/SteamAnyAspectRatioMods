@@ -10,14 +10,15 @@ Extract the ZIP into the game folder, beside `P5R.exe`.
 
 Launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`
 
+macOS (CrossOver): set the bottle's graphics to **DXMT**. DXVK also runs the
+full fix but stutters. With D3DMetal the 3D fix works, but menus, text boxes and
+movies stay stretched.
+
 ## 3. Custom Aspect Ratio
 
-Set the game's display mode to **Windowed** (required).
-
 Edit `Width` and `Height` in `[Resolution]` in `P5R_ARFix.ini`. The default is
-1280x800 (16:10, Steam Deck). Use your screen resolution and set the game
-window to the same size. `Width = 0` and `Height = 0` use the resolution
-selected in the game's Config menu.
+1280x800 (16:10, Steam Deck). Use your screen resolution. `Width = 0` and
+`Height = 0` use the resolution selected in the game's Config menu.
 
 The 3D scene fills the whole screen: taller screens (16:10, 4:3) show more above
 and below, wider ones (21:9, 32:9) show more to the sides. Menus, text boxes,
