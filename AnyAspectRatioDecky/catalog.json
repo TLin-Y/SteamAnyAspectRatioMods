@@ -1100,13 +1100,12 @@
       "executable": "re9.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil Requiem/Resident-Evil-Requiem-v1.0.0.zip",
-        "sha256": "e03b5ae3df2d1150e187b7f2fa7694e8fecc0a21a07f3644e120d069e9fbf0e8"
+        "path": "Resident Evil Requiem/Resident-Evil-Requiem-v1.1.0.zip",
+        "sha256": "58a6c0057444315d09b1119f580c4e6ed9f38d674007ed108374c3fd674993e4"
       },
       "files": ["dinput8.dll", "RE9_ARFix.asi", "RE9_ARFix.ini"],
       "ini_file": "RE9_ARFix.ini",
       "ini_resolution": [{"section": "AspectRatio", "width": "AspectWidth", "height": "AspectHeight", "kind": "ratio"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
