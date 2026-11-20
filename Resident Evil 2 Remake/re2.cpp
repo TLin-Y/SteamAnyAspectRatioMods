@@ -39,6 +39,7 @@ float fTargetARValue = 1.3333333f;
 
 bool bEnableFOVFix = true;
 float fFOVPercent = 120.0f;
+bool bFitScreen = true;
 
 namespace Stretch { extern bool bEnabled; }
 
@@ -93,6 +94,7 @@ void Configuration() {
     bEnableFOVFix = GetConfigAndLog(ini, "FOV", "EnableFOVFix", true);
     fFOVPercent = GetConfigAndLog(ini, "FOV", "FOVPercent", 120.0f);
 
+    bFitScreen = GetConfigAndLog(ini, "FitScreen", "Enabled", true);
     Stretch::bEnabled = GetConfigAndLog(ini, "Stretch", "Enabled", true);
 }
 
@@ -724,6 +726,35 @@ void Install() {
 
 }
 
+bool PatchRead(const char* pattern, const char* bytes, unsigned int size) {
+    auto hits = Memory::PatternScanAll(exeModule, pattern);
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Fit screen: \"{}\" found {} times (expected 1).", pattern, hits.size());
+        return false;
+    }
+    Memory::PatchBytes(hits[0], bytes, size);
+    return true;
+}
+
+bool FitScreen() {
+    if (!bFitScreen) return false;
+    std::uint8_t* layout = Memory::PatternScan(exeModule, "8B 53 68 83 FA 0D 0F 8E");
+    bool ok = PatchRead("44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77", "\x45\x31\xC9\x90", 4)
+        & PatchRead("8B 49 68 8D 41 F9 83 F8 0F 0F 87", "\x31\xC9\x90", 3)
+        & PatchRead("8B 53 68 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    int borderless = 0;
+    for (std::uint8_t* p = layout ? layout - 0xA0 : nullptr; layout && p < layout + 0xC0; ++p) {
+        if (p[0] != 0xE8) continue;
+        std::uint8_t* target = p + 5 + *reinterpret_cast<std::int32_t*>(p + 1);
+        if (target[0] == 0x0F && target[1] == 0xB6 && target[2] == 0x81 && target[7] == 0xC3) {
+            Memory::PatchBytes(p, "\x31\xC0\x0F\x1F\x00", 5);
+            ++borderless;
+        }
+    }
+    SPDLOG_INFO("Fit screen: display type reads {}, borderless size checks patched: {}.", ok ? "patched" : "incomplete", borderless);
+    return ok;
+}
+
 void AspectRatio() {
     if (!bEnableARFix) return;
 
@@ -791,6 +822,7 @@ void CameraFOV() {
 DWORD __stdcall Main(void*) {
     Logging();
     Configuration();
+    if (FitScreen()) Stretch::bEnabled = false;
     Stretch::Install();
 
     Sleep(1000);
