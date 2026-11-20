@@ -604,10 +604,14 @@ bool FitScreen() {
     bool ok = PatchRead("8B 4B 6C 8D 41 FF 83 F8 05", "\x31\xC9\x90", 3)
         & PatchRead("8B 49 6C 8D 41 F9 83 F8 10 0F 87", "\x31\xC9\x90", 3)
         & PatchRead("8B 53 6C 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    auto* image = reinterpret_cast<std::uint8_t*>(exeModule);
+    auto* nt = reinterpret_cast<PIMAGE_NT_HEADERS>(image + reinterpret_cast<PIMAGE_DOS_HEADER>(image)->e_lfanew);
+    std::uint8_t* imageEnd = image + nt->OptionalHeader.SizeOfImage;
     int borderless = 0;
     for (std::uint8_t* p = layout ? layout - 0x200 : nullptr; layout && p < layout + 0x100; ++p) {
         if (p[0] != 0xE8) continue;
         std::uint8_t* target = p + 5 + *reinterpret_cast<std::int32_t*>(p + 1);
+        if (target < image || target + 8 > imageEnd) continue;
         if (target[0] == 0x0F && target[1] == 0xB6 && target[2] == 0x81 && target[7] == 0xC3) {
             Memory::PatchBytes(p, "\x31\xC0\x0F\x1F\x00", 5);
             ++borderless;
