@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <set>
+#include <cstring>
 
 #if !defined(_M_X64)
 #error Resident Evil Requiem is a 64-bit game. Compile this project as x64.
@@ -29,11 +31,18 @@ namespace
     float fTargetAR = 1.6f;
     bool bEnableFOVFix = true;
     float fFOVScale = 1.0f;
+    bool bFitScreen = true;
 
     SafetyHookMid aspectHook{};
     SafetyHookMid projectionHook{};
     std::atomic<std::uintptr_t> mainCamera{ 0 };
     int projectionCameraReg = -1;
+
+    struct Region
+    {
+        std::uint8_t* start;
+        size_t size;
+    };
 
     struct Pattern
     {
@@ -93,10 +102,126 @@ namespace
         return count;
     }
 
+    std::vector<Region> ImageRegions(bool executableOnly)
+    {
+        std::vector<Region> regions;
+        auto base = reinterpret_cast<std::uint8_t*>(exeModule);
+        auto dos = reinterpret_cast<PIMAGE_DOS_HEADER>(base);
+        auto nt = reinterpret_cast<PIMAGE_NT_HEADERS>(base + dos->e_lfanew);
+        std::uint8_t* end = base + nt->OptionalHeader.SizeOfImage;
+        constexpr DWORD executable = PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
+
+        MEMORY_BASIC_INFORMATION mbi{};
+        for (std::uint8_t* addr = base; addr < end; addr = static_cast<std::uint8_t*>(mbi.BaseAddress) + mbi.RegionSize) {
+            if (!VirtualQuery(addr, &mbi, sizeof(mbi))) break;
+            if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) continue;
+            if (executableOnly && !(mbi.Protect & executable)) continue;
+            auto start = static_cast<std::uint8_t*>(mbi.BaseAddress);
+            size_t size = mbi.RegionSize;
+            if (start + size > end) size = end - start;
+            regions.push_back({ start, size });
+        }
+        return regions;
+    }
+
+    bool InRegions(const std::vector<Region>& regions, const std::uint8_t* p, size_t len)
+    {
+        for (const auto& r : regions) {
+            if (p >= r.start && p + len <= r.start + r.size) return true;
+        }
+        return false;
+    }
+
+    bool IsDisplayTypeRead(const std::uint8_t* p)
+    {
+        if (p[0] != 0x44 || p[1] != 0x8B || (p[2] & 0xF8) != 0x70 || (p[2] & 0x07) == 0x04 || p[3] != 0x70) return false;
+        if (p[4] == 0x41 && p[5] == 0x8D && (p[6] & 0xC7) == 0x46 && p[7] == 0xFF
+            && p[8] == 0x83 && (p[9] & 0xF8) == 0xF8 && p[10] == 0x05) {
+            return true;
+        }
+        static constexpr std::uint8_t lea[] = { 0x45, 0x8D, 0x7E, 0xF9 };
+        for (size_t k = 4; k + sizeof(lea) <= 16; ++k) {
+            if (std::memcmp(p + k, lea, sizeof(lea)) == 0) return true;
+        }
+        return false;
+    }
+
+    std::vector<std::uint8_t*> FindDisplayTypeReads(const std::vector<Region>& regions)
+    {
+        std::vector<std::uint8_t*> hits;
+        for (const auto& r : regions) {
+            for (size_t i = 0; i + 20 <= r.size; ++i) {
+                if (IsDisplayTypeRead(r.start + i)) hits.push_back(r.start + i);
+            }
+        }
+        return hits;
+    }
+
+    std::set<std::uint8_t*> FindFixedSizeGetters(const std::vector<Region>& regions, const std::vector<std::uint8_t*>& reads)
+    {
+        std::set<std::uint8_t*> getters;
+        for (auto read : reads) {
+            for (std::uint8_t* p = read - 0x80; p < read; ++p) {
+                if (!InRegions(regions, p, 5) || p[0] != 0xE8) continue;
+                std::int32_t rel;
+                std::memcpy(&rel, p + 1, sizeof(rel));
+                std::uint8_t* target = p + 5 + rel;
+                if (!InRegions(regions, target, 8)) continue;
+                if (target[0] == 0x0F && target[1] == 0xB6 && target[2] == 0x81 && target[7] == 0xC3) getters.insert(target);
+            }
+        }
+        return getters;
+    }
+
+    bool WriteMemory(void* address, const void* data, size_t size)
+    {
+        DWORD oldProtect;
+        if (!VirtualProtect(address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) return false;
+        std::memcpy(address, data, size);
+        VirtualProtect(address, size, oldProtect, &oldProtect);
+        FlushInstructionCache(GetCurrentProcess(), address, size);
+        return true;
+    }
+
     std::uintptr_t Rva(const void* p)
     {
         return reinterpret_cast<std::uintptr_t>(p) - reinterpret_cast<std::uintptr_t>(exeModule);
     }
+
+    void RemoveLetterbox()
+    {
+        std::vector<Region> regions;
+        std::vector<std::uint8_t*> reads;
+        for (int attempt = 0; attempt < 240 && reads.empty(); ++attempt) {
+            regions = ImageRegions(false);
+            reads = FindDisplayTypeReads(regions);
+            if (reads.empty()) Sleep(500);
+        }
+        if (reads.empty()) {
+            SPDLOG_ERROR("Scene view layout code not found; letterbox not removed.");
+            return;
+        }
+        Sleep(3000);
+        regions = ImageRegions(false);
+        reads = FindDisplayTypeReads(regions);
+
+        if (bFitScreen) {
+            static constexpr std::uint8_t returnFalse[] = { 0x31, 0xC0, 0xC3 };
+            auto getters = FindFixedSizeGetters(regions, reads);
+            if (getters.empty()) SPDLOG_WARN("Fixed output size check not found.");
+            for (auto getter : getters) {
+                if (WriteMemory(getter, returnFalse, sizeof(returnFalse))) SPDLOG_INFO("Fixed output size ignored at RVA 0x{:X}.", Rva(getter));
+            }
+        }
+
+        if (bFitScreen) {
+            static constexpr std::uint8_t forceFit[] = { 0x45, 0x31, 0xF6, 0x90 };
+            for (auto read : reads) {
+                if (WriteMemory(read, forceFit, sizeof(forceFit))) SPDLOG_INFO("DisplayType forced to Fit at RVA 0x{:X}.", Rva(read));
+            }
+        }
+    }
+
 
     std::uintptr_t ContextReg(const SafetyHookContext& ctx, int reg)
     {
@@ -209,6 +334,7 @@ namespace
             inipp::get_value(ini.sections["AspectRatio"], "AspectHeight", iAspectHeight);
             inipp::get_value(ini.sections["FOV"], "EnableFOVFix", bEnableFOVFix);
             inipp::get_value(ini.sections["FOV"], "FOVScale", fFOVScale);
+            inipp::get_value(ini.sections["FitScreen"], "Enabled", bFitScreen);
         } else {
             SPDLOG_WARN("{} not found; using defaults.", sConfigFile);
         }
@@ -221,8 +347,8 @@ namespace
             SPDLOG_ERROR("FOVScale {} out of range (0 - 2.0); using 1.0.", fFOVScale);
             fFOVScale = 1.0f;
         }
-        SPDLOG_INFO("Config: AR={} ({}:{} = {:.4f}), FOV={} scale {:.3f}",
-            bEnableARFix, iAspectWidth, iAspectHeight, fTargetAR, bEnableFOVFix, fFOVScale);
+        SPDLOG_INFO("Config: AR={} ({}:{} = {:.4f}), FOV={} scale {:.3f}, FitScreen={}",
+            bEnableARFix, iAspectWidth, iAspectHeight, fTargetAR, bEnableFOVFix, fFOVScale, bFitScreen);
     }
 
     DWORD WINAPI MainThread(void*)
@@ -231,6 +357,7 @@ namespace
         LoadConfiguration();
         Sleep(5000);
         if (bEnableARFix || bEnableFOVFix) InstallHooks();
+        if (bFitScreen) RemoveLetterbox();
         return 0;
     }
 }

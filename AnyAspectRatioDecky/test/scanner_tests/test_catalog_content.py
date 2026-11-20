@@ -281,7 +281,6 @@ README_MENTIONS = {
 
 STRETCHED = {
     "rayman-legends",
-    "resident-evil-requiem",
     "samurai-warriors-spirit-of-sanada", "ultrawidefix-lrff13",
 }
 
