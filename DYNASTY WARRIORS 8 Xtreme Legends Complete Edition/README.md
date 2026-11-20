@@ -1,6 +1,6 @@
 # DYNASTY-WARRIORS-8-Xtreme-Legends-Complete-Edition-Any-Aspect-Ratio
 
-Set the in-game resolution to 1280x720 and the SteamOS display scaling to "Stretch" so the picture fills the screen.
+Set the in-game resolution to your screen resolution (Steam Deck: 1280x800 or Fullscreen). The game draws a 16:9 picture with black bars on other screens; the mod stretches that picture to fill the whole screen, so no SteamOS display scaling is needed. The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works. To turn the mod's stretching off, set Enabled = false under [Stretch].
 
 ## Demo
 
@@ -22,3 +22,6 @@ Open DW8XL_ARFix.ini with any text editor. Change Width and Height to match your
 
 ## Camera / FOV
 In DW8XL_ARFix.ini, change FovMultiplier under [Camera] to adjust the standard and blocking camera distances. The packaged default is 1.10 (110%); use 1.0 for the game's original distances. Suggested values are 1.10 for 16:10, 1.16 for 3:2, and 1.29 for 4:3.
+
+## macOS (CrossOver)
+Use Fullscreen; the mod turns it into a borderless window that covers the whole screen. Set Width and Height in the ini to your screen size (for example 1728 and 1117 on a MacBook Pro 16").

@@ -99,12 +99,12 @@ PINNED = {
         "steam_app_id": "968790", "install_dir": "Dynasty Warriors 7 DX", "executable": "SM6EN.exe",
         "executable_alternatives": ("SM6JP.exe", "SM6TC.exe"), "source.destination": "",
         "files": ("dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"), "ini_file": "DW7XL_ARFix.ini",
-        "display_tags": ("stretch",), "wine_dll_overrides": ("dinput8=n,b",),
+        "display_tags": (), "wine_dll_overrides": ("dinput8=n,b",),
     },
     "dynasty-warriors-8-xtreme-legends-complete-edition": {
         "steam_app_id": "278080", "install_dir": "Dynasty Warriors 8", "executable": "Launch.exe",
         "source.destination": "", "files": ("dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"),
-        "ini_file": "DW8XL_ARFix.ini", "display_tags": ("stretch",), "wine_dll_overrides": ("dinput8=n,b",),
+        "ini_file": "DW8XL_ARFix.ini", "display_tags": (), "wine_dll_overrides": ("dinput8=n,b",),
     },
     "bloodstained-ritual-of-the-night": {
         "steam_app_id": "692850", "install_dir": "Bloodstained Ritual of the Night",
@@ -272,17 +272,15 @@ INI_DEFAULTS = {
     "pentiment": {"AspectRatio": {"Enabled": True}, "Resolution": {"Borderless": True, "Width": 1280, "Height": 800}},
 }
 
-STRETCH_NOTE = (b"1280x720", b'SteamOS display scaling to "Stretch"')
 README_MENTIONS = {
     "final-fantasy-xii-the-zodiac-age": (b"ff12.jpg", b"ff12demo.jpg", b"ff12demo2.jpg", b"at 4:3",
                                          b"SteamOS / Winlator", b"FOV fixes are enabled by default"),
-    "dynasty-warriors-7-xtreme-legends-definitive-edition": STRETCH_NOTE,
-    "dynasty-warriors-8-xtreme-legends-complete-edition": (*STRETCH_NOTE, b"FovMultiplier"),
+    "dynasty-warriors-7-xtreme-legends-definitive-edition": (b"1280x720", b"[Stretch]"),
+    "dynasty-warriors-8-xtreme-legends-complete-edition": (b"1280x720", b"[Stretch]", b"FovMultiplier"),
 }
 
 STRETCHED = {
-    "dynasty-warriors-7-xtreme-legends-definitive-edition",
-    "dynasty-warriors-8-xtreme-legends-complete-edition", "rayman-legends",
+    "rayman-legends",
     "resident-evil-requiem",
     "samurai-warriors-spirit-of-sanada", "ultrawidefix-lrff13",
 }
