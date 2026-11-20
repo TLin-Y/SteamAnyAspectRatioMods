@@ -30,4 +30,4 @@ The mod removes the game's black bars so the picture fills any screen at full re
 
 On macOS (CrossOver), use Fullscreen or Borderless Window at your screen resolution, and set the ratio of your screen in RE4_ARFix.ini (for example 1728:1117 on a MacBook Pro 16").
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-4-Remake-v1.4.0.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-4-Remake-v1.4.1.zip and in the repository root.
