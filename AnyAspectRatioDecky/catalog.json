@@ -142,6 +142,22 @@
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
+      "id": "star-ocean-the-second-story-r",
+      "name": "STAR OCEAN THE SECOND STORY R - Custom Aspect Ratio",
+      "steam_app_id": "2238900",
+      "install_dir": "STAR OCEAN THE SECOND STORY R",
+      "executable": "SO2R.exe",
+      "source": {
+        "kind": "archive",
+        "path": "STAR OCEAN THE SECOND STORY R/STAR-OCEAN-THE-SECOND-STORY-R-v1.0.0.zip",
+        "sha256": "dfffc3ffdf51e35a61bce629543db0505863c1620a93aeb1f2765690e8283832"
+      },
+      "files": ["winmm.dll", "SO2R_ARFix.asi", "SO2R_ARFix.ini"],
+      "ini_file": "SO2R_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "dark-souls-iii",
       "offline_only": true,
       "name": "Dark Souls III - Custom Aspect Ratio",

@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 154 game mods](https://img.shields.io/badge/Game%20mods-154-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 156 game mods](https://img.shields.io/badge/Game%20mods-156-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -194,6 +194,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | SONIC X SHADOW GENERATIONS | TLin-Y | [2513280](https://store.steampowered.com/app/2513280) | [v1.0.0](./SONIC%20X%20SHADOW%20GENERATIONS/SONIC-X-SHADOW-GENERATIONS-v1.0.0.zip) | 2026-11-08 | [README](./SONIC%20X%20SHADOW%20GENERATIONS/README.md) |
 | Soul Hackers 2 | Lyall | [1777620](https://store.steampowered.com/app/1777620) | [vv0.0.5](./external/Lyall/SoulHackers2Fix/SoulHackers2Fix_v0.0.5.zip) | 2022-09-08 | [SoulHackers2Fix](https://codeberg.org/Lyall/SoulHackers2Fix) |
 | STAR OCEAN - THE LAST HOPE - 4K & Full HD Remaster | Lyall | [609150](https://store.steampowered.com/app/609150) | [v0.9.1](./external/Lyall/SO4Fix/SO4Fix_0.9.1.zip) | 2025-06-06 | [SO4Fix](https://codeberg.org/Lyall/SO4Fix) |
+| STAR OCEAN THE SECOND STORY R | TLin-Y | [2238900](https://store.steampowered.com/app/2238900) | [v1.0.0](./STAR%20OCEAN%20THE%20SECOND%20STORY%20R/STAR-OCEAN-THE-SECOND-STORY-R-v1.0.0.zip) | 2026-11-21 | [README](./STAR%20OCEAN%20THE%20SECOND%20STORY%20R/README.md) |
 | Syberia: The World Before | Lyall | [1410640](https://store.steampowered.com/app/1410640) | [v1.0.3](./external/Lyall/SyberiaTWBFix/SyberiaTWBFix_1.0.3.zip) | 2025-06-21 | [SyberiaTWBFix](https://codeberg.org/Lyall/SyberiaTWBFix) |
 | Tales of Arise | TLin-Y | [740130](https://store.steampowered.com/app/740130) | [v1.1.0](./Tales%20of%20Arise/Tales-of-Arise-v1.1.0.zip) | 2026-11-03 | [README](./Tales%20of%20Arise/README.md) |
 | Tales of Berseria Remastered | Lyall | [2331020](https://store.steampowered.com/app/2331020) | [v0.0.1](./external/Lyall/ToBRFix/ToBRFix_0.0.1.zip) | 2026-03-29 | [ToBRFix](https://codeberg.org/Lyall/ToBRFix) |

@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 53, 51, 1, 1, 75
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 54, 52, 1, 1, 76
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -218,6 +218,10 @@ PINNED = {
         "steam_app_id": "579180", "install_dir": "Ys VIII Lacrimosa of Dana", "executable": "ys8.exe",
         "files": ("dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"), "ini_file": "Ys8_AspectPatch.ini",
     },
+    "star-ocean-the-second-story-r": {
+        "steam_app_id": "2238900", "install_dir": "STAR OCEAN THE SECOND STORY R", "executable": "SO2R.exe",
+        "files": ("winmm.dll", "SO2R_ARFix.asi", "SO2R_ARFix.ini"), "ini_file": "SO2R_ARFix.ini",
+    },
     "emperor-rise-of-the-middle-kingdom": {  # GOG only; GOG install folder, not on Steam
         "steam_app_id": "0", "install_dir": "Emperor - Rise of the Middle Kingdom", "executable": "Emperor.exe",
     },
@@ -274,6 +278,9 @@ INI_DEFAULTS = {
     },
     "emperor-rise-of-the-middle-kingdom": {"Window": {"Width": 1280, "Height": 800, "Borderless": True}},
     "pentiment": {"AspectRatio": {"Enabled": True}, "Resolution": {"Borderless": True, "Width": 1280, "Height": 800}},
+    "star-ocean-the-second-story-r": {
+        "AspectRatio": {"Enabled": True}, "Resolution": {"Width": 1280, "Height": 800}, "FOV": {"Multiplier": 1.0},
+    },
 }
 
 README_MENTIONS = {
