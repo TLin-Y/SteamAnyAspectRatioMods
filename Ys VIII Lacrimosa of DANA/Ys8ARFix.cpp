@@ -28,6 +28,7 @@
 #include <fstream>
 #include <utility>
 #include <windows.h>
+#include <d3d11.h>
 
 namespace fs = std::filesystem;
 
@@ -45,25 +46,105 @@ namespace
     bool bCameraAspect = true;
     bool bRemoveLetterbox = true;
     bool bSharedProjection = false;
-    safetyhook::MidHook letterboxHook;
-    std::atomic<bool> letterboxObserved = false;
+    SafetyHookInline drawIndexedHook;
+    SafetyHookInline deferredDrawIndexedHook;
+    std::atomic<bool> sceneFillObserved = false;
 
-    void LetterboxCallback(safetyhook::Context& ctx)
+    bool TextureSize(ID3D11Resource* resource, UINT& width, UINT& height)
     {
-        const int width = static_cast<int>(ctx.r10 & 0xFFFFFFFF);
-        const int height = static_cast<int>(ctx.r8 & 0xFFFFFFFF);
-        if (width <= 0 || height <= 0) {
-            SPDLOG_ERROR("Letterbox hook received invalid dimensions {}x{}; keeping original fitting.", width, height);
+        D3D11_RESOURCE_DIMENSION dimension{};
+        resource->GetType(&dimension);
+        if (dimension != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+            return false;
+        D3D11_TEXTURE2D_DESC desc{};
+        static_cast<ID3D11Texture2D*>(resource)->GetDesc(&desc);
+        width = desc.Width;
+        height = desc.Height;
+        return true;
+    }
+
+    bool IsSceneCopy(ID3D11DeviceContext* ctx, const D3D11_VIEWPORT& vp, UINT& width, UINT& height)
+    {
+        ID3D11RenderTargetView* rtv = nullptr;
+        ctx->OMGetRenderTargets(1, &rtv, nullptr);
+        if (!rtv)
+            return false;
+        ID3D11Resource* target = nullptr;
+        rtv->GetResource(&target);
+        rtv->Release();
+        const bool sized = TextureSize(target, width, height);
+        target->Release();
+        if (!sized || std::fabs(vp.TopLeftX * 2.0f + vp.Width - width) > 2.0f ||
+            std::fabs(vp.TopLeftY * 2.0f + vp.Height - height) > 2.0f)
+            return false;
+
+        ID3D11ShaderResourceView* srv = nullptr;
+        ctx->PSGetShaderResources(0, 1, &srv);
+        if (!srv)
+            return false;
+        ID3D11Resource* source = nullptr;
+        srv->GetResource(&source);
+        srv->Release();
+        UINT sourceWidth = 0, sourceHeight = 0;
+        const bool sourceSized = TextureSize(source, sourceWidth, sourceHeight);
+        source->Release();
+        return sourceSized && sourceWidth == width && sourceHeight == height;
+    }
+
+    template<SafetyHookInline& Hook>
+    void STDMETHODCALLTYPE DrawIndexedDetour(ID3D11DeviceContext* ctx, UINT count, UINT start, INT base)
+    {
+        D3D11_VIEWPORT vp{};
+        UINT viewports = 1;
+        ctx->RSGetViewports(&viewports, &vp);
+        static thread_local bool filledThisPass = false;
+        UINT width = 0, height = 0;
+        if (viewports != 1 || (vp.TopLeftX < 0.5f && vp.TopLeftY < 0.5f)) {
+            filledThisPass = false;
+            Hook.stdcall<void>(ctx, count, start, base);
             return;
         }
-        ctx.xmm2.f32[0] = std::nextafter(
-            static_cast<float>(height) / static_cast<float>(width), INFINITY);
-        if (!letterboxObserved.exchange(true)) {
-            SPDLOG_INFO("Letterbox hook executed: logical {}x{}, configured {}x{}.",
-                        width, height, iTargetWidth, iTargetHeight);
-            if (width != iTargetWidth || height != iTargetHeight)
-                SPDLOG_WARN("Set the game's resolution to the configured dimensions; this ASI does not force resolution.");
+        if (filledThisPass || !IsSceneCopy(ctx, vp, width, height)) {
+            Hook.stdcall<void>(ctx, count, start, base);
+            return;
         }
+        filledThisPass = true;
+        const D3D11_VIEWPORT full{ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), vp.MinDepth, vp.MaxDepth };
+        ctx->RSSetViewports(1, &full);
+        Hook.stdcall<void>(ctx, count, start, base);
+        ctx->RSSetViewports(1, &vp);
+        if (!sceneFillObserved.exchange(true))
+            SPDLOG_INFO("Scene fill active: {}x{} scene, HUD kept in {}x{} at {},{}.",
+                        width, height, vp.Width, vp.Height, vp.TopLeftX, vp.TopLeftY);
+    }
+
+    DWORD WINAPI InstallSceneFill(void*)
+    {
+        HMODULE d3d11 = LoadLibraryW(L"d3d11.dll");
+        auto create = d3d11 ? reinterpret_cast<PFN_D3D11_CREATE_DEVICE>(GetProcAddress(d3d11, "D3D11CreateDevice")) : nullptr;
+        ID3D11Device* device = nullptr;
+        ID3D11DeviceContext* context = nullptr;
+        if (!create || (FAILED(create(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device, nullptr, &context)) &&
+                        FAILED(create(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device, nullptr, &context)))) {
+            SPDLOG_ERROR("Scene fill: D3D11 device creation failed.");
+            return 1;
+        }
+        void** table = *reinterpret_cast<void***>(context);
+        drawIndexedHook = safetyhook::create_inline(table[12], reinterpret_cast<void*>(&DrawIndexedDetour<drawIndexedHook>));
+        ID3D11DeviceContext* deferred = nullptr;
+        if (SUCCEEDED(device->CreateDeferredContext(0, &deferred))) {
+            void** deferredTable = *reinterpret_cast<void***>(deferred);
+            if (deferredTable[12] != table[12])
+                deferredDrawIndexedHook = safetyhook::create_inline(deferredTable[12], reinterpret_cast<void*>(&DrawIndexedDetour<deferredDrawIndexedHook>));
+            deferred->Release();
+        }
+        context->Release();
+        device->Release();
+        if (drawIndexedHook)
+            SPDLOG_INFO("Scene fill hook installed.");
+        else
+            SPDLOG_ERROR("Scene fill hook failed.");
+        return 0;
     }
 
     bool InitializeLogging()
@@ -115,7 +196,8 @@ namespace
             std::ofstream defaultIni(path);
             defaultIni << "[Resolution]\nWidth = 1280\nHeight = 800\n\n"
                           "[AspectRatio]\n; Optional manual override\n; CustomAR = 1.6\n\n"
-                          "[Fixes]\nCameraAspect = true\nRemoveLetterbox = true\n"
+                          "[Fixes]\nCameraAspect = true\n"
+                          "; 3D fills the screen, HUD stays 16:9\nRemoveLetterbox = true\n"
                           "; Shared camera/UI projection: experimental, may distort UI\n"
                           "SharedProjection = false\n";
             defaultIni.close();
@@ -236,23 +318,39 @@ namespace
         return restored && flushed;
     }
 
+    bool WriteByte(std::uint8_t* address, std::uint8_t value)
+    {
+        DWORD oldProtect = 0;
+        if (!VirtualProtect(address, 1, PAGE_EXECUTE_READWRITE, &oldProtect))
+            return false;
+        *address = value;
+        VirtualProtect(address, 1, oldProtect, &oldProtect);
+        FlushInstructionCache(GetCurrentProcess(), address, 1);
+        return true;
+    }
+
+    void ApplyNativeRender()
+    {
+        auto* wide = FindUnique(exeModule, "Render size wide clamp",
+            "66 0F 2F 0D ?? ?? ?? ?? 76 1A C1 E1 04 B8 39 8E E3 38", 8);
+        auto* narrow = FindUnique(exeModule, "Render size narrow clamp",
+            "F2 0F 10 05 ?? ?? ?? ?? 66 0F 2F C1 76 10 8D 04 C0 99 83 E2 0F", 12);
+        if (wide && narrow && WriteByte(wide, 0xEB) && WriteByte(narrow, 0xEB))
+            SPDLOG_INFO("Native render resolution applied.");
+        else
+            SPDLOG_ERROR("Native render resolution not applied.");
+    }
+
     bool ApplyMemoryPatch()
     {
         constexpr float originalAR = 16.0f / 9.0f;
         std::uint8_t* aspect1 = nullptr;
         std::uint8_t* aspect2 = nullptr;
-        std::uint8_t* letterbox = nullptr;
         std::uint8_t* sharedAR = nullptr;
         if (bCameraAspect) {
             aspect1 = FindUnique(exeModule, "Camera aspect 1", "C7 87 30 08 00 00 39 8E E3 3F", 6);
             aspect2 = FindUnique(exeModule, "Camera aspect 2", "C7 83 30 08 00 00 39 8E E3 3F", 6);
             if (!aspect1 || !aspect2)
-                return false;
-        }
-        if (bRemoveLetterbox) {
-            letterbox = FindUnique(exeModule, "Letterbox",
-                "F3 0F 10 15 ?? ?? ?? ?? 66 41 0F 6E CA 0F 5B C9 66 41 0F 6E F0", 8);
-            if (!letterbox)
                 return false;
         }
         if (bSharedProjection) {
@@ -271,15 +369,6 @@ namespace
             }
         }
 
-        if (bRemoveLetterbox) {
-            auto result = safetyhook::MidHook::create(
-                letterbox, LetterboxCallback, safetyhook::MidHook::StartDisabled);
-            if (!result) {
-                SPDLOG_ERROR("Letterbox hook creation failed: {}.", static_cast<int>(result.error().type));
-                return false;
-            }
-            letterboxHook = std::move(*result);
-        }
         const auto rollback = [=]() {
             if (bCameraAspect) {
                 const bool restored1 = WriteFloat(aspect1, originalAR);
@@ -289,7 +378,6 @@ namespace
             }
             if (bSharedProjection && !WriteFloat(sharedAR, originalAR))
                 SPDLOG_ERROR("Shared projection rollback failed; restart the game.");
-            letterboxHook.reset();
         };
         if (bCameraAspect && (!WriteFloat(aspect1, fCustomAR) || !WriteFloat(aspect2, fCustomAR))) {
             rollback();
@@ -299,17 +387,13 @@ namespace
             rollback();
             return false;
         }
+        ApplyNativeRender();
         if (bRemoveLetterbox) {
-            const auto enabled = letterboxHook.enable();
-            if (!enabled) {
-                SPDLOG_ERROR("Letterbox hook enable failed: {}.", static_cast<int>(enabled.error().type));
-                rollback();
-                return false;
-            }
+            if (HANDLE thread = CreateThread(nullptr, 0, InstallSceneFill, nullptr, 0, nullptr))
+                CloseHandle(thread);
         }
         SPDLOG_INFO("Applied: CameraAspect={}, RemoveLetterbox={}, SharedProjection={}.",
                     bCameraAspect, bRemoveLetterbox, bSharedProjection);
-        SPDLOG_WARN("Experimental: HUD, scripted FOV, map zoom and resolution changes still require in-game testing.");
         return true;
     }
 
@@ -337,12 +421,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID)
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
         thisModule = hModule;
-        if (HANDLE thread = CreateThread(nullptr, 0, SetupThread, nullptr, 0, nullptr)) {
-            CloseHandle(thread);
-        } else {
-            OutputDebugStringA("Ys8_AspectPatch: Setup thread creation failed.\n");
-            return FALSE;
-        }
+        SetupThread(nullptr);
     }
     return TRUE;
 }

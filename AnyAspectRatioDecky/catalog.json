@@ -330,8 +330,8 @@
       "executable": "ys8.exe",
       "source": {
         "kind": "archive",
-        "path": "Ys VIII Lacrimosa of DANA/Ys-VIII-Lacrimosa-of-DANA-v1.1.0.zip",
-        "sha256": "a9bb4b27ea6cf491bb0678f444cd97a5edf2226a36e32aed1c76dbdaeeccd2b5"
+        "path": "Ys VIII Lacrimosa of DANA/Ys-VIII-Lacrimosa-of-DANA-v1.2.0.zip",
+        "sha256": "e3d6a20c7c15d02f53c132640e98a8769b7c610b4f83c36c8aedcd1c8db16448"
       },
       "files": ["dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"],
       "ini_file": "Ys8_AspectPatch.ini",

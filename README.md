@@ -225,6 +225,6 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Yakuza Kiwami 2 (Legacy) | Lyall | [927380](https://store.steampowered.com/app/927380) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Yakuza Kiwami 3 & Dark Ties | Lyall | [3937550](https://store.steampowered.com/app/3937550) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Yakuza: Like a Dragon | Lyall | [1235140](https://store.steampowered.com/app/1235140) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
-| Ys VIII: Lacrimosa of DANA | TLin-Y | [579180](https://store.steampowered.com/app/579180) | [v1.1.0](./Ys%20VIII%20Lacrimosa%20of%20DANA/Ys-VIII-Lacrimosa-of-DANA-v1.1.0.zip) | 2026-11-13 | [README](./Ys%20VIII%20Lacrimosa%20of%20DANA/README.md) |
+| Ys VIII: Lacrimosa of DANA | TLin-Y | [579180](https://store.steampowered.com/app/579180) | [v1.2.0](./Ys%20VIII%20Lacrimosa%20of%20DANA/Ys-VIII-Lacrimosa-of-DANA-v1.2.0.zip) | 2026-11-21 | [README](./Ys%20VIII%20Lacrimosa%20of%20DANA/README.md) |
 
 Version links open the release archive (or the mod folder when it ships loose files). Fixes by Lyall are redistributed unchanged from [codeberg.org/Lyall](https://codeberg.org/Lyall).
