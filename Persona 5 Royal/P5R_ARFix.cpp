@@ -33,6 +33,14 @@ namespace
     int* pFitOut = nullptr;
     int* pRefresh = nullptr;
     volatile bool uiReady = false;
+    volatile LONG movieDraws = 0;
+    volatile LONG liveMovies = 0;
+    volatile LONG movieFrames = 0;
+    volatile LONG framesAtStart = 0;
+    volatile LONG drawsAtStart = 0;
+    volatile bool movieLetterbox = false;
+    bool movieFallback = false;
+    int forceLetterbox = 0;
     int eventBars = 0;
     float fFov = 1.0f;
     float fTextScale = 1.0f;
@@ -880,6 +888,7 @@ namespace
             inipp::get_value(ini.sections["Interface"], "VerticalAlign", align);
             inipp::get_value(ini.sections["Interface"], "EventBars", eventBars);
             inipp::get_value(ini.sections["Camera"], "FOV", fFov);
+            inipp::get_value(ini.sections["Debug"], "MovieLetterbox", forceLetterbox);
             inipp::get_value(ini.sections["Interface"], "TextScale", fTextScale);
             inipp::get_value(ini.sections["Interface"], "HideNextArrow", hideArrow);
         }
@@ -985,6 +994,8 @@ namespace
         void* map = nullptr;
         void* setVertexBuffers = nullptr;
         void* psSetShaderResources = nullptr;
+        bool foreign = false;
+        bool inlined = false;
     };
     ContextTable contextTables[16];
     volatile LONG contextTableCount = 0;
@@ -1043,10 +1054,13 @@ namespace
         return &contextShaders[i];
     }
 
+    void Rearm(ID3D11DeviceContext* c);
+
     void STDMETHODCALLTYPE VSSetShaderHook(ID3D11DeviceContext* c, ID3D11VertexShader* s, ID3D11ClassInstance* const* ci, UINT n)
     {
         if (auto slot = ShaderSlot(c)) slot->shader = s;
         reinterpret_cast<VSSetShaderFn>(TableOf(c)->vsSetShader)(c, s, ci, n);
+        Rearm(c);
     }
 
     HRESULT STDMETHODCALLTYPE MapHook(ID3D11DeviceContext* c, ID3D11Resource* r, UINT sub, D3D11_MAP type, UINT flags, D3D11_MAPPED_SUBRESOURCE* m)
@@ -1076,6 +1090,7 @@ namespace
         if (first == 0 && n > 0)
             if (auto slot = ShaderSlot(c)) slot->srv = views ? views[0] : nullptr;
         reinterpret_cast<PSSetShaderResourcesFn>(TableOf(c)->psSetShaderResources)(c, first, n, views);
+        Rearm(c);
     }
 
     const uint8_t* MappedData(ID3D11Resource* r)
@@ -1192,6 +1207,7 @@ namespace
         if (BarMesh(c, count) || ArrowMesh(c, count, base)) return;
         auto table = TableOf(c);
         if (auto movie = MovieShader(c, count)) {
+            InterlockedIncrement(&movieDraws);
             auto game = ShaderSlot(c)->shader;
             reinterpret_cast<VSSetShaderFn>(table->vsSetShader)(c, movie, nullptr, 0);
             reinterpret_cast<DrawIndexedFn>(table->drawIndexed)(c, count, start, base);
@@ -1214,7 +1230,9 @@ namespace
     {
         auto vt = *reinterpret_cast<void***>(c);
         AcquireSRWLockExclusive(&tableLock);
-        bool known = vt[12] == reinterpret_cast<void*>(&DrawIndexedHook) || contextTableCount >= 16;
+        bool known = contextTableCount >= 16;
+        for (LONG i = 0; i < contextTableCount; ++i)
+            if (contextTables[i].table == vt) known = true;
         if (!known) {
             auto& entry = contextTables[contextTableCount];
             entry.table = vt;
@@ -1232,6 +1250,81 @@ namespace
                 PatchSlot(vt, 18, reinterpret_cast<void*>(&SetVertexBuffersHook));
             }
             spdlog::info("2D draws: context hooked");
+        }
+        ReleaseSRWLockExclusive(&tableLock);
+    }
+
+    HMODULE ModuleOf(void* p)
+    {
+        HMODULE m = nullptr;
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, static_cast<LPCWSTR>(p), &m);
+        return m;
+    }
+
+    bool RearmSlot(void** vt, int index, void* hook, void*& original)
+    {
+        void* cur = vt[index];
+        if (cur == hook || !cur || ModuleOf(cur) != ModuleOf(original)) return false;
+        original = cur;
+        PatchSlot(vt, index, hook);
+        return true;
+    }
+
+    volatile LONG rearmCount = 0;
+    struct InlineDraw
+    {
+        void* target;
+        SafetyHookInline hook;
+    };
+    InlineDraw inlineDraws[4];
+    int inlineDrawCount = 0;
+
+    bool InlineDrawIndexed(ContextTable& e, void* cur)
+    {
+        for (int i = 0; i < inlineDrawCount; ++i)
+            if (inlineDraws[i].target == cur) {
+                e.drawIndexed = inlineDraws[i].hook.original<void*>();
+                e.inlined = true;
+                return true;
+            }
+        if (inlineDrawCount >= 4 || ModuleOf(cur) != ModuleOf(e.drawIndexed)) return false;
+        auto h = safetyhook::create_inline(cur, reinterpret_cast<void*>(&DrawIndexedHook));
+        if (!h) return false;
+        auto& d = inlineDraws[inlineDrawCount++];
+        d.target = cur;
+        d.hook = std::move(h);
+        e.drawIndexed = d.hook.original<void*>();
+        e.inlined = true;
+        spdlog::info("2D draws: DrawIndexed inline-hooked at {:X}", reinterpret_cast<uintptr_t>(cur));
+        return true;
+    }
+
+    bool Reset(const ContextTable& e, void** vt)
+    {
+        if (!e.inlined && vt[12] != reinterpret_cast<void*>(&DrawIndexedHook)) return true;
+        return hideArrow && (vt[14] != reinterpret_cast<void*>(&MapHook) || vt[18] != reinterpret_cast<void*>(&SetVertexBuffersHook));
+    }
+
+    void Rearm(ID3D11DeviceContext* c)
+    {
+        auto vt = *reinterpret_cast<void***>(c);
+        auto known = TableOf(c);
+        if (!known || known->foreign || !Reset(*known, vt)) return;
+        AcquireSRWLockExclusive(&tableLock);
+        for (LONG i = 0; i < contextTableCount; ++i) {
+            auto& e = contextTables[i];
+            if (e.table != vt) continue;
+            if (!Reset(e, vt)) break;
+            bool done = false;
+            if (!e.inlined && vt[12] != reinterpret_cast<void*>(&DrawIndexedHook))
+                done = InlineDrawIndexed(e, vt[12]) || RearmSlot(vt, 12, reinterpret_cast<void*>(&DrawIndexedHook), e.drawIndexed);
+            if (hideArrow) {
+                done |= RearmSlot(vt, 14, reinterpret_cast<void*>(&MapHook), e.map);
+                done |= RearmSlot(vt, 18, reinterpret_cast<void*>(&SetVertexBuffersHook), e.setVertexBuffers);
+            }
+            if (!done) e.foreign = true;
+            else if (InterlockedIncrement(&rearmCount) <= 3) spdlog::info("2D draws: context re-hooked");
+            break;
         }
         ReleaseSRWLockExclusive(&tableLock);
     }
@@ -1339,6 +1432,29 @@ namespace
         device->Release();
     }
 
+    bool BaseSize(int& w, int& h)
+    {
+        if (!pResolution || pResolution[0] <= 0 || pResolution[1] <= 0) return false;
+        w = pResolution[0];
+        h = pResolution[1];
+        if (pResolution[2] != -1 && pResolution[3] != -1) { w = pResolution[2]; h = pResolution[3]; }
+        if (iWidth > 0 && iHeight > 0) { w = iWidth; h = iHeight; }
+        return w > 0 && h > 0;
+    }
+
+    void Letterbox(int& w, int& h)
+    {
+        if (static_cast<int64_t>(w) * 9 > static_cast<int64_t>(h) * 16) w = static_cast<int>((static_cast<int64_t>(h) * 16 + 4) / 9);
+        else h = static_cast<int>((static_cast<int64_t>(w) * 9 + 8) / 16);
+    }
+
+    void ApplySize(int w, int h)
+    {
+        int* out = pFitOut;
+        out[0] = w; out[1] = h; out[2] = w; out[3] = h;
+        ++*pRefresh;
+    }
+
     void RenderSize()
     {
         auto sizeRef = ScanCount("Render size", "C7 41 10 00 00 80 3F C7 41 14 00 00 00 3F E8 ? ? ? ?", 1);
@@ -1362,11 +1478,9 @@ namespace
         for (auto f : fits) {
             Mid(f + 2, [](safetyhook::Context& ctx) {
                 if (static_cast<int32_t>(ctx.rdx) <= 0 || static_cast<int32_t>(ctx.rcx) <= 0) return;
-                if (pResolution[0] <= 0 || pResolution[1] <= 0) return;
-                int w = pResolution[0], h = pResolution[1];
-                if (pResolution[2] != -1 && pResolution[3] != -1) { w = pResolution[2]; h = pResolution[3]; }
-                if (iWidth > 0 && iHeight > 0) { w = iWidth; h = iHeight; }
-                if (w <= 0 || h <= 0) return;
+                int w = 0, h = 0;
+                if (!BaseSize(w, h)) return;
+                if (movieLetterbox) Letterbox(w, h);
                 ctx.rdx = static_cast<uint32_t>(w);
                 ctx.rcx = static_cast<uint32_t>(h);
             });
@@ -1388,6 +1502,52 @@ namespace
         out[0] = iWidth; out[1] = iHeight; out[2] = iWidth; out[3] = iHeight;
         ++*pRefresh;
         spdlog::info("Render size refreshed to {}x{}", iWidth, iHeight);
+    }
+
+    DWORD WINAPI MovieMonitor(void*)
+    {
+        for (int i = 0; i < 1200 && !uiReady; ++i) Sleep(100);
+        for (;;) {
+            Sleep(100);
+            bool live = liveMovies > 0;
+            int w = 0, h = 0;
+            if (live && !movieLetterbox) {
+                bool stretched = movieFrames - framesAtStart >= 30 && movieDraws == drawsAtStart;
+                if (!(forceLetterbox || movieFallback || stretched) || !BaseSize(w, h)) continue;
+                movieFallback = true;
+                movieLetterbox = true;
+                Letterbox(w, h);
+                ApplySize(w, h);
+                spdlog::info("Movie: letterbox {}x{}", w, h);
+            } else if (!live && movieLetterbox) {
+                movieLetterbox = false;
+                if (!BaseSize(w, h)) continue;
+                ApplySize(w, h);
+                spdlog::info("Movie: render size restored to {}x{}", w, h);
+            }
+        }
+    }
+
+    void Movies()
+    {
+        if (!pFitOut || !pRefresh) return;
+        auto create = ScanCount("Movie create", "48 89 74 24 18 48 89 7C 24 20 55 48 8B EC 48 81 EC 80 00 00 00 83 3D", 1);
+        auto destroy = ScanCount("Movie destroy", "48 85 C9 0F 84 ? ? ? ? 53 48 83 EC 30 8B 41 04", 1);
+        auto frame = ScanCount("Movie frame", "48 89 5C 24 08 48 89 74 24 10 48 89 7C 24 18 55 41 56 41 57 48 8D AC 24 50 FF FF FF 48 81 EC B0 01 00 00 48 8B 02", 1);
+        if (create.empty() || destroy.empty() || frame.empty()) return;
+        bool ok = Mid(create[0], [](safetyhook::Context&) {
+            if (InterlockedIncrement(&liveMovies) == 1) {
+                framesAtStart = movieFrames;
+                drawsAtStart = movieDraws;
+            }
+        });
+        ok = ok && Mid(frame[0], [](safetyhook::Context&) { InterlockedIncrement(&movieFrames); });
+        ok = ok && Mid(destroy[0], [](safetyhook::Context& ctx) {
+            if (ctx.rcx && InterlockedDecrement(&liveMovies) < 0) InterlockedExchange(&liveMovies, 0);
+        });
+        if (!ok) return;
+        if (HANDLE h = CreateThread(nullptr, 0, MovieMonitor, nullptr, 0, nullptr)) CloseHandle(h);
+        spdlog::info("Movie letterbox fallback: {}", forceLetterbox ? "always" : "auto");
     }
 
     void Camera()
@@ -1466,6 +1626,7 @@ namespace
             return 0;
         }
         RenderSize();
+        Movies();
         Camera();
         TextScale();
         spdlog::info("Setup done");

@@ -983,8 +983,8 @@
       "executable": "P5R.exe",
       "source": {
         "kind": "archive",
-        "path": "Persona 5 Royal/Persona-5-Royal-v2.4.4.zip",
-        "sha256": "45c9265f1e00f94e89952e592f96d76ee2e2a1537858639c4304cec9c105af4f"
+        "path": "Persona 5 Royal/Persona-5-Royal-v2.4.5.zip",
+        "sha256": "973bcd7fddaf53f931afad7cfba6676686e1d3defd159f07c5603caa57f982bc"
       },
       "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
       "ini_file": "P5R_ARFix.ini",
