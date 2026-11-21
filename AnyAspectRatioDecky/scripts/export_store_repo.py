@@ -62,7 +62,7 @@ DEFAULTS_FILES = (
 EXPORT_PATHS = ROOT_PATHS + PY_PACKAGES + DEFAULTS_FILES
 BUILD_FLAVOR = "py_modules/helper/build_flavor.py"
 # Monorepo files (relative to the repository root) copied for the store README.
-SCREENSHOTS = ("resources/games-tab.jpg", "resources/edit-ini.jpg")
+SCREENSHOTS = ("resources/games-tab.jpg", "resources/edit-ini.jpg", "resources/how-mods-work.svg")
 SELF_UPDATE_ON = "SELF_UPDATE_ENABLED = True"
 SELF_UPDATE_OFF = "SELF_UPDATE_ENABLED = False"
 UPDATER = "py_modules/installer/plugin_updater.py"

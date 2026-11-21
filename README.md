@@ -9,7 +9,7 @@ Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3
 ---
 
 - **Windows/MacOS/Linux desktop:** the [AnyAspectRatio Desktop app](./AnyAspectRatioDesktop/README.md) finds your games and applies these fixes (and on MacOS the Wine override) for you.
-- **Steam OS/DroidDeck:** the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
+- **Steam OS/DroidDeck:** the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap (**requires [Decky Loader](https://decky.xyz)**):
 
 ![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg?v=4556e8ed)
 
@@ -26,7 +26,7 @@ If these fixes make your games better, you can [support the author on Ko-fi](htt
 
 This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
 
-Each fix is made and tested by hand for one specific game; none of them is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
+Each fix is made and tested by hand for the Steam version of one specific game; other versions (Epic, GOG, Game Pass, ...) are untested and may not be supported. None of the fixes is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
 
 My mods are mostly made from my earlier separate repositories, Cheat Engine patches I made years ago, or new reverse engineering that took anywhere from a few hours to several weeks for that game.
 
