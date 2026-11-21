@@ -629,8 +629,8 @@
       "executable": "nioh.exe",
       "source": {
         "kind": "archive",
-        "path": "Nioh Complete Edition/Nioh-Complete-Edition-v1.0.0.zip",
-        "sha256": "e350cec61918e74da3bb9608c86c4d48446d070d03d8e8f82c5188b71fe9f913"
+        "path": "Nioh Complete Edition/Nioh-Complete-Edition-v1.1.0.zip",
+        "sha256": "18210d69fc13fd57571f94a3bbf591f3a0dc523dd98bd2d2cbb128313b72cbb5"
       },
       "files": ["dinput8.dll", "Nioh_ARFix.asi", "Nioh_ARFix.ini"],
       "ini_file": "Nioh_ARFix.ini",
