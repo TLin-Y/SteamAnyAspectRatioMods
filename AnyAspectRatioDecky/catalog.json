@@ -241,6 +241,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "emperor-rise-of-the-middle-kingdom",
+      "name": "Emperor: Rise of the Middle Kingdom - Custom Resolution",
+      "steam_app_id": "0",
+      "install_dir": "Emperor - Rise of the Middle Kingdom",
+      "executable": "Emperor.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Emperor Rise of the Middle Kingdom/Emperor-Rise-of-the-Middle-Kingdom-v1.0.0.zip",
+        "sha256": "699fc030bb3063c06dc6268f6231c399715614a61bd8131c56fd29eafbccc790"
+      },
+      "files": ["Emperor_ARFix.asi", "Emperor_ARFix.ini"],
+      "ini_file": "Emperor_ARFix.ini",
+      "ini_resolution": [{"section": "Window", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": []
+    },
+    {
       "id": "final-fantasy-xii-the-zodiac-age",
       "name": "FINAL FANTASY XII THE ZODIAC AGE - Custom Aspect Ratio",
       "steam_app_id": "595520",
