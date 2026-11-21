@@ -193,17 +193,19 @@
     },
     {
       "id": "dw3re",
-      "name": "Dynasty Warriors 3: Complete Edition Remastered - Custom Resolution",
+      "name": "Dynasty Warriors 3: Complete Edition Remastered - Custom Resolution and FOV",
       "steam_app_id": "3841510",
       "install_dir": "DW3CE_RE",
-      "executable": "DW3CE_RE.exe",
+      "executable": "DW3CE_RE/Binaries/Win64/DW3CE_RE-Win64-Shipping.exe",
+      "executable_alternatives": ["DW3CE_RE.exe"],
       "source": {
         "kind": "archive",
-        "path": "Dynasty Warriors 3 Remastered/DW3RE-v1.1.0.zip",
-        "sha256": "5008eeb317ce56cb1c5b32b08e91534a4c57906b9dc127d58ff4bdc2f6272061"
+        "path": "Dynasty Warriors 3 Remastered/DW3RE-v1.2.0.zip",
+        "sha256": "5cbb992c23bc734f35eba82a580541f544abde5f730b174e382272821fb2fa62",
+        "destination": "DW3CE_RE/Binaries/Win64"
       },
-      "files": ["dxgi.dll", "DW3RE_ARFix.asi", "DW3RE_ARFix.ini"],
-      "ini_file": "DW3RE_ARFix.ini",
+      "files": ["DW3CE_RE/Binaries/Win64/dxgi.dll", "DW3CE_RE/Binaries/Win64/DW3RE_ARFix.asi", "DW3CE_RE/Binaries/Win64/DW3RE_ARFix.ini"],
+      "ini_file": "DW3CE_RE/Binaries/Win64/DW3RE_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dxgi=n,b"]
     },
