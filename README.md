@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 156 game mods](https://img.shields.io/badge/Game%20mods-156-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 157 game mods](https://img.shields.io/badge/Game%20mods-157-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -76,6 +76,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Apollo Justice: Ace Attorney Trilogy | TLin-Y | [2187220](https://store.steampowered.com/app/2187220) | [v1.0.0](./Apollo%20Justice%20Ace%20Attorney%20Trilogy/Apollo-Justice-Ace-Attorney-Trilogy-v1.0.0.zip) | 2026-11-13 | [README](./Apollo%20Justice%20Ace%20Attorney%20Trilogy/README.md) |
 | Assassin’s Creed Shadows | Lyall | [3159330](https://store.steampowered.com/app/3159330) | [v0.0.8](./external/Lyall/ACShadowsFix/ACShadowsFix_0.0.8.zip) | 2026-06-17 | [ACShadowsFix](https://codeberg.org/Lyall/ACShadowsFix) |
 | Atelier Yumia: The Alchemist of Memories & the Envisioned Land | Lyall | [3123410](https://store.steampowered.com/app/3123410) | [v0.0.6](./external/Lyall/AtelierYumiaFix/AtelierYumiaFix_0.0.6.zip) | 2025-05-31 | [AtelierYumiaFix](https://codeberg.org/Lyall/AtelierYumiaFix) |
+| Bayonetta | TLin-Y | [460790](https://store.steampowered.com/app/460790) | [v1.0.0](./Bayonetta/Bayonetta-v1.0.0.zip) | 2026-11-21 | [README](./Bayonetta/README.md) |
 | Beast of Reincarnation | Lyall | [2001760](https://store.steampowered.com/app/2001760) | [v0.0.6](./external/Lyall/BeastOfReincarnationFix/BeastOfReincarnationFix_0.0.6.zip) | 2026-08-26 | [BeastOfReincarnationFix](https://codeberg.org/Lyall/BeastOfReincarnationFix) |
 | Binary Domain | Lyall | [203750](https://store.steampowered.com/app/203750) | [v0.0.2](./external/Lyall/BinaryDomainFix/BinaryDomainFix_0.0.2.zip) | 2026-07-30 | [BinaryDomainFix](https://codeberg.org/Lyall/BinaryDomainFix) |
 | Black Myth: Wukong | Lyall | [2358720](https://store.steampowered.com/app/2358720) | [v0.8.5](./external/Lyall/WukongTweak/WukongTweak_0.8.5.zip) | 2025-06-04 | [WukongTweak](https://codeberg.org/Lyall/WukongTweak) |

@@ -57,6 +57,22 @@
       "wine_dll_overrides": ["xinput1_4=n,b"]
     },
     {
+      "id": "bayonetta",
+      "name": "Bayonetta - Custom Aspect Ratio",
+      "steam_app_id": "460790",
+      "install_dir": "Bayonetta",
+      "executable": "Bayonetta.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Bayonetta/Bayonetta-v1.0.0.zip",
+        "sha256": "e771416639ef04c50b4bc8efa60820bf8869079382fdb6e5d8fdf84c83cfabab"
+      },
+      "files": ["dinput8.dll", "Bayonetta_ARFix.asi", "Bayonetta_ARFix.ini"],
+      "ini_file": "Bayonetta_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "bloodstained-ritual-of-the-night",
       "name": "Bloodstained: Ritual of the Night - Custom Aspect Ratio",
       "steam_app_id": "692850",
