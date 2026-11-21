@@ -2,19 +2,15 @@
 #include "version.h"
 #include "helper.hpp"
 
-#ifdef _DEBUG
-    #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
-#else
-    #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
-#endif
-
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <inipp/inipp.h>
+#include <safetyhook.hpp>
 #include <windows.h>
+#include <algorithm>
+#include <atomic>
 #include <string>
 #include <vector>
-#include <sstream>
 
 namespace
 {
@@ -22,14 +18,24 @@ namespace
     HMODULE thisModule = nullptr;
 
     constexpr char sConfigFile[] = "DW3RE_ARFix.ini";
+    constexpr char fovPattern[] = "F3 0F 10 ?? 30 F3 0F 5F 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ??";
+    constexpr size_t fovSiteCount = 3;
+    constexpr size_t fovHookOffset = 5;
+    constexpr size_t fovScaleOffset = 13;
+
     std::filesystem::path FixPath;
     std::filesystem::path ExePath;
 
     bool bForceWindow = true;
-    bool bEnableAR = true;
-    
     int iTargetWidth = 1280;
-    int iTargetHeight = 960;
+    int iTargetHeight = 800;
+    float fFovMultiplier = 1.0f;
+    bool bLogStats = false;
+
+    std::vector<SafetyHookMid> fovHooks;
+    std::atomic<uint64_t> fovCalls{0};
+    std::atomic<float> lastFovIn{0.0f};
+    std::atomic<float> lastFovOut{0.0f};
 
     void Logging()
     {
@@ -49,14 +55,14 @@ namespace
 
             auto logger = std::make_shared<spdlog::logger>(
                 "DW3RE_Fix",
-                std::make_shared<spdlog::sinks::rotating_file_sink_st>(
+                std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                     (ExePath / "DW3RE_ARFix.log").string(), 10 * 1024 * 1024, 1));
             spdlog::set_default_logger(logger);
             spdlog::set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
-            spdlog::flush_on(spdlog::level::debug);
-            spdlog::set_level(spdlog::level::debug);
+            spdlog::flush_on(spdlog::level::info);
+            spdlog::set_level(spdlog::level::info);
 
-            SPDLOG_INFO("DW3RE AIO Patcher Initialized (Memory + Window Override).");
+            spdlog::info("DW3RE_ARFix {}.{}.{} loaded", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
         } catch (...) {}
     }
 
@@ -64,68 +70,119 @@ namespace
     {
         inipp::Ini<char> ini;
         std::ifstream iniFile(FixPath / sConfigFile);
-        if (iniFile) {
-            ini.parse(iniFile);
-            ini.strip_trailing_comments();
-            inipp::get_value(ini.sections["Resolution"], "Enable", bForceWindow);
-            inipp::get_value(ini.sections["Resolution"], "Width", iTargetWidth);
-            inipp::get_value(ini.sections["Resolution"], "Height", iTargetHeight);
-
-            inipp::get_value(ini.sections["Ultrawide"], "EnableAR", bEnableAR);
-            SPDLOG_INFO("Config Loaded - Target: {}x{}", iTargetWidth, iTargetHeight);
-        } else {
-            SPDLOG_WARN("Config file not found! Using defaults.");
+        if (!iniFile) {
+            spdlog::warn("Config file not found! Using defaults.");
+            return;
         }
-    }
+        ini.parse(iniFile);
+        ini.strip_trailing_comments();
+        inipp::get_value(ini.sections["Resolution"], "Enable", bForceWindow);
+        inipp::get_value(ini.sections["Resolution"], "Width", iTargetWidth);
+        inipp::get_value(ini.sections["Resolution"], "Height", iTargetHeight);
+        inipp::get_value(ini.sections["FOV"], "Multiplier", fFovMultiplier);
+        inipp::get_value(ini.sections["Debug"], "LogStats", bLogStats);
 
-    std::vector<uint8_t> ParseHexStringToBytes(const std::string& hexStr) {
-        std::vector<uint8_t> bytes;
-        std::stringstream ss(hexStr);
-        std::string byteStr;
-        while (ss >> byteStr) {
-            bytes.push_back(static_cast<uint8_t>(std::stoul(byteStr, nullptr, 16)));
+        if (!(fFovMultiplier >= 0.5f && fFovMultiplier <= 2.0f)) {
+            spdlog::warn("FOV Multiplier must be 0.5-2.0; using 1.0");
+            fFovMultiplier = 1.0f;
         }
-        return bytes;
+        spdlog::info("Config: window {} {}x{}, FOV Multiplier {:.3f}",
+                     bForceWindow, iTargetWidth, iTargetHeight, fFovMultiplier);
     }
 
-    std::vector<uint8_t> FloatToBytes(float value) {
-        std::vector<uint8_t> bytes(4);
-        std::memcpy(bytes.data(), &value, 4);
-        return bytes;
-    }
-
-    int ReplaceAllInDataSections(const std::vector<uint8_t>& pattern, const std::vector<uint8_t>& replacement)
+    std::vector<uintptr_t> FindInCode(const char* signature)
     {
-        if (pattern.empty() || replacement.empty() || pattern.size() != replacement.size()) return 0;
-        int replaceCount = 0;
-        PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)exeModule;
-        PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)exeModule + pDosHeader->e_lfanew);
-        PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNtHeaders);
+        std::vector<uintptr_t> results;
+        const auto pattern = Memory::PatternToBytes(signature);
+        const auto base = reinterpret_cast<uint8_t*>(exeModule);
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+        const auto* section = IMAGE_FIRST_SECTION(nt);
 
-        for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++, pSection++) {
-            if ((pSection->Characteristics & IMAGE_SCN_MEM_EXECUTE) != 0) continue;
-
-            std::uint8_t* sectionStart = (std::uint8_t*)exeModule + pSection->VirtualAddress;
-            size_t sectionSize = pSection->Misc.VirtualSize;
-            if (sectionSize < pattern.size()) continue;
-
-            std::uint8_t* current = sectionStart;
-            std::uint8_t* end = sectionStart + sectionSize - pattern.size();
-
-            while (current <= end) {
-                if (std::memcmp(current, pattern.data(), pattern.size()) == 0) {
-                    DWORD oldProtect;
-                    VirtualProtect(current, replacement.size(), PAGE_READWRITE, &oldProtect);
-                    std::memcpy(current, replacement.data(), replacement.size());
-                    VirtualProtect(current, replacement.size(), oldProtect, &oldProtect);
-                    replaceCount++;
-                    current += pattern.size();
-                } else {
-                    current++;
-                }
+        for (WORD i = 0; i < nt->FileHeader.NumberOfSections; ++i, ++section) {
+            if (!(section->Characteristics & IMAGE_SCN_MEM_EXECUTE)) continue;
+            const uint8_t* bytes = base + section->VirtualAddress;
+            const size_t size = section->Misc.VirtualSize;
+            if (size < pattern.size()) continue;
+            for (size_t offset = 0; offset + pattern.size() <= size; ++offset) {
+                if (bytes[offset] != pattern[0]) continue;
+                size_t j = 1;
+                while (j < pattern.size() && (pattern[j] < 0 || bytes[offset + j] == pattern[j])) ++j;
+                if (j == pattern.size()) results.push_back(reinterpret_cast<uintptr_t>(bytes + offset));
             }
         }
-        return replaceCount;
+        return results;
+    }
+
+    float ReadRipFloat(uintptr_t instruction, size_t length)
+    {
+        const int32_t displacement = *reinterpret_cast<const int32_t*>(instruction + length - 4);
+        return *reinterpret_cast<const float*>(instruction + length + displacement);
+    }
+
+    void ScaleFov(SafetyHookContext& ctx)
+    {
+        const float fovIn = ctx.xmm0.f32[0];
+        const float fovOut = (std::min)(fovIn * fFovMultiplier, 170.0f);
+        ctx.xmm0.f32[0] = fovOut;
+        if (bLogStats) {
+            fovCalls.fetch_add(1, std::memory_order_relaxed);
+            lastFovIn = fovIn;
+            lastFovOut = fovOut;
+        }
+    }
+
+    DWORD WINAPI StatsLoop(void*)
+    {
+        uint64_t previous = 0;
+        for (;;) {
+            Sleep(5000);
+            const uint64_t now = fovCalls.load();
+            spdlog::info("FOV calls={} fov {:.2f} -> {:.2f}", now - previous, lastFovIn.load(), lastFovOut.load());
+            previous = now;
+        }
+    }
+
+    void InstallFovHooks()
+    {
+        if (fFovMultiplier == 1.0f) {
+            spdlog::info("FOV Multiplier is 1.0; FOV left unchanged");
+            return;
+        }
+
+        std::vector<uintptr_t> sites;
+        for (int attempt = 0; attempt < 60; ++attempt) {
+            sites = FindInCode(fovPattern);
+            if (!sites.empty()) break;
+            Sleep(250);
+        }
+        if (sites.size() != fovSiteCount) {
+            spdlog::error("FOV signature found {} times, expected {}; FOV left unchanged", sites.size(), fovSiteCount);
+            return;
+        }
+
+        for (const auto site : sites) {
+            const float clamp = ReadRipFloat(site + fovHookOffset, 8);
+            const float scale = ReadRipFloat(site + fovScaleOffset, 8);
+            if (std::abs(clamp - 0.001f) > 1e-6f || std::abs(scale - 0.0087266462f) > 1e-6f) {
+                spdlog::error("FOV site game+0x{:X} has constants {} / {}; FOV left unchanged",
+                              site - reinterpret_cast<uintptr_t>(exeModule), clamp, scale);
+                fovHooks.clear();
+                return;
+            }
+            auto hook = SafetyHookMid::create(reinterpret_cast<void*>(site + fovHookOffset), ScaleFov);
+            if (!hook) {
+                spdlog::error("FOV hook failed at game+0x{:X}", site - reinterpret_cast<uintptr_t>(exeModule));
+                fovHooks.clear();
+                return;
+            }
+            fovHooks.push_back(std::move(*hook));
+            spdlog::info("FOV hook at game+0x{:X}", site + fovHookOffset - reinterpret_cast<uintptr_t>(exeModule));
+        }
+
+        if (bLogStats) {
+            if (HANDLE thread = CreateThread(nullptr, 0, StatsLoop, nullptr, 0, nullptr)) CloseHandle(thread);
+        }
     }
 
     BOOL CALLBACK EnumWindowsCallback(HWND hwnd, LPARAM lParam) {
@@ -149,8 +206,8 @@ namespace
                 SetWindowPos(hwnd, HWND_TOP, posX, posY, iTargetWidth, iTargetHeight,
                              SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 
-                SPDLOG_INFO("Window forcefully resized to {}x{} (Borderless)", iTargetWidth, iTargetHeight);
-                return FALSE; 
+                spdlog::info("Window forcefully resized to {}x{} (Borderless)", iTargetWidth, iTargetHeight);
+                return FALSE;
             }
         }
         return TRUE;
@@ -165,25 +222,16 @@ namespace
         return 0;
     }
 
-    DWORD WINAPI MemoryInjectThread(void*)
+    DWORD WINAPI MainThread(void*)
     {
         Logging();
         Configuration();
-
-        if (bEnableAR && iTargetHeight > 0) {
-            std::vector<uint8_t> origAR = ParseHexStringToBytes("3B 8E E3 3F"); 
-            
-            float fNewAR = static_cast<float>(iTargetWidth) / static_cast<float>(iTargetHeight);
-            std::vector<uint8_t> newAR = FloatToBytes(fNewAR);
-            
-            int count = ReplaceAllInDataSections(origAR, newAR);
-            SPDLOG_INFO("AR Data Patched. Instances: {}. Target AR: {:.5f}", count, fNewAR);
-        }
 
         if (HANDLE winHandle = CreateThread(nullptr, 0, WindowOverrideThread, nullptr, 0, nullptr)) {
             CloseHandle(winHandle);
         }
 
+        InstallFovHooks();
         return 0;
     }
 }
@@ -193,7 +241,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID)
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
         thisModule = hModule;
-        if (HANDLE mainHandle = CreateThread(nullptr, 0, MemoryInjectThread, nullptr, 0, nullptr)) {
+        if (HANDLE mainHandle = CreateThread(nullptr, 0, MainThread, nullptr, 0, nullptr)) {
             CloseHandle(mainHandle);
         }
     }
