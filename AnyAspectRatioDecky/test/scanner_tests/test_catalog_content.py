@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 52, 50, 1, 1, 74
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 53, 51, 1, 1, 75
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -32,7 +32,7 @@ ZIP_EXTRAS = {
     "final-fantasy-xiii": {"FF13Fix_Licences/FF13Fix_LICENSE.txt", "FF13Fix_Licences/MinHook_LICENSE.txt"},
     "warriors-orochi-3-ultimate": {"mods/fix/log.txt", "LICENSE-WO3UFix.txt"},
 }
-NO_LOADER_LICENSE = {"ai-the-somnium-files", "brotato", "phoenix-wright-ace-attorney-trilogy"}
+NO_LOADER_LICENSE = {"ai-the-somnium-files", "brotato", "emperor-rise-of-the-middle-kingdom", "phoenix-wright-ace-attorney-trilogy"}
 NO_ZIP_README = {"final-fantasy-xiii"}  # its README ships in the separate release zip
 
 
@@ -218,6 +218,9 @@ PINNED = {
         "steam_app_id": "579180", "install_dir": "Ys VIII Lacrimosa of Dana", "executable": "ys8.exe",
         "files": ("dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"), "ini_file": "Ys8_AspectPatch.ini",
     },
+    "emperor-rise-of-the-middle-kingdom": {  # GOG only; GOG install folder, not on Steam
+        "steam_app_id": "0", "install_dir": "Emperor - Rise of the Middle Kingdom", "executable": "Emperor.exe",
+    },
     "wofffix": {"steam_app_id": "552700", "install_dir": "WOFF", "executable": "WOFF.exe",
                 "files": ("WOFFFix.asi", "WOFFFix.ini", "dinput8.dll")},
     "doa6fix": {"steam_app_id": "838380", "install_dir": "Dead or Alive 6", "executable": "doa6.exe",
@@ -269,6 +272,7 @@ INI_DEFAULTS = {
         "Generations": {"CameraCorrection": True, "RemoveLetterbox": True},
         "Diagnostics": {"VerboseDiagnostics": False},
     },
+    "emperor-rise-of-the-middle-kingdom": {"Window": {"Width": 1280, "Height": 800, "Borderless": True}},
     "pentiment": {"AspectRatio": {"Enabled": True}, "Resolution": {"Borderless": True, "Width": 1280, "Height": 800}},
 }
 

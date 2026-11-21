@@ -83,7 +83,7 @@ def load_exceptions() -> dict:
 
 
 def main() -> int:
-    mods = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))["mods"]
+    mods = [mod for mod in json.loads(CATALOG_PATH.read_text(encoding="utf-8"))["mods"] if mod["steam_app_id"] != "0"]  # "0": not sold on Steam
     exceptions = load_exceptions()
     try:
         pics = steam_pics.lookup(sorted({int(mod["steam_app_id"]) for mod in mods}))
