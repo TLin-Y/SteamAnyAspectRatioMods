@@ -24,5 +24,13 @@ Edit `Width` and `Height` in `[Resolution]` in `Nioh_ARFix.ini`. The default is
 `RenderScale` sets the internal render resolution (Width/Height x RenderScale).
 Use a value below 1.0 for better performance; the UI is not affected.
 
+## FOV
+
+The view keeps the 16:9 horizontal FOV on any screen, and wider screens show
+more at the sides. To change it, edit `Multiplier` in `[FOV]` in
+`Nioh_ARFix.ini` (`1.1` = 110%, `0.9` = 90%, range 0.5 to 2.0).
+
+Movies keep 16:9 with black bars.
+
 Built for Nioh v1.24.07 and newer. Missing patches are logged to
 `Nioh_ARFix.log`.
