@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 161 game mods](https://img.shields.io/badge/Game%20mods-161-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 162 game mods](https://img.shields.io/badge/Game%20mods-162-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -28,7 +28,7 @@ G3dE0nn
 
 ## About this collection
 
-This collection focuses mainly on filling handheld-specific gaps and adapting mods for devices such as Steam Deck, AYN, and Retroid Pocket.
+This is a single-developer mod collection, made to fill handheld-specific gaps and adapt games for devices like the Steam Deck, AYN, and Retroid Pocket. Rather than just standard ultrawide fixes, it provides full cross-platform and ARM64 compatibility, covering both ultrawide and narrower aspect ratios (like 32:9, 16:10, 3:2, and 4:3).
 
 Each fix is made and tested by hand for the Steam version of one specific game; other versions (Epic, GOG, Game Pass, ...) are untested and may not be supported. None of the fixes is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
 
@@ -145,6 +145,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | KINGDOM HEARTS -HD 1.5+2.5 ReMIX- | m.vico | [2552430](https://store.steampowered.com/app/2552430) | [v1.0.1](./external/mvico/Keyblade%20Masters%20Ultrawide%20-%20KH%201.5-2.5/Keyblade%20Masters%20Ultrawide%20KH%201.5-2.5%20230%201.0.1.zip) | 2026-09-10 | [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) |
 | KINGDOM HEARTS III | m.vico | [2552450](https://store.steampowered.com/app/2552450) | [v1.0.1](./external/mvico/Keyblade%20Masters%20Ultrawide%20-%20KH3/Keyblade%20Masters%20Ultrawide%20KH3%202553%201.0.1.zip) | 2026-06-05 | [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomhearts3/mods/2553) |
 | LEGO Batman: Legacy of the Dark Knight | Lyall | [2215200](https://store.steampowered.com/app/2215200) | [v0.0.4](./external/Lyall/LEGOBatmanLotDKFix/LEGOBatmanLotDKFix_0.0.4.zip) | 2026-09-17 | [LEGOBatmanLotDKFix](https://codeberg.org/Lyall/LEGOBatmanLotDKFix) |
+| Life is Strange Remastered | TLin-Y | [1265920](https://store.steampowered.com/app/1265920) | [v1.0.0](./Life%20is%20Strange%20Remastered/Life-is-Strange-Remastered-v1.0.0.zip) | 2026-11-22 | [README](./Life%20is%20Strange%20Remastered/README.md) |
 | Lightning Returns: Final Fantasy XIII | TEODORMAX | [345350](https://store.steampowered.com/app/345350) | [v1.0.0](./external/TEODORMAX/UltrawideFix-LRFF13/UltrawideFix-LRFF13_1.0.0.zip) | 2026-07-28 | [UltrawideFix](https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35) |
 | Like a Dragon Gaiden: The Man Who Erased His Name | Lyall | [2375550](https://store.steampowered.com/app/2375550) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | Like a Dragon: Infinite Wealth | Lyall | [2072450](https://store.steampowered.com/app/2072450) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |

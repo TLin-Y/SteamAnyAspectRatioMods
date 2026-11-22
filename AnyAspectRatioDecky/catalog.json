@@ -453,6 +453,23 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "life-is-strange-remastered",
+      "name": "Life is Strange Remastered - Custom Aspect Ratio",
+      "steam_app_id": "1265920",
+      "install_dir": "LIS - Remastered",
+      "executable": "LIS/Binaries/Win64/LiS-Win64-Shipping.exe",
+      "executable_alternatives": ["LiS.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "Life is Strange Remastered/Life-is-Strange-Remastered-v1.0.0.zip",
+        "sha256": "5753f01102a7e002abad03a592b5f620af74b580bc75e95bfdac7bea30cd1a10",
+        "destination": "LIS/Binaries/Win64"
+      },
+      "files": ["LIS/Binaries/Win64/dxgi.dll", "LIS/Binaries/Win64/LiS_ARFix.asi", "LIS/Binaries/Win64/LiS_ARFix.ini"],
+      "ini_file": "LIS/Binaries/Win64/LiS_ARFix.ini",
+      "wine_dll_overrides": ["dxgi=n,b"]
+    },
+    {
       "id": "monster-hunter-rise",
       "name": "Monster Hunter Rise - Custom Aspect Ratio",
       "steam_app_id": "1446780",
