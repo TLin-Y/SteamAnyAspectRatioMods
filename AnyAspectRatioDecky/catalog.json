@@ -429,8 +429,8 @@
       "executable_alternatives": ["Game.exe"],
       "source": {
         "kind": "archive",
-        "path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.0.zip",
-        "sha256": "34761407652b188f9c727381313577ffa7285066adc25e9c461d6b02067b53b4"
+        "path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.1.zip",
+        "sha256": "cf351dab115c00e9b17eb21e99f0dd7fe63cc3d25c72e4b0c69823442c4f3d22"
       },
       "files": ["dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"],
       "ini_file": "Guac1_ARFix.ini",

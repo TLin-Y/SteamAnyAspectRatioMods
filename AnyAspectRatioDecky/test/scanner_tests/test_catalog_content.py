@@ -207,7 +207,7 @@ PINNED = {
         "steam_app_id": "275390", "install_dir": "DrinkBox_Game4", "executable": "GuacSTCE.exe",
         "executable_alternatives": ("Game.exe",), "files": ("dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"),
         "ini_file": "Guac1_ARFix.ini",
-        "source.path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.0.zip",
+        "source.path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.1.zip",
     },
     "rayman-legends": {
         "steam_app_id": "242550", "install_dir": "Rayman Legends", "executable": "Rayman Legends.exe",
