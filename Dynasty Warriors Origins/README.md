@@ -10,13 +10,13 @@ Extract the ZIP into the game folder, next to the game executable.
 
 Edit `DWOriginsFix.ini`. `Width` and `Height` are the resolution to use; the default `1280x800` is for Steam Deck. For example, use `1280x960` for 4:3, or set these values to your display resolution for 21:9 and wider screens.
 
-`TargetWidth` and `TargetHeight` are the built-in game resolution to replace, not the output resolution. Leave the default `3840x2160` for the 16:9 game mode. For the built-in 21:9 mode, use `3840x1600`.
+`TargetWidth` and `TargetHeight` are the built-in game resolution to replace, not the output resolution. Leave the default `3840x2160`.
 
 ![4:3 gameplay demonstration](demo1.jpg)
 
 ![Ultrawide gameplay demonstration](demo2-ultrawide.jpg)
 
-In the game's graphics options, select the top resolution entry (the replaced `3840x2160`). It now shows your custom resolution.
+In the game's graphics options, keep the aspect ratio at **16:9** on every screen, also on 21:9 and wider ones, and select the top resolution entry (the replaced `3840x2160`). It now shows your custom resolution. The game's own 21:9 mode draws the picture off-center on very wide screens such as 48:9.
 
 ## 3. Field of view
 

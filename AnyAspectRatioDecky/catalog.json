@@ -298,8 +298,8 @@
       "executable": "DWORIGINS.exe",
       "source": {
         "kind": "archive",
-        "path": "Dynasty Warriors Origins/Dynasty-Warriors-Origins-v1.1.1.zip",
-        "sha256": "d358208f85dfe33c3752948d7a92a5a0e135f467320a89f7e9ea3d8ed70982b5"
+        "path": "Dynasty Warriors Origins/Dynasty-Warriors-Origins-v1.1.2.zip",
+        "sha256": "704a8f8e08f50c3f9a50fbb87eb6961e0bbc7c82fc89b3d69ad49b237649780c"
       },
       "files": ["dinput8.dll", "DWOriginsFix.asi", "DWOriginsFix.ini"],
       "ini_file": "DWOriginsFix.ini",
