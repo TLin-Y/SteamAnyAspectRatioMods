@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "version.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -111,8 +112,54 @@ namespace
     {
         ctx.xmm1.f32[0] = static_cast<float>(targetWidth);
         ctx.xmm2.f32[0] = static_cast<float>(targetHeight);
-        ctx.r9 = 2;
+        ctx.r9 = 3;
         SPDLOG_INFO("Requesting Unity windowed resolution: {}x{}.", targetWidth, targetHeight);
+    }
+
+    BOOL CALLBACK FindGameWindow(HWND window, LPARAM parameter)
+    {
+        DWORD processId = 0;
+        GetWindowThreadProcessId(window, &processId);
+        if (processId != GetCurrentProcessId() || !IsWindowVisible(window) || GetWindow(window, GW_OWNER))
+            return TRUE;
+        wchar_t className[64]{};
+        if (GetClassNameW(window, className, 64) && std::wcscmp(className, L"UnityWndClass") == 0)
+        {
+            *reinterpret_cast<HWND*>(parameter) = window;
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    DWORD WINAPI BorderlessWindow(void*)
+    {
+        constexpr LONG_PTR frame = WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+        for (;; Sleep(250))
+        {
+            HWND window = nullptr;
+            EnumWindows(FindGameWindow, reinterpret_cast<LPARAM>(&window));
+            if (!window || IsIconic(window))
+                continue;
+            MONITORINFO monitor{ sizeof(monitor) };
+            if (!GetMonitorInfoW(MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST), &monitor))
+                continue;
+            const RECT& m = monitor.rcMonitor;
+            const float fit = (std::min)({ 1.0f, float(m.right - m.left) / targetWidth, float(m.bottom - m.top) / targetHeight });
+            const int width = (std::max)(1, int(std::lround(targetWidth * fit)));
+            const int height = (std::max)(1, int(std::lround(targetHeight * fit)));
+            const int x = m.left + (m.right - m.left - width) / 2;
+            const int y = m.top + (m.bottom - m.top - height) / 2;
+            const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
+            RECT current{};
+            GetWindowRect(window, &current);
+            if (!(style & frame) && current.left == x && current.top == y &&
+                current.right - x == width && current.bottom - y == height)
+                continue;
+            if (style & frame)
+                SetWindowLongPtrW(window, GWL_STYLE, (style & ~frame) | WS_POPUP);
+            SetWindowPos(window, nullptr, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+            SPDLOG_INFO("Borderless window {}x{} at {},{}.", width, height, x, y);
+        }
     }
 
     struct CameraResolution
@@ -297,6 +344,10 @@ namespace
             }
             resolutionHook = std::move(*resolutionResult);
             SPDLOG_INFO("Game resolution request hook installed.");
+            if (HANDLE thread = CreateThread(nullptr, 0, BorderlessWindow, nullptr, 0, nullptr))
+                CloseHandle(thread);
+            else
+                SPDLOG_ERROR("Cannot start borderless window thread: Win32 error {}.", GetLastError());
         }
         return true;
     }

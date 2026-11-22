@@ -19,7 +19,7 @@ The fix unlocks the game camera viewport for different aspect ratios.
 
 ## Custom Aspect Ratio
 
-Edit `Dave_ARFix.ini` to set the desired `Width` and `Height`. The default is 1280x800 (16:10); positive values request a windowed resolution. Set both values to `0` to keep the game's resolution and fullscreen settings while using the viewport fix.
+Edit `Dave_ARFix.ini` to set the desired `Width` and `Height`. The default is 1280x800 (16:10); positive values run the game in a borderless window of that size, centered on the screen. Set both values to `0` to keep the game's resolution and fullscreen settings while using the viewport fix.
 
 On macOS (CrossOver / Whisky), `Width` and `Height` are ignored so the game can run fullscreen; choose Fullscreen in the game's settings.
 

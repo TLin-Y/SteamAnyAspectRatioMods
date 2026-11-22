@@ -966,8 +966,8 @@
       "executable": "DaveTheDiver.exe",
       "source": {
         "kind": "archive",
-        "path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.2.0.zip",
-        "sha256": "85db79ef94bb74fb2f6301c0fe5b163b5a078dacb199b40e780d4f05a8537d3a"
+        "path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.2.1.zip",
+        "sha256": "039eb8277c0337422d2e52dc4ebe3401341cf1be4cabb92df6a8c079cfa43987"
       },
       "files": ["winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"],
       "ini_file": "Dave_ARFix.ini",
