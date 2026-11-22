@@ -139,6 +139,23 @@
       "wine_dll_overrides": ["winhttp=n,b"]
     },
     {
+      "id": "crisis-core-final-fantasy-vii-reunion",
+      "name": "CRISIS CORE -FINAL FANTASY VII- REUNION - Custom Aspect Ratio",
+      "steam_app_id": "1608070",
+      "install_dir": "CCFF7R",
+      "executable": "CCFF7R/Binaries/Win64/CCFF7R-Win64-Shipping.exe",
+      "executable_alternatives": ["CCFF7R.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "Crisis Core Final Fantasy VII Reunion/Crisis-Core-Final-Fantasy-VII-Reunion-v1.0.0.zip",
+        "sha256": "1cd15fd380fff357e24f896ac63766ca4cb9f2a1d36d43154f9d72edbabef8b2",
+        "destination": "CCFF7R/Binaries/Win64"
+      },
+      "files": ["CCFF7R/Binaries/Win64/dxgi.dll", "CCFF7R/Binaries/Win64/CCFF7R_ARFix.asi", "CCFF7R/Binaries/Win64/CCFF7R_ARFix.ini"],
+      "ini_file": "CCFF7R/Binaries/Win64/CCFF7R_ARFix.ini",
+      "wine_dll_overrides": ["dxgi=n,b"]
+    },
+    {
       "id": "dragonsword-awakening",
       "name": "DragonSword: Awakening - Custom Aspect Ratio",
       "steam_app_id": "4570720",
