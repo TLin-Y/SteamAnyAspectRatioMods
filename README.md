@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 160 game mods](https://img.shields.io/badge/Game%20mods-160-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 161 game mods](https://img.shields.io/badge/Game%20mods-161-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -132,6 +132,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | FINAL FANTASY XII THE ZODIAC AGE | TLin-Y | [595520](https://store.steampowered.com/app/595520) | [v1.0.0](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.0.zip) | 2026-11-11 | [README](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/README.md) |
 | Final Fantasy XIII | TLin-Y, rebtd7 | [292120](https://store.steampowered.com/app/292120) | [Combined package](./external/rebtd7/FF13Fix/FF13-ARFix-with-FF13Fix-v1.0.0.zip) | 2026-11-02 | [README](./Final%20Fantasy%20XIII/README.md) |
 | Final Fantasy XIII-2 | TEODORMAX | [292140](https://store.steampowered.com/app/292140) | [v1.4.0](./external/TEODORMAX/FFXIII2UW/FFXIII2UW_1.4.0.zip) | 2026-07-17 | [FFXIII2UW](https://www.nexusmods.com/finalfantasyxiii2/mods/42) |
+| FINAL FANTASY XV WINDOWS EDITION | TLin-Y | [637650](https://store.steampowered.com/app/637650) | [v1.0.0](./Final%20Fantasy%20XV/Final-Fantasy-XV-v1.0.0.zip) | 2026-11-22 | [README](./Final%20Fantasy%20XV/README.md) |
 | FINAL FANTASY XVI | Lyall | [2515020](https://store.steampowered.com/app/2515020) | [v0.8.5](./external/Lyall/FFXVIFix/FFXVIFix_0.8.5.zip) | 2025-06-05 | [FFXVIFix](https://codeberg.org/Lyall/FFXVIFix) |
 | Granblue Fantasy: Relink | Lyall | [881020](https://store.steampowered.com/app/881020) | [v1.1.5](./external/Lyall/GBFRelinkFix/GBFRelinkFix_1.1.5.zip) | 2026-08-07 | [GBFRelinkFix](https://codeberg.org/Lyall/GBFRelinkFix) |
 | Guacamelee! Super Turbo Championship Edition | TLin-Y | [275390](https://store.steampowered.com/app/275390) | [v2.0.0](./Guacamelee%20Super%20Turbo%20Championship%20Edition/Guacamelee-STCE-v2.0.0.zip) | 2026-11-08 | [README](./Guacamelee%20Super%20Turbo%20Championship%20Edition/README.md) |

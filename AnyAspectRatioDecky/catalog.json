@@ -373,6 +373,21 @@
       ]
     },
     {
+      "id": "final-fantasy-xv-windows-edition",
+      "name": "FINAL FANTASY XV WINDOWS EDITION - Custom Aspect Ratio",
+      "steam_app_id": "637650",
+      "install_dir": "FINAL FANTASY XV",
+      "executable": "ffxv_s.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Final Fantasy XV/Final-Fantasy-XV-v1.0.0.zip",
+        "sha256": "7913a9fdea1f9236effb28feaa707902a790eedc5a99aed476d66ac63720aab4"
+      },
+      "files": ["dinput8.dll", "FFXV_ARFix.asi", "FFXV_ARFix.ini"],
+      "ini_file": "FFXV_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "ys-viii-lacrimosa-of-dana",
       "name": "Ys VIII: Lacrimosa of DANA - Custom Aspect Ratio",
       "steam_app_id": "579180",
