@@ -1,5 +1,7 @@
 # WARRIORS-OROCHI-3-Ultimate-Any-Aspect-Ratio-Fov-With-Slow-Motion-Fix
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 Works in any mode: pick the last in-game resolution (it shows your screen size, e.g. 1280x800 on Steam Deck) for a native picture with a fitted HUD, or keep the old way (1280x720 with SteamOS display scaling set to "Stretch").
 
 # Install

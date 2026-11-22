@@ -1,5 +1,7 @@
 # DEVIL-MAY-CRY-5-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 Set the in-game resolution to your screen resolution (Steam Deck: 1280x800). The game now fills the whole screen with no black bars; no SteamOS display scaling needed.
 
 Why?

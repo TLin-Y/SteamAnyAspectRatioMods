@@ -1,5 +1,7 @@
 # Dynasty Warriors 3: Remastered - Custom Resolution and FOV
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 The game already supports ultrawide and 16:10. This mod is for custom borderless-window resolutions, especially narrow displays such as 1:1, 3:2, and 4:3.
 
 ## 1. Install

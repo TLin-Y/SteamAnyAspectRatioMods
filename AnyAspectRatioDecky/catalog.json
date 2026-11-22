@@ -29,7 +29,7 @@
       "source": {
         "kind": "archive",
         "path": "AI The Somnium Files/AI-The-Somnium-Files-v1.0.1.zip",
-        "sha256": "351d2851ae755a1baff03cd44c5ac0165a5e9b055ff4936fd151a2ae5a13e542"
+        "sha256": "99eb3998b944fe79af16af887e0be848edab67b9a6cc773a65f52e6810692d64"
       },
       "files": ["AI_TheSomniumFiles_Data/Managed/Assembly-CSharp.dll", "AI_TheSomniumFiles_Data/Managed/AI1Resolution.dll", "AI1_ARFix.ini"],
       "backups": [
@@ -48,7 +48,7 @@
       "source": {
         "kind": "archive",
         "path": "ASTLIBRA Revision/ASTLIBRA-Revision-v1.0.0.zip",
-        "sha256": "099e42ac2d897215da5146c38d8352653485e3372ff440f2b145732569d3f51c"
+        "sha256": "299dfa9a28c40b1373633c6a5ee9fc06ab68346bad914f08f1882fd55e50baa5"
       },
       "files": ["xinput1_4.dll", "ASTLIBRA_ARFix.asi", "ASTLIBRA_ARFix.ini"],
       "ini_file": "ASTLIBRA_ARFix.ini",
@@ -65,7 +65,7 @@
       "source": {
         "kind": "archive",
         "path": "Bayonetta/Bayonetta-v1.0.0.zip",
-        "sha256": "eebdd96b2c1ee963c670a118268c339019686a33ef6e21af476411e895c0564b"
+        "sha256": "e2bd24a9aecfdb8adce74eafbe65ebc37a663e39c6d023fe1acadcf9001ef9f5"
       },
       "files": ["dinput8.dll", "Bayonetta_ARFix.asi", "Bayonetta_ARFix.ini"],
       "ini_file": "Bayonetta_ARFix.ini",
@@ -81,7 +81,7 @@
       "source": {
         "kind": "archive",
         "path": "BEYOND Two Souls/BEYOND-Two-Souls-v1.0.0.zip",
-        "sha256": "cb7e91d0482d30855a7edf787ed5e4bd29ae991f51e6b73fc954e1ae704ce4f1"
+        "sha256": "9c97e4b9f88fec4645e2cd7a86f4871dcef0fa1904e0b4fa4c7ff3ebc198bb56"
       },
       "files": ["dinput8.dll", "BeyondTwoSouls_ARFix.asi", "BeyondTwoSouls_ARFix.ini"],
       "ini_file": "BeyondTwoSouls_ARFix.ini",
@@ -97,7 +97,7 @@
       "source": {
         "kind": "archive",
         "path": "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
-        "sha256": "bad9273f31874660ca580702d429e25aa2456dc9b137f987cd23f174e8b5c0ef",
+        "sha256": "bfdd4d69ae73d076a4fd511a872528c5fc06d58cda117d2901b30e6f9a80ffff",
         "destination": "BloodstainedRotN/Binaries/Win64"
       },
       "files": ["BloodstainedRotN/Binaries/Win64/winhttp.dll", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.asi", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini"],
@@ -114,7 +114,7 @@
       "source": {
         "kind": "archive",
         "path": "Brotato/Brotato-v1.0.0.zip",
-        "sha256": "ba239f05764936e40d7719caf710e44298cea73909a9df7b9cb5024ad01ab151"
+        "sha256": "70f63a0e6658871ad5a8da3e561d6c82dc1b1aef64db7dc34608d504993ec98b"
       },
       "files": ["override.cfg", "AnyAspectRatio.gd"],
       "ini_file": null,
@@ -131,7 +131,7 @@
       "source": {
         "kind": "archive",
         "path": "CODE VEIN/CODE-VEIN-v1.0.0.zip",
-        "sha256": "91d751ed9ea97caa5d322f0634041559d8835aac1667eb54a9f8c271ac5ae03a",
+        "sha256": "3421af568988f103898b6e056449ed485fb7144941b6ff2f097b188d390045e0",
         "destination": "CodeVein/Binaries/Win64"
       },
       "files": ["CodeVein/Binaries/Win64/winhttp.dll", "CodeVein/Binaries/Win64/CodeVein_ARFix.asi", "CodeVein/Binaries/Win64/CodeVein_ARFix.ini"],
@@ -148,7 +148,7 @@
       "source": {
         "kind": "archive",
         "path": "Crisis Core Final Fantasy VII Reunion/Crisis-Core-Final-Fantasy-VII-Reunion-v1.0.0.zip",
-        "sha256": "1cd15fd380fff357e24f896ac63766ca4cb9f2a1d36d43154f9d72edbabef8b2",
+        "sha256": "f7ab401e7f5773266c7dbc76467c897790c00b47c9e2ff9986669204c39a385d",
         "destination": "CCFF7R/Binaries/Win64"
       },
       "files": ["CCFF7R/Binaries/Win64/dxgi.dll", "CCFF7R/Binaries/Win64/CCFF7R_ARFix.asi", "CCFF7R/Binaries/Win64/CCFF7R_ARFix.ini"],
@@ -165,7 +165,7 @@
       "source": {
         "kind": "archive",
         "path": "DragonSword Awakening/DragonSword-Awakening-v1.0.0.zip",
-        "sha256": "a42cf114116cf454bf5d4f1a12c52ed55f06c7aaf1293b5c15c63f60db699907",
+        "sha256": "dc23657d9fb5d4e307d5e902ab0445293ee632249130c807fa851ea1871b72a1",
         "destination": "DS/Binaries/Win64"
       },
       "files": ["DS/Binaries/Win64/winmm.dll", "DS/Binaries/Win64/DSClient_ARFix.asi", "DS/Binaries/Win64/DSClient_ARFix.ini"],
@@ -183,7 +183,7 @@
       "source": {
         "kind": "archive",
         "path": "SONIC X SHADOW GENERATIONS/SONIC-X-SHADOW-GENERATIONS-v1.0.0.zip",
-        "sha256": "ced0c3b87bd646afee6dbc69ffcce47e1d6e44c0a06d36a68b6ebdca1606da68"
+        "sha256": "458dcc79611c6cc00dcaae1f02ea740b99c3207c53620830a223255f7a8eafde"
       },
       "files": ["winmm.dll", "SonicShadow_ARFix.asi", "GenerationsARFix.asi", "SonicShadow_ARFix.ini"],
       "ini_file": "SonicShadow_ARFix.ini",
@@ -198,7 +198,7 @@
       "source": {
         "kind": "archive",
         "path": "STAR OCEAN THE SECOND STORY R/STAR-OCEAN-THE-SECOND-STORY-R-v1.0.0.zip",
-        "sha256": "dfffc3ffdf51e35a61bce629543db0505863c1620a93aeb1f2765690e8283832"
+        "sha256": "bc280fc4862c5f12944d56303800c246984798dcbfa86958ec3a9a783e8094e8"
       },
       "files": ["winmm.dll", "SO2R_ARFix.asi", "SO2R_ARFix.ini"],
       "ini_file": "SO2R_ARFix.ini",
@@ -215,7 +215,7 @@
       "source": {
         "kind": "archive",
         "path": "Dark Souls III/Dark-Souls-III-v1.1.0.zip",
-        "sha256": "9a31706271c04694f61f4a4b94ccf2c0dd284a98b60ddd41c1c86e3a4ec62367",
+        "sha256": "09378224fad3a38ec04971e8a738f88b73f5efe05a9b1b26c2bb78c25d008ce3",
         "destination": "Game"
       },
       "files": ["Game/d3d11.dll", "Game/dinput8.dll", "Game/DS3_ARFix.asi", "Game/DS3_ARFix.ini"],
@@ -232,7 +232,7 @@
       "source": {
         "kind": "archive",
         "path": "DARK SOULS REMASTERED FOV/Dark-Souls-Remastered-FOV-v1.0.0.zip",
-        "sha256": "d875df799136bd03cec2a1132035ae39a0b675a5a1ed2684c2286f820e1c953c"
+        "sha256": "70d56faa32522d771b7694dad3b9e57df4ffe9c3c738b2656df1d757eabb0785"
       },
       "files": ["dinput8.dll", "DSR_FovFix.asi", "DSR_FovFix.ini"],
       "ini_file": "DSR_FovFix.ini",
@@ -249,7 +249,7 @@
       "source": {
         "kind": "archive",
         "path": "Dynasty Warriors 3 Remastered/DW3RE-v1.2.0.zip",
-        "sha256": "5cbb992c23bc734f35eba82a580541f544abde5f730b174e382272821fb2fa62",
+        "sha256": "80880af0f81ea0a3d574603eecdb5c5374a3b372cafdbd87d018d448713dba55",
         "destination": "DW3CE_RE/Binaries/Win64"
       },
       "files": ["DW3CE_RE/Binaries/Win64/dxgi.dll", "DW3CE_RE/Binaries/Win64/DW3RE_ARFix.asi", "DW3CE_RE/Binaries/Win64/DW3RE_ARFix.ini"],
@@ -267,7 +267,7 @@
       "source": {
         "kind": "archive",
         "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.1.0.zip",
-        "sha256": "bb9cb07c97f04987004c7d7fb59faa6166b13bbf19a9cc53f97c6aa03f7040b8"
+        "sha256": "bd4b5be2dbe695a046cbd692c581feb13b1f7e245f6781f2913913667c69cf12"
       },
       "files": ["dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"],
       "ini_file": "DW7XL_ARFix.ini",
@@ -283,7 +283,7 @@
       "source": {
         "kind": "archive",
         "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.1.0.zip",
-        "sha256": "b3697c333520fde5044ec35c779aa2801bfee29c8d3a98877f5956933126bdaf"
+        "sha256": "e265d199ce291c345880a1145ba6799c83f6a85c5c9634607070a53ed80608de"
       },
       "files": ["dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"],
       "ini_file": "DW8XL_ARFix.ini",
@@ -299,7 +299,7 @@
       "source": {
         "kind": "archive",
         "path": "Dynasty Warriors Origins/Dynasty-Warriors-Origins-v1.1.1.zip",
-        "sha256": "929cb2ea329274a6deba4c0581cff70a4bf7456925086840fdcba9feb639db37"
+        "sha256": "d358208f85dfe33c3752948d7a92a5a0e135f467320a89f7e9ea3d8ed70982b5"
       },
       "files": ["dinput8.dll", "DWOriginsFix.asi", "DWOriginsFix.ini"],
       "ini_file": "DWOriginsFix.ini",
@@ -315,7 +315,7 @@
       "source": {
         "kind": "archive",
         "path": "Emperor Rise of the Middle Kingdom/Emperor-Rise-of-the-Middle-Kingdom-v1.0.0.zip",
-        "sha256": "699fc030bb3063c06dc6268f6231c399715614a61bd8131c56fd29eafbccc790"
+        "sha256": "50826fa61da244cef034bc515a7972a4920c7f2146e280f785087731ae802276"
       },
       "files": ["Emperor_ARFix.asi", "Emperor_ARFix.ini"],
       "ini_file": "Emperor_ARFix.ini",
@@ -331,7 +331,7 @@
       "source": {
         "kind": "archive",
         "path": "Final Fantasy XII The Zodiac Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.0.zip",
-        "sha256": "2a15ec9572bfb06517137ca0b5c3ea10c0dc3eeefe9238fd1fb48a9d4436bdf5",
+        "sha256": "92d28133f73dfb6c3e3011ca790147e7a88c92c1415294a9aa185457c57566fb",
         "destination": "x64"
       },
       "files": ["x64/dinput8.dll", "x64/FFXII_TZA_ARFix.asi", "x64/FFXII_TZA_ARFix.ini"],
@@ -381,7 +381,7 @@
       "source": {
         "kind": "archive",
         "path": "Final Fantasy XV/Final-Fantasy-XV-v1.0.0.zip",
-        "sha256": "7913a9fdea1f9236effb28feaa707902a790eedc5a99aed476d66ac63720aab4"
+        "sha256": "2944d17059e5e09b2647aadd00c00971b39866b9099b4b4f38d8d176eae2ee13"
       },
       "files": ["dinput8.dll", "FFXV_ARFix.asi", "FFXV_ARFix.ini"],
       "ini_file": "FFXV_ARFix.ini",
@@ -396,7 +396,7 @@
       "source": {
         "kind": "archive",
         "path": "Ys VIII Lacrimosa of DANA/Ys-VIII-Lacrimosa-of-DANA-v1.2.0.zip",
-        "sha256": "e3d6a20c7c15d02f53c132640e98a8769b7c610b4f83c36c8aedcd1c8db16448"
+        "sha256": "e65b42d8266b62795dfc85ddcd51a94789537f32771a5138ff2572cd3d2600a5"
       },
       "files": ["dinput8.dll", "Ys8_AspectPatch.asi", "Ys8_AspectPatch.ini"],
       "ini_file": "Ys8_AspectPatch.ini",
@@ -413,7 +413,7 @@
       "source": {
         "kind": "archive",
         "path": "Guacamelee 2/Guacamelee-2-v2.0.1.zip",
-        "sha256": "e88ee8946bb54474352c64983d40e105f8a4bedfb0c3b3e9319c6a6311925785"
+        "sha256": "6013a2bbf8ae302ebf92345db01180cc3a8d82187e7dbc0e0930dcf2ad090a2e"
       },
       "files": ["dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"],
       "ini_file": "Guac2_ARFix.ini",
@@ -430,7 +430,7 @@
       "source": {
         "kind": "archive",
         "path": "Guacamelee Super Turbo Championship Edition/Guacamelee-STCE-v2.0.0.zip",
-        "sha256": "a8ea1f8b9153c270d6d0bbc207438e2e20f79d373cb0ac125edc479e53f547ba"
+        "sha256": "34761407652b188f9c727381313577ffa7285066adc25e9c461d6b02067b53b4"
       },
       "files": ["dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"],
       "ini_file": "Guac1_ARFix.ini",
@@ -446,7 +446,7 @@
       "source": {
         "kind": "archive",
         "path": "Heavy Rain/Heavy-Rain-v1.0.0.zip",
-        "sha256": "47e3de629698fe478085b757f0a10498f3e486a62532f74fc5a5be3fffc4544e"
+        "sha256": "2467b5412ad0404efdcd909717a582fd6b84a583a6a171ca95f490799f29e1a3"
       },
       "files": ["dinput8.dll", "HeavyRain_ARFix.asi", "HeavyRain_ARFix.ini"],
       "ini_file": "HeavyRain_ARFix.ini",
@@ -461,7 +461,7 @@
       "source": {
         "kind": "archive",
         "path": "Monster Hunter Rise/Monster-Hunter-Rise-v1.2.0.zip",
-        "sha256": "1339e4ba1a0b2d79a16f460198710a373585e166586a7243e854de8faef42806"
+        "sha256": "0caeeb8dc9e9a1fb4b6ef4d1fd532e8f90af2eb0fccdee07238cb79341e192f9"
       },
       "files": ["dinput8.dll", "MHRiseFix.asi", "MHRiseFix.ini"],
       "ini_file": "MHRiseFix.ini",
@@ -710,7 +710,7 @@
       "source": {
         "kind": "archive",
         "path": "Nioh Complete Edition/Nioh-Complete-Edition-v1.1.0.zip",
-        "sha256": "18210d69fc13fd57571f94a3bbf591f3a0dc523dd98bd2d2cbb128313b72cbb5"
+        "sha256": "891e0a111a5cd1da538f7e2757b515e1201aeb454552f5f222f4b06c6af790e9"
       },
       "files": ["dinput8.dll", "Nioh_ARFix.asi", "Nioh_ARFix.ini"],
       "ini_file": "Nioh_ARFix.ini",
@@ -727,7 +727,7 @@
       "source": {
         "kind": "archive",
         "path": "Onimusha Way of the Sword/Onimusha-Way-of-the-Sword-v1.0.0.zip",
-        "sha256": "42248a62c2af4065b6b7cbc9dff7ecf5d90aafec4a2a5f08b24aad48e47d75fb"
+        "sha256": "e51714638ad030dfe840cd270273f5eacb6d5cb4fb1e4927470d92cd9055b9aa"
       },
       "files": ["dinput8.dll", "OnimushaWotS_ARFix.asi", "OnimushaWotS_ARFix.ini"],
       "ini_file": "OnimushaWotS_ARFix.ini",
@@ -858,7 +858,7 @@
       "source": {
         "kind": "archive",
         "path": "Ori and the Will of the Wisps/Ori-and-the-Will-of-the-Wisps-v1.1.0.zip",
-        "sha256": "9d81fc9925192eccf481209c1d47cff337fb9aa177e5636c4e1d88221603acb0"
+        "sha256": "53199ef32f95fe78037b298471b8477d7f50e89cef739c42f15cc70a11e9aa41"
       },
       "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
       "ini_file": "OriARFix.ini",
@@ -874,7 +874,7 @@
       "source": {
         "kind": "archive",
         "path": "Pentiment/Pentiment-v0.2.1.zip",
-        "sha256": "2383ea4ada9ab2df49b235e19fc2c5d22574f37ab195c632b9ec9c003fb25bef"
+        "sha256": "82a625f266c162aa251d5b4642e59eedeb77f8bac80634238954cdb93f1abcb2"
       },
       "files": ["winhttp.dll", "Pentiment_ARFix.asi", "Pentiment_ARFix.ini"],
       "ini_file": "Pentiment_ARFix.ini",
@@ -890,7 +890,7 @@
       "source": {
         "kind": "archive",
         "path": "Apollo Justice Ace Attorney Trilogy/Apollo-Justice-Ace-Attorney-Trilogy-v1.0.0.zip",
-        "sha256": "8938516f49a7b659eb46dccaa4a198edf8057f4f11c920a612add91b36ed1fdf"
+        "sha256": "71f316529f91a4c2f0dde64b58356546c22406f863df21445befd57844c7f286"
       },
       "files": ["dinput8.dll", "GS456_ARFix.asi", "GS456_ARFix.ini"],
       "ini_file": "GS456_ARFix.ini",
@@ -906,7 +906,7 @@
       "source": {
         "kind": "archive",
         "path": "Phoenix Wright Ace Attorney Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.1.zip",
-        "sha256": "49403306676ef6406345b3f80650a0d5d8708818d36f0be621e074397a642298"
+        "sha256": "de3fde38e43bf814c68d59c235227c227140826b43f2f8d425c3ba057f4c08c4"
       },
       "files": [
         "PWAAT_Data/Managed/Assembly-CSharp.dll",
@@ -933,7 +933,7 @@
       "source": {
         "kind": "archive",
         "path": "Rayman Legends/Rayman-Legends-v1.0.0.zip",
-        "sha256": "3ac4e42f0250712860cf4e1232223969a7b7ccf703a84917a8b112e7c964b148"
+        "sha256": "b968fbc97b09c1503c3df86806d292111aedc071d85081ecf519ec179b85f3a1"
       },
       "files": ["dinput8.dll", "RaymanLegends_ARFix.asi", "RaymanLegends_ARFix.ini"],
       "ini_file": "RaymanLegends_ARFix.ini",
@@ -950,7 +950,7 @@
       "source": {
         "kind": "archive",
         "path": "DAVE THE DIVER/DAVE-THE-DIVER-v1.2.0.zip",
-        "sha256": "729d40c327312f96151b2e737b4cf1378126adc7f3925fe0475f41742316f194"
+        "sha256": "85db79ef94bb74fb2f6301c0fe5b163b5a078dacb199b40e780d4f05a8537d3a"
       },
       "files": ["winmm.dll", "Dave_ARFix.asi", "Dave_ARFix.ini"],
       "ini_file": "Dave_ARFix.ini",
@@ -966,7 +966,7 @@
       "source": {
         "kind": "archive",
         "path": "Dead Cells/Dead-Cells-v1.0.0.zip",
-        "sha256": "a8d670ce41e3e8b0f33c1df1157409bb6e5d5c656eac1d0d065117c8b8bb5ea9"
+        "sha256": "f2673444dd4bc215570e5dd58db592bc30cbc7b0b5a7f304da1fc1ed59bf09bd"
       },
       "files": ["dinput8.dll", "deadcells_ARFix.asi", "deadcells_ARFix.ini"],
       "ini_file": "deadcells_ARFix.ini",
@@ -982,7 +982,7 @@
       "source": {
         "kind": "archive",
         "path": "Devil May Cry 4 Special Edition/Devil-May-Cry-4-Special-Edition-v1.0.0.zip",
-        "sha256": "401a5ae685ee9a0ca42e900b84f93bc9fcf3a51f9692155b677524c8b0b97a0e"
+        "sha256": "71cf0349ee90d4cfbb4a7c0ecd7e7697c92e25c08fcde1992936ee05505e9d48"
       },
       "files": ["dinput8.dll", "DevilMayCry4SpecialEdition_ARFix.asi", "DevilMayCry4SpecialEdition_ARFix.ini"],
       "ini_file": "DevilMayCry4SpecialEdition_ARFix.ini",
@@ -998,7 +998,7 @@
       "source": {
         "kind": "archive",
         "path": "Devil May Cry 5/Devil-May-Cry-5-v1.1.0.zip",
-        "sha256": "f32f5c38ce92485783649d149d1f91a3efa3087ee283c75164f3e022390d493b"
+        "sha256": "4a637320ce8a2bacd114c8a32387fc8f8fbfa7bb79d1dae814f9d88d3489a9dc"
       },
       "files": ["dinput8.dll", "DevilMayCry5_ARFix.asi", "DevilMayCry5_ARFix.ini"],
       "ini_file": "DevilMayCry5_ARFix.ini",
@@ -1014,7 +1014,7 @@
       "source": {
         "kind": "archive",
         "path": "DmC Devil May Cry/DmC-Devil-May-Cry-v1.0.0.zip",
-        "sha256": "2e84f2c5ddc2757b7880d1a7cf5d8c1e1853bc097e09c71238745efd670b231e",
+        "sha256": "9cce4c104d61b59cff4f3fe795a2f5902211012155c4a91d8b9a771586eec811",
         "destination": "Binaries/Win32"
       },
       "files": ["Binaries/Win32/dinput8.dll", "Binaries/Win32/DMC-DevilMayCry_ARFix.asi", "Binaries/Win32/DMC-DevilMayCry_ARFix.ini"],
@@ -1032,7 +1032,7 @@
       "source": {
         "kind": "archive",
         "path": "Detroit Become Human/Detroit-Become-Human-v1.0.0.zip",
-        "sha256": "3c5756bf61c63f7edf491c4d25bfb6c81f0976a8b4afd14aa1ee6d864c6c5f81"
+        "sha256": "d165309c34fe9ca380670efe9b096e5b96060f8b57c8db25f6374aa87c13b9fd"
       },
       "files": ["dinput8.dll", "DetroitBecomeHuman_ARFix.asi", "DetroitBecomeHuman_ARFix.ini"],
       "ini_file": "DetroitBecomeHuman_ARFix.ini",
@@ -1048,7 +1048,7 @@
       "source": {
         "kind": "archive",
         "path": "SANABI/SANABI-v1.1.0.zip",
-        "sha256": "b3c346f1c61f912e61f30b7004d2930f15c32febe618a4b149cd2ee44c61b323"
+        "sha256": "7eb97a633fb7a7e9511597e7a4d5fac9551769e35e078ae07e5a0c6f126efa71"
       },
       "files": ["winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"],
       "ini_file": "SNB_ARFix.ini",
@@ -1063,7 +1063,7 @@
       "source": {
         "kind": "archive",
         "path": "Palworld/Palworld-v1.1.0.zip",
-        "sha256": "13f5423e55c7a2d7f459d63dbd2a43f74ac4cc883497668d2b6cee806b2d400e",
+        "sha256": "13f03358ec4742e87f0f0addc5ff41728f78af763af1ece29ea15d8190cf26cd",
         "destination": "Pal/Binaries/Win64"
       },
       "files": ["Pal/Binaries/Win64/winmm.dll", "Pal/Binaries/Win64/Palworld_ARFix.asi", "Pal/Binaries/Win64/Palworld_ARFix.ini"],
@@ -1080,7 +1080,7 @@
       "source": {
         "kind": "archive",
         "path": "Persona 5 Royal/Persona-5-Royal-v2.4.5.zip",
-        "sha256": "973bcd7fddaf53f931afad7cfba6676686e1d3defd159f07c5603caa57f982bc"
+        "sha256": "c08a86d8ceaf0bace14bccb5d651aca574b54fdbb18aef010791fc269e8e38c3"
       },
       "files": ["dinput8.dll", "P5R_ARFix.asi", "P5R_ARFix.ini"],
       "ini_file": "P5R_ARFix.ini",
@@ -1096,7 +1096,7 @@
       "source": {
         "kind": "archive",
         "path": "Persona 4 Golden/Persona-4-Golden-v1.3.3.zip",
-        "sha256": "15b4ba3a19052d56315e3945a492d39baadbc9eb67542c82affcefcb802d3626"
+        "sha256": "5f0c5dcec309a4f5e4dfe1bee3cf32b9f7f51fc7d35a0c97984751e1509e9195"
       },
       "files": ["dinput8.dll", "P4G_ARFix.asi", "P4G_ARFix.ini"],
       "ini_file": "P4G_ARFix.ini",
@@ -1112,7 +1112,7 @@
       "source": {
         "kind": "archive",
         "path": "PRAGMATA/PRAGMATA-v1.0.0.zip",
-        "sha256": "0ca4c539bc1aa2241810346e14120b818f08903126a581bb3f73fb70159b57b5"
+        "sha256": "fa8047e710572bf5e5a90b5236e37eb6b484f46271dddf3357c365909e6838d0"
       },
       "files": ["dinput8.dll", "PRAGMATA_ARFix.asi", "PRAGMATA_ARFix.ini"],
       "ini_file": "PRAGMATA_ARFix.ini",
@@ -1128,7 +1128,7 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil 2 Remake/Resident-Evil-2-Remake-v1.4.0.zip",
-        "sha256": "1b8885075d66c637b928c114f52cfd5c9a9760bb5e4843d5913c655534704d15"
+        "sha256": "e893f17327c3db6f1da23ee39a4f39264b1a61c2d1910162d00a7e4d6f020e98"
       },
       "files": ["dinput8.dll", "RE2_ARFix.asi", "RE2_ARFix.ini"],
       "ini_file": "RE2_ARFix.ini",
@@ -1144,7 +1144,7 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.5.0.zip",
-        "sha256": "baeb633c3234631e216afdec3e29585866432d781a0eea706440e0d4da11efef"
+        "sha256": "7778bec59bce455e3f498cde60abd9a2c0d497f800056fc2cd146993bd88dfac"
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",
@@ -1160,7 +1160,7 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil 4 Remake/Resident-Evil-4-Remake-v1.4.1.zip",
-        "sha256": "371b4ccc391438c32cf5426c272238203edde4ebe905a5088f2c462e271f7b3f"
+        "sha256": "e9e849640d5dc0d2da442187ca98dd339cda254c55a62974b4d199169495f29f"
       },
       "files": ["dinput8.dll", "RE4_ARFix.asi", "RE4_ARFix.ini"],
       "ini_file": "RE4_ARFix.ini",
@@ -1176,7 +1176,7 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil 7/Resident-Evil-7-v1.4.0.zip",
-        "sha256": "a709e5a5d64c05d2af4318010ce2bd3fb8589be66efc7834af5e62455133ace9"
+        "sha256": "72eae9c67122d5c25685aafb6972f0925358b392bfe4bb6204c7ac9c07e9e233"
       },
       "files": ["dinput8.dll", "RE7_ARFix.asi", "RE7_ARFix.ini"],
       "ini_file": "RE7_ARFix.ini",
@@ -1192,7 +1192,7 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil Village/Resident-Evil-Village-v1.4.0.zip",
-        "sha256": "d56d0dbfc72e35836495acc7af03a418805cee9b4a4adaeca59c30184ffc164a"
+        "sha256": "b742fdfff138c55e821f468971dd799851e9eaa3ac3978eb5852bbe9b62252df"
       },
       "files": [
         "dinput8.dll",
@@ -1212,7 +1212,7 @@
       "source": {
         "kind": "archive",
         "path": "Resident Evil Requiem/Resident-Evil-Requiem-v1.1.0.zip",
-        "sha256": "58a6c0057444315d09b1119f580c4e6ed9f38d674007ed108374c3fd674993e4"
+        "sha256": "6882fe60d1c7c44448ffcace428755e04c2fff5bb55221fe9ffa048889b1d7bd"
       },
       "files": ["dinput8.dll", "RE9_ARFix.asi", "RE9_ARFix.ini"],
       "ini_file": "RE9_ARFix.ini",
@@ -1228,7 +1228,7 @@
       "source": {
         "kind": "archive",
         "path": "Tales of Arise/Tales-of-Arise-v1.1.0.zip",
-        "sha256": "ba786ed2895040bfa42410c4055a0f11b75cdf063d90e4c84daad857461dbeb1",
+        "sha256": "12e7d01dcccdff05956ef936de3c8b23f46fb41f91a0398e3fadb910d4e121ab",
         "destination": "Arise/Binaries/Win64"
       },
       "files": [
@@ -1249,7 +1249,7 @@
       "source": {
         "kind": "archive",
         "path": "Trials of Mana/Trials-of-Mana-v1.0.1.zip",
-        "sha256": "1dbd8343dbca320d87d72b02744a20906c849e0719f0334268ada3ba91d033cf",
+        "sha256": "7202eeee175942ad6614a6b3df0ff6d6247de495bdf1d0e04ee00e74f22c981e",
         "destination": "Trials of Mana/Binaries/Win64"
       },
       "files": ["Trials of Mana/Binaries/Win64/dxgi.dll", "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.asi", "Trials of Mana/Binaries/Win64/TrialsOfMana_ARFix.ini"],
@@ -1266,7 +1266,7 @@
       "source": {
         "kind": "archive",
         "path": "Visions of Mana/Visions-of-Mana-v1.0.0.zip",
-        "sha256": "1085deb25106e1d466b9fa5aaa113bff6d2c7b3b6237cccea07ed3865c43e123",
+        "sha256": "c3422e564f577007318b1d9b0c774735b44308c0b0654fbca1599cf41334b2e2",
         "destination": "VisionsofMana/Binaries/Win64"
       },
       "files": [
@@ -1287,7 +1287,7 @@
       "source": {
         "kind": "archive",
         "path": "Samurai Warriors Spirit of Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.1.0.zip",
-        "sha256": "74c98788e7fba0bfb2e508e22ca9a03ae0dcbddc4017c91c50b1331e689a4c91"
+        "sha256": "2808e2574084b8737c9b4a9deb9df66416d0a7d4767acdb28265bd801a4892d2"
       },
       "files": ["dinput8.dll", "SWSanada_ARFix.asi", "SWSanada_ARFix.ini"],
       "ini_file": "SWSanada_ARFix.ini",
@@ -1303,7 +1303,7 @@
       "source": {
         "kind": "archive",
         "path": "Warriors Orochi 3 Ultimate/Warriors-Orochi-3-Ultimate-v1.2.0.zip",
-        "sha256": "ee84fc425611900f67887906c2dae757f2c5d8980555692faec05dcad74e5238"
+        "sha256": "922b49e8df20c24d1a7985112c1dd938ea3af88f7621b171bc74092594328541"
       },
       "files": [
         "dinput8.dll",
@@ -1327,7 +1327,7 @@
       "source": {
         "kind": "archive",
         "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.2.0.zip",
-        "sha256": "f8292daba0b653a673e32421e78543cbc450dd42bc39e30fed17c853db7ed5b4"
+        "sha256": "9c2d0432f1b4e0c98831bf29172d68cf8cb40d4e45bf6fb3485c9e5d1e599e77"
       },
       "files": ["dinput8.dll", "WO4U_ARFix.asi", "WO4U_ARFix.ini"],
       "ini_file": "WO4U_ARFix.ini",
@@ -2428,7 +2428,7 @@
       "source": {
         "kind": "archive",
         "path": "Reimpl-Absolum/Absolum-v0.1.0.zip",
-        "sha256": "e633a7c392e422e83f84f4ea1fa6fea2f5e382549e70e8d9214cbde49ab1c145",
+        "sha256": "2a492e8f2c50869d6455be95e02a0931d1119e1fe99516f64cfeaa3c6c07146a",
         "destination": "x64.steam"
       },
       "files": ["x64.steam/winhttp.dll", "x64.steam/Absolum_ARFix.asi", "x64.steam/Absolum_ARFix.ini"],

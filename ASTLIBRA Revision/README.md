@@ -1,5 +1,7 @@
 # ASTLIBRA Revision-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 Runs the game at any aspect ratio without black bars, in a borderless window.
 
 Taller screens (16:10, 4:3) show more sky above, with the HUD at the bottom edge.

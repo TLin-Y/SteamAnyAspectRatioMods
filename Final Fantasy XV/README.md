@@ -1,5 +1,7 @@
 # FINAL FANTASY XV WINDOWS EDITION-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 ![FINAL FANTASY XV WINDOWS EDITION at 4:3, 16:10 and 32:9](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Final%20Fantasy%20XV/demo.jpg)
 
 Removes the black bars at aspect ratios narrower than 16:9 (16:10, 4:3) and keeps the 16:9 field of view in third-person gameplay, with an adjustable FOV multiplier.

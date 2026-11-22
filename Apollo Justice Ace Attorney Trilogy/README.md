@@ -1,5 +1,7 @@
 # APOLLO-JUSTICE-ACE-ATTORNEY-TRILOGY-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 ![Apollo Justice: Ace Attorney Trilogy at 16:10](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Apollo%20Justice%20Ace%20Attorney%20Trilogy/1610.jpg)
 
 ![Apollo Justice: Ace Attorney Trilogy at 4:3](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Apollo%20Justice%20Ace%20Attorney%20Trilogy/43.jpg)

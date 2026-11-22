@@ -1,5 +1,7 @@
 # EMPEROR-RISE-OF-THE-MIDDLE-KINGDOM-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 ![Emperor at 16:10, 21:9 and 48:9](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Emperor%20Rise%20of%20the%20Middle%20Kingdom/demo.jpg)
 
 For the GOG version (`Emperor.exe` v1.0.1.0). The game is not sold on Steam; on

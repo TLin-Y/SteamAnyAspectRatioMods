@@ -1,5 +1,7 @@
 # WARRIORS-OROCHI-4-Ultimate-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 Works in any mode: Fullscreen, Windowed with the last in-game resolution (it shows your screen size, e.g. 1280x800 on Steam Deck), or the old way (1280x720 with SteamOS display scaling set to "Stretch"). The 3D always fills the screen; the HUD keeps its 16:9 layout stretched to the screen.
 
 # Install

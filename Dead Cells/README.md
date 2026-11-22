@@ -1,5 +1,7 @@
 # DEAD-CELLS-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 ![Dead Cells at 4:3](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Dead%20Cells/43.jpg)
 
 ![Dead Cells at 16:9](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Dead%20Cells/169.jpg)

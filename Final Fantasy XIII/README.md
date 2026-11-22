@@ -1,5 +1,7 @@
 # FINAL-FANTASY-XIII-Any-Aspect-Ratio
 
+[![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+
 Why?
 - The [existing Final Fantasy XIII Ultrawide Fix](https://community.pcgamingwiki.com/files/file/2017-final-fantasy-xiii-ultrawide-fix/page/2/) crops the image to fill handheld screens. I made this patch to preserve the full image at narrower custom resolutions below 21:9, such as the Steam Deck's 16:10 display.
   
