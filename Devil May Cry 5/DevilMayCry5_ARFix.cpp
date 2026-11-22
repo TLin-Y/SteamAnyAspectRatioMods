@@ -654,9 +654,20 @@ void AspectRatio() {
     }
 }
 
+bool ScreenWiderThan16x9() {
+    MONITORINFO monitor{ sizeof(monitor) };
+    if (!GetMonitorInfoW(MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY), &monitor)) return false;
+    const LONG width = monitor.rcMonitor.right - monitor.rcMonitor.left;
+    const LONG height = monitor.rcMonitor.bottom - monitor.rcMonitor.top;
+    if (height <= 0 || static_cast<float>(width) / height <= 16.0f / 9.0f + 0.01f) return false;
+    SPDLOG_INFO("Screen {}x{} is wider than 16:9: keeping the game's own 16:9 picture.", width, height);
+    return true;
+}
+
 DWORD __stdcall Main(void*) {
     Logging();
     Configuration();
+    if (ScreenWiderThan16x9()) return 1;
     if (FitScreen()) Stretch::bEnabled = false;
     Stretch::Install();
     Sleep(1000);

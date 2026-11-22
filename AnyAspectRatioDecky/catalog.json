@@ -1014,8 +1014,8 @@
       "executable": "DevilMayCry5.exe",
       "source": {
         "kind": "archive",
-        "path": "Devil May Cry 5/Devil-May-Cry-5-v1.1.0.zip",
-        "sha256": "4a637320ce8a2bacd114c8a32387fc8f8fbfa7bb79d1dae814f9d88d3489a9dc"
+        "path": "Devil May Cry 5/Devil-May-Cry-5-v1.1.1.zip",
+        "sha256": "ced823de8cafbba8192df18fc179b4be3b43d7889bfd84e0fbf93655ec0d7eee"
       },
       "files": ["dinput8.dll", "DevilMayCry5_ARFix.asi", "DevilMayCry5_ARFix.ini"],
       "ini_file": "DevilMayCry5_ARFix.ini",
