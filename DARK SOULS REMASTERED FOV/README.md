@@ -37,3 +37,9 @@ values:
 
 Edit `FovMultiplier` under `[Camera]` to choose a value. The mod clamps values
 to the range `0.1`–`3.0`.
+
+## 4. Ultrawide (21:9 and wider)
+
+This mod does not move the HUD or menus for ultrawide screens. For that, use
+the ultrawide HUD mod on Nexus Mods:
+https://www.nexusmods.com/darksoulsremastered/mods/1135

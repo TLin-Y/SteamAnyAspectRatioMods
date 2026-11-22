@@ -232,7 +232,7 @@
       "source": {
         "kind": "archive",
         "path": "DARK SOULS REMASTERED FOV/Dark-Souls-Remastered-FOV-v1.0.0.zip",
-        "sha256": "70d56faa32522d771b7694dad3b9e57df4ffe9c3c738b2656df1d757eabb0785"
+        "sha256": "d4905e730e28d6d089a8f0de67cab1f03896dc6da364c37835e5d93a6cd384d5"
       },
       "files": ["dinput8.dll", "DSR_FovFix.asi", "DSR_FovFix.ini"],
       "ini_file": "DSR_FovFix.ini",
