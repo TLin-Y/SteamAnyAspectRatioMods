@@ -19,6 +19,7 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <algorithm>
+#include <atomic>
 #include <mutex>
 #include <numeric>
 
@@ -829,9 +830,57 @@ void FOV() {
     }
 }
 
+namespace WideFov {
+SafetyHookMid hooks[4];
+std::atomic<bool> logged{ false };
+
+float Scale(uintptr_t camera, uintptr_t aspectOffset) {
+    const float aspect = *reinterpret_cast<float*>(camera + aspectOffset);
+    constexpr float native = 16.0f / 9.0f;
+    if (!(aspect > native + 0.001f && aspect < 20.0f)) return 1.0f;
+    if (!logged.exchange(true)) SPDLOG_INFO("Wide FOV: camera aspect {:.4f}, view widened x{:.4f}.", aspect, aspect / native);
+    return aspect / native;
+}
+
+void MainCamera(SafetyHookContext& ctx) { ctx.xmm0.f32[0] *= Scale(ctx.rdi, 0x44); }
+void MainHorizontalMode(SafetyHookContext& ctx) {
+    if (*reinterpret_cast<std::uint8_t*>(ctx.rdi + 0x40) == 0) ctx.xmm0.f32[0] *= Scale(ctx.rdi, 0x44);
+}
+void Event(SafetyHookContext& ctx) { ctx.xmm0.f32[0] *= Scale(ctx.rdi, 0x2D8); }
+
+void Install() {
+    struct Site { const char* pattern; size_t offset; safetyhook::MidHookFn fn; };
+    const Site sites[4] = {
+        { "F3 0F 10 47 38 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F 10 6F 30", 0x1A, MainCamera },
+        { "F3 0F 10 47 38 F3 0F 59 05 ?? ?? ?? ?? 0F 29 74 24 30 F3 0F 10 77 30 F3 0F 59 05 ?? ?? ?? ?? 0F 29 7C 24 20 F3 0F 10 7F 34 F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? 80 7F 40 00", 0x36, MainHorizontalMode },
+        { "F3 0F 10 87 D0 02 00 00 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F 10 AF C8 02 00 00", 0x1D, Event },
+        { "F3 0F 10 87 D0 02 00 00 F3 0F 59 05 ?? ?? ?? ?? 0F 29 74 24 30 F3 0F 10 B7 C8 02 00 00 F3 0F 59 05 ?? ?? ?? ?? 0F 29 7C 24 20 F3 0F 10 BF CC 02 00 00 F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ??", 0x3F, Event },
+    };
+    std::uint8_t* addresses[4]{};
+    for (int i = 0; i < 4; ++i) {
+        auto hits = Memory::PatternScanAll(exeModule, sites[i].pattern);
+        if (hits.size() != 1) {
+            SPDLOG_ERROR("Wide FOV: camera projection {} found {} times (expected 1); FOV not changed.", i + 1, hits.size());
+            return;
+        }
+        addresses[i] = hits[0] + sites[i].offset;
+    }
+    for (int i = 0; i < 4; ++i) {
+        hooks[i] = safetyhook::create_mid(addresses[i], sites[i].fn);
+        if (!hooks[i]) {
+            SPDLOG_ERROR("Wide FOV: hook {} could not be installed; FOV not changed.", i + 1);
+            for (auto& hook : hooks) hook = {};
+            return;
+        }
+    }
+    SPDLOG_INFO("Wide FOV: 4 camera projection hooks installed.");
+}
+}
+
 DWORD __stdcall Main(void*) {
     Logging();
     Configuration();
+    WideFov::Install();
     if (FitScreen()) Stretch::bEnabled = false;
     Stretch::Install();
 

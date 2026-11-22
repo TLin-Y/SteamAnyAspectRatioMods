@@ -1160,8 +1160,8 @@
       "executable": "re3.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.5.0.zip",
-        "sha256": "7778bec59bce455e3f498cde60abd9a2c0d497f800056fc2cd146993bd88dfac"
+        "path": "Resident Evil 3 Remake/Resident-Evil-3-Remake-v1.6.0.zip",
+        "sha256": "3c657500277a6ab64a47892ee888dd1b00f4f508816c560562d917889c304c9e"
       },
       "files": ["dinput8.dll", "RE3_ARFix.asi", "RE3_ARFix.ini"],
       "ini_file": "RE3_ARFix.ini",
