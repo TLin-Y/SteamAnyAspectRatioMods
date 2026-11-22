@@ -4,8 +4,7 @@
 
 ## 1. Install
 
-Extract the ZIP into the game folder, beside `Bayonetta.exe`. `Bayonetta.exe` itself is
-not modified, and the `aspect unlock` registry files are not needed.
+Extract the ZIP into the game folder, beside `Bayonetta.exe`, the `aspect unlock` registry files are not needed.
 
 ## 2. SteamOS / Winlator
 

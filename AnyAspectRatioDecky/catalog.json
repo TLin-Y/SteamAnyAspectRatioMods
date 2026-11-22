@@ -65,11 +65,26 @@
       "source": {
         "kind": "archive",
         "path": "Bayonetta/Bayonetta-v1.0.0.zip",
-        "sha256": "e771416639ef04c50b4bc8efa60820bf8869079382fdb6e5d8fdf84c83cfabab"
+        "sha256": "eebdd96b2c1ee963c670a118268c339019686a33ef6e21af476411e895c0564b"
       },
       "files": ["dinput8.dll", "Bayonetta_ARFix.asi", "Bayonetta_ARFix.ini"],
       "ini_file": "Bayonetta_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
+      "id": "beyond-two-souls",
+      "name": "BEYOND: Two Souls - Custom Aspect Ratio",
+      "steam_app_id": "960990",
+      "install_dir": "BEYOND Two Souls",
+      "executable": "BeyondTwoSouls_Steam.exe",
+      "source": {
+        "kind": "archive",
+        "path": "BEYOND Two Souls/BEYOND-Two-Souls-v1.0.0.zip",
+        "sha256": "cb7e91d0482d30855a7edf787ed5e4bd29ae991f51e6b73fc954e1ae704ce4f1"
+      },
+      "files": ["dinput8.dll", "BeyondTwoSouls_ARFix.asi", "BeyondTwoSouls_ARFix.ini"],
+      "ini_file": "BeyondTwoSouls_ARFix.ini",
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
