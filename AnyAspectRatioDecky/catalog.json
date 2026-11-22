@@ -998,8 +998,8 @@
       "executable": "DevilMayCry4SpecialEdition.exe",
       "source": {
         "kind": "archive",
-        "path": "Devil May Cry 4 Special Edition/Devil-May-Cry-4-Special-Edition-v1.0.0.zip",
-        "sha256": "71cf0349ee90d4cfbb4a7c0ecd7e7697c92e25c08fcde1992936ee05505e9d48"
+        "path": "Devil May Cry 4 Special Edition/Devil-May-Cry-4-Special-Edition-v1.0.1.zip",
+        "sha256": "72fd22cad81d7b4733aaee2c3158af4ea9258c433174ee61c78858fe1a19b737"
       },
       "files": ["dinput8.dll", "DevilMayCry4SpecialEdition_ARFix.asi", "DevilMayCry4SpecialEdition_ARFix.ini"],
       "ini_file": "DevilMayCry4SpecialEdition_ARFix.ini",
