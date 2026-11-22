@@ -1030,8 +1030,8 @@
       "executable": "Binaries/Win32/DMC-DevilMayCry.exe",
       "source": {
         "kind": "archive",
-        "path": "DmC Devil May Cry/DmC-Devil-May-Cry-v1.0.0.zip",
-        "sha256": "9cce4c104d61b59cff4f3fe795a2f5902211012155c4a91d8b9a771586eec811",
+        "path": "DmC Devil May Cry/DmC-Devil-May-Cry-v1.0.1.zip",
+        "sha256": "cfa54174941425173df2fd4763c78075a8e7c1b2f742557024559fb0b2eaa8d9",
         "destination": "Binaries/Win32"
       },
       "files": ["Binaries/Win32/dinput8.dll", "Binaries/Win32/DMC-DevilMayCry_ARFix.asi", "Binaries/Win32/DMC-DevilMayCry_ARFix.ini"],

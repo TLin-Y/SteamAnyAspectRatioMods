@@ -138,6 +138,11 @@ namespace
             MONITORINFO monitor{ sizeof(monitor) };
             if (!GetMonitorInfoW(MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST), &monitor)) continue;
             const RECT& m = monitor.rcMonitor;
+            const float fit = (std::min)({ 1.0f, float(m.right - m.left) / w, float(m.bottom - m.top) / h });
+            if (fit < 1.0f) {
+                w = (std::max)(1, int(std::lround(w * fit)));
+                h = (std::max)(1, int(std::lround(h * fit)));
+            }
             int x = m.left + (m.right - m.left - w) / 2, y = m.top + (m.bottom - m.top - h) / 2;
             LONG desired = (style & ~WS_OVERLAPPEDWINDOW) | WS_POPUP;
             RECT current{};
@@ -146,6 +151,20 @@ namespace
             if (style != desired) SetWindowLongW(window, GWL_STYLE, desired);
             SetWindowPos(window, nullptr, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
             spdlog::info("Borderless window {}x{}", w, h);
+        }
+    }
+
+    void EnableDpiAwareness()
+    {
+        HMODULE user32 = GetModuleHandleW(L"user32.dll");
+        using SetContext = BOOL(WINAPI*)(HANDLE);
+        auto setContext = user32 ? reinterpret_cast<SetContext>(GetProcAddress(user32, "SetProcessDpiAwarenessContext")) : nullptr;
+        if (setContext && setContext(reinterpret_cast<HANDLE>(-4))) {
+            spdlog::info("DPI awareness: per monitor");
+        } else if (SetProcessDPIAware()) {
+            spdlog::info("DPI awareness: system");
+        } else {
+            spdlog::warn("DPI awareness not set");
         }
     }
 }
@@ -157,6 +176,7 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID)
         Log();
         spdlog::info("DmC Devil May Cry AR Fix {}", sFixVersion);
         Config();
+        EnableDpiAwareness();
         Install();
     }
     return TRUE;
