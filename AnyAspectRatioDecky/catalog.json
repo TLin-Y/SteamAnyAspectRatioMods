@@ -874,8 +874,8 @@
       "executable": "oriwotw.exe",
       "source": {
         "kind": "archive",
-        "path": "Ori and the Will of the Wisps/Ori-and-the-Will-of-the-Wisps-v1.1.0.zip",
-        "sha256": "53199ef32f95fe78037b298471b8477d7f50e89cef739c42f15cc70a11e9aa41"
+        "path": "Ori and the Will of the Wisps/Ori-and-the-Will-of-the-Wisps-v1.1.1.zip",
+        "sha256": "f855cba7785055e507298466cad90959aae4a008b5299cd40ce8f24dd84fed64"
       },
       "files": ["version.dll", "OriARFix.asi", "OriARFix.ini"],
       "ini_file": "OriARFix.ini",

@@ -153,7 +153,7 @@ void __fastcall Hooked_LateUpdate(void* this_ptr, void* method_info) {
             float fovRad = fov * 0.5f * 0.0174532924f; 
             float m11_orig = 1.0f / std::tan(fovRad);
 
-            mat.m11 = m11_orig * (fTargetRatio / 1.7777778f) * fFOVScale;
+            mat.m11 = m11_orig * (std::min)(1.0f, fTargetRatio / 1.7777778f) * fFOVScale;
             mat.m00 = mat.m11 / fTargetRatio;
             Camera_set_projectionMatrix(m_camera, &mat, nullptr);
         }
@@ -162,7 +162,7 @@ void __fastcall Hooked_LateUpdate(void* this_ptr, void* method_info) {
             
             if (orthoSize > 0.001f) {
                 float m11_orig = 1.0f / orthoSize;
-                float uiScale = fTargetRatio / 1.7777778f; 
+                float uiScale = (std::min)(1.0f, fTargetRatio / 1.7777778f);
                 
                 mat.m11 = m11_orig * uiScale;
                 mat.m00 = mat.m11 / fTargetRatio;
