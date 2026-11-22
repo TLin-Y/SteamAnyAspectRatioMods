@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 158 game mods](https://img.shields.io/badge/Game%20mods-158-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 159 game mods](https://img.shields.io/badge/Game%20mods-159-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -137,6 +137,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Guacamelee! 2 | TLin-Y | [534550](https://store.steampowered.com/app/534550) | [v2.0.1](./Guacamelee%202/Guacamelee-2-v2.0.1.zip) | 2026-11-08 | [README](./Guacamelee%202/README.md) |
 | Hades | Nicolas Busseneau | [1145360](https://store.steampowered.com/app/1145360) | [v1.7.10](./external/NicolasBusseneau/Hephaistos/hephaistos-linux.zip) | 2024-07-01 | [Hephaistos](https://github.com/nbusseneau/hephaistos) |
 | Hatsune Miku: Project DIVA Mega Mix+ | Lyall | [1761390](https://store.steampowered.com/app/1761390) | [v0.0.1](./external/Lyall/MegaMixPlusFix/MegaMixPlusFix_0.0.1.zip) | 2025-06-01 | [MegaMixPlusFix](https://codeberg.org/Lyall/MegaMixPlusFix) |
+| Heavy Rain | TLin-Y | [960910](https://store.steampowered.com/app/960910) | [v1.0.0](./Heavy%20Rain/Heavy-Rain-v1.0.0.zip) | 2026-11-21 | [README](./Heavy%20Rain/README.md) |
 | Indiana Jones and the Great Circle | Lyall | [2677660](https://store.steampowered.com/app/2677660) | [v0.0.8](./external/Lyall/GreatCircleFix/GreatCircleFix_0.0.8.zip) | 2025-06-01 | [GreatCircleFix](https://codeberg.org/Lyall/GreatCircleFix) |
 | Judgment | Lyall | [2058180](https://store.steampowered.com/app/2058180) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | KINGDOM HEARTS -HD 1.5+2.5 ReMIX- | m.vico | [2552430](https://store.steampowered.com/app/2552430) | [v1.0.1](./external/mvico/Keyblade%20Masters%20Ultrawide%20-%20KH%201.5-2.5/Keyblade%20Masters%20Ultrawide%20KH%201.5-2.5%20230%201.0.1.zip) | 2026-09-10 | [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) |

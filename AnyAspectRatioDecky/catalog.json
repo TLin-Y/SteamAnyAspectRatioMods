@@ -406,6 +406,21 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "heavy-rain",
+      "name": "Heavy Rain - Custom Aspect Ratio",
+      "steam_app_id": "960910",
+      "install_dir": "HEAVY RAIN",
+      "executable": "HeavyRain.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Heavy Rain/Heavy-Rain-v1.0.0.zip",
+        "sha256": "47e3de629698fe478085b757f0a10498f3e486a62532f74fc5a5be3fffc4544e"
+      },
+      "files": ["dinput8.dll", "HeavyRain_ARFix.asi", "HeavyRain_ARFix.ini"],
+      "ini_file": "HeavyRain_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "monster-hunter-rise",
       "name": "Monster Hunter Rise - Custom Aspect Ratio",
       "steam_app_id": "1446780",
