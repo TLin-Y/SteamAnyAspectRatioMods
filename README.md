@@ -8,8 +8,8 @@ Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3
 
 ---
 
-- **Windows/MacOS/Linux desktop:** the [AnyAspectRatio Desktop app](./AnyAspectRatioDesktop/README.md) finds your games and applies these fixes (and on MacOS the Wine override) for you.
-- **Steam OS/DroidDeck:** the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap (**requires [Decky Loader](https://decky.xyz)**):
+- **Windows/MacOS/Linux desktop:** the [AnyAspectRatio Desktop app](./AnyAspectRatioDesktop/README.md) finds your games and applies these fixes for you.
+- **Steam OS/DroidDeck:** the [AnyAspectRatio Decky plugin](./AnyAspectRatioDecky/README.md) applies these fixes for you in one tap:
 
 ![AnyAspectRatio Decky plugin on Steam Deck](resources/games-tab.jpg?v=4556e8ed)
 
