@@ -344,7 +344,29 @@ namespace
             style |= WS_POPUP; // Convert to borderless popup style
             SetWindowLongPtrW(hwnd, GWL_STYLE, style);
 
-            SetWindowPos(hwnd, HWND_TOP, 0, 0, iTargetWidth, iTargetHeight,
+            int left = 0;
+            int top = 0;
+            MONITORINFO monitor{ sizeof(monitor) };
+            if (GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor)) {
+                left = monitor.rcMonitor.left;
+                top = monitor.rcMonitor.top;
+                const int monitorWidth = monitor.rcMonitor.right - monitor.rcMonitor.left;
+                const int monitorHeight = monitor.rcMonitor.bottom - monitor.rcMonitor.top;
+                const float fit = std::min({ 1.0f,
+                    static_cast<float>(monitorWidth) / static_cast<float>(iTargetWidth),
+                    static_cast<float>(monitorHeight) / static_cast<float>(iTargetHeight) });
+                if (fit < 1.0f) {
+                    const int requestedWidth = iTargetWidth;
+                    const int requestedHeight = iTargetHeight;
+                    iTargetWidth = std::max(1, static_cast<int>(std::lround(requestedWidth * fit)));
+                    iTargetHeight = std::max(1, static_cast<int>(std::lround(requestedHeight * fit)));
+                    SPDLOG_INFO("{}x{} is larger than the {}x{} monitor; using {}x{}.",
+                                requestedWidth, requestedHeight, monitorWidth, monitorHeight,
+                                iTargetWidth, iTargetHeight);
+                }
+            }
+
+            SetWindowPos(hwnd, HWND_TOP, left, top, iTargetWidth, iTargetHeight,
                          SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 
             SPDLOG_INFO("Successfully forced borderless window style and size to {}x{}.", iTargetWidth, iTargetHeight);

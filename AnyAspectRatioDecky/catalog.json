@@ -412,8 +412,8 @@
       "executable_alternatives": ["Guac2_64.exe"],
       "source": {
         "kind": "archive",
-        "path": "Guacamelee 2/Guacamelee-2-v2.0.1.zip",
-        "sha256": "6013a2bbf8ae302ebf92345db01180cc3a8d82187e7dbc0e0930dcf2ad090a2e"
+        "path": "Guacamelee 2/Guacamelee-2-v2.0.2.zip",
+        "sha256": "e73d2eed97e6ddac1b998e1f05f62244b49a0f2a6d93994c48bf7a8ca65622f1"
       },
       "files": ["dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"],
       "ini_file": "Guac2_ARFix.ini",

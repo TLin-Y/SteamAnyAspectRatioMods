@@ -16,6 +16,6 @@ Set the launch option or Wine environment variable to:
 
 ## Custom Aspect Ratio
 
-Edit `Guac2_ARFix.ini` and set `Width` and `Height` to the desired resolution. The mod creates a borderless window at that size and adjusts the game's aspect ratio to match. The default resolution is 1280x800 (16:10).
+Edit `Guac2_ARFix.ini` and set `Width` and `Height` to the desired resolution. The mod creates a borderless window at that size and adjusts the game's aspect ratio to match. A size larger than your screen is scaled down to fit it. The default resolution is 1280x800 (16:10).
 
 On narrower aspect ratios, the updated fix preserves horizontal field of view by expanding the camera's vertical view.

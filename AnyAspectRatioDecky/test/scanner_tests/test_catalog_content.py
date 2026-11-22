@@ -201,7 +201,7 @@ PINNED = {
     "guacamelee-2": {
         "steam_app_id": "534550", "install_dir": "Guacamelee2", "executable": "Guac2_x64.exe",
         "executable_alternatives": ("Guac2_64.exe",), "files": ("dinput8.dll", "Guac2_ARFix.asi", "Guac2_ARFix.ini"),
-        "ini_file": "Guac2_ARFix.ini", "source.path": "Guacamelee 2/Guacamelee-2-v2.0.1.zip",
+        "ini_file": "Guac2_ARFix.ini", "source.path": "Guacamelee 2/Guacamelee-2-v2.0.2.zip",
     },
     "guacamelee-stce": {
         "steam_app_id": "275390", "install_dir": "DrinkBox_Game4", "executable": "GuacSTCE.exe",
