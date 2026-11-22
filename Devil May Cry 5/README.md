@@ -23,7 +23,7 @@ Value: dinput8=n,b
 
 3. Custom Aspect Ratio
 
-Open DevilMayCry5_ARFix.ini with any text editor. The mod defaults to 16:10 (Steam Deck). On other screens, set AspectWidth and AspectHeight to your screen's ratio (e.g., 4:3; ratio values, not pixel dimensions), or set EnableARFix to false: the full-screen mode already matches the picture to your screen. On screens wider than 16:9 (21:9, 32:9) the mod does nothing and the game keeps its own 16:9 picture with side bars. This mod does not include an FOV setting.
+Open DevilMayCry5_ARFix.ini with any text editor. The mod defaults to 16:10 (Steam Deck). On other screens, set AspectWidth and AspectHeight to your screen's ratio (e.g., 4:3, 21:9, 32:9; ratio values, not pixel dimensions), or set EnableARFix to false: the full-screen mode already matches the picture to your screen. On screens wider than 16:9 the view is widened to the sides. This mod does not include an FOV setting.
 
 4. Full-Screen Stretching (old way)
 
@@ -31,4 +31,4 @@ The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") sti
 
 On macOS (CrossOver), use Fullscreen or Borderless at your screen resolution.
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Devil-May-Cry-5-v1.1.1.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Devil-May-Cry-5-v1.2.0.zip and in the repository root.
