@@ -30,7 +30,7 @@ G3dE0nn
 
 This is a single-developer mod collection, made to fill handheld-specific gaps and adapt games for devices like the Steam Deck, AYN, and Retroid Pocket. Rather than just standard ultrawide fixes, it provides full cross-platform and ARM64 compatibility, covering both ultrawide and narrower aspect ratios (like 32:9, 16:10, 3:2, and 4:3).
 
-Each fix is made and tested by hand for the Steam version of one specific game; other versions (Epic, GOG, Game Pass, ...) are untested and may not be supported. None of the fixes is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
+Each fix is made and tested by hand for the Steam version of one specific game; other versions (Epic, GOG, Game Pass, ...) are untested and may not be supported. None of the fixes is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), [REFramework](https://github.com/praydog/REFramework), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
 
 My mods are mostly made from my earlier separate repositories, Cheat Engine patches I made years ago, or new reverse engineering that took anywhere from a few hours to several weeks for that game.
 
