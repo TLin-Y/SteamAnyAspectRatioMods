@@ -1192,8 +1192,8 @@
       "executable": "re7.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil 7/Resident-Evil-7-v1.4.0.zip",
-        "sha256": "72eae9c67122d5c25685aafb6972f0925358b392bfe4bb6204c7ac9c07e9e233"
+        "path": "Resident Evil 7/Resident-Evil-7-v1.5.0.zip",
+        "sha256": "9a0c3781e8e455fac1e639334f11a37df13ff38963e6d2ff4616423bd45e0f1a"
       },
       "files": ["dinput8.dll", "RE7_ARFix.asi", "RE7_ARFix.ini"],
       "ini_file": "RE7_ARFix.ini",

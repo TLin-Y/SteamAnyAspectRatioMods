@@ -665,12 +665,23 @@ bool PatchRead(const char* pattern, const char* bytes, unsigned int size) {
     return true;
 }
 
+int WideDisplayType() {
+    if (fTargetARValue <= 16.0f / 9.0f + 0.01f) return -1;
+    const struct { float ratio; int type; } types[] = { { 21.0f / 9.0f, 4 }, { 32.0f / 9.0f, 5 }, { 48.0f / 9.0f, 6 } };
+    for (const auto& t : types)
+        if (std::abs(fTargetARValue - t.ratio) < 0.01f) return t.type;
+    return 0;
+}
+
 bool FitScreen() {
     if (!bFitScreen) return false;
     std::uint8_t* layout = Memory::PatternScan(exeModule, "8B 53 68 83 FA 0D 0F 8E");
-    bool ok = PatchRead("44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77", "\x45\x31\xC9\x90", 4)
-        & PatchRead("8B 49 68 8D 41 F9 83 F8 0F 0F 87", "\x31\xC9\x90", 3)
-        & PatchRead("8B 53 68 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    bool ok = WideDisplayType() >= 0;
+    if (!ok) {
+        ok = PatchRead("44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77", "\x45\x31\xC9\x90", 4)
+            & PatchRead("8B 49 68 8D 41 F9 83 F8 0F 0F 87", "\x31\xC9\x90", 3)
+            & PatchRead("8B 53 68 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    }
     auto* image = reinterpret_cast<std::uint8_t*>(exeModule);
     auto* nt = reinterpret_cast<PIMAGE_NT_HEADERS>(image + reinterpret_cast<PIMAGE_DOS_HEADER>(image)->e_lfanew);
     std::uint8_t* imageEnd = image + nt->OptionalHeader.SizeOfImage;
@@ -688,7 +699,147 @@ bool FitScreen() {
     return ok;
 }
 
+int iWideDisplayType = -1;
+
+void WideDisplay() {
+    iWideDisplayType = WideDisplayType();
+    if (!bFitScreen || iWideDisplayType < 0) return;
+    auto hits = Memory::PatternScanAll(exeModule, "44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Fit screen: display type read found {} times (expected 1).", hits.size());
+        return;
+    }
+    static SafetyHookMid displayTypeHook{};
+    displayTypeHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+        *reinterpret_cast<std::uint32_t*>(ctx.rcx + 0x68) = static_cast<std::uint32_t>(iWideDisplayType);
+    });
+    SPDLOG_INFO("Fit screen: wide display type {} {}.", iWideDisplayType, displayTypeHook ? "set" : "hook failed");
+}
+
+namespace WideFov {
+SafetyHookMid hooks[4];
+std::atomic<bool> logged{ false };
+
+float Scale(uintptr_t camera) {
+    const float aspect = *reinterpret_cast<float*>(camera + 0x44);
+    constexpr float native = 16.0f / 9.0f;
+    if (!(aspect > native + 0.001f && aspect < 20.0f)) return 1.0f;
+    if (!logged.exchange(true)) SPDLOG_INFO("Wide FOV: camera aspect {:.4f}, view widened x{:.4f}.", aspect, aspect / native);
+    return aspect / native;
+}
+
+void Camera(SafetyHookContext& ctx) { ctx.xmm0.f32[0] *= Scale(ctx.rdi); }
+void CameraHorizontalMode(SafetyHookContext& ctx) {
+    if (*reinterpret_cast<std::uint8_t*>(ctx.rdi + 0x40) == 0) ctx.xmm0.f32[0] *= Scale(ctx.rdi);
+}
+void InlineCamera(SafetyHookContext& ctx) { ctx.xmm0.f32[0] *= Scale(ctx.rsi); }
+void InlineHorizontalMode(SafetyHookContext& ctx) {
+    if (*reinterpret_cast<std::uint8_t*>(ctx.rsi + 0x40) == 0) ctx.xmm0.f32[0] *= Scale(ctx.rsi);
+}
+
+void Install() {
+    struct Site { const char* pattern; size_t offset; safetyhook::MidHookFn fn; };
+    const Site sites[4] = {
+        { "F3 0F 10 47 38 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F 10 6F 30", 0x1A, Camera },
+        { "F3 0F 10 47 38 F3 0F 59 05 ?? ?? ?? ?? 0F 29 74 24 30 F3 0F 10 77 30 F3 0F 59 05 ?? ?? ?? ?? 0F 29 7C 24 20 F3 0F 10 7F 34 F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? 80 7F 40 00", 0x36, CameraHorizontalMode },
+        { "F3 0F 10 46 38 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F 10 15", 0x1A, InlineCamera },
+        { "F3 0F 10 46 38 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? 80 7E 40 00", 0x22, InlineHorizontalMode },
+    };
+    std::uint8_t* addresses[4]{};
+    for (int i = 0; i < 4; ++i) {
+        auto hits = Memory::PatternScanAll(exeModule, sites[i].pattern);
+        if (hits.size() != 1) {
+            SPDLOG_ERROR("Wide FOV: camera projection {} found {} times (expected 1); FOV not changed.", i + 1, hits.size());
+            return;
+        }
+        addresses[i] = hits[0] + sites[i].offset;
+    }
+    for (int i = 0; i < 4; ++i) {
+        hooks[i] = safetyhook::create_mid(addresses[i], sites[i].fn);
+        if (!hooks[i]) {
+            SPDLOG_ERROR("Wide FOV: hook {} could not be installed; FOV not changed.", i + 1);
+            for (auto& hook : hooks) hook = {};
+            return;
+        }
+    }
+    SPDLOG_INFO("Wide FOV: 4 camera projection hooks installed.");
+}
+}
+
+void DisableVignette() {
+    if (fTargetARValue <= 21.0f / 9.0f + 0.01f) return;
+    auto hits = Memory::PatternScanAll(exeModule, "48 8B 41 30 C6 80 60 01 00 00 01 89 90 0C 02 00 00 C3");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Vignette setter found {} times (expected 1); vignette unchanged.", hits.size());
+        return;
+    }
+    static SafetyHookMid vignetteHook{};
+    vignetteHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+        static bool logged = false;
+        if (!logged) {
+            logged = true;
+            SPDLOG_INFO("Vignette: game requested mode {}; set to Disable.", static_cast<int>(ctx.rdx));
+        }
+        ctx.rdx = 2;
+    });
+    if (vignetteHook) SPDLOG_INFO("Vignette hook installed.");
+    else SPDLOG_ERROR("Vignette hook could not be installed.");
+}
+
+namespace GuiFit {
+SafetyHookInline drawHook;
+std::atomic<int> fitted{ 0 };
+
+void Fit(std::uintptr_t object, bool root) {
+    auto& flags = *reinterpret_cast<std::uint64_t*>(object + 0x50);
+    constexpr std::uint64_t adjust = 1ull << 20;
+    constexpr std::uint64_t anchorMask = 0xFull << 38, anchorCenter = 4ull << 38;
+    constexpr std::uint64_t scaleMask = 0x3ull << 44, scaleFitSmall = 2ull << 44, scaleStretch = 1ull << 44;
+    std::uint64_t wanted = flags;
+    if (!(flags & adjust)) {
+        if (!root) return;
+        wanted = (flags & ~(anchorMask | scaleMask)) | adjust | anchorCenter | scaleFitSmall;
+    } else if ((flags & scaleMask) == scaleStretch) wanted = (flags & ~scaleMask) | scaleFitSmall;
+    if (flags == wanted) return;
+    flags = wanted;
+    *reinterpret_cast<std::uint16_t*>(object + 0x4E) |= 1;
+    if (fitted.fetch_add(1) == 0) SPDLOG_INFO("GUI: views kept at 16:9 (fit to height).");
+}
+
+void* __fastcall Draw(std::uintptr_t gui, void* context) {
+    auto view = gui ? *reinterpret_cast<std::uintptr_t*>(gui + 0x78) : 0;
+    if (view && *reinterpret_cast<std::uintptr_t*>(view + 0x30) == 0) {
+        Fit(view, true);
+        auto child = *reinterpret_cast<std::uintptr_t*>(view + 0x118);
+        for (int i = 0; child && i < 64; ++i) {
+            if (*reinterpret_cast<std::uintptr_t*>(child + 0x30) != view) break;
+            Fit(child, false);
+            child = *reinterpret_cast<std::uintptr_t*>(child + 0x38);
+        }
+    }
+    return drawHook.call<void*>(gui, context);
+}
+
+void Install() {
+    if (fTargetARValue <= 16.0f / 9.0f + 0.01f) return;
+    auto hits = Memory::PatternScanAll(exeModule, "49 8B 0C CE 48 83 79 10 00 74 ?? E8 ?? ?? ?? ??");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("GUI: draw call found {} times (expected 1); interface not changed.", hits.size());
+        return;
+    }
+    std::uint8_t* call = hits[0] + 11;
+    auto* target = call + 5 + *reinterpret_cast<std::int32_t*>(call + 1);
+    drawHook = safetyhook::create_inline(target, reinterpret_cast<void*>(&Draw));
+    if (drawHook) SPDLOG_INFO("GUI: draw hook installed.");
+    else SPDLOG_ERROR("GUI: draw hook could not be installed.");
+}
+}
+
 DWORD __stdcall Main(void*) {
+    WideDisplay();
+    WideFov::Install();
+    DisableVignette();
+    GuiFit::Install();
     Stretch::Install();
 
     Sleep(1000);

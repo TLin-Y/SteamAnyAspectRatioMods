@@ -22,10 +22,10 @@ Value: dinput8=n,b
 
 3. Custom Aspect Ratio & FOV
 
-Customize the aspect ratio (AspectWidth / AspectHeight) and FOV (FOVScale) in RE7_ARFix.ini. The mod defaults to 16:10. Set the ratio of your screen.
+Customize the aspect ratio (AspectWidth / AspectHeight) and FOV (FOVScale) in RE7_ARFix.ini. The mod defaults to 16:10. Set the ratio of your screen. On screens wider than 16:9 the view is widened to the sides and the HUD and menus keep their 16:9 shape; on screens wider than 21:9 the vignette is turned off.
 
 4. Full Screen
 
 The mod removes the game's black bars so the picture fills any screen at full resolution. To go back to the game's own black bars, set Enabled = false under [FitScreen] in RE7_ARFix.ini. The old way (in-game 1280x720 with SteamOS display scaling set to "Stretch") still works as before.
 
-The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-7-v1.4.0.zip and in the repository root.
+The bundled dinput8.dll is from Ultimate ASI Loader. Its MIT license is included in Resident-Evil-7-v1.5.0.zip and in the repository root.
