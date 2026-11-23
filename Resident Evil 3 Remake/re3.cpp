@@ -19,7 +19,6 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <algorithm>
-#include <atomic>
 #include <mutex>
 #include <numeric>
 
@@ -741,12 +740,38 @@ bool PatchRead(const char* pattern, const char* bytes, unsigned int size) {
     return true;
 }
 
+int WideDisplayType() {
+    if (fTargetARValue <= 16.0f / 9.0f + 0.01f) return -1;
+    const struct { float ratio; int type; } types[] = { { 21.0f / 9.0f, 4 }, { 32.0f / 9.0f, 5 }, { 48.0f / 9.0f, 6 } };
+    for (const auto& t : types)
+        if (std::abs(fTargetARValue - t.ratio) < 0.01f) return t.type;
+    return 0;
+}
+
+int iWideDisplayType = -1;
+
 bool FitScreen() {
     if (!bFitScreen) return false;
     std::uint8_t* layout = Memory::PatternScan(exeModule, "8B 53 68 83 FA 0D 0F 8E");
-    bool ok = PatchRead("44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77", "\x45\x31\xC9\x90", 4)
-        & PatchRead("8B 49 68 8D 41 F9 83 F8 0F 0F 87", "\x31\xC9\x90", 3)
-        & PatchRead("8B 53 68 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    bool ok = false;
+    iWideDisplayType = WideDisplayType();
+    if (iWideDisplayType >= 0) {
+        auto hits = Memory::PatternScanAll(exeModule, "44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77");
+        if (hits.size() == 1) {
+            static SafetyHookMid displayTypeHook{};
+            displayTypeHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+                *reinterpret_cast<std::uint32_t*>(ctx.rcx + 0x68) = static_cast<std::uint32_t>(iWideDisplayType);
+            });
+            ok = static_cast<bool>(displayTypeHook);
+            SPDLOG_INFO("Fit screen: wide display type {} {}.", iWideDisplayType, ok ? "set" : "hook failed");
+        } else {
+            SPDLOG_ERROR("Fit screen: display type read found {} times (expected 1).", hits.size());
+        }
+    } else {
+        ok = PatchRead("44 8B 49 68 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 8D 41 FF 83 F8 05 77", "\x45\x31\xC9\x90", 4)
+            & PatchRead("8B 49 68 8D 41 F9 83 F8 0F 0F 87", "\x31\xC9\x90", 3)
+            & PatchRead("8B 53 68 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    }
     int borderless = 0;
     for (std::uint8_t* p = layout ? layout - 0xA0 : nullptr; layout && p < layout + 0xC0; ++p) {
         if (p[0] != 0xE8) continue;
@@ -830,57 +855,55 @@ void FOV() {
     }
 }
 
-namespace WideFov {
-SafetyHookMid hooks[4];
-std::atomic<bool> logged{ false };
-
-float Scale(uintptr_t camera, uintptr_t aspectOffset) {
-    const float aspect = *reinterpret_cast<float*>(camera + aspectOffset);
+void RaiseFovCap() {
     constexpr float native = 16.0f / 9.0f;
-    if (!(aspect > native + 0.001f && aspect < 20.0f)) return 1.0f;
-    if (!logged.exchange(true)) SPDLOG_INFO("Wide FOV: camera aspect {:.4f}, view widened x{:.4f}.", aspect, aspect / native);
-    return aspect / native;
+    if (fTargetARValue <= 21.0f / 9.0f + 0.01f) return;
+    auto hits = Memory::PatternScanAll(exeModule,
+        "F2 0F 5E 05 ?? ?? ?? ?? 66 0F 5A F0 41 0F 28 C0 F3 0F 59 05 ?? ?? ?? ?? F3 0F 5D 35 ?? ?? ?? ??");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Wide FOV: FOV aspect limit code found {} times (expected 1); view stays limited to 21:9.", hits.size());
+        return;
+    }
+    auto* cap = reinterpret_cast<float*>(hits[0] + 32 + *reinterpret_cast<std::int32_t*>(hits[0] + 28));
+    if (std::abs(*cap - 21.0f / 16.0f) > 0.001f) {
+        SPDLOG_ERROR("Wide FOV: FOV aspect limit is {:.4f}, not 21:9 (1.3125); left unchanged.", *cap);
+        return;
+    }
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(cap, sizeof(float), PAGE_READWRITE, &oldProtect)) {
+        SPDLOG_ERROR("Wide FOV: cannot unprotect the FOV aspect limit.");
+        return;
+    }
+    *cap = fTargetARValue / native;
+    VirtualProtect(cap, sizeof(float), oldProtect, &oldProtect);
+    SPDLOG_INFO("Wide FOV: FOV aspect limit raised from 21:9 to {:.4f}:1.", fTargetARValue);
 }
 
-void MainCamera(SafetyHookContext& ctx) { ctx.xmm0.f32[0] *= Scale(ctx.rdi, 0x44); }
-void MainHorizontalMode(SafetyHookContext& ctx) {
-    if (*reinterpret_cast<std::uint8_t*>(ctx.rdi + 0x40) == 0) ctx.xmm0.f32[0] *= Scale(ctx.rdi, 0x44);
-}
-void Event(SafetyHookContext& ctx) { ctx.xmm0.f32[0] *= Scale(ctx.rdi, 0x2D8); }
-
-void Install() {
-    struct Site { const char* pattern; size_t offset; safetyhook::MidHookFn fn; };
-    const Site sites[4] = {
-        { "F3 0F 10 47 38 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F 10 6F 30", 0x1A, MainCamera },
-        { "F3 0F 10 47 38 F3 0F 59 05 ?? ?? ?? ?? 0F 29 74 24 30 F3 0F 10 77 30 F3 0F 59 05 ?? ?? ?? ?? 0F 29 7C 24 20 F3 0F 10 7F 34 F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? 80 7F 40 00", 0x36, MainHorizontalMode },
-        { "F3 0F 10 87 D0 02 00 00 F3 0F 59 05 ?? ?? ?? ?? F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? F3 0F 10 AF C8 02 00 00", 0x1D, Event },
-        { "F3 0F 10 87 D0 02 00 00 F3 0F 59 05 ?? ?? ?? ?? 0F 29 74 24 30 F3 0F 10 B7 C8 02 00 00 F3 0F 59 05 ?? ?? ?? ?? 0F 29 7C 24 20 F3 0F 10 BF CC 02 00 00 F3 0F 59 05 ?? ?? ?? ?? E8 ?? ?? ?? ??", 0x3F, Event },
-    };
-    std::uint8_t* addresses[4]{};
-    for (int i = 0; i < 4; ++i) {
-        auto hits = Memory::PatternScanAll(exeModule, sites[i].pattern);
-        if (hits.size() != 1) {
-            SPDLOG_ERROR("Wide FOV: camera projection {} found {} times (expected 1); FOV not changed.", i + 1, hits.size());
-            return;
-        }
-        addresses[i] = hits[0] + sites[i].offset;
+void DisableVignette() {
+    if (fTargetARValue <= 21.0f / 9.0f + 0.01f) return;
+    auto hits = Memory::PatternScanAll(exeModule, "48 8B 41 30 C6 80 60 01 00 00 01 89 90 0C 02 00 00 C3");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Vignette setter found {} times (expected 1); vignette unchanged.", hits.size());
+        return;
     }
-    for (int i = 0; i < 4; ++i) {
-        hooks[i] = safetyhook::create_mid(addresses[i], sites[i].fn);
-        if (!hooks[i]) {
-            SPDLOG_ERROR("Wide FOV: hook {} could not be installed; FOV not changed.", i + 1);
-            for (auto& hook : hooks) hook = {};
-            return;
+    static SafetyHookMid vignetteHook{};
+    vignetteHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+        static bool logged = false;
+        if (!logged) {
+            logged = true;
+            SPDLOG_INFO("Vignette: game requested mode {}; set to Disable.", static_cast<int>(ctx.rdx));
         }
-    }
-    SPDLOG_INFO("Wide FOV: 4 camera projection hooks installed.");
-}
+        ctx.rdx = 2;
+    });
+    if (vignetteHook) SPDLOG_INFO("Vignette hook installed.");
+    else SPDLOG_ERROR("Vignette hook could not be installed.");
 }
 
 DWORD __stdcall Main(void*) {
     Logging();
     Configuration();
-    WideFov::Install();
+    RaiseFovCap();
+    DisableVignette();
     if (FitScreen()) Stretch::bEnabled = false;
     Stretch::Install();
 
