@@ -1208,8 +1208,8 @@
       "executable": "re8.exe",
       "source": {
         "kind": "archive",
-        "path": "Resident Evil Village/Resident-Evil-Village-v1.4.0.zip",
-        "sha256": "b742fdfff138c55e821f468971dd799851e9eaa3ac3978eb5852bbe9b62252df"
+        "path": "Resident Evil Village/Resident-Evil-Village-v1.5.0.zip",
+        "sha256": "8daf2eea7f9eded5263841bef512dc79cbd40acb4811cf642e92002cbb19396d"
       },
       "files": [
         "dinput8.dll",
