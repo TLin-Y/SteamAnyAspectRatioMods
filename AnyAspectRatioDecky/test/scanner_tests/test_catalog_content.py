@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 60, 59, 1, 0, 78
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 61, 60, 1, 0, 79
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -222,6 +222,9 @@ PINNED = {
         "steam_app_id": "2238900", "install_dir": "STAR OCEAN THE SECOND STORY R", "executable": "SO2R.exe",
         "files": ("winmm.dll", "SO2R_ARFix.asi", "SO2R_ARFix.ini"), "ini_file": "SO2R_ARFix.ini",
     },
+    "dynasty-warriors-6": {  # GOG only; folder from the user's install, not on Steam
+        "steam_app_id": "0", "install_dir": "Dynasty Warriors 6", "executable": "DW6_WIN.exe",
+    },
     "emperor-rise-of-the-middle-kingdom": {  # GOG only; GOG install folder, not on Steam
         "steam_app_id": "0", "install_dir": "Emperor - Rise of the Middle Kingdom", "executable": "Emperor.exe",
     },
@@ -266,6 +269,7 @@ INI_DEFAULTS = {
     "final-fantasy-xii-the-zodiac-age": {
         "Window": {"Width": 1280, "Height": 800}, "Resolution": {"Enabled": True}, "FOV": {"Enabled": True},
     },
+    "dynasty-warriors-6": {"Resolution": {"Width": 1280, "Height": 800}, "FOV": {"Multiplier": 1.0}, "Stretch": {"Enabled": True}},
     "dynasty-warriors-7-xtreme-legends-definitive-edition": {"Resolution": {"Width": 1280, "Height": 800}},
     "dynasty-warriors-origins": {
         "Custom Resolution": {"Width": 1280, "Height": 800, "TargetWidth": 3840, "TargetHeight": 2160}, "FOV": {"FOVScale": 0},
@@ -290,6 +294,7 @@ INI_DEFAULTS = {
 README_MENTIONS = {
     "final-fantasy-xii-the-zodiac-age": (b"ff12.jpg", b"ff12demo.jpg", b"ff12demo2.jpg", b"at 4:3",
                                          b"SteamOS / Winlator", b"FOV fixes are enabled by default"),
+    "dynasty-warriors-6": (b"1280x720", b"[Stretch]"),
     "dynasty-warriors-7-xtreme-legends-definitive-edition": (b"1280x720", b"[Stretch]"),
     "dynasty-warriors-8-xtreme-legends-complete-edition": (b"1280x720", b"[Stretch]", b"FovMultiplier"),
     "samurai-warriors-spirit-of-sanada": (b"1280x720", b"[Stretch]"),

@@ -258,6 +258,22 @@
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
+      "id": "dynasty-warriors-6",
+      "name": "DYNASTY WARRIORS 6 - Custom Aspect Ratio",
+      "steam_app_id": "0",
+      "install_dir": "Dynasty Warriors 6",
+      "executable": "DW6_WIN.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Dynasty Warriors 6/Dynasty-Warriors-6-v1.0.0.zip",
+        "sha256": "64e3853f9836601bf40e11610b86810e090197b8893f8a4b55208a3d75281df7"
+      },
+      "files": ["dinput8.dll", "DW6_ARFix.asi", "DW6_ARFix.ini"],
+      "ini_file": "DW6_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "dynasty-warriors-7-xtreme-legends-definitive-edition",
       "name": "DYNASTY WARRIORS 7: Xtreme Legends Definitive Edition - Custom Aspect Ratio",
       "steam_app_id": "968790",
