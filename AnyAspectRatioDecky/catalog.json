@@ -995,8 +995,8 @@
       "executable": "deadcells.exe",
       "source": {
         "kind": "archive",
-        "path": "Dead Cells/Dead-Cells-v1.0.0.zip",
-        "sha256": "f2673444dd4bc215570e5dd58db592bc30cbc7b0b5a7f304da1fc1ed59bf09bd"
+        "path": "Dead Cells/Dead-Cells-v1.1.0.zip",
+        "sha256": "2dfc8f2e9735db5a3bfe06b4f8592fd9442e15d89ad31a1646561f7d736c0d7a"
       },
       "files": ["dinput8.dll", "deadcells_ARFix.asi", "deadcells_ARFix.ini"],
       "ini_file": "deadcells_ARFix.ini",

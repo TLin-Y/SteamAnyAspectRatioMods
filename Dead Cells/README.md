@@ -30,4 +30,9 @@ While `[Window] Enabled = true`, the mod controls the window and the in-game
 Window Mode option has no effect. Set it to `false` to use the game's own
 windowed/fullscreen modes; the picture still fills the screen.
 
+## 4. Custom FOV
+
+Edit `FOV` in `[View]` in `deadcells_ARFix.ini`. `1.0` is the game's normal
+view, `1.1` shows 110% of it, `2.0` shows 200%. The HUD scales with the view.
+
 Works with the default DirectX version (`deadcells.exe`), not the OpenGL legacy option.

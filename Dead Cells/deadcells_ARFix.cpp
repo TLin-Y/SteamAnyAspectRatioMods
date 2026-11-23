@@ -21,7 +21,7 @@ namespace
     HMODULE thisModule = nullptr;
     fs::path FixPath;
 
-    enum Op : std::int32_t { OMov = 0, OGetThis = 40, OJSGte = 49, OJNotEq = 57, OJAlways = 58, OToInt = 62, ORet = 67 };
+    enum Op : std::int32_t { OMov = 0, OFloat = 2, OSDiv = 10, OGetThis = 40, OSetThis = 41, OJSGte = 49, OJNotEq = 57, OJAlways = 58, OToSFloat = 60, OToInt = 62, ORet = 67 };
     constexpr std::int32_t HOBJ = 11;
 
     struct Settings
@@ -31,6 +31,7 @@ namespace
         int width = 1280;
         int height = 800;
         bool fillEnabled = true;
+        double fov = 1.0;
     } settings;
 
     struct HlOpcode { std::int32_t op, p1, p2, p3; void* extra; };
@@ -40,9 +41,11 @@ namespace
     static_assert(sizeof(HlOpcode) == 20 && sizeof(HlFunction) == 40 && sizeof(HlType) == 16 && sizeof(HlProto) == 16);
 
     struct Header { int version, nints, nfloats, nstrings, ntypes, nglobals, nnatives, nfunctions; } header{};
+    const double* resourceFloats = nullptr;
 
     int stagePatched = 0;
     bool displayModeLocked = false;
+    bool fovPatched = false;
     std::vector<std::string> warnings;
 
     bool ReadHeader()
@@ -73,6 +76,12 @@ namespace
         header.nglobals = index();
         header.nnatives = index();
         header.nfunctions = index();
+        if (header.version >= 4) index();
+        index();
+        const size_t floatsPos = pos + 4 * static_cast<size_t>(header.nints);
+        if (header.nfloats > 0 && floatsPos + 8 * static_cast<size_t>(header.nfloats) <= SizeofResource(exe, resource)) {
+            resourceFloats = reinterpret_cast<const double*>(data + floatsPos);
+        }
         return header.nfunctions > 0 && header.ntypes > 0;
     }
 
@@ -178,6 +187,48 @@ namespace
         stagePatched = 2;
     }
 
+    bool IsFloatArray(std::uintptr_t p)
+    {
+        const size_t size = 8 * static_cast<size_t>(header.nfloats);
+        return p && resourceFloats && Readable(p, size) && std::memcmp(reinterpret_cast<const void*>(p), resourceFloats, size) == 0;
+    }
+
+    void PatchFov(HlFunction& f, std::uintptr_t* code)
+    {
+        const std::uintptr_t floatsField = FindField(code, IsFloatArray);
+        if (!floatsField) return;
+        const auto* floats = reinterpret_cast<const double*>(floatsField);
+        auto* nfloats = reinterpret_cast<std::int32_t*>(code) + 2;
+        if (*nfloats != header.nfloats) return;
+
+        HlOpcode* hit = nullptr;
+        int count = 0;
+        HlOpcode* o = f.ops;
+        for (int k = 2; k + 1 < f.nops; ++k) {
+            if (o[k].op == OSDiv && o[k - 1].op == OFloat && o[k - 1].p1 == o[k].p3 && o[k - 2].op == OToSFloat
+                && o[k - 2].p1 == o[k].p2 && o[k + 1].op == OSetThis && o[k + 1].p2 == o[k].p1
+                && o[k - 1].p2 >= 0 && o[k - 1].p2 < header.nfloats && floats[o[k - 1].p2] == 4.0) {
+                hit = &o[k - 1];
+                ++count;
+            }
+        }
+        if (count != 1) return;
+
+        auto* table = static_cast<double*>(VirtualAlloc(nullptr, 8 * (static_cast<size_t>(header.nfloats) + 1), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+        if (!table) return;
+        std::memcpy(table, floats, 8 * static_cast<size_t>(header.nfloats));
+        table[header.nfloats] = 4.0 * settings.fov;
+        for (int i = 8; i < 40; ++i) {
+            if (code[i] == floatsField) {
+                code[i] = reinterpret_cast<std::uintptr_t>(table);
+                break;
+            }
+        }
+        hit->p2 = header.nfloats;
+        *nfloats = header.nfloats + 1;
+        fovPatched = true;
+    }
+
     void LockDisplayMode(HlFunction& f)
     {
         HlOpcode* o = f.ops;
@@ -194,9 +245,14 @@ namespace
         auto* functions = reinterpret_cast<HlFunction*>(FindField(code, IsFunctionArray));
         const auto* types = reinterpret_cast<const HlType*>(FindField(code, IsTypeArray));
         if (!types) return warnings.push_back("Game type table not found.");
+        auto* onResize = FindMethod(types, functions, L"Main", L"onResize");
         if (settings.fillEnabled) {
-            if (auto* f = FindMethod(types, functions, L"Main", L"onResize")) PatchStage(*f);
+            if (onResize) PatchStage(*onResize);
             if (!stagePatched) warnings.push_back("Main.onResize not patched; black bars remain.");
+        }
+        if (settings.fov != 1.0) {
+            if (onResize) PatchFov(*onResize, const_cast<std::uintptr_t*>(code));
+            if (!fovPatched) warnings.push_back("FOV not applied; the game keeps its default view size.");
         }
         if (settings.windowEnabled) {
             if (auto* f = FindMethod(types, functions, L"dx.Window", L"set_displayMode")) LockDisplayMode(*f);
@@ -257,6 +313,11 @@ namespace
         inipp::get_value(ini.sections["Window"], "Width", settings.width);
         inipp::get_value(ini.sections["Window"], "Height", settings.height);
         inipp::get_value(ini.sections["AspectRatio"], "Enabled", settings.fillEnabled);
+        inipp::get_value(ini.sections["View"], "FOV", settings.fov);
+        if (!(settings.fov >= 0.25 && settings.fov <= 4.0)) {
+            warnings.push_back("Invalid FOV; using 1.0.");
+            settings.fov = 1.0;
+        }
         if (settings.width < 0 || settings.height < 0 || settings.width > 16384 || settings.height > 16384
             || (settings.width == 0) != (settings.height == 0)) {
             warnings.push_back("Invalid window size; using 1280x800.");
@@ -275,9 +336,9 @@ namespace
             return 1;
         }
         SPDLOG_INFO("Dead Cells Any Aspect Ratio fix {}.{}.{} loaded.", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-        SPDLOG_INFO("Config: Window={} {}x{} borderless={}, AspectRatio={}", settings.windowEnabled,
-            settings.width, settings.height, settings.borderless, settings.fillEnabled);
-        SPDLOG_INFO("Stage clamps removed: {}. Display mode locked: {}.", stagePatched, displayModeLocked);
+        SPDLOG_INFO("Config: Window={} {}x{} borderless={}, AspectRatio={}, FOV={}", settings.windowEnabled,
+            settings.width, settings.height, settings.borderless, settings.fillEnabled, settings.fov);
+        SPDLOG_INFO("Stage clamps removed: {}. Display mode locked: {}. FOV applied: {}.", stagePatched, displayModeLocked, fovPatched);
         for (const auto& warning : warnings) SPDLOG_WARN("{}", warning);
 
         while (settings.windowEnabled) {
@@ -296,7 +357,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID)
         DisableThreadLibraryCalls(hModule);
         thisModule = hModule;
         LoadConfiguration();
-        if (settings.fillEnabled || settings.windowEnabled) PatchBytecode();
+        if (settings.fillEnabled || settings.windowEnabled || settings.fov != 1.0) PatchBytecode();
         if (HANDLE thread = CreateThread(nullptr, 0, MainThread, nullptr, 0, nullptr)) CloseHandle(thread);
     }
     return TRUE;
