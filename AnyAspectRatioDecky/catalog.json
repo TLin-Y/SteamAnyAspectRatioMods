@@ -384,7 +384,12 @@
         },
         {
           "name": "rebtd7",
-          "url": "https://github.com/rebtd7/FF13Fix"
+          "support": [
+            {
+              "label": "FF13",
+              "url": "https://github.com/rebtd7/FF13Fix"
+            }
+          ]
         }
       ]
     },
@@ -830,7 +835,12 @@
       "credits": [
         {
           "name": "TechieW",
-          "url": "https://www.nexusmods.com/eldenring/mods/7870"
+          "support": [
+            {
+              "label": "Elden Ring",
+              "url": "https://www.nexusmods.com/eldenring/mods/7870"
+            }
+          ]
         }
       ]
     },
@@ -852,7 +862,12 @@
       "credits": [
         {
           "name": "Twig",
-          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517"
+          "support": [
+            {
+              "label": "Undertale",
+              "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517"
+            }
+          ]
         }
       ]
     },
@@ -875,7 +890,12 @@
       "credits": [
         {
           "name": "Nicolas Busseneau",
-          "url": "https://github.com/nbusseneau/hephaistos"
+          "support": [
+            {
+              "label": "Hades",
+              "url": "https://github.com/nbusseneau/hephaistos"
+            }
+          ]
         }
       ]
     },
@@ -6712,7 +6732,12 @@
       "credits": [
         {
           "name": "TEODORMAX",
-          "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
+          "support": [
+            {
+              "label": "FF13-2/13-3",
+              "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
+            }
+          ]
         }
       ],
       "ini_file": "alba_data/prog/win/bin/FFXIII2FOV.ini"
@@ -6738,7 +6763,12 @@
       "credits": [
         {
           "name": "TEODORMAX",
-          "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
+          "support": [
+            {
+              "label": "FF13-2/13-3",
+              "url": "https://www.nexusmods.com/finalfantasyxiii2/mods/42"
+            }
+          ]
         }
       ],
       "ini_file": "UltrawideFix.ini",
@@ -6766,7 +6796,12 @@
       "credits": [
         {
           "name": "MinuteReversal",
-          "url": "https://github.com/MinuteReversal"
+          "support": [
+            {
+              "label": "MHW 16:10",
+              "url": "https://github.com/MinuteReversal/MHW16x10Fix"
+            }
+          ]
         }
       ],
       "ini_file": "mhw_16x10.ini",
@@ -6792,7 +6827,16 @@
       "credits": [
         {
           "name": "m.vico",
-          "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
+          "support": [
+            {
+              "label": "KH1.5-2.5/3",
+              "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/mvico42517"
+            }
+          ]
         }
       ],
       "ini_file": "Keyblade-Masters-UW-KH-1.5+2.5-config.ini"
@@ -6818,7 +6862,16 @@
       "credits": [
         {
           "name": "m.vico",
-          "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
+          "support": [
+            {
+              "label": "KH1.5-2.5/3",
+              "url": "https://www.nexusmods.com/kingdomheartsfinalmix/mods/230"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/mvico42517"
+            }
+          ]
         }
       ],
       "ini_file": "KINGDOM HEARTS III/Binaries/Win64/KH3-UW-config.ini"
@@ -6849,7 +6902,12 @@
       "credits": [
         {
           "name": "Yuki",
-          "url": "https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/"
+          "support": [
+            {
+              "label": "Daemon X Machina",
+              "url": "https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/"
+            }
+          ]
         }
       ]
     },
@@ -6879,7 +6937,12 @@
       "credits": [
         {
           "name": "PhantomGamers",
-          "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
+          "support": [
+            {
+              "label": "FFX/X-2",
+              "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
+            }
+          ]
         }
       ]
     },
@@ -6908,7 +6971,116 @@
       "credits": [
         {
           "name": "Refilo",
-          "url": "https://www.nexusmods.com/finalfantasyresonance/mods/29"
+          "support": [
+            {
+              "label": "FF Resonance",
+              "url": "https://www.nexusmods.com/finalfantasyresonance/mods/29"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hollow-knight-silksong-ultra-wide",
+      "name": "Hollow Knight: Silksong - Ultra-Wide",
+      "steam_app_id": "1030300",
+      "install_dir": "Hollow Knight Silksong",
+      "executable": "Hollow Knight Silksong.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/p1xel8ted/Silksong Ultra-Wide/01. Silksong Ultra-Wide - Windows-Wine-Proton-32-0-1-8-1773743500.zip",
+        "sha256": "ed6b2a1f8b1d2c995e3968e723b9c0d56271382875c9756480db818be3296c03"
+      },
+      "display_tags": ["ultrawide-fov"],
+      "files": [
+        "doorstop_config.ini",
+        "winhttp.dll",
+        "BepInEx/config/BepInEx.cfg",
+        "BepInEx/core/0Harmony.dll",
+        "BepInEx/core/0Harmony.xml",
+        "BepInEx/core/0Harmony20.dll",
+        "BepInEx/core/BepInEx.Harmony.dll",
+        "BepInEx/core/BepInEx.Harmony.xml",
+        "BepInEx/core/BepInEx.Preloader.dll",
+        "BepInEx/core/BepInEx.Preloader.xml",
+        "BepInEx/core/BepInEx.dll",
+        "BepInEx/core/BepInEx.xml",
+        "BepInEx/core/HarmonyXInterop.dll",
+        "BepInEx/core/Mono.Cecil.Mdb.dll",
+        "BepInEx/core/Mono.Cecil.Pdb.dll",
+        "BepInEx/core/Mono.Cecil.Rocks.dll",
+        "BepInEx/core/Mono.Cecil.dll",
+        "BepInEx/core/MonoMod.RuntimeDetour.dll",
+        "BepInEx/core/MonoMod.RuntimeDetour.xml",
+        "BepInEx/core/MonoMod.Utils.dll",
+        "BepInEx/core/MonoMod.Utils.xml",
+        "BepInEx/plugins/ConfigurationManager-BepInEx5-Mono.dll",
+        "BepInEx/plugins/Hollow Knight Silk Song Ultra-Wide.dll"
+      ],
+      "wine_dll_overrides": [
+        "winhttp=n,b"
+      ],
+      "credits": [
+        {
+          "name": "p1xel8ted",
+          "support": [
+            {
+              "label": "Hollow Knight/Silksong",
+              "url": "https://github.com/p1xel8ted/UltrawideFixes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hollow-knight-ultra-wide",
+      "name": "Hollow Knight - Ultra-Wide",
+      "steam_app_id": "367520",
+      "install_dir": "Hollow Knight",
+      "executable": "hollow_knight.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/p1xel8ted/Hollow Knight Ultra-Wide/01.HollowKnight_v0.1.2_WindowsProton.zip",
+        "sha256": "aafb2dd576b3126f573f9c9952f71ff66b7b1908a498c0908bb6a5617db67afd"
+      },
+      "display_tags": ["ultrawide-fov"],
+      "files": [
+        "doorstop_config.ini",
+        "winhttp.dll",
+        "BepInEx/config/BepInEx.cfg",
+        "BepInEx/core/0Harmony.dll",
+        "BepInEx/core/0Harmony.xml",
+        "BepInEx/core/0Harmony20.dll",
+        "BepInEx/core/BepInEx.Harmony.dll",
+        "BepInEx/core/BepInEx.Harmony.xml",
+        "BepInEx/core/BepInEx.Preloader.dll",
+        "BepInEx/core/BepInEx.Preloader.xml",
+        "BepInEx/core/BepInEx.dll",
+        "BepInEx/core/BepInEx.xml",
+        "BepInEx/core/HarmonyXInterop.dll",
+        "BepInEx/core/Mono.Cecil.Mdb.dll",
+        "BepInEx/core/Mono.Cecil.Pdb.dll",
+        "BepInEx/core/Mono.Cecil.Rocks.dll",
+        "BepInEx/core/Mono.Cecil.dll",
+        "BepInEx/core/MonoMod.RuntimeDetour.dll",
+        "BepInEx/core/MonoMod.RuntimeDetour.xml",
+        "BepInEx/core/MonoMod.Utils.dll",
+        "BepInEx/core/MonoMod.Utils.xml",
+        "BepInEx/plugins/ConfigurationManager-BepInEx5-Mono.dll",
+        "BepInEx/plugins/Hollow Knight Ultra-Wide.dll"
+      ],
+      "wine_dll_overrides": [
+        "winhttp=n,b"
+      ],
+      "credits": [
+        {
+          "name": "p1xel8ted",
+          "support": [
+            {
+              "label": "Hollow Knight/Silksong",
+              "url": "https://github.com/p1xel8ted/UltrawideFixes"
+            }
+          ]
         }
       ]
     }

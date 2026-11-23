@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 163 game mods](https://img.shields.io/badge/Game%20mods-163-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
+[![Game mods](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FTLin-Y%2FSteamAnyAspectRatioMods%2Fmain%2FAnyAspectRatioDecky%2Fcatalog.json&query=%24.mods.length&label=Game%20mods&color=2EA043&style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -28,7 +28,7 @@ G3dE0nn
 
 ## About this collection
 
-This is a single-developer mod collection, made to fill handheld-specific gaps and adapt games for devices like the Steam Deck, AYN, and Retroid Pocket. Rather than just standard ultrawide fixes, it provides full cross-platform and ARM64 compatibility, covering both ultrawide and narrower aspect ratios (like 32:9, 16:10, 3:2, and 4:3).
+This is a single-developer mod collection, made to fill aspect-ratio gaps and adapt games for devices like the Steam Deck, AYN, Retroid Pocket, and 48:9 triple-monitor setups. Rather than just standard ultrawide fixes, it provides full cross-platform and ARM64 compatibility, covering both ultrawide and narrower aspect ratios (like 32:9, 16:10, 3:2, and 4:3).
 
 Each fix is made and tested by hand for the Steam version of one specific game; other versions (Epic, GOG, Game Pass, ...) are untested and may not be supported. None of the fixes is generic. General methods do exist, such as [SUWSF](https://github.com/PhantomGamers/SUWSF), [REFramework](https://github.com/praydog/REFramework), the [Universal UE4 Console Unlocker](https://framedsc.com/GeneralGuides/universal_ue4_consoleunlocker.htm) and the [WSGF](https://www.wsgf.org/phpBB3/viewforum.php?f=95) guides, but they are not always easy to use or compatible with Proton and Wine on x86 and ARM64.
 
@@ -49,6 +49,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
 - **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
+- **p1xel8ted** — [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes) for Hollow Knight and Hollow Knight: Silksong.
 - **PhantomGamers** — [SUWSF patches for Final Fantasy X/X-2 HD Remaster](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/).
 - **Yuki** — [Daemon X Machina: Titanic Scion Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
 - **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
@@ -141,6 +142,8 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Hades | Nicolas Busseneau | [1145360](https://store.steampowered.com/app/1145360) | [v1.7.10](./external/NicolasBusseneau/Hephaistos/hephaistos-linux.zip) | 2024-07-01 | [Hephaistos](https://github.com/nbusseneau/hephaistos) |
 | Hatsune Miku: Project DIVA Mega Mix+ | Lyall | [1761390](https://store.steampowered.com/app/1761390) | [v0.0.1](./external/Lyall/MegaMixPlusFix/MegaMixPlusFix_0.0.1.zip) | 2025-06-01 | [MegaMixPlusFix](https://codeberg.org/Lyall/MegaMixPlusFix) |
 | Heavy Rain | TLin-Y | [960910](https://store.steampowered.com/app/960910) | [v1.0.0](./Heavy%20Rain/Heavy-Rain-v1.0.0.zip) | 2026-11-21 | [README](./Heavy%20Rain/README.md) |
+| Hollow Knight | p1xel8ted | [367520](https://store.steampowered.com/app/367520) | [v0.1.2](./external/p1xel8ted/Hollow%20Knight%20Ultra-Wide/01.HollowKnight_v0.1.2_WindowsProton.zip) | 2026-03-08 | [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes/releases/tag/HollowKnight) |
+| Hollow Knight: Silksong | p1xel8ted | [1030300](https://store.steampowered.com/app/1030300) | [v0.1.8](./external/p1xel8ted/Silksong%20Ultra-Wide/01.%20Silksong%20Ultra-Wide%20-%20Windows-Wine-Proton-32-0-1-8-1773743500.zip) | 2026-03-17 | [Nexus Mods](https://www.nexusmods.com/hollowknightsilksong/mods/32) |
 | Indiana Jones and the Great Circle | Lyall | [2677660](https://store.steampowered.com/app/2677660) | [v0.0.8](./external/Lyall/GreatCircleFix/GreatCircleFix_0.0.8.zip) | 2025-06-01 | [GreatCircleFix](https://codeberg.org/Lyall/GreatCircleFix) |
 | Judgment | Lyall | [2058180](https://store.steampowered.com/app/2058180) | [v0.0.6](./external/Lyall/DragonTweak/DragonTweak_0.0.6.zip) | 2026-01-21 | [DragonTweak](https://codeberg.org/Lyall/DragonTweak) |
 | KINGDOM HEARTS -HD 1.5+2.5 ReMIX- | m.vico | [2552430](https://store.steampowered.com/app/2552430) | [v1.0.1](./external/mvico/Keyblade%20Masters%20Ultrawide%20-%20KH%201.5-2.5/Keyblade%20Masters%20Ultrawide%20KH%201.5-2.5%20230%201.0.1.zip) | 2026-09-10 | [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) |
