@@ -396,8 +396,8 @@
       "executable": "ffxv_s.exe",
       "source": {
         "kind": "archive",
-        "path": "Final Fantasy XV/Final-Fantasy-XV-v1.0.0.zip",
-        "sha256": "2944d17059e5e09b2647aadd00c00971b39866b9099b4b4f38d8d176eae2ee13"
+        "path": "Final Fantasy XV/Final-Fantasy-XV-v1.0.1.zip",
+        "sha256": "6871b91030b550c3f9a2788c59f11948e410a6fb7f797bad1e2457e39275943a"
       },
       "files": ["dinput8.dll", "FFXV_ARFix.asi", "FFXV_ARFix.ini"],
       "ini_file": "FFXV_ARFix.ini",

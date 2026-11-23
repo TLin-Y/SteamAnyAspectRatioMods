@@ -35,6 +35,9 @@ namespace
     };
 
     HMODULE ownModule = nullptr;
+    std::atomic<bool> started{false};
+    size_t gameSize = 0;
+    ULONGLONG loadTick = 0;
     std::shared_ptr<spdlog::logger> logFile;
     uintptr_t imageBase = 0;
     std::vector<Section> sections;
@@ -397,7 +400,6 @@ namespace
         logFile->info("{} {}.{}.{}: FOV Multiplier={:.3f}", fixName, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH,
                       fovMultiplier);
 
-        imageBase = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
         LoadSections();
         bool ok = AddFit("Startup fit", {"8D 04 C9 C1 E8 04 39 D0 44 0F 42 C0", "8D 04 C9 C1 E8 04 3B C2 44 0F 42 C0"}, 8, 4,
                          RCX, RDX);
@@ -438,11 +440,26 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID)
     if (reason == DLL_PROCESS_ATTACH)
     {
         ownModule = module;
-        DisableThreadLibraryCalls(module);
-        const HANDLE thread = CreateThread(nullptr, 0, Start, nullptr, 0, nullptr);
-        if (!thread)
-            return FALSE;
-        CloseHandle(thread);
+        imageBase = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(imageBase);
+        gameSize = reinterpret_cast<const IMAGE_NT_HEADERS64*>(imageBase + dos->e_lfanew)->OptionalHeader.SizeOfImage;
+        loadTick = GetTickCount64();
+    }
+    else if (reason == DLL_THREAD_ATTACH && !started.load())
+    {
+        using QueryThread = LONG(WINAPI*)(HANDLE, int, PVOID, ULONG, PULONG);
+        static const auto query =
+            reinterpret_cast<QueryThread>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryInformationThread"));
+        uintptr_t address = 0;
+        if (query)
+            query(GetCurrentThread(), 9, &address, sizeof(address), nullptr);
+        const bool gameThread = address >= imageBase && address < imageBase + gameSize;
+        if ((gameThread || GetTickCount64() - loadTick > 20000) && !started.exchange(true))
+        {
+            DisableThreadLibraryCalls(module);
+            if (const HANDLE thread = CreateThread(nullptr, 0, Start, nullptr, 0, nullptr))
+                CloseHandle(thread);
+        }
     }
     return TRUE;
 }
