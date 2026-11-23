@@ -598,12 +598,38 @@ bool PatchRead(const char* pattern, const char* bytes, unsigned int size) {
     return true;
 }
 
+int WideDisplayType() {
+    if (fTargetARValue <= 16.0f / 9.0f + 0.01f) return -1;
+    const struct { float ratio; int type; } types[] = { { 21.0f / 9.0f, 4 }, { 32.0f / 9.0f, 5 }, { 48.0f / 9.0f, 6 } };
+    for (const auto& t : types)
+        if (std::abs(fTargetARValue - t.ratio) < 0.01f) return t.type;
+    return 0;
+}
+
+int iWideDisplayType = -1;
+
 bool FitScreen() {
     if (!bFitScreen) return false;
     std::uint8_t* layout = Memory::PatternScan(exeModule, "8B 53 6C 83 FA 0D 0F 8E");
-    bool ok = PatchRead("8B 4B 6C 8D 41 FF 83 F8 05", "\x31\xC9\x90", 3)
-        & PatchRead("8B 49 6C 8D 41 F9 83 F8 10 0F 87", "\x31\xC9\x90", 3)
-        & PatchRead("8B 53 6C 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    bool ok = false;
+    iWideDisplayType = WideDisplayType();
+    if (iWideDisplayType >= 0) {
+        auto hits = Memory::PatternScanAll(exeModule, "8B 4B 6C 8D 41 FF 83 F8 05");
+        if (hits.size() == 1) {
+            static SafetyHookMid displayTypeHook{};
+            displayTypeHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+                *reinterpret_cast<std::uint32_t*>(ctx.rbx + 0x6C) = static_cast<std::uint32_t>(iWideDisplayType);
+            });
+            ok = static_cast<bool>(displayTypeHook);
+            SPDLOG_INFO("Fit screen: wide display type {} {}.", iWideDisplayType, ok ? "set" : "hook failed");
+        } else {
+            SPDLOG_ERROR("Fit screen: display type read found {} times (expected 1).", hits.size());
+        }
+    } else {
+        ok = PatchRead("8B 4B 6C 8D 41 FF 83 F8 05", "\x31\xC9\x90", 3)
+            & PatchRead("8B 49 6C 8D 41 F9 83 F8 10 0F 87", "\x31\xC9\x90", 3)
+            & PatchRead("8B 53 6C 83 FA 0D 0F 8E", "\x31\xD2\x90", 3);
+    }
     auto* image = reinterpret_cast<std::uint8_t*>(exeModule);
     auto* nt = reinterpret_cast<PIMAGE_NT_HEADERS>(image + reinterpret_cast<PIMAGE_DOS_HEADER>(image)->e_lfanew);
     std::uint8_t* imageEnd = image + nt->OptionalHeader.SizeOfImage;
@@ -685,6 +711,46 @@ void FOV() {
     }
 }
 
+void RemoveFovLimit() {
+    if (fTargetARValue <= 21.0f / 9.0f + 0.01f) return;
+    auto hits = Memory::PatternScanAll(exeModule,
+        "F2 0F 5E 05 ?? ?? ?? ?? 66 0F 5A F0 E8 ?? ?? ?? ?? 24 0F 3C 01 75 0C 84 DB 75 08 F3 0F 5D 35 ?? ?? ?? ??");
+    if (hits.size() != 2) {
+        SPDLOG_ERROR("Wide FOV: FOV aspect limit code found {} times (expected 2); view stays limited to 21:9.", hits.size());
+        return;
+    }
+    for (auto* hit : hits) {
+        std::uint8_t* minss = hit + 27;
+        const float limit = *reinterpret_cast<float*>(minss + 8 + *reinterpret_cast<std::int32_t*>(minss + 4));
+        if (std::abs(limit - 21.0f / 16.0f) > 0.001f) {
+            SPDLOG_ERROR("Wide FOV: FOV aspect limit is {:.4f}, not 21:9 (1.3125); left unchanged.", limit);
+            return;
+        }
+    }
+    for (auto* hit : hits) Memory::PatchBytes(hit + 27, "\x0F\x1F\x84\x00\x00\x00\x00\x00", 8);
+    SPDLOG_INFO("Wide FOV: 21:9 FOV aspect limit removed (2 sites).");
+}
+
+void DisableVignette() {
+    if (fTargetARValue <= 21.0f / 9.0f + 0.01f) return;
+    auto hits = Memory::PatternScanAll(exeModule, "48 8B 41 30 C6 80 B1 01 00 00 01 89 90 74 03 00 00 C3");
+    if (hits.size() != 1) {
+        SPDLOG_ERROR("Vignette setter found {} times (expected 1); vignette unchanged.", hits.size());
+        return;
+    }
+    static SafetyHookMid vignetteHook{};
+    vignetteHook = safetyhook::create_mid(hits[0], [](SafetyHookContext& ctx) {
+        static bool logged = false;
+        if (!logged) {
+            logged = true;
+            SPDLOG_INFO("Vignette: game requested mode {}; set to Disable.", static_cast<int>(ctx.rdx));
+        }
+        ctx.rdx = 2;
+    });
+    if (vignetteHook) SPDLOG_INFO("Vignette hook installed.");
+    else SPDLOG_ERROR("Vignette hook could not be installed.");
+}
+
 DWORD __stdcall Main(void*) {
     Logging();
     Configuration();
@@ -695,6 +761,8 @@ DWORD __stdcall Main(void*) {
 
     AspectRatio();
     FOV();
+    RemoveFovLimit();
+    DisableVignette();
 
     return 1;
 }
