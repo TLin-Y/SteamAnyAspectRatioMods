@@ -4,7 +4,7 @@ The AnyAspectRatio package combines TLin-Y's aspect-ratio fix and [rebtd7's FF13
 
 ## Install
 
-Apply with the AnyAspectRatio plugin, or extract `FF13-ARFix-with-FF13Fix-v1.0.0.zip` beside `ffxiiiimg.exe` in `FINAL FANTASY XIII\white_data\prog\win\bin`.
+Apply with the AnyAspectRatio plugin, or extract `FF13-ARFix-with-FF13Fix-v1.1.0.zip` beside `ffxiiiimg.exe` in `FINAL FANTASY XIII\white_data\prog\win\bin`.
 
 On SteamOS / Winlator, use `WINEDLLOVERRIDES="d3d9,dinput8=n,b" %command%`. For a separate DXVK installation, see [FF13Fix's README](./FF13Fix_README.txt).
 

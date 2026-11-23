@@ -453,6 +453,6 @@ class CatalogContentTests(unittest.TestCase):
                 with self.subTest(file=name):
                     self.assertEqual(upstream.read(f"FF13Fix_164/{name}"), archive.read(name))
         folder = REPOSITORY_ROOT / "Final Fantasy XIII"
-        with ZipFile(folder / "Final-Fantasy-XIII-v1.0.0.zip") as release:
+        with ZipFile(folder / "Final-Fantasy-XIII-v1.1.0.zip") as release:
             self.assertIsNone(release.testzip())
             self.assertEqual((folder / "README.md").read_bytes(), release.read("README.md"))

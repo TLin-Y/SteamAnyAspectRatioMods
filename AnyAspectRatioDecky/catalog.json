@@ -363,8 +363,8 @@
       "executable": "white_data/prog/win/bin/ffxiiiimg.exe",
       "source": {
         "kind": "archive",
-        "path": "external/rebtd7/FF13Fix/FF13-ARFix-with-FF13Fix-v1.0.0.zip",
-        "sha256": "a7235e4110aeb7adbdc75d222edd2b2327756b086e2c474e235319ab2bd1e22e",
+        "path": "external/rebtd7/FF13Fix/FF13-ARFix-with-FF13Fix-v1.1.0.zip",
+        "sha256": "69f5a08927ffb75a7abee1e99065c2402bd6e7024f2b342d2c4aa11c8c30866a",
         "destination": "white_data/prog/win/bin"
       },
       "files": [
