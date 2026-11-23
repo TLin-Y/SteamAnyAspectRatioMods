@@ -758,20 +758,17 @@
       "install_dir": "Ori DE",
       "executable": "OriDE.exe",
       "source": {
-        "kind": "files",
-        "file_hashes": {
-          "oriDE_Data/Managed/Assembly-CSharp.dll": "017392585c38b48ff6407ffc0145e2468b3d0ea8660c9e3f15ab43d384530915"
-        },
-        "files": [
-          {
-            "path": "Ori and the Blind Forest Definitive Edition/Assembly-CSharp.dll",
-            "destination": "oriDE_Data/Managed/Assembly-CSharp.dll"
-          }
-        ]
+        "kind": "archive",
+        "path": "Ori and the Blind Forest Definitive Edition/Ori-and-the-Blind-Forest-Definitive-Edition-v1.1.0.zip",
+        "sha256": "b299b14a65ca41496783ebe2243dc5298ed28f19932a1d71b2604fb4cd89515e"
       },
-      "files": ["oriDE_Data/Managed/Assembly-CSharp.dll"],
-      "ini_file": null,
-      "wine_dll_overrides": []
+      "files": ["oriDE_Data/Managed/Assembly-CSharp.dll", "winmm.dll", "Ori1_ARFix.asi", "Ori1_ARFix.ini"],
+      "backups": [
+        {"target": "oriDE_Data/Managed/Assembly-CSharp.dll", "backup": "oriDE_Data/Managed/Assembly-CSharp.dll.oride-original.bak"}
+      ],
+      "ini_file": "Ori1_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["winmm=n,b"]
     },
     {
       "id": "elden-ring-ultrawide-fix",

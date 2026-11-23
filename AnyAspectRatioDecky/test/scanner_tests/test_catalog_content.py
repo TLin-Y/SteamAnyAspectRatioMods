@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 60, 58, 1, 1, 77
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 60, 59, 1, 0, 78
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -243,7 +243,11 @@ PINNED = {
         "ini_resolution": (IniResolutionPair("Custom Resolution", "Width", "Height", "pixels"),),
     },
     "ninja-gaiden-sigma-2": {"source.kind": "directory"},
-    "ori-and-the-blind-forest-definitive-edition": {"source.kind": "files", "source.files": 1, "ini_file": None},
+    "ori-and-the-blind-forest-definitive-edition": {
+        "source.kind": "archive", "ini_file": "Ori1_ARFix.ini", "wine_dll_overrides": ("winmm=n,b",),
+        "backups": (ModBackup("oriDE_Data/Managed/Assembly-CSharp.dll",
+                              "oriDE_Data/Managed/Assembly-CSharp.dll.oride-original.bak"),),
+    },
     "wildheartsfix": {"manual": False, "executable": "00_game/target_origin/ex/WILD HEARTS.exe"},
     "dbxv2fix": {"manual": True},
 }

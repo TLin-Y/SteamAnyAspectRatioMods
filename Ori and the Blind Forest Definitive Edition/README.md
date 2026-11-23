@@ -2,25 +2,30 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
-# V2 maintain FOV (released as v1.0.0)
-I've recompiled Assembly-CSharp.dll to unlock all built-in aspect ratio limits. 
-It now automatically detects and matches your current display resolution—no extra setup required. 
-Tested and confirmed working on everything from 32:9 to 1:1 ratios.
-## Installation
-PC / Steam Deck: Copy and replace the SteamLibrary\steamapps\common\Ori DE\oriDE_Data\Managed\Assembly-CSharp.dll. The V2 managed-assembly replacement does not require a Steam launch-option DLL override.
+Unlocks all aspect ratios and keeps the FOV. Tested from 32:9 to 1:1.
+The game has no ultrawide resolutions in its menu, so the mod also forces the window size from the INI.
 
-Wine: In GameNative container: select your A: disk, replace the oriDE_Data\Managed\Assembly-CSharp.dll
+## Install
 
+1. Close the game. Back up `oriDE_Data\Managed\Assembly-CSharp.dll`
+   as `Assembly-CSharp.dll.oride-original.bak`.
+2. Extract the ZIP beside `oriDE.exe`, merging folders.
+3. Windows with display scaling above 100%: right-click `oriDE.exe` -> Properties -> Compatibility ->
+   Change high DPI settings -> tick "Override high DPI scaling behavior" (Application).
 
-# Optional: Force Any Resolution
+## SteamOS / Winlator
 
-## Installation
-1. Unzip [ForceWindowSize-v1.0.0.zip](./ForceWindowSize-v1.0.0.zip) directly into your game's root folder (where `oriDE.exe` is located).
-2. Linux / Android Winlator / Proton Users
-*   **Winlator or Armada:** Go to Container Settings (or Armada Settings) -> Environment Variables -> Add: `WINEDLLOVERRIDES="winmm=n,b"`
-*   **Steam (Proton):** Add `WINEDLLOVERRIDES="winmm=n,b" %command%` to your game's Launch Options.
+Steam launch option:
 
-You can customize the target resolution by editing the `Ori1_ARFix.ini` file located in your game folder:
+```
+WINEDLLOVERRIDES="winmm=n,b" %command%
+```
+
+Winlator: Container Settings -> Environment Variables -> add `WINEDLLOVERRIDES` = `winmm=n,b`.
+
+## Custom Aspect Ratio
+
+Edit `Ori1_ARFix.ini`, then restart:
 
 ```ini
 [Resolution]
