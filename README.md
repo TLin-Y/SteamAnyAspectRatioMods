@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Currently supports 163 game mods](https://img.shields.io/badge/Game%20mods-163-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
+[![Currently supports 163 game mods](https://img.shields.io/badge/Game%20mods-163-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
