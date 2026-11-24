@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 61, 60, 1, 0, 79
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 58, 57, 1, 0, 77
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -105,15 +105,6 @@ PINNED = {
         "steam_app_id": "278080", "install_dir": "Dynasty Warriors 8", "executable": "Launch.exe",
         "source.destination": "", "files": ("dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"),
         "ini_file": "DW8XL_ARFix.ini", "display_tags": (), "wine_dll_overrides": ("dinput8=n,b",),
-    },
-    "bloodstained-ritual-of-the-night": {
-        "steam_app_id": "692850", "install_dir": "Bloodstained Ritual of the Night",
-        "executable": f"BloodstainedRotN/{WIN64}/BloodstainedRotN-Win64-Shipping.exe",
-        "executable_alternatives": ("BloodstainedRotN.exe",), "source.destination": f"BloodstainedRotN/{WIN64}",
-        "files": _in(f"BloodstainedRotN/{WIN64}", "winhttp.dll", "BloodstainedARFix.asi", "BloodstainedARFix.ini"),
-        "ini_file": f"BloodstainedRotN/{WIN64}/BloodstainedARFix.ini",
-        "wine_dll_overrides": ("winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"),
-        "source.path": "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
     },
     "dragonsword-awakening": {
         "steam_app_id": "4570720", "install_dir": "DragonSword  Awakening",
@@ -277,7 +268,6 @@ INI_DEFAULTS = {
     "dynasty-warriors-8-xtreme-legends-complete-edition": {
         "Resolution": {"Width": 1280, "Height": 800}, "Camera": {"FovMultiplier": 1.1},
     },
-    "bloodstained-ritual-of-the-night": {"Resolution": {"Width": 1280, "Height": 800}, "Camera": {"FOVPercent": 100}},
     "dragonsword-awakening": {"Resolution": {"Width": 1280, "Height": 800}, "FOV": {"KeepHorizontalFOV": True}},
     "sonic-x-shadow-generations": {
         "Shadow": {"CameraCorrection": True, "RemoveLetterbox": True},

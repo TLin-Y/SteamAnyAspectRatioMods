@@ -88,24 +88,6 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
-      "id": "bloodstained-ritual-of-the-night",
-      "name": "Bloodstained: Ritual of the Night - Custom Aspect Ratio",
-      "steam_app_id": "692850",
-      "install_dir": "Bloodstained Ritual of the Night",
-      "executable": "BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe",
-      "executable_alternatives": ["BloodstainedRotN.exe"],
-      "source": {
-        "kind": "archive",
-        "path": "Bloodstained Ritual of the Night/Bloodstained-Ritual-of-the-Night-v1.0.0.zip",
-        "sha256": "bfdd4d69ae73d076a4fd511a872528c5fc06d58cda117d2901b30e6f9a80ffff",
-        "destination": "BloodstainedRotN/Binaries/Win64"
-      },
-      "files": ["BloodstainedRotN/Binaries/Win64/winhttp.dll", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.asi", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini"],
-      "ini_file": "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.ini",
-      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "wine_dll_overrides": ["winhttp=n,b", "msvcp140,vcruntime140,vcruntime140_1=b"]
-    },
-    {
       "id": "brotato",
       "name": "Brotato - Any Aspect Ratio",
       "steam_app_id": "1942280",
@@ -456,21 +438,6 @@
       "files": ["dinput8.dll", "Guac1_ARFix.asi", "Guac1_ARFix.ini"],
       "ini_file": "Guac1_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "wine_dll_overrides": ["dinput8=n,b"]
-    },
-    {
-      "id": "heavy-rain",
-      "name": "Heavy Rain - Custom Aspect Ratio",
-      "steam_app_id": "960910",
-      "install_dir": "HEAVY RAIN",
-      "executable": "HeavyRain.exe",
-      "source": {
-        "kind": "archive",
-        "path": "Heavy Rain/Heavy-Rain-v1.0.0.zip",
-        "sha256": "2467b5412ad0404efdcd909717a582fd6b84a583a6a171ca95f490799f29e1a3"
-      },
-      "files": ["dinput8.dll", "HeavyRain_ARFix.asi", "HeavyRain_ARFix.ini"],
-      "ini_file": "HeavyRain_ARFix.ini",
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
@@ -1070,22 +1037,6 @@
       "files": ["Binaries/Win32/dinput8.dll", "Binaries/Win32/DMC-DevilMayCry_ARFix.asi", "Binaries/Win32/DMC-DevilMayCry_ARFix.ini"],
       "display_tags": ["set-window-mode"],
       "ini_file": "Binaries/Win32/DMC-DevilMayCry_ARFix.ini",
-      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "wine_dll_overrides": ["dinput8=n,b"]
-    },
-    {
-      "id": "detroit-become-human",
-      "name": "Detroit: Become Human - Custom Aspect Ratio",
-      "steam_app_id": "1222140",
-      "install_dir": "Detroit Become Human",
-      "executable": "DetroitBecomeHuman.exe",
-      "source": {
-        "kind": "archive",
-        "path": "Detroit Become Human/Detroit-Become-Human-v1.0.0.zip",
-        "sha256": "d165309c34fe9ca380670efe9b096e5b96060f8b57c8db25f6374aa87c13b9fd"
-      },
-      "files": ["dinput8.dll", "DetroitBecomeHuman_ARFix.asi", "DetroitBecomeHuman_ARFix.ini"],
-      "ini_file": "DetroitBecomeHuman_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "wine_dll_overrides": ["dinput8=n,b"]
     },

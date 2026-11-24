@@ -99,7 +99,7 @@ class CatalogInstallTests(GameTest):
         self.assertEqual([], list(self.game.iterdir()))
 
     def test_asi_logs_use_the_real_mod_file_names(self) -> None:
-        for mod_id, log in (("bloodstained-ritual-of-the-night", "BloodstainedRotN/Binaries/Win64/BloodstainedARFix.log"),
+        for mod_id, log in (("code-vein", "CodeVein/Binaries/Win64/CodeVein_ARFix.log"),
                             ("sonic-x-shadow-generations", "SonicShadow_ARFix.log")):
             with self.subTest(mod=mod_id):
                 mod = catalog_mod(mod_id)
