@@ -2,7 +2,11 @@
 
 ## New in 2.1.0
 
-- **New fix:** Plants vs. Zombies GOTY Edition (16:9). Back up your save first; see its ReadMe.
+- **New fixes:** Bayonetta, CRISIS CORE -FINAL FANTASY VII- REUNION, DYNASTY WARRIORS 6, Emperor: Rise of the Middle Kingdom, FINAL FANTASY XV WINDOWS EDITION, Hollow Knight, Hollow Knight: Silksong, Life is Strange Remastered, Life is Strange: Before the Storm Remastered, Life is Strange 2, Plants vs. Zombies GOTY Edition (16:9; back up your save first, see its ReadMe), STAR OCEAN THE SECOND STORY R and The Adventures of Elliot: The Millennium Tales.
+- **Updated:** DAVE THE DIVER, Dead Cells, Devil May Cry 4 Special Edition, Devil May Cry 5, DmC Devil May Cry, Dynasty Warriors 3: Complete Edition Remastered, DYNASTY WARRIORS 7 and 8, Dynasty Warriors: Origins, Final Fantasy XIII, both Guacamelee! games, Ninja Gaiden Sigma 2, Nioh: Complete Edition, both Ori games, Persona 5 Royal, Resident Evil 2/3/4/7/Village/Requiem, SAMURAI WARRIORS: Spirit of Sanada, Warriors Orochi 3 and 4 Ultimate and Ys VIII: Lacrimosa of DANA.
+- **Removed:** Bloodstained: Ritual of the Night and Detroit: Become Human.
+- **Desktop app updates.** Check for a new version in the app and open its download.
+- **Scan progress** in the Games tab, and mods grouped by author in the Mods tab.
 - **Clearer labels.** Undertale and Plants vs. Zombies now show **(4:3 -> 16:9 Fix)** in the Games tab.
 - **Safer Apply.** If Apply fails partway, the original files it had replaced are put back.
 - **Cleaner Remove.** Remove now works when the game's original files are read-only on Windows, and restored files keep their permissions.

@@ -36,6 +36,11 @@ NO_LOADER_LICENSE = {"ai-the-somnium-files", "brotato", "emperor-rise-of-the-mid
 NO_ZIP_README = {"final-fantasy-xiii"}  # its README ships in the separate release zip
 
 
+def _lines(text: bytes) -> list[bytes]:
+    """Git may change line endings on checkout, so texts are compared without them."""
+    return text.splitlines()
+
+
 def _credit_names(mod) -> tuple[str, ...]:
     return tuple(credit.name for credit in mod.credits)
 
@@ -353,7 +358,7 @@ class CatalogContentTests(unittest.TestCase):
                 self.assertEqual(ZIP_EXTRAS.get(mod.mod_id, set()), extras)
                 if "README.md" in required:
                     readme = archive.read("README.md")
-                    self.assertEqual((REPOSITORY_ROOT / mod_readme_path(mod)).read_bytes(), readme)
+                    self.assertEqual(_lines((REPOSITORY_ROOT / mod_readme_path(mod)).read_bytes()), _lines(readme))
                     for mention in README_MENTIONS.get(mod.mod_id, ()):
                         self.assertIn(mention, readme)
 
@@ -453,4 +458,4 @@ class CatalogContentTests(unittest.TestCase):
         folder = REPOSITORY_ROOT / "Final Fantasy XIII"
         with ZipFile(folder / "Final-Fantasy-XIII-v1.1.0.zip") as release:
             self.assertIsNone(release.testzip())
-            self.assertEqual((folder / "README.md").read_bytes(), release.read("README.md"))
+            self.assertEqual(_lines((folder / "README.md").read_bytes()), _lines(release.read("README.md")))
