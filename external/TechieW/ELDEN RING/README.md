@@ -1,6 +1,6 @@
 # Elden Ring Ultrawide Fix (Offline)
 
-Author: [TechieW](https://www.nexusmods.com/eldenring/mods/7870).
+Author: [TechieW](https://github.com/techiew/EldenRingMods) (MIT, see `LICENSE`); release from [Nexus Mods](https://www.nexusmods.com/eldenring/mods/7870).
 The author's release ZIP is kept unchanged.
 
 ## AnyAspectRatio plugin

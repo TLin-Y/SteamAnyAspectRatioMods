@@ -790,6 +790,10 @@
           "support": [
             {
               "label": "Elden Ring",
+              "url": "https://github.com/techiew/EldenRingMods"
+            },
+            {
+              "label": "Nexus Mods",
               "url": "https://www.nexusmods.com/eldenring/mods/7870"
             }
           ]

@@ -47,7 +47,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Dark Byte (Eric Heijnen)** — [Cheat Engine](https://github.com/cheat-engine/cheat-engine/), the tool used to find the aspect-ratio and FOV values for about 90% of the games here.
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
-- **TechieW** — [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
+- **TechieW** — [EldenRingMods](https://github.com/techiew/EldenRingMods) (MIT), packaged as the [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
 - **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
 - **p1xel8ted** — [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes) for Hollow Knight and Hollow Knight: Silksong.
 - **PhantomGamers** — [SUWSF patches for Final Fantasy X/X-2 HD Remaster](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/).

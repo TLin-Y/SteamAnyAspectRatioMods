@@ -13,7 +13,7 @@ Special thanks to:
 - [Nicolas Busseneau](https://github.com/nbusseneau/hephaistos), for Hephaistos, the Hades aspect-ratio patcher.
 - [TEODORMAX](https://www.nexusmods.com/finalfantasyxiii2/mods/42), for Final Fantasy XIII-2 and Lightning Returns fixes.
 - [Twig](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517), for the Undertale Ultrawide Fix.
-- [TechieW](https://www.nexusmods.com/eldenring/mods/7870), for the Elden Ring Ultrawide Fix.
+- [TechieW](https://github.com/techiew/EldenRingMods), for EldenRingMods and the [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870).
 - [Refilo](https://www.nexusmods.com/finalfantasyresonance/mods/29), for the Final Fantasy Resonance Ultrawide Mod.
 - [p1xel8ted](https://github.com/p1xel8ted/UltrawideFixes), for the Hollow Knight and Hollow Knight: Silksong Ultra-Wide mods.
 - [Kamiccolo](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/), for the Final Fantasy X/X-2 HD Remaster patches.
