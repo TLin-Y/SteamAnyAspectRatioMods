@@ -73,21 +73,6 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
-      "id": "beyond-two-souls",
-      "name": "BEYOND: Two Souls - Custom Aspect Ratio",
-      "steam_app_id": "960990",
-      "install_dir": "BEYOND Two Souls",
-      "executable": "BeyondTwoSouls_Steam.exe",
-      "source": {
-        "kind": "archive",
-        "path": "BEYOND Two Souls/BEYOND-Two-Souls-v1.0.0.zip",
-        "sha256": "9c97e4b9f88fec4645e2cd7a86f4871dcef0fa1904e0b4fa4c7ff3ebc198bb56"
-      },
-      "files": ["dinput8.dll", "BeyondTwoSouls_ARFix.asi", "BeyondTwoSouls_ARFix.ini"],
-      "ini_file": "BeyondTwoSouls_ARFix.ini",
-      "wine_dll_overrides": ["dinput8=n,b"]
-    },
-    {
       "id": "brotato",
       "name": "Brotato - Any Aspect Ratio",
       "steam_app_id": "1942280",
