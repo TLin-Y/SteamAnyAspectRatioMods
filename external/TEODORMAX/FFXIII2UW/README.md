@@ -1,6 +1,6 @@
 # FFXIII2UW - Final Fantasy XIII-2 Ultrawide Fix
 
-Author: TEODORMAX - https://www.nexusmods.com/finalfantasyxiii2/mods/42
+[![Nexus Mods](https://img.shields.io/badge/Nexus%20Mods-TEODORMAX-DA8E35?style=for-the-badge)](https://www.nexusmods.com/finalfantasyxiii2/mods/42)
 
 Version 1.4.0, last updated 17 July 2026.
 

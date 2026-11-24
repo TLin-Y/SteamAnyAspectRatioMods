@@ -1,5 +1,7 @@
 # Undertale Ultrawide Fix
 
+[![Steam](https://img.shields.io/badge/Steam-Twig-000000?style=for-the-badge&logo=steam&logoColor=white)](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517)
+
 ## Install
 For manual installation, rename the original `data.win` to `data.win.bak`, then
 extract `Undertale-Ultrawide-Fix.zip` into the folder containing `UNDERTALE.exe`.
@@ -12,5 +14,3 @@ Unapply the mod to delete its `data.win` and rename `data.win.bak` back to `data
 
 ## Enable
 Start Undertale, load or create a save, press Esc, then select Settings.
-
-By Twig: https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517

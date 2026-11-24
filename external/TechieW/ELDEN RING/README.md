@@ -1,7 +1,8 @@
 # Elden Ring Ultrawide Fix (Offline)
 
-Author: [TechieW](https://github.com/techiew/EldenRingMods) (MIT, see `LICENSE`); release from [Nexus Mods](https://www.nexusmods.com/eldenring/mods/7870).
-The author's release ZIP is kept unchanged.
+[![GitHub](https://img.shields.io/badge/GitHub-TechieW-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/techiew/EldenRingMods) [![Nexus Mods](https://img.shields.io/badge/Nexus%20Mods-TechieW-DA8E35?style=for-the-badge)](https://www.nexusmods.com/eldenring/mods/7870)
+
+MIT licensed (see `LICENSE`). The author's release ZIP is kept unchanged.
 
 ## AnyAspectRatio plugin
 

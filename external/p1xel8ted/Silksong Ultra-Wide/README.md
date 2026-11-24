@@ -1,6 +1,8 @@
 # Hollow Knight: Silksong - Ultra-Wide
 
-Author: [p1xel8ted](https://www.nexusmods.com/hollowknightsilksong/mods/32). The author's release zip (v0.1.8) is kept unchanged. It bundles BepInEx 5, ConfigurationManager and the mod.
+[![Nexus Mods](https://img.shields.io/badge/Nexus%20Mods-p1xel8ted-DA8E35?style=for-the-badge)](https://www.nexusmods.com/hollowknightsilksong/mods/32)
+
+The author's release zip (v0.1.8) is kept unchanged. It bundles BepInEx 5, ConfigurationManager and the mod.
 
 Removes the game's resolution and aspect-ratio limits and adds ultra-wide support, an FOV option, vignette and hero-light controls, a HUD offset and a splash-screen skip.
 

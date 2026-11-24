@@ -1,6 +1,6 @@
 # UltrawideFix - Lightning Returns: Final Fantasy XIII
 
-Author: TEODORMAX - https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35
+[![Nexus Mods](https://img.shields.io/badge/Nexus%20Mods-TEODORMAX-DA8E35?style=for-the-badge)](https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35)
 
 Version 1.0.0, last updated 28 July 2026.
 

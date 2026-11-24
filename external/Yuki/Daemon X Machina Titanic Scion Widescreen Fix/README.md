@@ -1,6 +1,7 @@
 # Daemon X Machina: Titanic Scion Widescreen Fix
 
-Author: [Yuki](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
+[![Website](https://img.shields.io/badge/Website-Yuki-555555?style=for-the-badge)](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/)
+
 `patch.zip` holds the author's `patch.7z` contents repacked as ZIP for the plugin. The only change: `SUWSF.ini` defaults to `Resolution="1280x800"` (was `"auto"`) with a comment explaining the setting.
 
 Made for game version 1.2.2. A later game update may break it until the author updates the patch.

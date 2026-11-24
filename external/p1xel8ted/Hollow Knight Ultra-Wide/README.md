@@ -1,6 +1,8 @@
 # Hollow Knight - Ultra-Wide
 
-Author: [p1xel8ted](https://github.com/p1xel8ted/UltrawideFixes/releases/tag/HollowKnight). Release v0.1.2 (Windows/Proton build). The author ships a `.7z`; it is repacked here unchanged as a `.zip` (same files and paths) because the plugin only reads zip archives. It bundles BepInEx 5, ConfigurationManager and the mod.
+[![GitHub](https://img.shields.io/badge/GitHub-p1xel8ted-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/p1xel8ted/UltrawideFixes/releases/tag/HollowKnight)
+
+Release v0.1.2 (Windows/Proton build). The author ships a `.7z`; it is repacked here unchanged as a `.zip` (same files and paths) because the plugin only reads zip archives. It bundles BepInEx 5, ConfigurationManager and the mod.
 
 Removes the game's resolution and aspect-ratio limits and adds ultra-wide support, an FOV option, menu backgrounds that fill the screen, a hero-light toggle and a HUD offset.
 

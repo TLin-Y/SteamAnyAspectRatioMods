@@ -1,6 +1,6 @@
 # MHW16x10Fix - Monster Hunter: World
 
-Author: MinuteReversal - https://github.com/MinuteReversal/MHW16x10Fix
+[![GitHub](https://img.shields.io/badge/GitHub-MinuteReversal-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/MinuteReversal/MHW16x10Fix)
 
 Version 0.11.13 (released 27 Oct 2026), MIT licensed (see [LICENSE](./LICENSE)).
 

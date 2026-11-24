@@ -1,6 +1,8 @@
 # Final Fantasy Resonance - Ultrawide Mod
 
-Author: [Refilo](https://www.nexusmods.com/finalfantasyresonance/mods/29). The author's release zip (v2.6.3) is kept unchanged; its `README.txt` has the full option list.
+[![Nexus Mods](https://img.shields.io/badge/Nexus%20Mods-Refilo-DA8E35?style=for-the-badge)](https://www.nexusmods.com/finalfantasyresonance/mods/29)
+
+The author's release zip (v2.6.3) is kept unchanged; its `README.txt` has the full option list.
 
 Hor+ ultrawide (32:9, 24:10, 21:9) and Vert+ for screens taller than 16:9 such as 16:10 (Steam Deck 1280x800): more of the world above and below instead of zooming in; menus, HUD and cutscenes keep their 16:9 layout.
 

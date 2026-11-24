@@ -1,5 +1,7 @@
 # Hades - Hephaistos Aspect Ratio Fix
 
+[![GitHub](https://img.shields.io/badge/GitHub-Nicolas%20Busseneau-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/nbusseneau/hephaistos)
+
 Hephaistos patches Hades for a selected resolution, including ultrawide and
 Steam Deck 16:10. The Linux release is included for SteamOS.
 
@@ -40,5 +42,3 @@ the helper.
 Hephaistos expands the gameplay viewport, but static artwork and many menus
 remain centered at 16:9. See the [upstream README](https://github.com/nbusseneau/hephaistos)
 for all options and troubleshooting.
-
-By Nicolas Busseneau: https://github.com/nbusseneau/hephaistos

@@ -1,6 +1,8 @@
 # FINAL FANTASY X/X-2 HD Remaster - SUWSF Widescreen Patches
 
-FFX and FFX-2 widescreen patches by [Kamiccolo](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/) ([Ko-fi](https://ko-fi.com/kamiccolo)), for [SUWSF](https://github.com/PhantomGamers/SUWSF) by PhantomGamers (MIT, see `LICENSE`).
+[![PCGamingWiki](https://img.shields.io/badge/PCGamingWiki-Kamiccolo-556B2F?style=for-the-badge)](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/) [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Kamiccolo-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/kamiccolo)
+
+FFX and FFX-2 widescreen patches for [SUWSF](https://github.com/PhantomGamers/SUWSF) by PhantomGamers (MIT, see `LICENSE`).
 
 The files are the author's release, repacked at the zip root. The only change: `SUWSF.ini` defaults to `Resolution="1280x800"` (was `"auto"`) with a comment explaining the setting.
 

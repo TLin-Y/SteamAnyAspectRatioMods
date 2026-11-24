@@ -596,7 +596,7 @@
       "source": {
         "kind": "archive",
         "path": "external/Twig/Undertale/Undertale-Ultrawide-Fix.zip",
-        "sha256": "235c2e668eea15f2abc2bb85cf005cb026ee560af6d08b57153574cd84c5ea6a"
+        "sha256": "28af39bfcff61e6c16dbdaf39d0a100b2c28de8730289c553bc7192d3e94b4fb"
       },
       "files": ["data.win"],
       "backup_file": "data.win.bak",
@@ -624,7 +624,7 @@
       "source": {
         "kind": "archive",
         "path": "external/NicolasBusseneau/Hephaistos/hephaistos-linux.zip",
-        "sha256": "c24924b42e5b26ce9bc7370f5ff5ba9bc7d476678f9305fb31313fe1f4b06477"
+        "sha256": "6bc30941bfb4431a97fbe6ab1dd40fc102ca153a96af74bdad705296c2519050"
       },
       "files": ["hephaistos", "Hephaistos-README.md"],
       "ini_file": null,
