@@ -589,18 +589,19 @@
     },
     {
       "id": "undertale",
-      "name": "Undertale - Ultrawide Fix",
+      "name": "Undertale - Widescreen Fix",
       "steam_app_id": "391540",
       "install_dir": "Undertale",
       "executable": "UNDERTALE.exe",
       "source": {
         "kind": "archive",
         "path": "external/Twig/Undertale/Undertale-Ultrawide-Fix.zip",
-        "sha256": "28af39bfcff61e6c16dbdaf39d0a100b2c28de8730289c553bc7192d3e94b4fb"
+        "sha256": "2da261a1f5de0312a76fcaa6b8883e55d415e054e30f664fc045bed211713e13"
       },
       "files": ["data.win"],
       "backup_file": "data.win.bak",
       "ini_file": null,
+      "display_tags": ["4x3-to-16x9-fix"],
       "wine_dll_overrides": [],
       "credits": [
         {
@@ -609,6 +610,54 @@
             {
               "label": "Undertale",
               "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517"
+            },
+            {
+              "label": "PvZ",
+              "url": "https://github.com/Twig6943/PvZWidescreenSteam"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plants-vs-zombies-widescreen",
+      "name": "Plants vs. Zombies GOTY Edition - Widescreen",
+      "steam_app_id": "3590",
+      "install_dir": "Plants Vs Zombies",
+      "executable": "PlantsVsZombies.exe",
+      "source": {
+        "kind": "archive",
+        "path": "external/Twig/PvZWidescreenSteam/PvZWidescreenForSteam.zip",
+        "sha256": "f51f73fc1e6e4bea38fd444258c1042b756abc0491a32d0fc5b2c82d12b22d5d"
+      },
+      "files": ["PlantsVsZombies.exe", "main.pak", "pvzgame.exe"],
+      "backups": [
+        {"target": "PlantsVsZombies.exe", "backup": "PlantsVsZombies.exe.pvz-original.bak"},
+        {"target": "main.pak", "backup": "main.pak.pvz-original.bak"}
+      ],
+      "ini_file": null,
+      "display_tags": ["4x3-to-16x9-fix", "must-read-readme"],
+      "wine_dll_overrides": [],
+      "credits": [
+        {
+          "name": "Twig",
+          "support": [
+            {
+              "label": "Undertale",
+              "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517"
+            },
+            {
+              "label": "PvZ",
+              "url": "https://github.com/Twig6943/PvZWidescreenSteam"
+            }
+          ]
+        },
+        {
+          "name": "HenryJk",
+          "support": [
+            {
+              "label": "PvZ",
+              "url": "https://github.com/HenryJk/PvZWidescreen"
             }
           ]
         }

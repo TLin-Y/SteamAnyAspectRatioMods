@@ -173,6 +173,14 @@ PINNED = {
         "source.path": "external/Twig/Undertale/Undertale-Ultrawide-Fix.zip", "files": ("data.win",),
         "backup_file": "data.win.bak", "readme": "external/Twig/Undertale/README.md", "credits": ("Twig",),
     },
+    "plants-vs-zombies-widescreen": {
+        "steam_app_id": "3590", "install_dir": "Plants Vs Zombies", "executable": "PlantsVsZombies.exe",
+        "source.path": "external/Twig/PvZWidescreenSteam/PvZWidescreenForSteam.zip",
+        "files": ("PlantsVsZombies.exe", "main.pak", "pvzgame.exe"),
+        "backups": (ModBackup("PlantsVsZombies.exe", "PlantsVsZombies.exe.pvz-original.bak"),
+                    ModBackup("main.pak", "main.pak.pvz-original.bak")),
+        "readme": "external/Twig/PvZWidescreenSteam/README.md", "credits": ("Twig", "HenryJk"),
+    },
     "elden-ring-ultrawide-fix": {
         "offline_only": True, "install_dir": "ELDEN RING", "executable": "Game/eldenring.exe",
         "executable_alternatives": _in("Game", "modengine2_launcher.exe", "start_protected_game.exe",

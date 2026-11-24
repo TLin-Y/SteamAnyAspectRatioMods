@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Game mods](https://img.shields.io/badge/Game%20mods-161-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
+[![Game mods](https://img.shields.io/badge/Game%20mods-162-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -49,7 +49,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **MinuteReversal** — [MHW16x10Fix](https://github.com/MinuteReversal/MHW16x10Fix) for Monster Hunter: World.
 - **Nicolas Busseneau** — [Hephaistos](https://github.com/nbusseneau/hephaistos), the Hades aspect-ratio patcher.
 - **TEODORMAX** — [FFXIII2UW](https://www.nexusmods.com/finalfantasyxiii2/mods/42) for Final Fantasy XIII-2 and [UltrawideFix](https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35) for Lightning Returns.
-- **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
+- **Twig** — [Undertale Widescreen Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517) and [PvZWidescreenSteam](https://github.com/Twig6943/PvZWidescreenSteam) for Plants vs. Zombies, based on [PvZWidescreen](https://github.com/HenryJk/PvZWidescreen) by **HenryJk**.
 - **TechieW** — [EldenRingMods](https://github.com/techiew/EldenRingMods) (MIT), packaged as the [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
 - **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
 - **p1xel8ted** — [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes) for Hollow Knight and Hollow Knight: Silksong.
@@ -188,6 +188,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Persona 5 Royal | TLin-Y | [1687950](https://store.steampowered.com/app/1687950) | [v2.4.6](./Persona%205%20Royal/Persona-5-Royal-v2.4.6.zip) | 2026-11-23 | [README](./Persona%205%20Royal/README.md) |
 | Persona 5 Strikers | Lyall | [1382330](https://store.steampowered.com/app/1382330) | [v1.0.2](./external/Lyall/P5StrikersFix/P5StrikersFix_1.0.2.zip) | 2026-08-21 | [P5StrikersFix](https://codeberg.org/Lyall/P5StrikersFix) |
 | Phoenix Wright: Ace Attorney Trilogy | TLin-Y | [787480](https://store.steampowered.com/app/787480) | [v1.0.1](./Phoenix%20Wright%20Ace%20Attorney%20Trilogy/Phoenix-Wright-Ace-Attorney-Trilogy-v1.0.1.zip) | 2026-11-13 | [README](./Phoenix%20Wright%20Ace%20Attorney%20Trilogy/README.md) |
+| Plants vs. Zombies GOTY Edition | Twig, HenryJk | [3590](https://store.steampowered.com/app/3590) | [v1.0](./external/Twig/PvZWidescreenSteam/PvZWidescreenForSteam.zip) | 2024-03-16 | [README](./external/Twig/PvZWidescreenSteam/README.md) |
 | PRAGMATA | TLin-Y | [3357650](https://store.steampowered.com/app/3357650) | [v1.0.0](./PRAGMATA/PRAGMATA-v1.0.0.zip) | 2026-11-13 | [README](./PRAGMATA/README.md) |
 | Prince of Persia: The Lost Crown | Lyall | [2751000](https://store.steampowered.com/app/2751000) | [v0.8.6](./external/Lyall/PoPTLCFix/PoPTLCFix_0.8.6.zip) | 2025-06-06 | [PoPTLCFix](https://codeberg.org/Lyall/PoPTLCFix) |
 | RAIDOU Remastered: The Mystery of the Soulless Army | Lyall | [2288350](https://store.steampowered.com/app/2288350) | [v0.0.4](./external/Lyall/RaidouFix/RaidouFix_0.0.4.zip) | 2025-06-25 | [RaidouFix](https://codeberg.org/Lyall/RaidouFix) |
@@ -220,7 +221,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Tormented Souls 2 | Lyall | [2464280](https://store.steampowered.com/app/2464280) | [v0.0.1](./external/Lyall/TormentedSouls2Fix/TormentedSouls2Fix_0.0.1.zip) | 2025-12-11 | [TormentedSouls2Fix](https://codeberg.org/Lyall/TormentedSouls2Fix) |
 | Trails in the Sky 1st Chapter | Lyall | [3375780](https://store.steampowered.com/app/3375780) | [v0.0.2](./external/Lyall/Sky1stChapterFix/Sky1stChapterFix_0.0.2.zip) | 2025-10-20 | [Sky1stChapterFix](https://codeberg.org/Lyall/Sky1stChapterFix) |
 | Trials of Mana | TLin-Y | [924980](https://store.steampowered.com/app/924980) | [v1.0.1](./Trials%20of%20Mana/Trials-of-Mana-v1.0.1.zip) | 2026-11-17 | [README](./Trials%20of%20Mana/README.md) |
-| Undertale | Twig | [391540](https://store.steampowered.com/app/391540) | [Ultrawide Fix](./external/Twig/Undertale/Undertale-Ultrawide-Fix.zip) | 2026-11-06 | [Steam Community](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517) |
+| Undertale | Twig | [391540](https://store.steampowered.com/app/391540) | [Widescreen Fix](./external/Twig/Undertale/Undertale-Ultrawide-Fix.zip) | 2026-11-06 | [Steam Community](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517) |
 | Venus Vacation PRISM - DEAD OR ALIVE Xtreme | Lyall | [3155730](https://store.steampowered.com/app/3155730) | [v0.0.1](./external/Lyall/DOAXVVPrismFix/DOAXVVPrismFix_0.0.1.zip) | 2026-01-22 | [DOAXVVPrismFix](https://codeberg.org/Lyall/DOAXVVPrismFix) |
 | Visions of Mana | TLin-Y | [2490990](https://store.steampowered.com/app/2490990) | [v1.0.0](./Visions%20of%20Mana/Visions-of-Mana-v1.0.0.zip) | 2026-11-02 | [README](./Visions%20of%20Mana/README.md) |
 | Warriors Orochi 3 Ultimate | TLin-Y | [1879330](https://store.steampowered.com/app/1879330) | [v1.2.0](./Warriors%20Orochi%203%20Ultimate/Warriors-Orochi-3-Ultimate-v1.2.0.zip) | 2026-11-19 | [README](./Warriors%20Orochi%203%20Ultimate/README.md) |

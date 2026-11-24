@@ -1,6 +1,8 @@
-# Undertale Ultrawide Fix
+# Undertale Widescreen Fix
 
 [![Steam](https://img.shields.io/badge/Steam-Twig-000000?style=for-the-badge&logo=steam&logoColor=white)](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517)
+
+Plays Undertale in 16:9 instead of 4:3.
 
 ## Install
 For manual installation, rename the original `data.win` to `data.win.bak`, then

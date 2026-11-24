@@ -2,6 +2,8 @@
 
 ## New in 2.1.0
 
+- **New fix:** Plants vs. Zombies GOTY Edition (16:9). Back up your save first; see its ReadMe.
+- **Clearer labels.** Undertale and Plants vs. Zombies now show **(4:3 -> 16:9 Fix)** in the Games tab.
 - **Safer Apply.** If Apply fails partway, the original files it had replaced are put back.
 - **Cleaner Remove.** Remove now works when the game's original files are read-only on Windows, and restored files keep their permissions.
 
