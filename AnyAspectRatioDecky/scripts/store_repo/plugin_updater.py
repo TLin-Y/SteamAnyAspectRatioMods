@@ -11,7 +11,7 @@ def read_installed_version(plugin_dir: Path) -> str:
     raise PluginError(STORE_UPDATES)
 
 
-def check_for_update(repository_url: str, installed_version: str) -> dict[str, object]:
+def check_for_update(repository_url: str, installed_version: str, asset_pattern: object = None) -> dict[str, object]:
     raise PluginError(STORE_UPDATES)
 
 

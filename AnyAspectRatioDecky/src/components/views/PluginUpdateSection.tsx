@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { ButtonItem, ConfirmModal, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
+import { ButtonItem, ConfirmModal, Navigation, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
 import { checkForPluginUpdate, installPluginUpdateRequest, PLUGIN_NAME, PLUGIN_VERSION } from "../../services/callables";
 import { errorText } from "../../services/formatters";
 import { showErrorModal } from "../../services/modals";
+import { DESKTOP_ACTIONS } from "../../services/platform";
 import type { PluginUpdateInfo } from "../../services/types";
+
+// The desktop app checks for its own release file (for this OS) and downloads it through the browser.
+const DESKTOP = DESKTOP_ACTIONS !== null;
+const PRODUCT = DESKTOP ? "app" : "plugin";
 
 type Props = {
   busy: boolean;
@@ -39,13 +44,13 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
   const check = async () => {
     setBusy(true);
     setUpdate(null);
-    setStatus("Checking for a newer plugin release...");
+    setStatus(`Checking for a newer ${PRODUCT} release...`);
     try {
       const result = await checkForPluginUpdate();
       setUpdate(result);
       setStatus(
         !result.update_available ? `${PLUGIN_NAME} ${PLUGIN_VERSION} is up to date.`
-          : !result.download_url ? `Version ${result.latest_version} exists but has no plugin zip attached yet.`
+          : !result.download_url ? `Version ${result.latest_version} exists but has no ${DESKTOP ? "download for this computer" : "plugin zip"} attached yet.`
           : `Version ${result.latest_version} is available.`,
       );
     } catch (error) {
@@ -80,15 +85,18 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
 
   const confirmInstall = () => showModal(
     <ConfirmModal
-      strTitle={`Update to ${update?.latest_version}?`}
-      strDescription={`Downloads ${PLUGIN_NAME} ${update?.latest_version} from ${repositoryLabel} and replaces the installed plugin files. Your settings and applied mods are kept.`}
-      strOKButtonText="Update"
-      onOK={install}
+      strTitle={`${DESKTOP ? "Download" : "Update to"} ${update?.latest_version}?`}
+      strDescription={(DESKTOP
+        ? `Opens the download of ${PLUGIN_NAME} ${update?.latest_version} for this computer in your browser. Close ${PLUGIN_NAME}, then use the downloaded file in place of the current app.`
+        : `Downloads ${PLUGIN_NAME} ${update?.latest_version} from ${repositoryLabel} and replaces the installed plugin files.`
+      ) + " Your settings and applied mods are kept."}
+      strOKButtonText={DESKTOP ? "Download" : "Update"}
+      onOK={DESKTOP ? () => update && Navigation.NavigateToExternalWeb(update.download_url) : install}
     />,
   );
 
   return (
-    <PanelSection title="Plugin update">
+    <PanelSection title={DESKTOP ? "App update" : "Plugin update"}>
       <PanelSectionRow>
         <ButtonItem
           layout="below"
@@ -98,12 +106,12 @@ export function PluginUpdateSection({ busy, setBusy, offline, repositoryLabel }:
             ? "Unavailable in offline mode."
             : `Installed: ${PLUGIN_VERSION}. Checks the releases of ${repositoryLabel}.`}
         >
-          Check for plugin update
+          Check for {PRODUCT} update
         </ButtonItem>
       </PanelSectionRow>
       {update?.update_available && (
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={confirmInstall} disabled={busy}>
+          <ButtonItem layout="below" onClick={confirmInstall} disabled={busy || !update.download_url}>
             Update to {update.latest_version}
           </ButtonItem>
         </PanelSectionRow>

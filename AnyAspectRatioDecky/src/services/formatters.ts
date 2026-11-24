@@ -1,5 +1,8 @@
 import type { updateDependencies } from "./callables";
 
+/** Game titles on the Games tab and applied mods/authors on the Mods tab. */
+export const APPLIED_BLUE = "#64b5f6";
+
 export function formatCatalogUpdate(result: Awaited<ReturnType<typeof updateDependencies>>): string {
   const summary = `${result.catalog_changed ? "Catalog updated" : "Catalog already up to date"}: ` +
     `${result.mod_count} mod(s), ${result.local_archive_count} local archive(s). ` +

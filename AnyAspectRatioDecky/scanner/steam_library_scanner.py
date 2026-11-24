@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from helper.validator import Validator
+from logger.plugin_logger import log
 from scanner import steam_layout
 from utils import folders
 from utils.steam_vdf import VdfParseError, read_vdf
@@ -201,6 +202,7 @@ def scan_steam_libraries(steam_roots: Sequence[Path]) -> SteamScanReport:
             warnings.append(f"Could not enumerate manifests in {apps_dir}: {error}")
             continue
 
+        log.info("Reading Steam library %s (%d games)", library, len(manifests))
         for manifest_path in manifests:
             app = _read_manifest(manifest_path, library, common_dir, warnings)
             if app is not None:

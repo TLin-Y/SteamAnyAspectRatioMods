@@ -80,6 +80,7 @@ def freeze() -> Path:
     write_licenses()
     data = {
         PLUGIN / "catalog.json": ".",
+        PLUGIN / "plugin.json": ".",  # The installed version for the update check.
         WEB / "index.html": "web",
         WEB / "styles.css": "web",
         WEB / "dist" / "app.js": "web/dist",

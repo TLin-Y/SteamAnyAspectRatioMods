@@ -4,7 +4,7 @@
   PanelSectionRow,
 } from "@decky/ui";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { GameDetails } from "./GameDetails";
+import { GameDetails, LogText } from "./GameDetails";
 import { GameCard } from "./GameCard";
 import { GameFilter } from "./GameFilter";
 import { useIniEditor } from "./useIniEditor";
@@ -18,6 +18,7 @@ import {
   getModReadme,
   selectMatchedGame,
   getDiskUsage,
+  getLog,
 } from "../../services/callables";
 import {
   confirmOfflineMod,
@@ -47,6 +48,7 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
   const [clockTick, setClockTick] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [scanLog, setScanLog] = useState("");
   const [scanOutdated, setScanOutdated] = useRemembered("games.scanOutdated", false);
   // The step a running mod change is on, shown on that game's card; null when nothing runs.
   const [modProgress, setModProgress] = useState<{ key: string; step: string } | null>(null);
@@ -106,6 +108,23 @@ function GamesTab({ dataRevision }: { dataRevision: number }) {
     initialRevision.current = dataRevision;
     setScanOutdated(true);
   }, [dataRevision]);
+
+  // While scanning, show the plugin log lines written since "Scan started" (slow SD cards and USB drives).
+  useEffect(() => {
+    if (!scanning) {
+      setScanLog("");
+      return;
+    }
+    const timer = window.setInterval(() => {
+      getLog(200).then(({ content }) => {
+        const lines = content.split("\n");
+        const start = lines.map((line) => line.endsWith(" Scan started")).lastIndexOf(true);
+        const recent = start < 0 ? [] : lines.slice(start + 1).slice(-8);
+        setScanLog(recent.map((line) => line.replace(/^\S+ \S+ \w+ /, "")).join("\n")); // Drop date, time, level.
+      }, () => undefined);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [scanning]);
 
   const notifyError = (title: string, message: string) => {
     setErrorMessage(message);
@@ -371,6 +390,11 @@ Required setting: ${setting}`, refreshError),
           >
             {scanning ? "Scanning Steam libraries..." : "Scan for supported games"}
           </ButtonItem>
+        </PanelSectionRow>
+      )}
+      {!selectedGame && scanLog && (
+        <PanelSectionRow>
+          <div style={{ fontSize: "12px", opacity: 0.8, width: "100%" }}><LogText text={scanLog} /></div>
         </PanelSectionRow>
       )}
       {!selectedGame && (

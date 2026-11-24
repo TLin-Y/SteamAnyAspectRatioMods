@@ -143,6 +143,18 @@ def _record_outcome(
             store.remove_matched_game(mod.mod_id, game_path)
 
 
+def _applied_mod_ids(store: PluginStore) -> frozenset[str]:
+    """Mods whose files are all present in some game, per the last scan (Apply/Remove clears it)."""
+    cached = store.load_last_scan()
+    games = cached["report"].get("supported_games") if cached else None
+    if not isinstance(games, list):
+        return frozenset()
+    return frozenset(
+        game["mod_id"] for game in games
+        if isinstance(game, dict) and game.get("file_status") == "complete" and isinstance(game.get("mod_id"), str)
+    )
+
+
 def _fetch_online_catalog(store: PluginStore) -> bool | None:
     with pack_operation():
         return refresh_catalog_on_start(store, store.load_settings())
@@ -304,7 +316,7 @@ class Plugin:
         return {
             "mod_count": len(source.mods),
             "offline_mode": store.load_settings().offline_mode,
-            "authors": summarize_credits(source.mods),
+            "authors": summarize_credits(source.mods, _applied_mod_ids(store)),
             "pack": store.pack_stats(),
         }
 
@@ -486,7 +498,8 @@ class Plugin:
     async def scan_supported_games(self) -> dict[str, object]:
         log.info("Scan started")
         with log.on_error("Scan failed"):
-            report = self._scan()
+            # In a thread, so the page can read the log for progress meanwhile.
+            report = await asyncio.to_thread(self._scan)
         for warning in report.warnings:
             if warning.startswith("Steam library is unavailable:"):
                 log.warning(warning)

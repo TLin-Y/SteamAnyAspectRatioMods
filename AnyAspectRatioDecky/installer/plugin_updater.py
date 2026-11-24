@@ -56,7 +56,9 @@ def latest_release(repository_url: str) -> tuple[str, dict[str, object], str]:
     return repository, release, latest_text
 
 
-def check_for_update(repository_url: str, installed_version: str) -> dict[str, object]:
+def check_for_update(
+    repository_url: str, installed_version: str, asset_pattern: re.Pattern[str] = _ASSET_PATTERN,
+) -> dict[str, object]:
     """Look up the latest release of the repository and report whether it is newer."""
     repository, release, latest_text = latest_release(repository_url)
     latest = parse_version(latest_text)  # never None: latest_release rejects other tags
@@ -68,7 +70,7 @@ def check_for_update(repository_url: str, installed_version: str) -> dict[str, o
             continue
         url = str(asset.get("browser_download_url") or "")
         name = str(asset.get("name") or "")
-        if _ASSET_PATTERN.match(name) and url.startswith(download_prefix):
+        if asset_pattern.match(name) and url.startswith(download_prefix):
             download_url = url
             break
 

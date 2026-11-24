@@ -312,23 +312,30 @@ def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
     ))
 
 
-def summarize_credits(mods: tuple[ModDefinition, ...]) -> list[dict[str, object]]:
-    """Group mods by author, the repository owner first, then most mods first."""
-    authors: dict[ModCredit, int] = {}
+def summarize_credits(
+    mods: tuple[ModDefinition, ...], applied_mod_ids: frozenset[str] = frozenset(),
+) -> list[dict[str, object]]:
+    """Group mods by author: the repository owner first, then most applied, then most mods; applied mods first."""
+    authors: dict[ModCredit, list[ModDefinition]] = {}
     for mod in mods:
         for credit in mod.credits:
-            authors[credit] = authors.get(credit, 0) + 1
+            authors.setdefault(credit, []).append(mod)
     return [
         {
             "name": credit.name,
             "url": credit.url,
             "support": [{"label": link.label, "url": link.url} for link in credit.support],
-            "mod_count": count,
+            "mod_count": len(owned),
+            "mods": [
+                {"id": mod.mod_id, "name": mod.name, "applied": mod.mod_id in applied_mod_ids}
+                for mod in sorted(owned, key=lambda mod: (mod.mod_id not in applied_mod_ids, mod.name.lower()))
+            ],
         }
-        for credit, count in sorted(
+        for credit, owned in sorted(
             authors.items(), key=lambda item: (
                 item[0].name != REPOSITORY_OWNER,
-                -item[1],
+                -sum(mod.mod_id in applied_mod_ids for mod in item[1]),
+                -len(item[1]),
                 item[0].name.lower(),
             )
         )

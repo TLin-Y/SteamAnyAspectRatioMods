@@ -79,6 +79,7 @@ export type CreditsInfo = {
     url: string;
     support: { label: string; url: string }[];
     mod_count: number;
+    mods: { id: string; name: string; applied: boolean }[];
   }[];
   pack: { file_count: number; size_bytes: number };
 };

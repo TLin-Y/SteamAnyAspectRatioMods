@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
 from installer import launcher
+from logger.plugin_logger import log
 from scanner.local_archives import build_local_mods, scan_local_archives
 from scanner.mod_catalog import ModDefinition, load_mod_catalog
 from scanner.non_steam_shortcuts import scan_non_steam_shortcuts
@@ -388,6 +389,7 @@ def match_supported_games(
 
     matcher = _GameMatcher(catalog, _ExecutableIndex.build(catalog), list(steam_scan.warnings))
     for app in steam_scan.apps:
+        log.info("Checking %s", app.name)
         matcher.match_app(app, mods_by_app_id.get(app.app_id, []))
     for shortcut in steam_scan.shortcuts:
         matcher.match_shortcut(shortcut)
@@ -395,6 +397,7 @@ def match_supported_games(
         _folder_key(app.game_path) for app in (*steam_scan.apps, *steam_scan.shortcuts) if app.game_path
     } | {_folder_key(game_path) for game_path, _ in matcher.known if game_path}
     for folder in _custom_game_folders(custom_game_dirs, matcher.warnings):
+        log.info("Checking folder %s", folder)
         matcher.match_folder(folder, steam_folders)
 
     return SupportedGameScanReport(

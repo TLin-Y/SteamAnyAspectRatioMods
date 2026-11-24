@@ -100,6 +100,16 @@ class CatalogRuleTests(CatalogEditTest):
         authors = summarize_credits(self.load())
         owned = len(self.document["mods"]) - 1
         self.assertEqual([("TLin-Y", owned), ("Other", 1)], [(author["name"], author["mod_count"]) for author in authors])
+        last = self.document["mods"][-1]
+        own = summarize_credits(self.load(), frozenset({last["id"]}))[0]["mods"]
+        self.assertEqual((last["id"], True), (own[0]["id"], own[0]["applied"]))
+        rest = [mod["name"].lower() for mod in own[1:]]
+        self.assertEqual(sorted(rest), rest)
+        self.assertFalse(any(mod["applied"] for mod in own[1:]))
+        self.document["mods"][1]["credits"] = [{"name": "Busy", "url": "https://example.com/b"}]
+        self.document["mods"][2]["credits"] = [{"name": "Busy", "url": "https://example.com/b"}]
+        ordered = summarize_credits(self.load(), frozenset({first["id"]}))
+        self.assertEqual(["TLin-Y", "Other", "Busy"], [author["name"] for author in ordered])
         self.assert_rejected(first, "credits", (
             [{"name": "Bad", "url": "http://x"}],
             [{"name": "Bad", "support": [{"label": "Pay", "url": "http://x"}]}],

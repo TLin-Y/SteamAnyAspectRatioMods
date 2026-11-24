@@ -2,6 +2,7 @@ import asyncio
 import importlib
 import logging
 import os
+import re
 import sys
 import threading
 import types
@@ -37,6 +38,9 @@ EXPOSED_METHODS = (
 
 
 NATIVE_WINDOWS = sys.platform == "win32"
+# build.py names the release files AnyAspectRatio-Desktop-<version>-<suffix>.
+RELEASE_SUFFIX = {"win32": "Windows.exe", "darwin": "macOS.zip"}.get(sys.platform, "Linux.tar.xz")
+RELEASE_ASSET = re.compile(rf"^{PLUGIN_NAME}-Desktop-v?\d+(?:\.\d+)*-{re.escape(RELEASE_SUFFIX)}$")
 
 
 def _drop_wine_overrides(method: str, result: object) -> None:
@@ -193,12 +197,23 @@ class DesktopBackend:
             raise self._main.PluginError("The game is no longer installed. Scan again and retry.")
         return games[0]
 
+    def check_app_update(self) -> dict[str, object]:
+        """The Decky updater's check, but for this OS's desktop release file."""
+        from installer.plugin_updater import check_for_update, read_installed_version
+
+        with self._main.log.on_error("App update check failed"):
+            return check_for_update(self._plugin._update_repository(), read_installed_version(plugin_root()), RELEASE_ASSET)
+
     def call(self, method: str, *args: object, **kwargs: object) -> object:
+        if method == "check_plugin_update":
+            return self.check_app_update()
         if method not in EXPOSED_METHODS:
             raise ValueError(f"Unknown method: {method}")
         result = asyncio.run(getattr(self._plugin, method)(*args, **kwargs))
         if NATIVE_WINDOWS:
             _drop_wine_overrides(method, result)
+        if method == "get_settings" and isinstance(result, dict):
+            result["self_update_enabled"] = True  # Shows the update check; installing opens the download.
         return result
 
     def start_catalog_refresh(self) -> None:

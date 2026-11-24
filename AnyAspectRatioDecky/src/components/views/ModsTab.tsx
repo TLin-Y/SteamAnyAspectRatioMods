@@ -12,7 +12,7 @@ import { openFilePicker } from "@decky/api";
 import type { FileSelectionType } from "@decky/api";
 import { getCredits, importOfflinePack, clearLocalData, updateDependencies, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
 import { showErrorModal } from "../../services/modals";
-import { errorText, formatBytes, formatCatalogUpdate } from "../../services/formatters";
+import { APPLIED_BLUE, errorText, formatBytes, formatCatalogUpdate } from "../../services/formatters";
 import type { CreditsInfo } from "../../services/types";
 
 type ActionState = { busy: boolean; status: string; completions: number };
@@ -35,6 +35,47 @@ const subscribeActionState = (listener: () => void) => {
 };
 
 const getActionState = () => actionState;
+
+type Author = CreditsInfo["authors"][number];
+
+const Divider = () => (
+  <PanelSectionRow>
+    <div style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.25)", margin: "8px 0" }} />
+  </PanelSectionRow>
+);
+
+const APPLIED_STYLE = { color: APPLIED_BLUE, fontWeight: "bold" } as const;
+
+// "https://codeberg.org/Lyall" -> "Codeberg"
+const siteName = (url: string) => {
+  const site = new URL(url).hostname.replace(/^www\./, "").split(".")[0];
+  return site.charAt(0).toUpperCase() + site.slice(1);
+};
+
+const showAuthorMods = (author: Author, applied: number) =>
+  showModal(
+    <ConfirmModal
+      strTitle={`${author.name} - ${applied}/${author.mod_count} mods`}
+      strOKButtonText="Close"
+      bAlertDialog
+    >
+      <div className="aar-scroll-pane" style={{ maxHeight: "60vh", overflowY: "auto" }}>
+        {author.mods.map((mod, index) => (
+          <div
+            key={mod.id}
+            style={{
+              display: "flex", gap: "8px", padding: "4px 8px", borderRadius: "3px",
+              background: index % 2 ? "transparent" : "rgba(255,255,255,0.05)",
+              ...(mod.applied ? APPLIED_STYLE : { color: "#6b6b6b" }),
+            }}
+          >
+            <span style={{ minWidth: "2.5em", textAlign: "right", flexShrink: 0 }}>{index + 1}.</span>
+            <span>{mod.name}</span>
+          </div>
+        ))}
+      </div>
+    </ConfirmModal>,
+  );
 
 async function runAction<T extends { warning?: string | null; [key: string]: unknown }>(
   title: string,
@@ -147,20 +188,41 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           <div role="status" style={{ fontSize: "12px", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{status}</div>
         </PanelSectionRow>
       )}
+      {credits && <Divider />}
+      {credits && (
+        <PanelSectionRow>
+          <div style={{ fontSize: "13px" }}>
+            Thank you to every author below. Your free, public fixes let us enjoy our games on the screens we love. ❤️
+          </div>
+        </PanelSectionRow>
+      )}
       {credits?.authors.map((author) => {
         const links = [
-          ...(author.url ? [{ label: author.url.replace("https://", ""), url: author.url }] : []),
+          ...(author.url ? [{ label: siteName(author.url), url: author.url }] : []),
           ...author.support,
         ];
+        const applied = author.mods.filter((mod) => mod.applied).length;
         return (
           <PanelSectionRow key={`${author.name}|${author.url}`}>
-            <div style={{ width: "100%" }}>
-              <div>{`${author.name} - ${author.mod_count} mod(s)`}</div>
+            <div style={{ width: "100%", marginBottom: "12px" }}>
+              <DialogButton
+                style={{ width: "100%", minWidth: 0, padding: "8px", fontSize: "15px", marginBottom: "4px" }}
+                onClick={() => showAuthorMods(author, applied)}
+              >
+                <span style={applied ? APPLIED_STYLE : undefined}>{author.name}</span>
+                {" - "}
+                <span style={applied ? APPLIED_STYLE : undefined}>{applied}</span>
+                {`/${author.mod_count} mods`}
+              </DialogButton>
               <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                 {links.map((link) => (
                   <DialogButton
                     key={link.url}
-                    style={{ flex: 1, minWidth: 0, minHeight: 0, height: "28px", padding: "0 4px", fontSize: "12px" }}
+                    style={{
+                      flex: 1, minWidth: 0, minHeight: 0, height: "26px", padding: "0 4px", fontSize: "12px",
+                      background: "transparent", border: "1px solid rgba(255,255,255,0.25)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}
                     disabled={credits.offline_mode}
                     onClick={() => Navigation.NavigateToExternalWeb(link.url)}
                   >
@@ -172,9 +234,7 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </PanelSectionRow>
         );
       })}
-      <PanelSectionRow>
-        <div style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.25)", margin: "8px 0" }} />
-      </PanelSectionRow>
+      <Divider />
       <PanelSectionRow>
         <ButtonItem layout="below" disabled={busy} onClick={importRepositoryZip}>
           Import offline mods pack
