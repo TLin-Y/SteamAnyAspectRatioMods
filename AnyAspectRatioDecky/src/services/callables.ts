@@ -3,7 +3,7 @@ import type { SupportedGameReport, PluginSettingsInfo, PluginUpdateInfo, Credits
 
 // Must match "name" in plugin.json and PLUGIN_NAME in helper/__init__.py.
 export const PLUGIN_NAME = "AnyAspectRatio";
-export const PLUGIN_VERSION = "2.0";
+export const PLUGIN_VERSION = "2.1";
 
 export const DEFAULT_PICKER_DIRECTORY = "/home/deck/Downloads";
 

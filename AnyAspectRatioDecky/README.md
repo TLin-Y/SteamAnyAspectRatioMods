@@ -16,7 +16,7 @@ This Decky plugin finds your supported games (in every Steam library, including 
 
 **From ZIP:**
 
-1. Download `AnyAspectRatio-2.0.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest) and put it on the Deck.
+1. Download `AnyAspectRatio-2.1.0.zip` from the [latest release](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases/latest) and put it on the Deck.
 2. In Decky, open **Settings → General** and turn on **Developer mode**.
 3. Open **Settings → Developer → Install Plugin from ZIP** and pick the zip.
 4. Open **AnyAspectRatio** and press **Scan for supported games**.

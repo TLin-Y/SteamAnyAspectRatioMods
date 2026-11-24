@@ -1,7 +1,7 @@
 from helper.errors import PluginError
 from installer import backups, game_folder, launcher, mod_ini
 from scanner.mod_catalog import ModDefinition, mod_log_names
-from utils import folders
+from utils import files, folders
 
 
 def remove_mod_files(
@@ -38,11 +38,11 @@ def remove_mod_files(
     backups.restore(file_backups)
     for target in targets:
         if target not in (kept_ini, shipped_launcher) and target not in file_backups:
-            target.unlink(missing_ok=True)
+            files.delete(target)
     launcher.restore(game_launcher)
     if shipped_launcher is not None:
-        shipped_launcher.unlink(missing_ok=True)
+        files.delete(shipped_launcher)
     for backup in file_backups.values():
-        backup.unlink(missing_ok=True)
+        files.delete(backup)
     folders.remove_empty_parents([target for target in targets if target != kept_ini], game_root)
     return []

@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from pathlib import Path
 
 from helper.errors import PluginError
@@ -53,9 +54,19 @@ def _stage_launcher(
 def _replace_files(
     targets: dict[str, Path], staged_by_target: dict[Path, Path], file_backups: dict[Path, Path], skipped: set[str],
 ) -> None:
-    for relative_path, target in targets.items():
-        if relative_path not in skipped:
-            files.replace_with_backup(staged_by_target[target], target, file_backups.get(target), "Mod replacement")
+    with ExitStack() as undo:
+        for relative_path, target in targets.items():
+            if relative_path in skipped:
+                continue
+            backup = file_backups.get(target)
+            is_new = not target.exists()
+            makes_backup = backup is not None and not is_new and not backup.exists()
+            files.replace_with_backup(staged_by_target[target], target, backup, "Mod replacement")
+            if makes_backup:
+                undo.callback(files.move, backup, target)
+            elif is_new:
+                undo.callback(files.delete, target)
+        undo.pop_all()
 
 
 def apply_mod_files(

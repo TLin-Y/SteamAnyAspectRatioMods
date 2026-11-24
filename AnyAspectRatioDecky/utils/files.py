@@ -5,6 +5,7 @@ import shutil
 import stat
 import tempfile
 from collections.abc import Callable
+from contextlib import suppress
 from pathlib import Path
 
 from helper import PLUGIN_NAME
@@ -88,7 +89,25 @@ def write_bytes_atomic(
     return mode_kept
 
 
+# Windows refuses to replace or delete a read-only file.
+def _clear_read_only(path: Path) -> None:
+    if os.name == "nt" and path.is_file():
+        os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+
+
+def delete(path: Path) -> None:
+    _clear_read_only(path)
+    path.unlink(missing_ok=True)
+
+
+# Some filesystems (sandboxed SteamOS, exFAT) refuse chmod; the content matters more.
+def copy_mode(source: Path, target: Path) -> None:
+    with suppress(OSError):
+        shutil.copymode(source, target)
+
+
 def move(source: Path, target: Path) -> None:
+    _clear_read_only(target)
     os.replace(source, target)
 
 
@@ -103,7 +122,7 @@ def replace_with_backup(staged: Path, target: Path, backup: Path | None, action:
         if backup is not None and target.is_file() and not backup.exists():
             target.rename(backup)
             renamed = True
-        os.replace(staged, target)
+        move(staged, target)
     except OSError as error:
         if renamed:
             try:

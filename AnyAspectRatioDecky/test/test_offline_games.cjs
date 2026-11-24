@@ -106,6 +106,10 @@ test("Shared game title adds Offline without losing New", () => {
   assert.ok(JSON.stringify(title).includes("(Offline)"));
   assert.ok(JSON.stringify(title).includes("(New)"));
   assert.ok(!JSON.stringify(GameTitle({ game: game(false) })).includes("(Offline)"));
+  const tagged = JSON.stringify(GameTitle({
+    game: { ...game(false), display_tags: ["4x3-to-16x9-fix", "launcher-1920x1080-high"] },
+  }));
+  assert.ok(tagged.includes("(4:3 -> 16:9 Fix)") && tagged.includes("(Launcher 1920x1080 High)"), tagged);
   const unresolved = GameTitle({ game: game(true), unresolved: true });
   assert.equal(unresolved.props.style.color, "#9e9e9e");
   assert.ok(JSON.stringify(unresolved).includes("(.exe)"));

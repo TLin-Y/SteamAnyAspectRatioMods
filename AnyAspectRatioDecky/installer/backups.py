@@ -47,6 +47,7 @@ def restore(backups: dict[Path, Path]) -> None:
                 continue
             staged = files.stage_file(backup, target.parent)
             cleanup.callback(staged.unlink, missing_ok=True)
-            staged_backups.append((staged, target))
-        for staged, target in staged_backups:
+            staged_backups.append((staged, target, backup))
+        for staged, target, backup in staged_backups:
             files.move(staged, target)
+            files.copy_mode(backup, target)

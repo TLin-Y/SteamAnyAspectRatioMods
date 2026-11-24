@@ -1,3 +1,4 @@
+import stat
 from unittest.mock import patch
 
 from support.builders import archive_source, loose_mod, mod, zip_bytes
@@ -87,6 +88,35 @@ class BackupTests(GameTest):
             with self.assertRaisesRegex(PermissionError, "replacement blocked"):
                 self.apply(PATCHER, replace_existing_files=True)
         self.assert_files({"Managed/Game.dll": "original game", "Managed/Game.dll.bak": None})
+
+    def test_failed_apply_undoes_every_file_already_installed(self) -> None:
+        self.write(ORIGINALS)
+        with serving(ARCHIVE), replace_fails("other.dll", "replacement blocked"):
+            with self.assertRaisesRegex(PermissionError, "replacement blocked"):
+                self.apply(PATCHER, replace_existing_files=True)
+        self.assert_files({**ORIGINALS, **NO_BACKUPS, "helper.dll": None})
+
+    def test_failed_reapply_keeps_the_installed_mod_and_its_backups(self) -> None:
+        self.install()
+        with serving(ARCHIVE), replace_fails("other.dll", "replacement blocked"):
+            with self.assertRaisesRegex(PermissionError, "replacement blocked"):
+                self.apply(PATCHER, replace_existing_files=True)
+        self.assert_files({**BACKED_UP, "Managed/Game.dll": "patched game", "helper.dll": "helper"})
+
+    def test_read_only_originals_are_restored_read_only(self) -> None:
+        self.write(ORIGINALS)
+        targets = [self.game / name for name in ORIGINALS]
+        for target in targets:
+            target.chmod(stat.S_IREAD)
+        with serving(ARCHIVE):
+            self.assertEqual([], self.apply(PATCHER, replace_existing_files=True))
+        with replace_fails("other.dll", "restore blocked"), self.assertRaisesRegex(PermissionError, "restore blocked"):
+            self.remove(PATCHER, preserve_modified_ini=False)
+        self.assertEqual([], self.remove(PATCHER, preserve_modified_ini=False))
+        self.assert_files({**ORIGINALS, **NO_BACKUPS, "helper.dll": None})
+        for target in targets:
+            self.assertFalse(target.stat().st_mode & stat.S_IWRITE)
+            target.chmod(stat.S_IREAD | stat.S_IWRITE)
 
     def test_failed_restore_keeps_every_backup_for_a_retry(self) -> None:
         self.install()

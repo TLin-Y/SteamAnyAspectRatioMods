@@ -1,4 +1,9 @@
-# AnyAspectRatio v2.0.0: one tap per game on Steam Deck, now also on Windows, macOS and Linux
+# AnyAspectRatio v2.1.0: one tap per game on Steam Deck, now also on Windows, macOS and Linux
+
+## New in 2.1.0
+
+- **Safer Apply.** If Apply fails partway, the original files it had replaced are put back.
+- **Cleaner Remove.** Remove now works when the game's original files are read-only on Windows, and restored files keep their permissions.
 
 ## New in 2.0.0
 
@@ -68,15 +73,15 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-2.0.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-2.1.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-2.0.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-2.1.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
 5. Press **Scan for supported games**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
 
-On Windows, macOS or Linux, download **AnyAspectRatio-Desktop-2.0.0** for your system from the Assets instead and follow the [desktop guide](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
+On Windows, macOS or Linux, download **AnyAspectRatio-Desktop-2.1.0** for your system from the Assets instead and follow the [desktop guide](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
 
 ## Good to know
 

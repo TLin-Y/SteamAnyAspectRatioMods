@@ -5,6 +5,14 @@ import { isEditableIniLine } from "../../services/modals";
 import { isFolderGame, type ModLogResult, type SupportedGame } from "../../services/types";
 import { EditableValue } from "./EditableValue";
 
+// Tags hold only letters, digits, - and _, so "4x3-to-16x9" stands for "4:3 -> 16:9".
+function tagLabel(tag: string): string {
+  return tag
+    .replace(/[-_]/g, " ")
+    .replace(/(\d+)x(\d+) to (\d+)x(\d+)/g, "$1:$2 -> $3:$4")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function GameTitle({ game, index, unresolved = false }: {
   game: SupportedGame; index?: number; unresolved?: boolean;
 }) {
@@ -14,7 +22,7 @@ export function GameTitle({ game, index, unresolved = false }: {
       {index !== undefined && `${index + 1}. `}
       {game.app_name}
       {[...(game.display_tags ?? []), ...(game.manual ? ["manual"] : [])].map((tag) =>
-        ` (${tag.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())})`,
+        ` (${tagLabel(tag)})`,
       )}
       {game.offline_only && " (Offline)"}
       {game.source_kind === "local_archive" && " (Custom)"}
