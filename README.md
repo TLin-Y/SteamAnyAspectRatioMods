@@ -51,7 +51,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
 - **p1xel8ted** — [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes) for Hollow Knight and Hollow Knight: Silksong.
 - **PhantomGamers** — [SUWSF patches for Final Fantasy X/X-2 HD Remaster](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/).
-- **Kamiccolo** — Final Fantasy X/X-2 HD Remaster fix: [Ko-fi](https://ko-fi.com/kamiccolo).
+- **Kamiccolo** — [Final Fantasy X/X-2 HD Remaster fix](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/): [Ko-fi](https://ko-fi.com/kamiccolo).
 - **Yuki** — [Daemon X Machina: Titanic Scion Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
 - **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
 - **rebtd7** — [FF13Fix](https://github.com/rebtd7/FF13Fix), based on OneTweakNG by Nucleoprotein.
