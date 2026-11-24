@@ -1,6 +1,6 @@
 # Keyblade Masters Ultrawide - Kingdom Hearts III
 
-Version 1.0.1 (original release 5 Jun 2026) by m.vico. Licensed under CC BY-NC-ND 4.0; see [LICENSE](./LICENSE).
+Version 1.0.1 (original release 5 Jun 2026) by m.vico ([Ko-fi](https://ko-fi.com/mvico42517)). Licensed under CC BY-NC-ND 4.0; see [LICENSE](./LICENSE).
 
 Adds ultrawide support, removes pillarboxing, and expands the field of view and level of detail for wider aspect ratios. The author reports testing at 16:10, 21:9, 32:9, and 48:9.
 

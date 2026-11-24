@@ -1,6 +1,6 @@
 # Keyblade Masters Ultrawide - Kingdom Hearts I.5+II.5 ReMIX
 
-Version 1.0.1 (released 10 Sep 2026) by m.vico. Licensed under CC BY-NC-ND 4.0; see [LICENSE](./LICENSE).
+Version 1.0.1 (released 10 Sep 2026) by m.vico ([Ko-fi](https://ko-fi.com/mvico42517)). Licensed under CC BY-NC-ND 4.0; see [LICENSE](./LICENSE).
 
 Adds ultrawide support to all four games in the Remix, removes pillarboxing, and expands the level of detail for wider aspect ratios. The author reports testing at 16:10, 21:9, 32:9, and 48:9.
 

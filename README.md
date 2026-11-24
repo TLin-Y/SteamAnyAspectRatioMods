@@ -46,16 +46,21 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **ThirteenAG** — [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader), included by some game mods to load ASI plugins.
 - **Dark Byte (Eric Heijnen)** — [Cheat Engine](https://github.com/cheat-engine/cheat-engine/), the tool used to find the aspect-ratio and FOV values for about 90% of the games here.
 - **Compiler dependencies** — [inipp](https://github.com/mcmtroffaes/inipp), [SafetyHook](https://github.com/cursey/safetyhook), [spdlog](https://github.com/gabime/spdlog), [Zydis](https://github.com/zyantific/zydis), and [Zycore](https://github.com/zyantific/zycore) (used by Zydis). The compiler setup pins specific upstream revisions.
+- **MinuteReversal** — [MHW16x10Fix](https://github.com/MinuteReversal/MHW16x10Fix) for Monster Hunter: World.
+- **Nicolas Busseneau** — [Hephaistos](https://github.com/nbusseneau/hephaistos), the Hades aspect-ratio patcher.
+- **TEODORMAX** — [FFXIII2UW](https://www.nexusmods.com/finalfantasyxiii2/mods/42) for Final Fantasy XIII-2 and [UltrawideFix](https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35) for Lightning Returns.
 - **Twig** — [Undertale Ultrawide Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517).
 - **TechieW** — [EldenRingMods](https://github.com/techiew/EldenRingMods) (MIT), packaged as the [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
 - **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
 - **p1xel8ted** — [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes) for Hollow Knight and Hollow Knight: Silksong.
-- **PhantomGamers** — [SUWSF patches for Final Fantasy X/X-2 HD Remaster](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/).
-- **Kamiccolo** — [Final Fantasy X/X-2 HD Remaster fix](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/): [Ko-fi](https://ko-fi.com/kamiccolo).
+- **Kamiccolo** — [Final Fantasy X/X-2 HD Remaster patches](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/): [Ko-fi](https://ko-fi.com/kamiccolo).
+- **PhantomGamers** — [SUWSF](https://github.com/PhantomGamers/SUWSF), used by the Final Fantasy X/X-2 and Daemon X Machina patches.
 - **Yuki** — [Daemon X Machina: Titanic Scion Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
-- **m.vico** — [Keyblade Masters Ultrawide](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
+- **m.vico** — Keyblade Masters Ultrawide for [Kingdom Hearts I.5+II.5 ReMIX](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) and [Kingdom Hearts III](https://www.nexusmods.com/kingdomhearts3/mods/2553): [Ko-fi](https://ko-fi.com/mvico42517).
 - **rebtd7** — [FF13Fix](https://github.com/rebtd7/FF13Fix), based on OneTweakNG by Nucleoprotein.
-- **MinuteReversal**, **Nicolas Busseneau** ([Hephaistos](https://github.com/nbusseneau/hephaistos)), **TEODORMAX**, **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
+- **ellekz** — [Dark Souls III fullscreen fix](https://www.nexusmods.com/darksouls3/mods/2046): [Ko-fi](https://ko-fi.com/loreciao).
+- **Nozomi Miyamori** — [NGS2 NM Plugin](https://github.com/nm004/ngs2-nm-plugin) for Ninja Gaiden Sigma 2.
+- **Fiend Busa** — [Black Mod](https://www.nexusmods.com/ninjagaidenmastercollection/mods/37) for Ninja Gaiden Sigma 2.
 
 ## In action
 
