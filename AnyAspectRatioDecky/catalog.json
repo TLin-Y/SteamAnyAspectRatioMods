@@ -426,6 +426,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "life-is-strange-2",
+      "name": "Life is Strange 2 - Custom Aspect Ratio",
+      "steam_app_id": "532210",
+      "install_dir": "Life is Strange 2",
+      "executable": "LIS2/Binaries/Win64/LIS2-Win64-Shipping.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Life is Strange 2/Life-is-Strange-2-v1.0.0.zip",
+        "sha256": "0d24f3dda78a2a28b3792f7b5d23db244a970bb2c37829cbcc9c7fd1dd08f35d",
+        "destination": "LIS2/Binaries/Win64"
+      },
+      "files": ["LIS2/Binaries/Win64/dinput8.dll", "LIS2/Binaries/Win64/LIS2_ARFix.asi", "LIS2/Binaries/Win64/LIS2_ARFix.ini"],
+      "ini_file": "LIS2/Binaries/Win64/LIS2_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "life-is-strange-before-the-storm-remastered",
       "name": "Life is Strange: Before the Storm Remastered - Custom Aspect Ratio",
       "steam_app_id": "1265930",
