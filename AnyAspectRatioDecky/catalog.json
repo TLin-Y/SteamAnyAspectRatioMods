@@ -426,6 +426,21 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "life-is-strange-before-the-storm-remastered",
+      "name": "Life is Strange: Before the Storm Remastered - Custom Aspect Ratio",
+      "steam_app_id": "1265930",
+      "install_dir": "LIS - Before the Storm Remastered",
+      "executable": "Life is Strange - Before the Storm.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Life is Strange Before the Storm Remastered/Life-is-Strange-Before-the-Storm-Remastered-v1.0.0.zip",
+        "sha256": "22594efe8caa01b4dfecc2b69219b5e62227201bed7d60fc9b585c6f2eb5dfff"
+      },
+      "files": ["winmm.dll", "LiSBtS_ARFix.asi", "LiSBtS_ARFix.ini"],
+      "ini_file": "LiSBtS_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "life-is-strange-remastered",
       "name": "Life is Strange Remastered - Custom Aspect Ratio",
       "steam_app_id": "1265920",
