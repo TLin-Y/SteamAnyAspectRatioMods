@@ -16,7 +16,9 @@ Special thanks to:
 - [TechieW](https://www.nexusmods.com/eldenring/mods/7870), for the Elden Ring Ultrawide Fix.
 - [Refilo](https://www.nexusmods.com/finalfantasyresonance/mods/29), for the Final Fantasy Resonance Ultrawide Mod.
 - [p1xel8ted](https://github.com/p1xel8ted/UltrawideFixes), for the Hollow Knight and Hollow Knight: Silksong Ultra-Wide mods.
-- [PhantomGamers](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/), for SUWSF and the Final Fantasy X/X-2 HD Remaster patches.
+- [Kamiccolo](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/), for the Final Fantasy X/X-2 HD Remaster patches.
+  If you enjoy their work, consider supporting them on [Ko-fi](https://ko-fi.com/kamiccolo).
+- [PhantomGamers](https://github.com/PhantomGamers/SUWSF), for SUWSF.
 - [Yuki](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/), for the Daemon X Machina: Titanic Scion Widescreen Fix.
 - [m.vico](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230), for Keyblade Masters Ultrawide for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
 - [rebtd7](https://github.com/rebtd7/FF13Fix), for FF13Fix, and Nucleoprotein for OneTweakNG.

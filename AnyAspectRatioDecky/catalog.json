@@ -6856,7 +6856,7 @@
       "executable_alternatives": ["FFX.exe", "FFX-2.exe"],
       "source": {
         "kind": "archive",
-        "path": "external/PhantomGamers/Final Fantasy X-X2 HD Remaster SUWSF/Final Fantasy XX-2 HD Remaster 2560x1080 64x27 SUWSF.zip",
+        "path": "external/Kamiccolo/Final Fantasy X-X2 HD Remaster SUWSF/Final Fantasy XX-2 HD Remaster 2560x1080 64x27 SUWSF.zip",
         "sha256": "2d93c08ba9a8ad8f591be8a471cd883a7c8e847f1a9874fba43cf5ae5388e680"
       },
       "files": [
@@ -6872,11 +6872,15 @@
       ],
       "credits": [
         {
-          "name": "PhantomGamers",
+          "name": "Kamiccolo",
           "support": [
             {
               "label": "FFX/X-2",
               "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/kamiccolo"
             }
           ]
         }
