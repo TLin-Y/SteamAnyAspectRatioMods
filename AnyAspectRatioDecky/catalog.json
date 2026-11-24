@@ -1098,6 +1098,23 @@
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
+      "id": "the-adventures-of-elliot-the-millennium-tales",
+      "name": "The Adventures of Elliot: The Millennium Tales - Custom Aspect Ratio",
+      "steam_app_id": "3483510",
+      "install_dir": "The Adventures of Elliot_The Millennium Tales",
+      "executable": "Elliot/Binaries/Win64/Elliot-Win64-Shipping.exe",
+      "executable_alternatives": ["Elliot.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "The Adventures of Elliot The Millennium Tales/The-Adventures-of-Elliot-The-Millennium-Tales-v1.0.0.zip",
+        "sha256": "c83671aa54f1b023f5e3fb98086d1ef752b59762ec4a399f63a89816ff0d6124",
+        "destination": "Elliot/Binaries/Win64"
+      },
+      "files": ["Elliot/Binaries/Win64/winhttp.dll", "Elliot/Binaries/Win64/Elliot_ARFix.asi", "Elliot/Binaries/Win64/Elliot_ARFix.ini"],
+      "ini_file": "Elliot/Binaries/Win64/Elliot_ARFix.ini",
+      "wine_dll_overrides": ["winhttp=n,b"]
+    },
+    {
       "id": "trials-of-mana",
       "name": "Trials of Mana - Custom Aspect Ratio",
       "steam_app_id": "924980",
