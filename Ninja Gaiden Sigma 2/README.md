@@ -1,43 +1,22 @@
-# Ninja Gaiden Sigma 2 Mods
+# Ninja-Gaiden-Sigma-2-Any-Aspect-Ratio
 
-## Special Thanks
+Aspect ratio fix only, based on [NinjaGaidenMCFix](https://codeberg.org/Lyall/NinjaGaidenMCFix) by Lyall. Default 16:10 (1280x800).
 
-Special thanks to the mod writers:
+## Install
 
-- **Nozomi Miyamori**
-- **Fiend Busa**
-- **Lyall** ([Codeberg](https://codeberg.org/Lyall/NinjaGaidenMCFix))
+1. Copy the files from `NG2 Aspect Ratio` (`dinput8.dll`, `NinjaGaidenMCFix.asi`, `NinjaGaidenMCFix.ini`) into the game folder, beside `NINJA GAIDEN SIGMA2.exe`.
+2. SteamOS launch option: `WINEDLLOVERRIDES="dinput8=n,b" %command%`. For Winlator, set the environment variable `WINEDLLOVERRIDES=dinput8=n,b`.
 
----
+## Custom Aspect Ratio
 
-## Mods 16:10 Aspect Ratio (default 1280x800)
-- Editing the .ini file can force lock it to any resolution and aspect ratio, ignoring Winlator's limits
-- If Winlator crashes or shows a black screen during in-game movies (open the chest/logo), try renaming the './databin/movie' folder.
-### 1. Black Mod
-- **Source:** [Nexus Mods #37](https://www.nexusmods.com/ninjagaidenmastercollection/mods/37)
+Edit `Width` and `Height` under `[Custom Resolution]` in `NinjaGaidenMCFix.ini`.
 
-### 2. Gore Effects
-- **Source:** [Nexus Mods #236](https://www.nexusmods.com/ninjagaidenmastercollection/mods/236?tab=description)
+If the game crashes or shows a black screen during in-game movies (opening a chest, the logo), try renaming the `databin/movie` folder.
 
-> ⚠️ **Use only ONE of the above mods — do not combine them.** The Black Mod (#1) already includes the Gore Effects from #2 but with additional features (more complicated).
+## Optional mods (install manually)
 
-### 3. Winlator Load Container Config & Driver Settings
-- Refer to the screenshots for setup guidance. 
+These are not included. Download them from their authors and follow their instructions. Use only one of the first two; Black Mod already includes the Gore Effects.
 
----
-
-## Setup
-
-1. Copy all files from **one** of the mod folders into your game root directory.
-2. Refer to the screenshots for Winlator (Cmodv13, GameHub/Light etc.) container config and driver setup. 
-3. For Steam Deck / SteamOS, open the game's Properties, then General > Launch Options, and use:
-
-```
-WINEDLLOVERRIDES="dinput8=n,b" %command%
-```
-
-   For Winlator / Wine, set this environment variable:
-
-```
-WINEDLLOVERRIDES=dinput8=n,b
-```
+- Black Mod by Fiend Busa: https://www.nexusmods.com/ninjagaidenmastercollection/mods/37
+- Gore Effects: https://www.nexusmods.com/ninjagaidenmastercollection/mods/236
+- NGS2 NM Plugin by Nozomi Miyamori: https://github.com/nm004/ngs2-nm-plugin

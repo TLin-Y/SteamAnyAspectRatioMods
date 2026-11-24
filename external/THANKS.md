@@ -22,7 +22,10 @@ Special thanks to:
 - [Yuki](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/), for the Daemon X Machina: Titanic Scion Widescreen Fix.
 - [m.vico](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230), for Keyblade Masters Ultrawide for Kingdom Hearts I.5+II.5 ReMIX and Kingdom Hearts III.
 - [rebtd7](https://github.com/rebtd7/FF13Fix), for FF13Fix, and Nucleoprotein for OneTweakNG.
-- **ellekz**, **Nozomi Miyamori**, and **Fiend Busa**.
+- [ellekz](https://www.nexusmods.com/darksouls3/mods/2046), for the Dark Souls III fullscreen fix.
+  If you enjoy their work, consider supporting them on [Ko-fi](https://ko-fi.com/loreciao).
+- [Nozomi Miyamori](https://github.com/nm004/ngs2-nm-plugin), for the Ninja Gaiden Sigma 2 NM Plugin.
+- [Fiend Busa](https://www.nexusmods.com/ninjagaidenmastercollection/mods/37), for the Ninja Gaiden Sigma 2 Black Mod.
 
 Thank you as well to every contributor and author credited in the individual
 mod READMEs and licenses. Please visit the original projects for their work,
