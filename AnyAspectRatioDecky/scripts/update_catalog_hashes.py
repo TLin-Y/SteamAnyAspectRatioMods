@@ -3,9 +3,10 @@
 Archive sources get the zip's "sha256": the plugin verifies the download and keys its cache on it,
 so run this after changing any mod zip and commit the catalog with it. Loose-file sources
 ("files"/"directory") get "file_hashes", one checksum per installed file, verified after download.
+Also sets the mod count in the main README's static "Game mods" badge.
 
 Usage: python scripts/update_catalog_hashes.py [--check]
-  --check   change nothing; exit 1 when a checksum is missing or stale
+  --check   change nothing; exit 1 when a checksum or the badge count is missing or stale
 """
 
 import hashlib
@@ -17,12 +18,14 @@ from pathlib import Path
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = PLUGIN_ROOT.parent
 CATALOG_PATH = PLUGIN_ROOT / "catalog.json"
+README_PATH = REPOSITORY_ROOT / "README.md"
 
 ZIP_PATH_LINE = re.compile(r'^(\s*)"path":\s*"([^"]+\.zip)"(,?)\s*$')
 HASH_LINE = re.compile(r'^\s*"sha256":')
 LOOSE_KIND_LINE = re.compile(r'^(\s*)"kind":\s*"(files|directory)",\s*$')
 FILE_HASHES_START = re.compile(r'^\s*"file_hashes":\s*\{')
 FILE_HASHES_END = re.compile(r"^\s*\},?\s*$")
+MOD_COUNT_BADGE = re.compile(r"(https://img\.shields\.io/badge/Game%20mods-)\d+(-)")
 
 
 def file_sha256(path: Path) -> str:
@@ -99,23 +102,37 @@ def updated_catalog_text(text: str) -> str:
     return newline.join(output) + (newline if text.endswith("\n") else "")
 
 
-def update(check: bool = False) -> bool:
-    """Rewrite the catalog; returns True when it changed (or would change with check=True)."""
-    original = CATALOG_PATH.read_bytes().decode("utf-8")
-    updated = updated_catalog_text(original)
+def updated_readme_text(text: str, mod_count: int) -> str:
+    updated, found = MOD_COUNT_BADGE.subn(rf"\g<1>{mod_count}\g<2>", text)
+    if found != 1:
+        raise SystemExit(f"Expected one Game mods badge in README.md, found {found}")
+    return updated
+
+
+def _rewrite(path: Path, transform, check: bool) -> bool:
+    original = path.read_bytes().decode("utf-8")
+    updated = transform(original)
     if updated == original:
         return False
     if not check:
-        CATALOG_PATH.write_bytes(updated.encode("utf-8"))
+        path.write_bytes(updated.encode("utf-8"))
     return True
+
+
+def update(check: bool = False) -> bool:
+    """Rewrite the catalog and README badge; returns True when either changed (or would with check=True)."""
+    catalog_changed = _rewrite(CATALOG_PATH, updated_catalog_text, check)
+    mod_count = len(json.loads(CATALOG_PATH.read_bytes().decode("utf-8"))["mods"])
+    readme_changed = _rewrite(README_PATH, lambda text: updated_readme_text(text, mod_count), check)
+    return catalog_changed or readme_changed
 
 
 def main() -> None:
     check = "--check" in sys.argv[1:]
     changed = update(check)
     if check and changed:
-        raise SystemExit("catalog.json archive checksums are stale: run scripts/update_catalog_hashes.py")
-    print("catalog.json checksums " + ("updated" if changed else "are up to date"))
+        raise SystemExit("catalog.json checksums or README mod count are stale: run scripts/update_catalog_hashes.py")
+    print("catalog.json checksums and README mod count " + ("updated" if changed else "are up to date"))
 
 
 if __name__ == "__main__":
