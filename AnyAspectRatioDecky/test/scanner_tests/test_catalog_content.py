@@ -279,7 +279,7 @@ INI_DEFAULTS = {
         "Custom Resolution": {"Width": 1280, "Height": 800, "TargetWidth": 3840, "TargetHeight": 2160}, "FOV": {"FOVScale": 0},
     },
     "dynasty-warriors-8-xtreme-legends-complete-edition": {
-        "Resolution": {"Width": 1280, "Height": 800}, "Camera": {"FovMultiplier": 1.1},
+        "Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0},
     },
     "dragonsword-awakening": {"Resolution": {"Width": 1280, "Height": 800}, "FOV": {"KeepHorizontalFOV": True}},
     "sonic-x-shadow-generations": {
@@ -299,7 +299,6 @@ README_MENTIONS = {
                                          b"SteamOS / Winlator", b"FOV fixes are enabled by default"),
     "dynasty-warriors-6": (b"1280x720", b"[Stretch]"),
     "dynasty-warriors-7-xtreme-legends-definitive-edition": (b"1280x720", b"[Stretch]"),
-    "dynasty-warriors-8-xtreme-legends-complete-edition": (b"1280x720", b"[Stretch]", b"FovMultiplier"),
 }
 
 STRETCHED = {

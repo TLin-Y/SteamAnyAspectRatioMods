@@ -265,8 +265,8 @@
       "executable": "Launch.exe",
       "source": {
         "kind": "archive",
-        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.1.0.zip",
-        "sha256": "e265d199ce291c345880a1145ba6799c83f6a85c5c9634607070a53ed80608de"
+        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.2.0.zip",
+        "sha256": "37be9aa0f005c0e5e2fa3337751efc5ee2c059fb88313cfc7883f84e8a020009"
       },
       "files": ["dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"],
       "ini_file": "DW8XL_ARFix.ini",
