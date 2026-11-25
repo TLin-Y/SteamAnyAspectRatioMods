@@ -667,7 +667,7 @@
         {"target": "main.pak", "backup": "main.pak.pvz-original.bak"}
       ],
       "ini_file": null,
-      "display_tags": ["4x3-to-16x9-fix", "must-read-readme"],
+      "display_tags": ["4x3-to-16x9-fix", "back-up-save-file-first", "must-read-readme"],
       "wine_dll_overrides": [],
       "credits": [
         {
