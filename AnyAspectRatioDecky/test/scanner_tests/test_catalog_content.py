@@ -273,7 +273,7 @@ INI_DEFAULTS = {
     "final-fantasy-xii-the-zodiac-age": {
         "Window": {"Width": 1280, "Height": 800}, "Resolution": {"Enabled": True}, "FOV": {"Enabled": True},
     },
-    "dynasty-warriors-6": {"Resolution": {"Width": 1280, "Height": 800}, "FOV": {"Multiplier": 1.0}, "Stretch": {"Enabled": True}},
+    "dynasty-warriors-6": {"Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0}},
     "dynasty-warriors-7-xtreme-legends-definitive-edition": {"Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0}},
     "dynasty-warriors-origins": {
         "Custom Resolution": {"Width": 1280, "Height": 800, "TargetWidth": 3840, "TargetHeight": 2160}, "FOV": {"FOVScale": 0},
@@ -297,7 +297,6 @@ INI_DEFAULTS = {
 README_MENTIONS = {
     "final-fantasy-xii-the-zodiac-age": (b"ff12.jpg", b"ff12demo.jpg", b"ff12demo2.jpg", b"at 4:3",
                                          b"SteamOS / Winlator", b"FOV fixes are enabled by default"),
-    "dynasty-warriors-6": (b"1280x720", b"[Stretch]"),
 }
 
 STRETCHED = {

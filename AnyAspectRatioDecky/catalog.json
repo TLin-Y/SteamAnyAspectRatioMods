@@ -232,8 +232,8 @@
       "executable": "DW6_WIN.exe",
       "source": {
         "kind": "archive",
-        "path": "Dynasty Warriors 6/Dynasty-Warriors-6-v1.0.0.zip",
-        "sha256": "64e3853f9836601bf40e11610b86810e090197b8893f8a4b55208a3d75281df7"
+        "path": "Dynasty Warriors 6/Dynasty-Warriors-6-v1.1.0.zip",
+        "sha256": "3f3af6cc55eb56c5d0c52b67cacecfe05ed65106c5399cb300ff0ad3d0a754d5"
       },
       "files": ["dinput8.dll", "DW6_ARFix.asi", "DW6_ARFix.ini"],
       "ini_file": "DW6_ARFix.ini",
