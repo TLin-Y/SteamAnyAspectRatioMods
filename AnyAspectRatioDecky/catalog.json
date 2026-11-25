@@ -249,8 +249,8 @@
       "executable_alternatives": ["SM6JP.exe", "SM6TC.exe"],
       "source": {
         "kind": "archive",
-        "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.1.0.zip",
-        "sha256": "bd4b5be2dbe695a046cbd692c581feb13b1f7e245f6781f2913913667c69cf12"
+        "path": "DYNASTY WARRIORS 7 Xtreme Legends Definitive Edition/Dynasty-Warriors-7-Xtreme-Legends-Definitive-Edition-v1.2.0.zip",
+        "sha256": "2b83aff23c1771699abc209f6ab79677613ec50df75c16da7680ea216cb30b4b"
       },
       "files": ["dinput8.dll", "DW7XL_ARFix.asi", "DW7XL_ARFix.ini"],
       "ini_file": "DW7XL_ARFix.ini",
