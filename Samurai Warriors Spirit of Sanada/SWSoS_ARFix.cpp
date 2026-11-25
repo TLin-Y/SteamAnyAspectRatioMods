@@ -11,7 +11,6 @@
 #include <cmath>
 #include <cstddef>
 #include <span>
-#include <string_view>
 
 constexpr float kNativeRatio = 16.0f / 9.0f;
 constexpr int kSmallestSize = 240;
@@ -203,38 +202,19 @@ float ScaleFromCenter(float value, float length, float scale) {
 
 }
 
-namespace Rtti {
+namespace Vtable {
 
-struct Image {
-    std::uint8_t* base = reinterpret_cast<std::uint8_t*>(gameModule);
-    std::size_t size = reinterpret_cast<IMAGE_NT_HEADERS*>(base + reinterpret_cast<IMAGE_DOS_HEADER*>(base)->e_lfanew)->OptionalHeader.SizeOfImage;
+constexpr int kDrawSlot = 2;
 
-    template<typename T, typename Accept>
-    std::uint8_t* Find(T value, Accept accept) const {
-        for (auto* at = base; at + sizeof(T) <= base + size; at += 4)
-            if (*reinterpret_cast<T*>(at) == value && accept(at)) return at;
-        return nullptr;
-    }
-
-    std::uint8_t* FindText(std::string_view text) const {
-        std::string_view bytes(reinterpret_cast<char*>(base), size);
-        auto at = bytes.find({ text.data(), text.size() + 1 });
-        return at == bytes.npos ? nullptr : base + at;
-    }
-};
-
-void** FindVtable(std::string_view className) {
-    constexpr std::ptrdiff_t kNameInType = 16, kTypeInLocator = 12, kSelfInLocator = 20;
-    Image image;
-    auto* name = image.FindText(className);
-    auto isLocator = [&](std::uint8_t* at) {
-        auto* locator = at - kTypeInLocator;
-        return *reinterpret_cast<std::uint32_t*>(locator + kSelfInLocator) == static_cast<std::uint32_t>(locator - image.base);
-    };
-    auto* typeInLocator = name ? image.Find(static_cast<std::uint32_t>(name - kNameInType - image.base), isLocator) : nullptr;
-    auto* locatorInVtable = typeInLocator ? image.Find(typeInLocator - kTypeInLocator, [](std::uint8_t*) { return true; }) : nullptr;
-    if (locatorInVtable) return reinterpret_cast<void**>(locatorInVtable + sizeof(void*));
-    SPDLOG_ERROR("Class {} not found; not applied.", className);
+void** WithDraw(const char* feature, const char* pattern) {
+    auto* draw = FindOne(feature, pattern);
+    if (!draw) return nullptr;
+    auto* base = reinterpret_cast<std::uint8_t*>(gameModule);
+    auto size = reinterpret_cast<IMAGE_NT_HEADERS*>(base + reinterpret_cast<IMAGE_DOS_HEADER*>(base)->e_lfanew)->OptionalHeader.SizeOfImage;
+    std::span slots(reinterpret_cast<void**>(base), size / sizeof(void*));
+    auto users = std::ranges::count(slots, draw);
+    if (users == 1) return &*std::ranges::find(slots, draw) - kDrawSlot;
+    SPDLOG_ERROR("{}: used by {} vtables (expected 1); not applied.", feature, users);
     return nullptr;
 }
 
@@ -246,7 +226,6 @@ using Screen::Point;
 
 constexpr float kEdgeTolerance = 1.0f;
 constexpr float kBackdropShare = 0.2f;
-constexpr int kDrawSlot = 2;
 
 struct Span {
     float low, high;
@@ -280,23 +259,24 @@ void FitPoints(std::span<Point> points) {
 using DrawFn = void(__fastcall*)(std::uint8_t* primitive, void* device);
 
 struct PrimitiveClass {
-    std::string_view name;
+    const char* name;
+    const char* draw;
     std::ptrdiff_t pointsOffset;
     std::size_t pointCount;
     void** vtable = nullptr;
-    DrawFn draw = nullptr;
+    DrawFn original = nullptr;
 };
 
 PrimitiveClass classes[] = {
-    { ".?AVC2DTile@@", 0x30, 2 },
-    { ".?AVC2DTileG@@", 0x30, 4 },
-    { ".?AVC2DSprite@@", 0x30, 2 },
-    { ".?AVC2DAnimSprite@@", 0x30, 2 },
-    { ".?AVC2DQuadF@@", 0x30, 4 },
-    { ".?AVC2DQuadFT@@", 0x30, 4 },
-    { ".?AVC2DQuadG@@", 0x40, 4 },
-    { ".?AVC2DQuadGT@@", 0x40, 4 },
-    { ".?AVC2DScissoring@@", 0x30, 2 },
+    { "C2DTile", "48 83 EC 58 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 40 F3 0F 10 41 44 44 8B 49 40 48 8B C2 48", 0x30, 2 },
+    { "C2DTileG", "48 83 EC 68 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 50 F3 0F 10 41 60 48 8B C2 4C 8D 49 50 48", 0x30, 4 },
+    { "C2DSprite", "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 30 48 8B 59 60 48 8B F2 48 8B F9 48 39 1D ?? ?? ?? ??", 0x30, 2 },
+    { "C2DAnimSprite", "48 89 5C 24 18 48 89 74 24 20 57 48 81 EC A0 00 00 00 0F 29 B4 24 90 00 00 00 48 8B 05 ?? ?? ??", 0x30, 2 },
+    { "C2DQuadF", "48 83 EC 68 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 50 F3 0F 10 41 54 44 8B 49 50 48 8B C2 48", 0x30, 4 },
+    { "C2DQuadFT", "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 30 48 8B 99 80 00 00 00 48 8B F2 48 8B F9 48 39 1D ??", 0x30, 4 },
+    { "C2DQuadG", "48 83 EC 68 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 50 F3 0F 10 41 60 48 8B C2 4C 8D 49 30 48", 0x40, 4 },
+    { "C2DQuadGT", "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 30 48 8B 99 90 00 00 00 48 8B F2 48 8B F9 48 39 1D ??", 0x40, 4 },
+    { "C2DScissoring", "48 83 EC 48 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 30 80 BA D9 01 00 00 01 F3 0F 2C 41 30 F3", 0x30, 2 },
 };
 
 void __fastcall DrawFitted(std::uint8_t* primitive, void* device) {
@@ -306,18 +286,18 @@ void __fastcall DrawFitted(std::uint8_t* primitive, void* device) {
     std::array<Point, 4> original{};
     std::ranges::copy(points, original.begin());
     FitPoints(points);
-    type.draw(primitive, device);
+    type.original(primitive, device);
     std::copy_n(original.begin(), type.pointCount, points.begin());
 }
 
 bool Apply() {
     for (auto& type : classes) {
-        type.vtable = Rtti::FindVtable(type.name);
+        type.vtable = Vtable::WithDraw(type.name, type.draw);
         if (!type.vtable) return false;
-        type.draw = reinterpret_cast<DrawFn>(type.vtable[kDrawSlot]);
+        type.original = reinterpret_cast<DrawFn>(type.vtable[Vtable::kDrawSlot]);
     }
     for (auto& type : classes)
-        Memory::Write(reinterpret_cast<std::uint8_t*>(type.vtable + kDrawSlot), &DrawFitted);
+        Memory::Write(reinterpret_cast<std::uint8_t*>(type.vtable + Vtable::kDrawSlot), &DrawFitted);
     SPDLOG_INFO("HUD: kept 16:9.");
     return true;
 }
@@ -345,12 +325,12 @@ void __fastcall Draw(std::uint8_t* primitive, void* device) {
 }
 
 void Apply() {
-    auto* vtable = Rtti::FindVtable(".?AVC2DMinimapGroupPrim@@");
+    auto* vtable = Vtable::WithDraw("Minimap draw", "40 55 53 56 57 48 8B EC 48 83 EC 68 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 E8 48 8B B1 70 6D 00");
     auto* code = FindOne("Minimap", "48 89 5C 24 08 57 48 83 EC 20 48 8B DA 48 8B F9 E8 ?? ?? ?? ?? 0F 57 C0 8B C0 F3 48 0F 2A C0 F3 0F 5E 05 ?? ?? ?? ?? F3 0F 59 03 F3 0F 11 07 E8 ?? ?? ?? ?? 0F 57 C0 8B C0 F3 48 0F 2A C0 F3 0F 5E 05 ?? ?? ?? ?? F3 0F 59 43 04 F3 0F 11 47 04 E8");
     if (!vtable || !code) return;
-    draw = reinterpret_cast<Hud::DrawFn>(vtable[Hud::kDrawSlot]);
+    draw = reinterpret_cast<Hud::DrawFn>(vtable[Vtable::kDrawSlot]);
     Replace(canvasToScreen, code, &CanvasToScreen);
-    Memory::Write(reinterpret_cast<std::uint8_t*>(vtable + Hud::kDrawSlot), &Draw);
+    Memory::Write(reinterpret_cast<std::uint8_t*>(vtable + Vtable::kDrawSlot), &Draw);
     SPDLOG_INFO("Minimap: kept in proportion.");
 }
 
@@ -425,11 +405,7 @@ void Apply() {
 
 }
 
-void Apply() {
-    if (std::min(config.width, config.height) < kSmallestSize || std::max(config.width, config.height) > kLargestSize) {
-        SPDLOG_ERROR("Resolution {}x{} is invalid; nothing applied.", config.width, config.height);
-        return;
-    }
+void ApplyToGame() {
     Resolution::Apply();
     Fullscreen::Apply();
     Camera::Apply();
@@ -442,6 +418,22 @@ void Apply() {
     WorldHud::Apply();
 }
 
+namespace Device {
+
+SafetyHookInline createDevice;
+
+HRESULT WINAPI CreateDevice(void* adapter, UINT driverType, HMODULE software, UINT flags, const void* levels, UINT levelCount, UINT sdkVersion, void** device, void* level, void** context) {
+    static bool applied = (ApplyToGame(), true);
+    return createDevice.call<HRESULT>(adapter, driverType, software, flags, levels, levelCount, sdkVersion, device, level, context);
+}
+
+void Apply() {
+    auto* code = GetProcAddress(LoadLibraryW(L"d3d11.dll"), "D3D11CreateDevice");
+    createDevice = safetyhook::create_inline(reinterpret_cast<void*>(code), &CreateDevice);
+}
+
+}
+
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(module);
@@ -449,7 +441,10 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID) {
         SetProcessDPIAware();
         StartLog();
         LoadConfig();
-        Apply();
+        if (std::min(config.width, config.height) < kSmallestSize || std::max(config.width, config.height) > kLargestSize)
+            SPDLOG_ERROR("Resolution {}x{} is invalid; nothing applied.", config.width, config.height);
+        else
+            Device::Apply();
     }
     return TRUE;
 }

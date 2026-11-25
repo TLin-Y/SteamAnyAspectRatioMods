@@ -1160,8 +1160,8 @@
       "executable": "SWSanada.exe",
       "source": {
         "kind": "archive",
-        "path": "Samurai Warriors Spirit of Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.2.0.zip",
-        "sha256": "2a22d093a21f9ca2d34309e1871dd4904ff45fdef1a14088475c3b4867e4d772"
+        "path": "Samurai Warriors Spirit of Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.2.1.zip",
+        "sha256": "60aa237d6e0f1734160a0447fb4ab96bbb802ba04bf90b6a2fd9cf97d5eaaaad"
       },
       "files": ["dinput8.dll", "SWSanada_ARFix.asi", "SWSanada_ARFix.ini"],
       "ini_file": "SWSanada_ARFix.ini",
