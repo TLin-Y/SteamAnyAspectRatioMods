@@ -1200,8 +1200,8 @@
       "executable": "WO4.exe",
       "source": {
         "kind": "archive",
-        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.2.0.zip",
-        "sha256": "9c2d0432f1b4e0c98831bf29172d68cf8cb40d4e45bf6fb3485c9e5d1e599e77"
+        "path": "Warriors Orochi 4 Ultimate/Warriors-Orochi-4-Ultimate-v1.3.0.zip",
+        "sha256": "93705b3d2933821b125baecde6e3faaced482683c84815b9e8d48ad84e9b18be"
       },
       "files": ["dinput8.dll", "WO4U_ARFix.asi", "WO4U_ARFix.ini"],
       "ini_file": "WO4U_ARFix.ini",
