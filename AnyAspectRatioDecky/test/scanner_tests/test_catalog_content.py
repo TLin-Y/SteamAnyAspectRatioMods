@@ -300,7 +300,6 @@ README_MENTIONS = {
     "dynasty-warriors-6": (b"1280x720", b"[Stretch]"),
     "dynasty-warriors-7-xtreme-legends-definitive-edition": (b"1280x720", b"[Stretch]"),
     "dynasty-warriors-8-xtreme-legends-complete-edition": (b"1280x720", b"[Stretch]", b"FovMultiplier"),
-    "samurai-warriors-spirit-of-sanada": (b"1280x720", b"[Stretch]"),
 }
 
 STRETCHED = {
