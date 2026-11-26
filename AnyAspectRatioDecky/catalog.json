@@ -274,6 +274,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "dynasty-warriors-9",
+      "name": "DYNASTY WARRIORS 9 - Custom Aspect Ratio",
+      "steam_app_id": "730310",
+      "install_dir": "Dynasty Warriors 9",
+      "executable": "DW9.exe",
+      "source": {
+        "kind": "archive",
+        "path": "DYNASTY WARRIORS 9/Dynasty-Warriors-9-v1.0.0.zip",
+        "sha256": "dc6b2b6c5755f89d57bddddd8ec27a323e8589d4df65f199489528d418bc5883"
+      },
+      "files": ["dinput8.dll", "DW9_ARFix.asi", "DW9_ARFix.ini"],
+      "ini_file": "DW9_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "dynasty-warriors-origins",
       "name": "Dynasty Warriors: Origins - Custom Resolution",
       "steam_app_id": "2384580",
