@@ -104,8 +104,22 @@ std::vector<std::uint8_t*> FindLists(std::span<const int> choices) {
     return found;
 }
 
+std::uint8_t* FindModeRejection() {
+    constexpr std::size_t kSearch = 0x80, kLoopLength = 5, kMostPops = 1;
+    constexpr std::array<std::uint8_t, 4> kAfterLastMode{ 0x83, 0xF9, 0x0B, 0x72 };
+    constexpr std::array<std::uint8_t, 2> kReturnFalse{ 0x32, 0xC0 };
+    auto* modeList = FindOne("Display modes", "8D 86 7E 01 00 00");
+    if (!modeList) return nullptr;
+    auto loop = std::ranges::search(std::span(modeList, kSearch), kAfterLastMode);
+    if (!loop.empty())
+        for (auto* at = loop.data() + kLoopLength; at <= loop.data() + kLoopLength + kMostPops; at++)
+            if (std::equal(kReturnFalse.begin(), kReturnFalse.end(), at)) return at;
+    SPDLOG_ERROR("Display modes: rejection not found; not applied.");
+    return nullptr;
+}
+
 bool Apply() {
-    auto* modeCheck = FindOne("Display modes", "32 C0 5B 59 C2 04 00 B0 01 5B 59 C2 04 00");
+    auto* modeCheck = FindModeRejection();
     auto widths = FindLists(kWidths), heights = FindLists(kHeights), pictureHeights = FindLists(kPictureHeights);
     if (!modeCheck || widths.empty() || heights.empty() || pictureHeights.empty()) {
         SPDLOG_ERROR("Resolution: {} widths, {} heights and {} picture heights found; nothing applied.", widths.size(), heights.size(), pictureHeights.size());
