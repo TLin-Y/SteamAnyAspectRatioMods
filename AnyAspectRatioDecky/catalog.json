@@ -1169,6 +1169,22 @@
       "wine_dll_overrides": ["dxgi=n,b"]
     },
     {
+      "id": "samurai-warriors-4-dx",
+      "name": "SAMURAI WARRIORS 4 DX - Custom Aspect Ratio",
+      "steam_app_id": "2719200",
+      "install_dir": "SAMURAI WARRIORS 4 DX",
+      "executable": "SamuraiWarriors4DX.exe",
+      "source": {
+        "kind": "archive",
+        "path": "SAMURAI WARRIORS 4 DX/Samurai-Warriors-4-DX-v1.0.0.zip",
+        "sha256": "ae08175271e9ba265dc9e204910b23c90e419251956a6836884e3f56bb228bb8"
+      },
+      "files": ["dinput8.dll", "SW4DX_ARFix.asi", "SW4DX_ARFix.ini"],
+      "ini_file": "SW4DX_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "samurai-warriors-spirit-of-sanada",
       "name": "SAMURAI WARRIORS: Spirit of Sanada - Custom Aspect Ratio",
       "steam_app_id": "595740",
