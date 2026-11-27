@@ -236,7 +236,7 @@ PINNED = {
     "rayman-legends": {
         "steam_app_id": "242550", "install_dir": "Rayman Legends", "executable": "Rayman Legends.exe",
         "files": ("dinput8.dll", "RaymanLegends_ARFix.asi", "RaymanLegends_ARFix.ini"),
-        "ini_file": "RaymanLegends_ARFix.ini",
+        "ini_file": "RaymanLegends_ARFix.ini", "source.path": "Rayman Legends/Rayman-Legends-v2.0.0.zip",
     },
     "ys-viii-lacrimosa-of-dana": {
         "steam_app_id": "579180", "install_dir": "Ys VIII Lacrimosa of Dana", "executable": "ys8.exe",
@@ -324,7 +324,6 @@ README_MENTIONS = {
 }
 
 STRETCHED = {
-    "rayman-legends",
     "ultrawidefix-lrff13",
 }
 

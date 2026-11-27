@@ -2,38 +2,32 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-TLin--Y-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TLin-Y/SteamAnyAspectRatioMods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961)
 
-Set the in-game resolution to 1280x720 and SteamOS display scaling to "Stretch". This mod does not remove the game's letterbox bars.
+![Rayman Legends at 4:3, 16:10 and 32:9](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Rayman%20Legends/demo.jpg)
 
-## 1. Install
+Runs the game at any aspect ratio without black bars or stretching. Narrower screens keep the 16:9 side view and show more above and below; wider screens show more at the sides. Menus stay centred.
 
-Extract the files into the game folder containing `Rayman Legends.exe`.
+## Install
 
-## 2. SteamOS / Winlator
+Extract `RaymanLegends_ARFix.asi`, `RaymanLegends_ARFix.ini`, and `dinput8.dll` into the game folder (beside `Rayman Legends.exe`).
 
-For SteamOS, set the game's display scaling to "Stretch", and select 1280x720 as its in-game resolution. Set the Steam launch option to:
+## SteamOS / Winlator
 
-`WINEDLLOVERRIDES="dinput8=n,b" %command%`
+Add the launch option:
 
-For Winlator / Wine, set `WINEDLLOVERRIDES` to `dinput8=n,b`.
+```text
+WINEDLLOVERRIDES="dinput8=n,b" %command%
+```
 
-## 3. Custom Aspect Ratio
+## Settings
 
-The ASI creates `RaymanLegends_ARFix.ini` beside itself:
+Edit `RaymanLegends_ARFix.ini` and restart the game:
 
 ```ini
 [Resolution]
 Width = 1280
 Height = 800
-
-[Fixes]
-AspectRatio = true
-HUD = false
 ```
 
-Change `Width` and `Height` to the desired aspect ratio, then restart the game. The default is 1280x800 (16:10). The mod adjusts the aspect ratio and borderless window but does not remove the game's letterbox bars or change its internal render-target resolution. For SteamOS stretching, set the in-game resolution to 1280x720 and display scaling to "Stretch".
+The game starts at this resolution (default 1280 x 800, Steam Deck). Fullscreen or window is set in the game (Options > Window).
 
-The gameplay hooks use fixed offsets for Steam v1.3.140380. Other game versions are not validated and may not work correctly. `HUD` is disabled by default.
-
-## Credits
-
-Hook locations, instruction identifiers and gameplay behavior were identified from Helifax's `Plugin.Rayman Legends.dll` version 2.6.4.0. [Original WSGF discussion](http://www.wsgf.org/forums/viewtopic.php?p=148423#p148423).
+Wider than 16:9, the volume slider knobs in Options sit to the right of their bars.

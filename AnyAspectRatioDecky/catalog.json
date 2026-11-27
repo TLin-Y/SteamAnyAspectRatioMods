@@ -852,13 +852,12 @@
       "executable": "Rayman Legends.exe",
       "source": {
         "kind": "archive",
-        "path": "Rayman Legends/Rayman-Legends-v1.0.0.zip",
-        "sha256": "b968fbc97b09c1503c3df86806d292111aedc071d85081ecf519ec179b85f3a1"
+        "path": "Rayman Legends/Rayman-Legends-v2.0.0.zip",
+        "sha256": "ea7ae65dea93109b7e585078573f0940a07cc714b3aad885c6d2ec9be8c7a1cd"
       },
       "files": ["dinput8.dll", "RaymanLegends_ARFix.asi", "RaymanLegends_ARFix.ini"],
       "ini_file": "RaymanLegends_ARFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
-      "display_tags": ["stretch"],
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
