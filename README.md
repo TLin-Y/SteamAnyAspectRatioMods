@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Game mods](https://img.shields.io/badge/Game%20mods-168-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
+[![Game mods](https://img.shields.io/badge/Game%20mods-169-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -180,6 +180,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | No Sleep For Kaname Date | Lyall | [2752180](https://store.steampowered.com/app/2752180) | [v0.0.1](./external/Lyall/NoSleepForKanameDateFix/NoSleepForKanameDateFix_0.0.1.zip) | 2026-06-12 | [NoSleepForKanameDateFix](https://codeberg.org/Lyall/NoSleepForKanameDateFix) |
 | OCTOPATH TRAVELER 0 | Lyall | [3014320](https://store.steampowered.com/app/3014320) | [v0.0.4](./external/Lyall/Octopath0Fix/Octopath0Fix_0.0.4.zip) | 2026-03-05 | [Octopath0Fix](https://codeberg.org/Lyall/Octopath0Fix) |
 | OCTOPATH TRAVELER II | Lyall | [1971650](https://store.steampowered.com/app/1971650) | [v0.9.0](./external/Lyall/Octopath2Fix/Octopath2Fix_0.9.0.zip) | 2025-06-08 | [Octopath2Fix](https://codeberg.org/Lyall/Octopath2Fix) |
+| ONE PIECE PIRATE WARRIORS 3 | TLin-Y | [331600](https://store.steampowered.com/app/331600) | [v1.0.0](./ONE%20PIECE%20PIRATE%20WARRIORS%203/One-Piece-Pirate-Warriors-3-v1.0.0.zip) | 2026-11-26 | [README](./ONE%20PIECE%20PIRATE%20WARRIORS%203/README.md) |
 | ONE PIECE: PIRATE WARRIORS 4 | Lyall | [1089090](https://store.steampowered.com/app/1089090) | [v0.0.4](./external/Lyall/OPPW4Fix/OPPW4Fix_0.0.4.zip) | 2025-06-05 | [OPPW4Fix](https://codeberg.org/Lyall/OPPW4Fix) |
 | Onimusha: Way of the Sword | TLin-Y | [2638890](https://store.steampowered.com/app/2638890) | [v1.0.0](./Onimusha%20Way%20of%20the%20Sword/Onimusha-Way-of-the-Sword-v1.0.0.zip) | 2026-11-15 | [README](./Onimusha%20Way%20of%20the%20Sword/README.md) |
 | Ori and the Blind Forest: Definitive Edition | TLin-Y | [387290](https://store.steampowered.com/app/387290) | [v1.1.0](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/Ori-and-the-Blind-Forest-Definitive-Edition-v1.1.0.zip) | 2026-11-22 | [README](./Ori%20and%20the%20Blind%20Forest%20Definitive%20Edition/README.md) |

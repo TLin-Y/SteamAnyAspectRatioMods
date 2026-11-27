@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 63, 62, 1, 0, 80
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 64, 63, 1, 0, 81
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -115,6 +115,11 @@ PINNED = {
         "steam_app_id": "2719200", "install_dir": "SAMURAI WARRIORS 4 DX", "executable": "SamuraiWarriors4DX.exe",
         "source.destination": "", "files": ("dinput8.dll", "SW4DX_ARFix.asi", "SW4DX_ARFix.ini"),
         "ini_file": "SW4DX_ARFix.ini", "display_tags": (), "wine_dll_overrides": ("dinput8=n,b",),
+    },
+    "one-piece-pirate-warriors-3": {
+        "steam_app_id": "331600", "install_dir": "OPPW3", "executable": "oppw3.exe",
+        "source.destination": "", "files": ("dinput8.dll", "OPPW3_ARFix.asi", "OPPW3_ARFix.ini"),
+        "ini_file": "OPPW3_ARFix.ini", "display_tags": (), "wine_dll_overrides": ("dinput8=n,b",),
     },
     "samurai-warriors-4-ii": {
         "steam_app_id": "348470", "install_dir": "SAMURAI WARRIORS 4-II", "executable": "SW4II.exe",
@@ -298,6 +303,7 @@ INI_DEFAULTS = {
     },
     "dynasty-warriors-9": {"Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0}},
     "samurai-warriors-4-ii": {"Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0}},
+    "one-piece-pirate-warriors-3": {"Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0}},
     "samurai-warriors-4-dx": {"Resolution": {"Width": 0, "Height": 0}, "FOV": {"Multiplier": 1.0}},
     "dragonsword-awakening": {"Resolution": {"Width": 1280, "Height": 800}, "FOV": {"KeepHorizontalFOV": True}},
     "sonic-x-shadow-generations": {

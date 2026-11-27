@@ -543,6 +543,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "one-piece-pirate-warriors-3",
+      "name": "ONE PIECE PIRATE WARRIORS 3 - Custom Aspect Ratio",
+      "steam_app_id": "331600",
+      "install_dir": "OPPW3",
+      "executable": "oppw3.exe",
+      "source": {
+        "kind": "archive",
+        "path": "ONE PIECE PIRATE WARRIORS 3/One-Piece-Pirate-Warriors-3-v1.0.0.zip",
+        "sha256": "c0dd9642cb39c339cde47185df825ff87d29947aacbf5a31027fd7c14e4a51a8"
+      },
+      "files": ["dinput8.dll", "OPPW3_ARFix.asi", "OPPW3_ARFix.ini"],
+      "ini_file": "OPPW3_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "onimusha-way-of-the-sword",
       "name": "Onimusha: Way of the Sword - Custom Aspect Ratio",
       "steam_app_id": "2638890",
