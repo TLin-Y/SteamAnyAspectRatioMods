@@ -12,6 +12,8 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 #if !defined(_M_IX86)
 #error Devil May Cry 4 Special Edition is a 32-bit game. Compile this project as x86.
@@ -42,6 +44,9 @@ namespace
 
     std::mutex readersMutex;
     std::set<void*> widgetReaders;
+
+    std::mutex layoutsMutex;
+    std::unordered_map<uintptr_t, std::pair<float, float>> centeredLayouts;
 
     HRESULT __stdcall NextSample(void* reader, WORD stream, void** sample, std::uint64_t* time, std::uint64_t* duration, DWORD* flags, DWORD* output, WORD* streamOut)
     {
@@ -241,8 +246,14 @@ namespace
                 float w = float(*reinterpret_cast<int*>(r + 0xC0)), h = float(*reinterpret_cast<int*>(r + 0xC4));
                 float fw = std::fmin(w, h * 16.0f / 9.0f), s = fw / 1920.0f;
                 auto f = reinterpret_cast<float*>(ctx.esi);
-                f[16] = (w - fw) / 2.0f;
-                f[17] = (h - fw * 9.0f / 16.0f) / 2.0f;
+                float x = (w - fw) / 2.0f, y = (h - fw * 9.0f / 16.0f) / 2.0f;
+                std::lock_guard lock(layoutsMutex);
+                auto& centered = centeredLayouts[ctx.esi];
+                if ((f[16] == 0.0f && f[17] == 0.0f) || (f[16] == centered.first && f[17] == centered.second)) {
+                    f[16] = x;
+                    f[17] = y;
+                    centered = { x, y };
+                }
                 f[24] = f[25] = f[26] = s;
             });
         }
