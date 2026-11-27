@@ -2298,42 +2298,21 @@
       "ini_file": "SHfFix.ini"
     },
     {
-      "id": "crossworldsfix",
-      "name": "Sonic Racing: CrossWorlds - CrossWorldsFix",
+      "id": "sonic-racing-crossworlds",
+      "name": "Sonic Racing: CrossWorlds - Custom Aspect Ratio",
       "steam_app_id": "2486820",
       "install_dir": "SonicRacingCrossWorlds",
-      "executable": "SonicRacingCrossWorlds.exe",
+      "executable": "UNION/Binaries/Win64/SonicRacingCrossWorldsSteam.exe",
+      "executable_alternatives": ["SonicRacingCrossWorlds.exe"],
       "source": {
         "kind": "archive",
-        "path": "external/Lyall/CrossWorldsFix/CrossWorldsFix_0.0.3.zip",
-        "sha256": "1cd5ed2d7ce6a8b4dfc9d47b7cb38b69a3a94ef437da54d4ee6b380665d31c13"
+        "path": "Sonic Racing CrossWorlds/Sonic-Racing-CrossWorlds-v1.0.0.zip",
+        "sha256": "ce7f71b2c138c26d6a92658d2b5d83e5bb31d4da9e3fa9d6406277be28fe5ae3",
+        "destination": "UNION/Binaries/Win64"
       },
-      "files": [
-        "CrossWorldsFix.asi",
-        "CrossWorldsFix.ini",
-        "winmm.dll"
-      ],
-      "display_tags": ["may-be-outdated-report-to-lyall"],
-      "wine_dll_overrides": [
-        "winmm=n,b"
-      ],
-      "credits": [
-        {
-          "name": "Lyall",
-          "url": "https://codeberg.org/Lyall",
-          "support": [
-            {
-              "label": "Patreon",
-              "url": "https://www.patreon.com/Wintermance"
-            },
-            {
-              "label": "Ko-fi",
-              "url": "https://ko-fi.com/W7W01UAI9"
-            }
-          ]
-        }
-      ],
-      "ini_file": "CrossWorldsFix.ini"
+      "files": ["UNION/Binaries/Win64/winmm.dll", "UNION/Binaries/Win64/CrossWorlds_ARFix.asi", "UNION/Binaries/Win64/CrossWorlds_ARFix.ini"],
+      "ini_file": "UNION/Binaries/Win64/CrossWorlds_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
     },
     {
       "id": "sky1stchapterfix",

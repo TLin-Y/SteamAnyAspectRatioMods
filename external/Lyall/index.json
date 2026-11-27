@@ -1906,21 +1906,6 @@
     ]
   },
   {
-    "repo": "CrossWorldsFix",
-    "description": "An ASI plugin for Sonic Racing: CrossWorlds that adds ultrawide/narrower support.",
-    "html_url": "https://codeberg.org/Lyall/CrossWorldsFix",
-    "tag": "0.0.3",
-    "published": "2025-12-06",
-    "zip": "external/Lyall/CrossWorldsFix/CrossWorldsFix_0.0.3.zip",
-    "size": 876758,
-    "files": [
-      "CrossWorldsFix.asi",
-      "CrossWorldsFix.ini",
-      "EXTRACT_TO_GAME_FOLDER",
-      "winmm.dll"
-    ]
-  },
-  {
     "repo": "WO3UFix",
     "description": "An ASI plugin for WARRIORS OROCHI 3 Ultimate Definitive Edition that can add custom resolutions, ultrawide/narrower support and more.",
     "html_url": "https://codeberg.org/Lyall/WO3UFix",
