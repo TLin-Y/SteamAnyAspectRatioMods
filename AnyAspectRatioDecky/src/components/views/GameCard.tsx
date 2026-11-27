@@ -1,10 +1,14 @@
-import { ButtonItem, DialogButton, PanelSection, PanelSectionRow, ToggleField } from "@decky/ui";
+import { ButtonItem, DialogButton, Navigation, PanelSection, PanelSectionRow, ToggleField } from "@decky/ui";
 import { MOD_LOG_BUTTON_STYLE } from "../../services/formatters";
+import { openAuthorPage } from "../../services/modals";
 import { DESKTOP_ACTIONS } from "../../services/platform";
 import type { SupportedGame } from "../../services/types";
 import { GameTitle } from "./GameDetails";
 
 const DESKTOP_BUTTON_STYLE = { flex: "1 1 0", minWidth: 0, height: "36px", padding: "4px" };
+const DECK_BUTTON_STYLE = { flex: "0 0 30%", height: "36px", padding: "4px" };
+const ACTION_BUTTON_STYLE = DESKTOP_ACTIONS ? DESKTOP_BUTTON_STYLE : DECK_BUTTON_STYLE;
+const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
 type Props = {
   first: SupportedGame;
@@ -22,11 +26,12 @@ type Props = {
   onEdit: (game: SupportedGame) => void;
   onReadme: (game: SupportedGame) => void;
   onLog: (game: SupportedGame) => void;
+  onChooseDownload: (game: SupportedGame) => void;
 };
 
 export function GameCard({
   first, game, index, groupId, toggleRevision, updating, progress, readmeLoading,
-  onSelect, onApply, onClear, onEdit, onReadme, onLog,
+  onSelect, onApply, onClear, onEdit, onReadme, onLog, onChooseDownload,
 }: Props) {
   if (!game) {
     return (
@@ -47,12 +52,14 @@ export function GameCard({
     );
   }
 
+  const authorPage = game.download_page;
+  const needsZip = !!authorPage && !game.download_file && game.file_status !== "complete";
   const toggle = (
     <ToggleField
       key={`${game.steam_app_id}-${toggleRevision}`}
       label={game.file_status === "partial" ? "Apply *" : "Apply"}
       checked={game.file_status === "complete"}
-      disabled={updating || !game.game_path}
+      disabled={updating || !game.game_path || needsZip}
       onChange={(checked) => onApply(game, checked)}
     />
   );
@@ -84,24 +91,39 @@ export function GameCard({
               Open
             </DialogButton>
           )}
-          {!game.manual && (
-            <DialogButton
-              style={DESKTOP_ACTIONS ? DESKTOP_BUTTON_STYLE : { flex: "0 0 30%", height: "36px", padding: "4px" }}
-              onClick={() => onEdit(game)}
-              disabled={updating || !game.game_path}
-            >
-              Edit
-            </DialogButton>
+          {needsZip ? (
+            <>
+              <DialogButton style={ACTION_BUTTON_STYLE} onClick={() => openAuthorPage(authorPage)}>
+                Get
+              </DialogButton>
+              <DialogButton
+                style={ACTION_BUTTON_STYLE}
+                disabled={updating}
+                onClick={() => onChooseDownload(game)}
+              >
+                Choose zip
+              </DialogButton>
+            </>
+          ) : (
+            <>
+              {!game.manual && (
+                <DialogButton
+                  style={ACTION_BUTTON_STYLE}
+                  onClick={() => onEdit(game)}
+                  disabled={updating || !game.game_path}
+                >
+                  Edit
+                </DialogButton>
+              )}
+              <DialogButton
+                style={game.manual && !DESKTOP_ACTIONS ? { ...DECK_BUTTON_STYLE, flex: "0 0 60%" } : ACTION_BUTTON_STYLE}
+                onClick={() => authorPage ? Navigation.NavigateToExternalWeb(authorPage) : onReadme(game)}
+                disabled={readmeLoading}
+              >
+                ReadMe
+              </DialogButton>
+            </>
           )}
-          <DialogButton
-            style={DESKTOP_ACTIONS
-              ? DESKTOP_BUTTON_STYLE
-              : { flex: game.manual ? "0 0 60%" : "0 0 30%", height: "36px", padding: "4px" }}
-            onClick={() => onReadme(game)}
-            disabled={readmeLoading}
-          >
-            ReadMe
-          </DialogButton>
           {DESKTOP_ACTIONS && game.wine_dll_overrides.length > 0 && (
             <DialogButton
               style={DESKTOP_BUTTON_STYLE}
@@ -124,6 +146,15 @@ export function GameCard({
         </PanelSectionRow>
       ) : (
         <>
+          {(needsZip || game.download_file) && (
+            <PanelSectionRow>
+              <div role="status" style={{ overflowWrap: "anywhere" }}>
+                {needsZip
+                  ? "Not hosted here. Get the zip from the author's page, then Scan."
+                  : `Zip: ${fileName(game.download_file ?? "")}`}
+              </div>
+            </PanelSectionRow>
+          )}
           <PanelSectionRow>
             {log ? (
               <div style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>

@@ -30,6 +30,8 @@ export type SupportedGameReport = {
     log_files?: string[];
     display_tags?: string[];
     backup_files?: string[];
+    download_page?: string;
+    download_file?: string;
   }[];
   warnings: string[];
 };
@@ -78,6 +80,7 @@ export type CreditsInfo = {
     name: string;
     url: string;
     support: { label: string; url: string }[];
+    external?: boolean;
     mod_count: number;
     mods: { id: string; name: string; applied: boolean }[];
   }[];

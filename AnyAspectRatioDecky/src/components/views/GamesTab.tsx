@@ -19,7 +19,12 @@ import {
   selectMatchedGame,
   getDiskUsage,
   getLog,
+  importAuthorDownload,
+  getDownloadsFolder,
+  DEFAULT_PICKER_DIRECTORY,
 } from "../../services/callables";
+import { openFilePicker } from "@decky/api";
+import type { FileSelectionType } from "@decky/api";
 import {
   confirmOfflineMod,
   showErrorModal,
@@ -354,6 +359,26 @@ Required setting: ${setting}`, refreshError),
     else void openGameDetails(selectedGame);
   }, [selectedGame]);
 
+  const chooseDownload = async (game: SupportedGame) => {
+    let picked;
+    try {
+      const start = await getDownloadsFolder().catch(() => DEFAULT_PICKER_DIRECTORY);
+      picked = await openFilePicker(0 as FileSelectionType, start, true, false, undefined, ["zip"]);
+    } catch {
+      return;
+    }
+    setModProgress({ key: gameKey(game), step: "Checking the zip" });
+    try {
+      await importAuthorDownload(game.mod_id, picked.realpath || picked.path);
+      const refreshError = await refresh();
+      if (refreshError) notifyError("Status refresh failed", refreshError);
+    } catch (error) {
+      notifyError("Could not use this zip", errorText(error));
+    } finally {
+      setModProgress(null);
+    }
+  };
+
   const resetGameChoice = async (game: SupportedGame) => {
     const group = game.ambiguity_group;
     if (!group || !game.game_path) return;
@@ -508,6 +533,7 @@ Required setting: ${setting}`, refreshError),
               onEdit={(selected) => void openGameDetails(selected)}
               onReadme={(selected) => void openGameReadme(selected)}
               onLog={(selected) => void openGameLog(selected)}
+              onChooseDownload={(selected) => void chooseDownload(selected)}
             />
           </Fragment>
         );

@@ -58,6 +58,7 @@ function createHarness(offline = false) {
     "../../services/callables": api,
     "../../services/modals": { showErrorModal: (...args) => errors.push(args) },
     "../../services/formatters": formatters,
+    "../modals/CleanupModal": { CleanupModal: "CleanupModal" },
   });
   const render = () => {
     stateIndex = 0;
@@ -150,6 +151,7 @@ test("backup-target replacement confirmation explains the original-file backup",
       };
       if (name === "../components/modals/LaunchOptionsInfoModal") return { LaunchOptionsInfoModal: "LaunchOptionsInfoModal" };
       if (name === "../components/modals/GameChoiceModal") return { GameChoiceModal: "GameChoiceModal" };
+      if (name === "./platform") return { DESKTOP_ACTIONS: null };
       throw new Error(`Unexpected dependency: ${name}`);
     },
     module,
@@ -166,4 +168,47 @@ test("backup-target replacement confirmation explains the original-file backup",
   assert.equal(modal.props.strOKButtonText, "Replace original file");
   modal.props.onOK();
   assert.equal(await confirmation, true);
+});
+
+test("cleanup dialog deletes cache and logs by default and keeps saved author downloads", () => {
+  const source = fs.readFileSync(path.join(__dirname, "../src/components/modals/CleanupModal.tsx"), "utf8");
+  const output = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText;
+  const states = [];
+  let hook = 0;
+  const module = { exports: {} };
+  new Function("require", "module", "exports", output)(
+    (name) => {
+      if (name === "react/jsx-runtime") return { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) };
+      if (name === "react") return {
+        useState(initial) {
+          const index = hook++;
+          if (!(index in states)) states[index] = initial;
+          return [states[index], (value) => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
+        },
+      };
+      if (name === "@decky/ui") return { ConfirmModal: "ConfirmModal", DialogCheckbox: "DialogCheckbox" };
+      throw new Error(`Unexpected dependency: ${name}`);
+    },
+    module,
+    module.exports,
+  );
+  const chosen = [];
+  const render = () => {
+    hook = 0;
+    return module.exports.CleanupModal({ onConfirm: (choice) => chosen.push(choice) });
+  };
+  let modal = render();
+  assert.deepEqual(modal.props.children.map((box) => box.props.checked), [true, true, false]);
+  modal.props.onOK();
+  assert.deepEqual(chosen.pop(), { caches: true, logs: true, downloads: false });
+  for (const box of modal.props.children) box.props.onChange(false);
+  modal = render();
+  assert.equal(modal.props.bOKDisabled, true);
+  modal.props.children[2].props.onChange(true);
+  modal = render();
+  assert.equal(modal.props.bOKDisabled, false);
+  modal.props.onOK();
+  assert.deepEqual(chosen.pop(), { caches: false, logs: false, downloads: true });
 });

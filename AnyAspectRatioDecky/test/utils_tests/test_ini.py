@@ -21,3 +21,7 @@ class IniTests(unittest.TestCase):
                                 (b'"1280x800', None), (b"0x800", None), (b"1280X800", None), (b"auto", None)):
             with self.subTest(value=value):
                 self.assertEqual(expected, ini.resolution_quote(value))
+        for value, expected in ((b"auto", b""), (b'"AUTO"', b'"'), (b"'auto'", b"'"), (b'"auto', None),
+                                (b"automatic", None), (b"1280x800", None)):
+            with self.subTest(value=value):
+                self.assertEqual(expected, ini.auto_quote(value))

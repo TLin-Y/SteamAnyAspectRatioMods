@@ -38,8 +38,9 @@ class SourceKind(StrEnum):
     DIRECTORY = "directory"
     FILES = "files"
     LOCAL_ARCHIVE = "local_archive"
+    AUTHOR_DOWNLOAD = "author_download"
 
-ZIP_SOURCE_KINDS = frozenset((SourceKind.ARCHIVE, SourceKind.LOCAL_ARCHIVE))
+ZIP_SOURCE_KINDS = frozenset((SourceKind.ARCHIVE, SourceKind.LOCAL_ARCHIVE, SourceKind.AUTHOR_DOWNLOAD))
 _HASHED_SOURCE_KINDS = frozenset((SourceKind.DIRECTORY, SourceKind.FILES))
 
 
@@ -50,6 +51,10 @@ class IniValueKind(StrEnum):
     RATIO = "ratio"
     # One key holds both as text, e.g. Resolution="1280x800"
     PIXELS_STRING = "pixels_string"
+    # Same, and "auto" is replaced too.
+    PIXELS_STRING_AUTO = "pixels_string_auto"
+
+PIXELS_STRING_KINDS = frozenset((IniValueKind.PIXELS_STRING, IniValueKind.PIXELS_STRING_AUTO))
 
 def _sorted_items(mapping: dict[str, str]) -> tuple[tuple[str, str], ...]:
     return tuple(sorted(mapping.items()))
@@ -63,7 +68,9 @@ class ModSourceFile:
 
 @dataclass(frozen=True, slots=True)
 class ModSource:
-    kind: Annotated[SourceKind, one_of(SourceKind.ARCHIVE, SourceKind.DIRECTORY, SourceKind.FILES)]
+    kind: Annotated[
+        SourceKind, one_of(SourceKind.ARCHIVE, SourceKind.DIRECTORY, SourceKind.FILES, SourceKind.AUTHOR_DOWNLOAD)
+    ]
     path: RelativePath | None = None
     destination: RelativePathOrEmpty = ""
     files: tuple[ModSourceFile, ...] = ()
@@ -73,6 +80,9 @@ class ModSource:
     file_hashes: tuple[tuple[str, str], ...] = json_field(
         default=(), wire=dict[RelativePath, Sha256], convert=_sorted_items,
     )
+    page: HttpsUrlOrEmpty = ""
+    download_path: str = json_field(default="", skip=True)
+    archive_root: str = json_field(default="", skip=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,9 +122,11 @@ class IniResolutionString:
 
     section: IniSection
     key: IniKey
+    replace_auto: bool = False
 
     def as_pair(self) -> IniResolutionPair:
-        return IniResolutionPair(self.section, self.key, self.key, IniValueKind.PIXELS_STRING)
+        kind = IniValueKind.PIXELS_STRING_AUTO if self.replace_auto else IniValueKind.PIXELS_STRING
+        return IniResolutionPair(self.section, self.key, self.key, kind)
 
 
 @exact_keys
@@ -172,6 +184,7 @@ class _CatalogDocument:
     source_repository: SourceRepository
     mods: tuple[object, ...]
     default_credits: tuple[ModCredit, ...] = ()
+    author_downloads: tuple[object, ...] = ()
 
 def _first_repeat(values: Iterable[str]) -> str | None:
     seen: set[str] = set()
@@ -213,6 +226,14 @@ def _check_files(mod: ModDefinition) -> None:
 def _check_source(mod: ModDefinition) -> None:
     source = mod.source
     is_file_list = source.kind == SourceKind.FILES
+    if source.kind == SourceKind.AUTHOR_DOWNLOAD:
+        if not source.page:
+            raise PluginError("source.page is missing")
+        if source.sha256 or source.path is not None or source.files or source.file_hashes:
+            raise PluginError("an author download keeps nothing in the repository: only its page and files")
+        return
+    if source.page:
+        raise PluginError("source.page is only for author_download sources")
 
     if is_file_list:
         if source.path is not None:
@@ -238,7 +259,7 @@ def _check_ini(mod: ModDefinition) -> None:
     seen: set[tuple[str, str]] = set()
     for pair in mod.ini_resolution:
         keys = {(pair.section.casefold(), name.casefold()) for name in (pair.width, pair.height)}
-        expected = 1 if pair.kind == IniValueKind.PIXELS_STRING else 2
+        expected = 1 if pair.kind in PIXELS_STRING_KINDS else 2
         if len(keys) != expected or keys & seen:
             raise PluginError(f"ini_resolution repeats a key in [{pair.section}]")
         seen |= keys
@@ -315,16 +336,24 @@ def mod_log_names(files: tuple[str, ...] | list[str]) -> list[str]:
 def summarize_credits(
     mods: tuple[ModDefinition, ...], applied_mod_ids: frozenset[str] = frozenset(),
 ) -> list[dict[str, object]]:
-    """Group mods by author: the repository owner first, then most applied, then most mods; applied mods first."""
+    """Group mods by author: the repository owner first, then most applied, then most mods; applied mods first.
+
+    Authors whose mods are all author downloads (not hosted or tested here) come last.
+    """
     authors: dict[ModCredit, list[ModDefinition]] = {}
     for mod in mods:
         for credit in mod.credits:
             authors.setdefault(credit, []).append(mod)
+
+    def external(owned: list[ModDefinition]) -> bool:
+        return all(mod.source.kind == SourceKind.AUTHOR_DOWNLOAD for mod in owned)
+
     return [
         {
             "name": credit.name,
             "url": credit.url,
             "support": [{"label": link.label, "url": link.url} for link in credit.support],
+            "external": external(owned),
             "mod_count": len(owned),
             "mods": [
                 {"id": mod.mod_id, "name": mod.name, "applied": mod.mod_id in applied_mod_ids}
@@ -333,6 +362,7 @@ def summarize_credits(
         }
         for credit, owned in sorted(
             authors.items(), key=lambda item: (
+                external(item[1]),
                 item[0].name != REPOSITORY_OWNER,
                 -sum(mod.mod_id in applied_mod_ids for mod in item[1]),
                 -len(item[1]),
@@ -352,9 +382,12 @@ def _parse_mod(
     index: int,
     repository: SourceRepository,
     default_credits: tuple[ModCredit, ...],
+    author_download: bool = False,
 ) -> ModDefinition:
     with errors.wrap(f"Mod catalog entry {_entry_label(entry, index)}"):
         mod = decode(entry, ModDefinition)
+        if (mod.source.kind == SourceKind.AUTHOR_DOWNLOAD) != author_download:
+            raise PluginError("author_download sources go in author_downloads, and only they do")
         extras = decode(entry, _EntryExtras)
         mod = replace(
             mod,
@@ -405,6 +438,9 @@ def load_mod_catalog(
     mods = tuple(
         _parse_mod(entry, index, repository, document.default_credits)
         for index, entry in enumerate(document.mods)
+    ) + tuple(
+        _parse_mod(entry, index, repository, document.default_credits, author_download=True)
+        for index, entry in enumerate(document.author_downloads)
     )
     
     if repeat := _first_repeat(mod.mod_id for mod in mods):

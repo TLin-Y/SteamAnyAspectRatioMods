@@ -1,4 +1,5 @@
-import { ConfirmModal, showModal } from "@decky/ui";
+import { ConfirmModal, Navigation, showModal } from "@decky/ui";
+import { DESKTOP_ACTIONS } from "./platform";
 import type { LaunchOptionsDisplay, SupportedGame } from "./types";
 import { LaunchOptionsInfoModal } from "../components/modals/LaunchOptionsInfoModal";
 import { GameChoiceModal } from "../components/modals/GameChoiceModal";
@@ -96,6 +97,22 @@ export function confirmModifiedIniRemoval(
     );
     closeModal = modal.Close;
   });
+}
+
+/** SteamOS's browser saves downloads silently, so say where the zip goes before opening the page. */
+export function openAuthorPage(url: string) {
+  if (DESKTOP_ACTIONS) {
+    Navigation.NavigateToExternalWeb(url);
+    return;
+  }
+  showModal(
+    <ConfirmModal
+      strTitle="Download from the author's page"
+      strDescription={"The browser shows no message when the download finishes. The zip is saved to your Downloads folder.\n\nWhen it is done, come back here and press Scan. If the zip is somewhere else, use Choose zip."}
+      strOKButtonText="Open page"
+      onOK={() => Navigation.NavigateToExternalWeb(url)}
+    />,
+  );
 }
 
 export function showErrorModal(title: string, message: string) {

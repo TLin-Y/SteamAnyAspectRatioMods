@@ -1,7 +1,7 @@
 from contextlib import ExitStack
 from unittest.mock import patch
 
-from support.catalog import catalog_document
+from support.catalog import catalog_document, catalog_size
 from support.fakes import failing, serving
 from support.plugin import PluginTest, file_logger
 from support.sandbox import PLUGIN_ROOT
@@ -17,7 +17,7 @@ class LocalDataTests(PluginTest):
     def test_importing_a_pack_online_also_refreshes_the_catalog(self) -> None:
         with serving((PLUGIN_ROOT / "catalog.json").read_bytes()):
             self.assertIsNone(self.call("import_offline_pack", str(self.pack.path))["warning"])
-        self.assertEqual((len(catalog_document()["mods"]), 1), (self.mod_count(), self.mod_count(Settings(offline_mode=True))))
+        self.assertEqual((catalog_size(catalog_document()), 1), (self.mod_count(), self.mod_count(Settings(offline_mode=True))))
 
         with failing(OSError("network down")):
             self.assertIn("Could not refresh", self.call("import_offline_pack", str(self.pack.path))["warning"])
@@ -42,3 +42,25 @@ class LocalDataTests(PluginTest):
             self.assertTrue(self.store.settings_path.exists())
             plugin_log.info("new log")
             self.assertIn("new log", self.store.log_path.read_text(encoding="utf-8"))
+
+    def test_clearing_deletes_only_what_was_chosen(self) -> None:
+        kept_zip = self.store.author_downloads_dir / "mod.zip"
+        self.write({"mod.zip": "zip"}, self.store.author_downloads_dir)
+        self.write({"test.cache": "cache"}, self.store.cache_dir)
+        self.call("_uninstall")
+        self.assertTrue(kept_zip.is_file())
+
+        with ExitStack() as stack:
+            plugin_log = file_logger(stack, "test.clear.choice", self.store.log_path)
+            with patch.object(self.main, "log", plugin_log):
+                self.call("clear_local_data")
+                self.assertTrue(kept_zip.is_file())
+                plugin_log.info("old log")
+                self.write({"test.cache": "cache"}, self.store.cache_dir)
+                self.call("clear_local_data", False, False, True)
+                self.assertFalse(kept_zip.exists())
+                self.assertTrue((self.store.cache_dir / "test.cache").is_file())
+                self.assertTrue(self.store.log_path.is_file())
+                self.call("clear_local_data", False, True, False)
+                self.assertFalse(self.store.log_path.exists())
+                self.assertTrue((self.store.cache_dir / "test.cache").is_file())

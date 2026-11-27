@@ -50,6 +50,7 @@ function harness(report) {
         if (name === "react") return react;
         if (name === "react/jsx-runtime") return { jsx: element, jsxs: element, Fragment: "Fragment" };
         if (name === "@decky/ui") return ui;
+        if (name === "@decky/api") return { openFilePicker: async () => { throw new Error("dismissed"); } };
         if (name === "react-markdown") return { __esModule: true, default: "ReactMarkdown" };
         if (name.endsWith("/callables")) return {
           setModApplied: async (...args) => {
@@ -159,4 +160,31 @@ test("Other games apply without an Offline prompt; Offline games remove without 
     assert.equal(h.calls.length, 1);
     assert.equal(h.calls[0][2], applied);
   }
+});
+
+test("Author downloads offer the author's page and stay off until the zip is found", () => {
+  const page = "https://example.com/mod";
+  let h;
+  const card = (download) => {
+    h = harness({
+      supported_games: [{ ...game(false), source_kind: "author_download", download_page: page, ...download }],
+      warnings: [], steam_scan: { apps_scanned: 1, libraries_scanned: 1 }, catalogued_mods: 1,
+    });
+    return h.render();
+  };
+  const text = (tree) => nodes(tree, "div").map((node) => String(node.props.children)).join("|");
+  const missing = card({ download_file: "" });
+  assert.ok(nodes(missing, "ToggleField")[0].props.disabled);
+  const actions = ["Get", "Choose zip", "Edit", "ReadMe"];
+  const buttons = (tree) => nodes(tree, "DialogButton").map((node) => node.props.children).filter((name) => actions.includes(name));
+  assert.deepEqual(buttons(missing), ["Get", "Choose zip"]);
+  nodes(missing, "DialogButton").find((node) => node.props.children === "Get").props.onClick();
+  assert.equal(h.modal.node.props.strOKButtonText, "Open page");
+  assert.match(h.modal.node.props.strDescription, /no message when the download finishes/);
+  assert.ok(text(missing).includes("Not hosted here."));
+  const found = card({ download_file: "C:\\Users\\me\\Downloads\\mod v2.zip" });
+  assert.ok(!nodes(found, "ToggleField")[0].props.disabled);
+  assert.deepEqual(buttons(found), ["Edit", "ReadMe"]);
+  assert.ok(text(found).includes("Zip: mod v2.zip|"), text(found));
+  assert.ok(text(card({ download_file: "/x/mod.zip" })).includes("Zip: mod.zip|"));
 });

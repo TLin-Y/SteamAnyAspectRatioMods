@@ -42,7 +42,7 @@ def source_file_map(mod: ModDefinition) -> dict[str, str]:
             outside = next((path for path in mod.files if not path.startswith(prefix)), None)
             if outside is not None:
                 raise PluginError(f"Mod file {outside} is outside archive destination {source.destination}")
-            return {path: path.removeprefix(prefix) for path in mod.files}
+            return {path: source.archive_root + path.removeprefix(prefix) for path in mod.files}
         case kind:
             raise PluginError(f"Unsupported mod source kind: {kind}")
 

@@ -65,7 +65,7 @@ class LocalArchiveTests(GameTest):
     def test_index_is_reused_only_for_the_same_folder_version_and_archives(self) -> None:
         self.zip("Cool Game.zip", {"a.dll": "1"})
         self.scan(index_path=self.index)
-        with patch("scanner.local_archives._list_archive_files") as listing:
+        with patch("scanner.local_archives.list_archive_files") as listing:
             self.assertEqual(1, len(self.scan(index_path=self.index)[0]))
         listing.assert_not_called()
 
@@ -73,7 +73,7 @@ class LocalArchiveTests(GameTest):
         for stale in ({**document, "version": 0}, {**document, "directory": "/elsewhere"}, {**document, "archives": []}):
             with self.subTest(stale=stale):
                 self.index.write_text(json.dumps(stale), encoding="utf-8")
-                with patch("scanner.local_archives._list_archive_files", return_value=(["a.dll"], None)) as listing:
+                with patch("scanner.local_archives.list_archive_files", return_value=(["a.dll"], None)) as listing:
                     self.assertEqual(1, len(self.scan(index_path=self.index)[0]))
                 listing.assert_called_once()
 

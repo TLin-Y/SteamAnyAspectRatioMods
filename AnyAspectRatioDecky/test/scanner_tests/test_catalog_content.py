@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 68, 67, 1, 0, 80
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 68, 67, 1, 0, 81
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -438,6 +438,8 @@ class CatalogContentTests(unittest.TestCase):
                     case "files":
                         source = next(item for item in mod.source.files if item.destination == mod.ini_file)
                         content = (REPOSITORY_ROOT / source.path).read_bytes()
+                    case "author_download":
+                        continue
                     case _:
                         content = (REPOSITORY_ROOT / mod.source.path / mod.ini_file).read_bytes()
                 sections = ini.values_by_section(content.splitlines(keepends=True))
@@ -453,6 +455,10 @@ class CatalogContentTests(unittest.TestCase):
                 with self.subTest(mod=entry["id"]):
                     self.assertEqual({"section", "width", "height", "kind"}, set(pair))
                     self.assertIn(pair["kind"], ("pixels", "ratio"))
+            with self.subTest(mod=entry["id"]):
+                self.assertNotIn("page", entry["source"])
+                self.assertNotEqual("author_download", entry["source"]["kind"])
+                self.assertTrue(all(set(item) == {"section", "key"} for item in entry.get("ini_resolution_strings", [])))
 
     def test_stretch_tag_marks_exactly_the_stretched_games(self) -> None:
         tagged = {mod.mod_id for mod in self.mods if "stretch" in mod.display_tags}
@@ -464,6 +470,9 @@ class CatalogContentTests(unittest.TestCase):
         self.assertEqual(("", OWN_MODS), (authors["TLin-Y"]["url"], authors["TLin-Y"]["mod_count"]))
         self.assertEqual(["Mod list", "Ko-fi"], [link["label"] for link in authors["TLin-Y"]["support"]])
         self.assertEqual(["Patreon", "Ko-fi"], [link["label"] for link in authors["Lyall"]["support"]])
+        ordered = [author["external"] for author in summarize_credits(self.mods)]
+        self.assertEqual(sorted(ordered), ordered)
+        self.assertEqual({"Kamiccolo", "Refilo"}, {name for name, author in authors.items() if author["external"]})
 
     def test_ff13_package_carries_the_upstream_files_unchanged(self) -> None:
         ff13 = catalog_mod("final-fantasy-xiii")

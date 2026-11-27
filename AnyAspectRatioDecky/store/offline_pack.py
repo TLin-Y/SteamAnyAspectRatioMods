@@ -59,6 +59,8 @@ def wanted_paths(mods: tuple[ModDefinition, ...]) -> tuple[set[str], set[str]]:
     optional: set[str] = set()
     for mod in mods:
         match mod.source.kind:
+            case SourceKind.AUTHOR_DOWNLOAD:
+                continue
             case SourceKind.FILES | SourceKind.DIRECTORY:
                 required.update(staging.source_file_map(mod).values())
             case _ if mod.source.path is not None:

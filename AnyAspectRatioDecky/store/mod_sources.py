@@ -98,6 +98,11 @@ def open_archive(source: ModSource) -> Generator[Path, None, None]:
     2. download from the repo
     3. the offline pack (only if the network fails or in offline mode)
     """
+    if source.kind == SourceKind.AUTHOR_DOWNLOAD:
+        if not source.download_path or not Path(source.download_path).is_file():
+            raise PluginError(f"Download the mod from the author's page first: {source.page}")
+        yield Path(source.download_path)
+        return
     if source.path is None:
         raise PluginError("Archive source path is missing")
     if source.kind == SourceKind.LOCAL_ARCHIVE:

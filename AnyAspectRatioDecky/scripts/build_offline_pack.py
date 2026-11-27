@@ -20,6 +20,7 @@ ZIP_OVERHEAD_RESERVE_BYTES = 16 * 1024 * 1024
 VERSION_PATTERN = re.compile(r"(?:dev|v?\d+(?:\.\d+)*)")
 sys.path.insert(0, str(PLUGIN_ROOT))
 
+import verify_author_pages  # noqa: E402
 import verify_catalog_steam  # noqa: E402
 from update_catalog_hashes import update as update_catalog_hashes  # noqa: E402
 
@@ -65,6 +66,8 @@ def main() -> None:
         raise SystemExit("Version must be 'dev' or a numeric version such as '1.8.0'.")
     if verify_catalog_steam.main() != 0:
         raise SystemExit("Catalog does not match Steam metadata (or Steam was unreachable); see above.")
+    if verify_author_pages.main() not in (0, 3):
+        raise SystemExit("An author-download page is gone or its site was unreachable; see above.")
     update_catalog_hashes()
     mods = load_mod_catalog(PLUGIN_ROOT / "catalog.json")
     required, optional = wanted_paths(mods)

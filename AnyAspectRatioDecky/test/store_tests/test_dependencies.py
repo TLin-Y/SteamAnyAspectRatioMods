@@ -31,6 +31,7 @@ class CatalogUpdateTests(StoreTest):
         self.assertEqual("bundled", self.origin())
         document = json.loads(CATALOG)
         document["mods"] = document["mods"][:2]
+        document.pop("author_downloads", None)
         self.stale_archive()
         dev = Settings(catalog_ref="dev")
         with serving(json.dumps(document).encode()) as network:

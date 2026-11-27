@@ -31,7 +31,7 @@ class LocalArchive:
     files: tuple[str, ...]
 
 
-def _list_archive_files(path: Path) -> list[str]:
+def list_archive_files(path: Path) -> list[str]:
     try:
         files = zips.file_names(path)
     except (zips.BadZipFile, OSError) as error:
@@ -128,7 +128,7 @@ def _index_entry(path: Path, cached: object) -> dict | None:
 
 def _read_archive(path: Path) -> dict:
     try:
-        return {"files": _list_archive_files(path), "error": None}
+        return {"files": list_archive_files(path), "error": None}
     except PluginError as failure:
         return {"files": [], "error": str(failure)}
 

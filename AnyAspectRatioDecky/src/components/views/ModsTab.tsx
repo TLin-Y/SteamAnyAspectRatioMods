@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
 import {
   ButtonItem,
   ConfirmModal,
@@ -12,8 +12,11 @@ import { openFilePicker } from "@decky/api";
 import type { FileSelectionType } from "@decky/api";
 import { getCredits, importOfflinePack, clearLocalData, updateDependencies, DEFAULT_PICKER_DIRECTORY } from "../../services/callables";
 import { showErrorModal } from "../../services/modals";
+import { CleanupModal } from "../modals/CleanupModal";
 import { APPLIED_BLUE, errorText, formatBytes, formatCatalogUpdate } from "../../services/formatters";
 import type { CreditsInfo } from "../../services/types";
+
+const EXTERNAL_GRAY = "#9e9e9e";
 
 type ActionState = { busy: boolean; status: string; completions: number };
 
@@ -146,11 +149,13 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
 
   const confirmDeleteLocalData = () =>
     showModal(
-      <ConfirmModal
-        strTitle="Delete local files and caches?"
-        strDescription="Removes the imported repository zip, the downloaded catalog, caches, and plugin logs. Settings and mods already applied to games are kept."
-        strOKButtonText="Delete"
-        onOK={() => runAction("Delete failed", clearLocalData, "Local files and caches deleted.", onDataChanged)}
+      <CleanupModal
+        onConfirm={(choice) => runAction(
+          "Delete failed",
+          () => clearLocalData(choice.caches, choice.logs, choice.downloads),
+          "Selected local files deleted.",
+          onDataChanged,
+        )}
       />,
     );
 
@@ -196,17 +201,32 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
           </div>
         </PanelSectionRow>
       )}
-      {credits?.authors.map((author) => {
+      {credits?.authors.map((author, index, authors) => {
         const links = [
           ...(author.url ? [{ label: siteName(author.url), url: author.url }] : []),
           ...author.support,
         ];
         const applied = author.mods.filter((mod) => mod.applied).length;
         return (
-          <PanelSectionRow key={`${author.name}|${author.url}`}>
+          <Fragment key={`${author.name}|${author.url}`}>
+          {author.external && !authors[index - 1]?.external && (
+            <PanelSectionRow>
+              <div style={{ color: EXTERNAL_GRAY }}>
+                <div style={{ fontWeight: "bold" }}>External Source (untested)</div>
+                <div style={{ fontSize: "12px" }}>
+                  These mods may not be redistributed, but they are free for anyone to download and use. Please visit
+                  the original page for more details.
+                </div>
+              </div>
+            </PanelSectionRow>
+          )}
+          <PanelSectionRow>
             <div style={{ width: "100%", marginBottom: "12px" }}>
               <DialogButton
-                style={{ width: "100%", minWidth: 0, padding: "8px", fontSize: "15px", marginBottom: "4px" }}
+                style={{
+                  width: "100%", minWidth: 0, padding: "8px", fontSize: "15px", marginBottom: "4px",
+                  ...(author.external ? { color: EXTERNAL_GRAY } : {}),
+                }}
                 onClick={() => showAuthorMods(author, applied)}
               >
                 <span style={applied ? APPLIED_STYLE : undefined}>{author.name}</span>
@@ -232,6 +252,7 @@ export function ModsTab({ onDataChanged }: { onDataChanged: () => void }) {
               </div>
             </div>
           </PanelSectionRow>
+          </Fragment>
         );
       })}
       <Divider />

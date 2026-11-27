@@ -5,7 +5,7 @@ from http.client import IncompleteRead
 from unittest.mock import patch
 
 from support.builders import write_zip
-from support.catalog import catalog_document
+from support.catalog import catalog_document, catalog_size
 from support.fakes import failing, serving
 from support.packs import (
     CATALOG_MEMBER,
@@ -99,7 +99,7 @@ class OfflinePackTests(PackTest):
         with serving(json.dumps(online).encode()):
             update_dependencies(self.store, Settings())
         self.install()
-        self.assertEqual(len(online["mods"]), len(load_active_catalog(self.store, Settings()).mods))
+        self.assertEqual(catalog_size(online), len(load_active_catalog(self.store, Settings()).mods))
         (packed,) = load_active_catalog(self.store, Settings(offline_mode=True)).mods
         self.assert_works_offline(packed)
 

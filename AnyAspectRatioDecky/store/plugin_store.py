@@ -101,6 +101,7 @@ class PluginStore:
         self.catalog_meta_path = self.cache_dir / "catalog.meta.json"
         self.archive_cache_dir = self.cache_dir / "archives"
         self.pack_dir = data_dir / "pack"
+        self.author_downloads_dir = data_dir / "author_downloads"
         self.local_index_path = self.cache_dir / "local_archives.json"
         self.last_scan_path = self.cache_dir / "last_scan.json"
         self.applied_hashes_path = self.data_dir / "applied_hashes.json"
@@ -229,6 +230,10 @@ class PluginStore:
         self.clear_pack()
         folders.remove_tree(self.cache_dir)
         self.ensure_directories()
+
+    def clear_author_downloads(self) -> None:
+        folders.remove_tree(self.author_downloads_dir)
+        self.clear_last_scan()
 
     def pack_stats(self) -> dict[str, int]:
         file_count, size_bytes = folders.stats(self.pack_dir)

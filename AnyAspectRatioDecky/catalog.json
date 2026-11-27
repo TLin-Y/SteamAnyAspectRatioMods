@@ -6792,40 +6792,6 @@
       ]
     },
     {
-      "id": "final-fantasy-resonance-ultrawide",
-      "name": "FINAL FANTASY RESONANCE - Ultrawide Mod",
-      "steam_app_id": "3259780",
-      "install_dir": "FINAL FANTASY RESONANCE",
-      "executable": "FFRS.exe",
-      "source": {
-        "kind": "archive",
-        "path": "external/Refilo/FFResonance Ultrawide/FFResonance Ultrawide 2.6.3 29 2.6.3 2026-11-06T22-52Z ukvcoplGf.zip",
-        "sha256": "97ea5c76f481eba09e823a8c0929fc74580c3ee62959ef91f44495463fcc043a",
-        "destination": "FFRS/Binaries/Win64"
-      },
-      "files": [
-        "FFRS/Binaries/Win64/winmm.dll",
-        "FFRS/Binaries/Win64/refilomod/core/core_002_004.dll",
-        "FFRS/Binaries/Win64/refilomod/ultrawide/ultrawide.dll",
-        "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini"
-      ],
-      "ini_file": "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini",
-      "wine_dll_overrides": [
-        "winmm=n,b"
-      ],
-      "credits": [
-        {
-          "name": "Refilo",
-          "support": [
-            {
-              "label": "FF Resonance",
-              "url": "https://www.nexusmods.com/finalfantasyresonance/mods/29"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "hollow-knight-silksong-ultra-wide",
       "name": "Hollow Knight: Silksong - Ultra-Wide",
       "steam_app_id": "1030300",
@@ -6924,6 +6890,70 @@
             {
               "label": "Hollow Knight/Silksong",
               "url": "https://github.com/p1xel8ted/UltrawideFixes"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "author_downloads": [
+    {
+      "id": "final-fantasy-resonance-ultrawide",
+      "name": "FINAL FANTASY RESONANCE - Ultrawide Mod",
+      "steam_app_id": "3259780",
+      "install_dir": "FINAL FANTASY RESONANCE",
+      "executable": "FFRS.exe",
+      "source": {
+        "kind": "author_download",
+        "page": "https://www.nexusmods.com/finalfantasyresonance/mods/29",
+        "destination": "FFRS/Binaries/Win64"
+      },
+      "files": [
+        "FFRS/Binaries/Win64/winmm.dll",
+        "FFRS/Binaries/Win64/refilomod/core/core_002_004.dll",
+        "FFRS/Binaries/Win64/refilomod/ultrawide/ultrawide.dll",
+        "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini"
+      ],
+      "ini_file": "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini",
+      "wine_dll_overrides": ["winmm=n,b"],
+      "credits": [
+        {
+          "name": "Refilo",
+          "support": [
+            {
+              "label": "FF Resonance",
+              "url": "https://www.nexusmods.com/finalfantasyresonance/mods/29"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "final-fantasy-x-x2-hd-remaster-suwsf",
+      "name": "FINAL FANTASY X/X-2 HD Remaster - SUWSF Widescreen Patches",
+      "steam_app_id": "359870",
+      "install_dir": "FINAL FANTASY FFX&FFX-2 HD Remaster",
+      "executable": "FFX&X-2_LAUNCHER.exe",
+      "executable_alternatives": ["FFX.exe", "FFX-2.exe"],
+      "source": {
+        "kind": "author_download",
+        "page": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
+      },
+      "files": ["d3d11.dll", "SUWSF.asi", "SUWSF.ini", "LICENSE"],
+      "ini_file": "SUWSF.ini",
+      "ini_resolution_strings": [{"section": "UserSettings", "key": "Resolution", "replace_auto": true}],
+      "wine_dll_overrides": ["d3d11=n,b"],
+      "credits": [
+        {
+          "name": "Kamiccolo",
+          "support": [
+            {
+              "label": "FFX/X-2",
+              "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
+            },
+            {
+              "label": "Ko-fi",
+              "url": "https://ko-fi.com/kamiccolo"
             }
           ]
         }

@@ -61,8 +61,12 @@ export const getCredits = callable<[], CreditsInfo>("get_credits");
 
 export const importOfflinePack = callable<[string], { warning?: string | null }>("import_offline_pack");
 
+export const importAuthorDownload = callable<[string, string], Record<string, never>>("import_author_download");
 
-export const clearLocalData = callable<[], Record<string, never>>("clear_local_data");
+export const getDownloadsFolder = callable<[], string>("get_downloads_folder");
+
+
+export const clearLocalData = callable<[boolean, boolean, boolean], Record<string, never>>("clear_local_data");
 
 export const setModApplied = callable<
   [string, string, boolean, boolean | null, boolean | null],

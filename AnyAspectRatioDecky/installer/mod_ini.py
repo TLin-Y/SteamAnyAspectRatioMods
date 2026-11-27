@@ -3,7 +3,7 @@ from pathlib import Path
 
 from helper.errors import PluginError
 from installer import game_folder, staging
-from scanner.mod_catalog import IniResolutionPair, IniValueKind, ModDefinition
+from scanner.mod_catalog import PIXELS_STRING_KINDS, IniResolutionPair, IniValueKind, ModDefinition
 from utils import files, folders, ini, sizes, text_files
 
 MAX_INI_SIZE_BYTES = 256 * sizes.KIB
@@ -48,8 +48,10 @@ def rewrite_ini_resolution(content: bytes, width: int, height: int, pairs: tuple
         values = sections.get(_key(pair.section), {})
         width_rows, height_rows = values.get(_key(pair.width), []), values.get(_key(pair.height), [])
         match pair.kind, width_rows, height_rows:
-            case IniValueKind.PIXELS_STRING, [row], _:
+            case kind, [row], _ if kind in PIXELS_STRING_KINDS:
                 quote = ini.resolution_quote(row.read(lines))
+                if quote is None and kind == IniValueKind.PIXELS_STRING_AUTO:
+                    quote = ini.auto_quote(row.read(lines))
                 if quote is not None:
                     replacements.append((row, quote + f"{width}x{height}".encode("ascii") + quote))
             case IniValueKind.RATIO, [width_row], [height_row]:

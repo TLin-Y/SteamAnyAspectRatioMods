@@ -69,9 +69,19 @@ def is_decimal(value: bytes) -> bool:
     return whole.isdigit() and (not dot or fraction.isdigit())
 
 
+def _quote(value: bytes) -> bytes:
+    return value[:1] if len(value) >= 2 and value[:1] in _QUOTES and value.endswith(value[:1]) else b""
+
+
+def auto_quote(value: bytes) -> bytes | None:
+    """For an "auto" value, the quote around it; None for anything else."""
+    quote = _quote(value)
+    return quote if value[len(quote):len(value) - len(quote)].lower() == b"auto" else None
+
+
 def resolution_quote(value: bytes) -> bytes | None:
     """For a "WIDTHxHEIGHT" value, the quote around it (b'"', b"'" or b""); None for anything else."""
-    quote = value[:1] if len(value) >= 2 and value[:1] in _QUOTES and value.endswith(value[:1]) else b""
+    quote = _quote(value)
     width, x, height = value[len(quote):len(value) - len(quote)].partition(b"x")
     if x and all(part.isdigit() and not part.startswith(b"0") for part in (width, height)):
         return quote

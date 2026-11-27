@@ -5,8 +5,9 @@ from pathlib import Path
 
 from installer import launcher
 from logger.plugin_logger import log
-from scanner.local_archives import build_local_mods, scan_local_archives
-from scanner.mod_catalog import ModDefinition, load_mod_catalog
+from scanner.author_downloads import find_downloads, scan_download_folders
+from scanner.local_archives import LocalArchive, build_local_mods, scan_local_archives
+from scanner.mod_catalog import ModDefinition, SourceKind, load_mod_catalog
 from scanner.non_steam_shortcuts import scan_non_steam_shortcuts
 from scanner.steam_library_scanner import (
     InstalledApp,
@@ -45,6 +46,8 @@ class SupportedGame:
     offline_only: bool = False
     display_tags: list[str] = field(default_factory=list)
     backup_files: list[str] = field(default_factory=list)
+    download_page: str = ""
+    download_file: str = ""
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -172,6 +175,7 @@ def _build_game(
         offline_only=mod.offline_only,
         display_tags=list(mod.display_tags),
         backup_files=[item.target for item in mod.file_backups],
+        download_page=mod.source.page,
     )
 
 
@@ -410,12 +414,36 @@ def match_supported_games(
     )
 
 
+def add_author_downloads(
+    report: SupportedGameScanReport,
+    local_archives: Sequence[LocalArchive],
+    folders: Sequence[Path],
+    index_dir: Path | None = None,
+) -> None:
+    """Look for the user's zips only when an author-download game is installed."""
+    installed = {game.mod_id for game in report.supported_games}
+    mods = [
+        mod for mod in report.mods.values()
+        if mod.mod_id in installed and mod.source.kind == SourceKind.AUTHOR_DOWNLOAD
+    ]
+    if not mods:
+        return
+    found = find_downloads(mods, [*local_archives, *scan_download_folders(folders, index_dir)])
+    report.mods.update(found)
+    report.supported_games = [
+        replace(game, download_file=found[game.mod_id].source.download_path) if game.mod_id in found else game
+        for game in report.supported_games
+    ]
+
+
 def scan_supported_games(
     catalog: tuple[ModDefinition, ...] | None = None,
     *,
     local_archive_dir: str | None = None,
     local_index_path: Path | None = None,
     custom_game_dirs: Sequence[str] = (),
+    download_folders: Sequence[Path] = (),
+    download_index_dir: Path | None = None,
 ) -> SupportedGameScanReport:
     steam_scan = discover_steam_apps()
     steam_scan.shortcuts = scan_non_steam_shortcuts(find_steam_roots())
@@ -430,5 +458,6 @@ def scan_supported_games(
     
     report = match_supported_games(steam_scan, catalog, local_mods, custom_game_dirs)
     report.warnings.extend([*archive_warnings, *match_warnings])
+    add_author_downloads(report, archives, download_folders, download_index_dir)
 
     return report

@@ -27,6 +27,17 @@ else {
     if ($steamCheckExitCode -ne 0) {
         throw "Catalog does not match Steam metadata; fix catalog.json or scripts\steam_catalog_exceptions.json."
     }
+    & python (Join-Path $PSScriptRoot "verify_author_pages.py")
+    $pagesExitCode = $LASTEXITCODE
+    if ($pagesExitCode -eq 3) {
+        Write-Warning "A mod site refused the automated check; open the pages marked 'blocked' above by hand."
+    }
+    elseif ($pagesExitCode -eq 2) {
+        throw "Author page check could not reach a mod site. Retry online."
+    }
+    elseif ($pagesExitCode -ne 0) {
+        throw "An author-download page is gone; update or remove its catalog entry."
+    }
 }
 
 $requiredFiles = @(
@@ -59,6 +70,7 @@ $runtimeFiles = @(
     "logger\__init__.py",
     "logger\plugin_logger.py",
     "scanner\__init__.py",
+    "scanner\author_downloads.py",
     "scanner\local_archives.py",
     "scanner\mod_catalog.py",
     "scanner\non_steam_shortcuts.py",

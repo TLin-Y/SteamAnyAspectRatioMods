@@ -23,6 +23,7 @@ from installer.mod_logs import existing_mod_logs, read_mod_log
 from installer.plugin_updater import check_for_update, install_update, read_installed_version
 from installer.remove import remove_mod_files
 from logger.plugin_logger import log
+from scanner.author_downloads import applied_download, downloads_folder, import_download, keep_download
 from scanner.local_archives import scan_local_archives
 from scanner.mod_catalog import (
     ModDefinition,
@@ -75,6 +76,11 @@ def get_store() -> PluginStore:
         log.attach_file(store.log_path)
         _store = store
     return _store
+
+
+def _user_downloads_folder() -> Path:
+    home = getattr(decky, "DECKY_USER_HOME", None)
+    return downloads_folder(Path(home) if home else None)
 
 
 def _update_available(game: SupportedGame, mod: ModDefinition, hashes: dict[str, dict[str, str]]) -> bool:
@@ -218,6 +224,8 @@ class Plugin:
             local_archive_dir=settings.local_archive_dir or None,
             local_index_path=store.local_index_path,
             custom_game_dirs=settings.custom_game_dirs,
+            download_folders=[store.author_downloads_dir, _user_downloads_folder()],
+            download_index_dir=store.cache_dir,
         )
         hashes = _load_applied_hashes(store, report.warnings) or {}
         games = [
@@ -336,11 +344,15 @@ class Plugin:
             return f"Could not refresh the online catalog: {error}"
         return None
 
-    async def clear_local_data(self) -> dict[str, object]:
+    async def clear_local_data(self, caches: bool = True, logs: bool = True, downloads: bool = False) -> dict[str, object]:
         store = get_store()
         with log.on_error("Clearing local data failed"), pack_operation():
-            store.clear_local_data()
-            log.clear_files()
+            if caches:
+                store.clear_local_data()
+            if downloads:
+                store.clear_author_downloads()
+            if logs:
+                log.clear_files()
         return {}
 
     async def get_settings(self) -> dict[str, object]:
@@ -622,6 +634,9 @@ class Plugin:
             resolution = (settings.ini_resolution_width, settings.ini_resolution_height)
             if applied:
                 def apply() -> list[str]:
+                    nonlocal mod
+                    if mod.source.kind == SourceKind.AUTHOR_DOWNLOAD:
+                        mod = keep_download(mod, store.author_downloads_dir)
                     return apply_mod_files(
                         mod, path,
                         replace_existing_files=replace_existing_files,
@@ -640,6 +655,8 @@ class Plugin:
                 kept = sum(file in mod.files for file in conflicts) if replace_existing_files is False else 0
                 copied = 0 if awaiting else len(mod.files) - kept
             else:
+                if mod.source.kind == SourceKind.AUTHOR_DOWNLOAD:
+                    mod = applied_download(mod, store.author_downloads_dir)
                 try:
                     conflicts = remove_mod_files(
                         mod, path, preserve_modified_ini=preserve_modified_ini, ini_resolution=resolution
@@ -659,6 +676,22 @@ class Plugin:
             log.warning("Skipped INI resolution adjustment: %s", mod_id)
             result["ini_adjustment_warning"] = " ".join(ini_warnings)
         return result
+
+    async def get_downloads_folder(self) -> str:
+        return str(_user_downloads_folder())
+
+    async def import_author_download(self, mod_id: str, archive_path: str) -> dict[str, object]:
+        with log.on_error(f"Choosing the download failed: {mod_id}"):
+            mod = self._get_mod_definition(mod_id)
+            if mod.source.kind != SourceKind.AUTHOR_DOWNLOAD:
+                raise PluginError("This mod is not downloaded from its author's page")
+            if not isinstance(archive_path, str) or not archive_path:
+                raise PluginError("Choose a zip file")
+            store = get_store()
+            await asyncio.to_thread(import_download, mod, Path(archive_path), store.author_downloads_dir)
+            store.clear_last_scan()
+        log.info("Author download chosen: %s", mod_id)
+        return {}
 
     async def get_mod_ini(self, mod_id: str, game_path: str) -> dict[str, object]:
         with log.on_error(f"Reading mod INI failed: {mod_id}"):
@@ -727,7 +760,7 @@ class Plugin:
                 repository,
                 str(info["download_url"]),
                 Path(plugin_dir),
-                Path.home() / "Downloads",
+                _user_downloads_folder(),
             )
         log.info("Plugin update completed")
         return result

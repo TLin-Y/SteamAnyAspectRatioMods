@@ -31,6 +31,7 @@ def build_pack(folder: Path) -> Pack:
     document = catalog_document()
     entry = next(entry for entry in document["mods"] if entry["id"] == "dark-souls-iii")
     document["mods"] = [entry]
+    document.pop("author_downloads", None)
     archive = zip_bytes({name: name for name in DS3_FILES})
     entry["source"]["sha256"] = hashlib.sha256(archive).hexdigest()
     members = {

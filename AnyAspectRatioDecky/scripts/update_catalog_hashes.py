@@ -122,7 +122,8 @@ def _rewrite(path: Path, transform, check: bool) -> bool:
 def update(check: bool = False) -> bool:
     """Rewrite the catalog and README badge; returns True when either changed (or would with check=True)."""
     catalog_changed = _rewrite(CATALOG_PATH, updated_catalog_text, check)
-    mod_count = len(json.loads(CATALOG_PATH.read_bytes().decode("utf-8"))["mods"])
+    catalog = json.loads(CATALOG_PATH.read_bytes().decode("utf-8"))
+    mod_count = len(catalog["mods"]) + len(catalog.get("author_downloads", []))
     readme_changed = _rewrite(README_PATH, lambda text: updated_readme_text(text, mod_count), check)
     return catalog_changed or readme_changed
 

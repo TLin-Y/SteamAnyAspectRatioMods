@@ -55,6 +55,7 @@ class ResolutionTests(GameTest):
 
     def test_rewrite_changes_nothing_but_a_single_valid_declared_value(self) -> None:
         string = (IniResolutionPair("UserSettings", "Resolution", "Resolution", "pixels_string"),)
+        string_or_auto = (IniResolutionPair("UserSettings", "Resolution", "Resolution", "pixels_string_auto"),)
         custom = (IniResolutionPair("Custom Resolution", "Width", "Height", "pixels"),)
         other = b"[Patch:X]\nResolution=1x1\n"
         cases = (
@@ -65,6 +66,10 @@ class ResolutionTests(GameTest):
              b'[UserSettings]\nResolution="1920x1080" ; comment\r\n' + other),
             (string, b"[UserSettings]\nResolution=1280x800\n" + other, b"[UserSettings]\nResolution=1920x1080\n" + other),
             (string, b'[UserSettings]\nResolution="auto"\n' + other, None),
+            (string_or_auto, b'[UserSettings]\nResolution="auto"\n' + other,
+             b'[UserSettings]\nResolution="1920x1080"\n' + other),
+            (string_or_auto, b"[UserSettings]\nResolution=1280x800\n" + other,
+             b"[UserSettings]\nResolution=1920x1080\n" + other),
             (string, b'[UserSettings]\nResolution="1280x800\n' + other, None),
         )
         for pairs, before, after in cases:

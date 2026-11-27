@@ -16,12 +16,17 @@ def catalog_document() -> dict:
     return json.loads(_catalog_text())
 
 
+def catalog_size(document: dict) -> int:
+    return len(document["mods"]) + len(document.get("author_downloads", []))
+
+
 class CatalogEditTest(SandboxTest):
     """Edit self.document (a copy of catalog.json), then load() it like the plugin does."""
 
     def setUp(self) -> None:
         super().setUp()
         self.document = catalog_document()
+        self.document.pop("author_downloads", None)
 
     def entry(self, mod_id: str) -> dict:
         return next(entry for entry in self.document["mods"] if entry["id"] == mod_id)

@@ -25,6 +25,8 @@ EXPOSED_METHODS = (
     "get_mod_readme",
     "get_offline_mode",
     "get_settings",
+    "get_downloads_folder",
+    "import_author_download",
     "import_offline_pack",
     "save_mod_ini",
     "save_settings",
