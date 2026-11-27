@@ -521,6 +521,21 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "monster-hunter-world",
+      "name": "Monster Hunter: World - Custom Aspect Ratio",
+      "steam_app_id": "582010",
+      "install_dir": "Monster Hunter World",
+      "executable": "MonsterHunterWorld.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Monster Hunter World/Monster-Hunter-World-v1.0.0.zip",
+        "sha256": "21f9bb8927e98a6ebc50ab3308550f7c3e27034d93c4cda63f0eea0eb8259ba4"
+      },
+      "files": ["dinput8.dll", "MonsterHunterWorld_ARFix.asi", "MonsterHunterWorld_ARFix.ini"],
+      "ini_file": "MonsterHunterWorld_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "ninja-gaiden-sigma-2",
       "name": "Ninja Gaiden Sigma 2 - Custom Aspect Ratio",
       "steam_app_id": "1580790",
@@ -6671,38 +6686,6 @@
       "ini_file": "UltrawideFix.ini",
       "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
       "display_tags": ["stretch"]
-    },
-    {
-      "id": "mhw16x10fix",
-      "name": "Monster Hunter: World - MHW16x10Fix",
-      "steam_app_id": "582010",
-      "install_dir": "Monster Hunter World",
-      "executable": "MonsterHunterWorld.exe",
-      "source": {
-        "kind": "archive",
-        "path": "external/MinuteReversal/MHW16x10Fix/MHW16x10Fix_0.11.13.zip",
-        "sha256": "384af688974d178db4f27ad7df7eb02810c124f3dc3e728ddfbf5545207d867d"
-      },
-      "files": [
-        "dinput8.dll",
-        "mhw_16x10.ini"
-      ],
-      "wine_dll_overrides": [
-        "dinput8=n,b"
-      ],
-      "credits": [
-        {
-          "name": "MinuteReversal",
-          "support": [
-            {
-              "label": "MHW 16:10",
-              "url": "https://github.com/MinuteReversal/MHW16x10Fix"
-            }
-          ]
-        }
-      ],
-      "ini_file": "mhw_16x10.ini",
-      "ini_resolution": [{"section": "Fix", "width": "Width", "height": "Height", "kind": "pixels"}]
     },
     {
       "id": "kingdom-hearts-hd-1-5-2-5-remix-keyblade-masters-ultrawide",

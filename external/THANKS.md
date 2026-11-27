@@ -9,7 +9,6 @@ Special thanks to:
 - [Lyall](https://codeberg.org/Lyall), for an extraordinary collection of game fixes.
   If you enjoy his work, consider supporting him on
   [Patreon](https://www.patreon.com/Wintermance) or [Ko-fi](https://ko-fi.com/W7W01UAI9).
-- [MinuteReversal](https://github.com/MinuteReversal/MHW16x10Fix), for MHW16x10Fix.
 - [Nicolas Busseneau](https://github.com/nbusseneau/hephaistos), for Hephaistos, the Hades aspect-ratio patcher.
 - [TEODORMAX](https://www.nexusmods.com/finalfantasyxiii2/mods/42), for the [Final Fantasy XIII-2](https://www.nexusmods.com/finalfantasyxiii2/mods/42) and [Lightning Returns](https://www.nexusmods.com/lightningreturnsfinalfantasy13/mods/35) fixes.
 - [Twig](https://steamcommunity.com/sharedfiles/filedetails/?id=2953302517), for the Undertale Widescreen Fix and [PvZWidescreenSteam](https://github.com/Twig6943/PvZWidescreenSteam).
