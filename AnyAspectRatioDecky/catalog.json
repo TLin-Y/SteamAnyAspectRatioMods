@@ -273,6 +273,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "dynasty-warriors-8-empires",
+      "name": "Dynasty Warriors 8 Empires - Custom Aspect Ratio",
+      "steam_app_id": "322520",
+      "install_dir": "Dynasty Warriors 8 - Empires",
+      "executable": "Launch.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Dynasty Warriors 8 Empires/Dynasty-Warriors-8-Empires-v1.0.0.zip",
+        "sha256": "d8a0ded42313cc6a88513a3660106a937bddadb966ee11d66f098031494601f9"
+      },
+      "files": ["dinput8.dll", "DW8E_ARFix.asi", "DW8E_ARFix.ini"],
+      "ini_file": "DW8E_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "dynasty-warriors-8-xtreme-legends-complete-edition",
       "name": "DYNASTY WARRIORS 8: Xtreme Legends Complete Edition - Custom Aspect Ratio",
       "steam_app_id": "278080",
@@ -280,8 +296,8 @@
       "executable": "Launch.exe",
       "source": {
         "kind": "archive",
-        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.2.1.zip",
-        "sha256": "093242c1be2d726eb3e101c08fa97aafb5b3471f612673932480c40b86bd4a22"
+        "path": "DYNASTY WARRIORS 8 Xtreme Legends Complete Edition/Dynasty-Warriors-8-Xtreme-Legends-Complete-Edition-v1.2.2.zip",
+        "sha256": "7afec08738d680700626938e53457fb6e569047c68424cc26fa24434157bbe3e"
       },
       "files": ["dinput8.dll", "DW8XL_ARFix.asi", "DW8XL_ARFix.ini"],
       "ini_file": "DW8XL_ARFix.ini",

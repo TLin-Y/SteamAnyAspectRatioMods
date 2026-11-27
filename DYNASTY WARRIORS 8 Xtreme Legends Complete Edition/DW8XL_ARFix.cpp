@@ -284,44 +284,27 @@ namespace WorldHud {
 
 using Screen::Point;
 
-struct Matrix { float rows[4][4]; };
+struct Range { float low, high; };
 
-struct PlayerCamera {
-    std::uint8_t before[0x198];
-    Matrix toViewport;
-    Matrix worldToViewport;
-    std::uint8_t between[0x30];
-    Point viewport;
-};
-static_assert(offsetof(PlayerCamera, worldToViewport) == 0x1D8 && offsetof(PlayerCamera, viewport) == 0x248);
+struct Bounds { Range x, y; };
 
-SafetyHookMid buildMatrix, project;
+SafetyHookMid project;
 
-Point UndoFit(Point at, Point viewport) {
-    return { Screen::ScaleFromCenter(viewport.x + at.x, Screen::kCanvas.x, 1.0f / Screen::fit.x) - viewport.x,
-        Screen::ScaleFromCenter(viewport.y + at.y, Screen::kCanvas.y, 1.0f / Screen::fit.y) - viewport.y };
+float Unfit(float value, Range range, float fit) {
+    float middle = (range.low + range.high) / 2;
+    return middle + (value - middle) / fit;
 }
 
-void UndoFitInMatrix(SafetyHookContext& ctx) {
-    auto& camera = *reinterpret_cast<PlayerCamera*>(ctx.eax - offsetof(PlayerCamera, toViewport));
-    auto& rows = camera.toViewport.rows;
-    auto& center = reinterpret_cast<Point&>(rows[3]);
-    rows[0][0] /= Screen::fit.x;
-    rows[1][1] /= Screen::fit.y;
-    center = UndoFit(center, camera.viewport);
-}
-
-void WidenBounds(SafetyHookContext& ctx) {
-    auto& camera = *reinterpret_cast<PlayerCamera*>(ctx.edx - offsetof(PlayerCamera, worldToViewport));
-    for (auto& corner : std::span(reinterpret_cast<Point*>(ctx.edi), 2)) corner = UndoFit(corner, camera.viewport);
+void UnfitPoint(SafetyHookContext& ctx) {
+    auto& point = *reinterpret_cast<Point*>(ctx.esi);
+    auto& bounds = *reinterpret_cast<Bounds*>(ctx.edi);
+    point = { Unfit(point.x, bounds.x, Screen::fit.x), Unfit(point.y, bounds.y, Screen::fit.y) };
 }
 
 void Apply() {
-    auto* matrix = FindOne("World HUD", "D9 50 04 D9 50 20 D9 58 10 FF D3 5F 5E 5D 5B");
-    auto* projection = FindOne("World HUD bounds", "83 EC 1C 8D 44 24 08 50 E8 ?? ?? ?? ?? D9 44 24 18 D9 C0 83 C4 04 D9 E8 DE F1");
-    if (!matrix || !projection) return;
-    buildMatrix = safetyhook::create_mid(matrix + 6, UndoFitInMatrix);
-    project = safetyhook::create_mid(projection, WidenBounds);
+    auto* code = FindOne("World HUD", "D9 07 D8 D9 DF E0 F6 C4 41 74 ?? D9 47 04");
+    if (!code) return;
+    project = safetyhook::create_mid(code, UnfitPoint);
     SPDLOG_INFO("World HUD: kept on target.");
 }
 
