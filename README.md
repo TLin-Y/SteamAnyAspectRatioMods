@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Game mods](https://img.shields.io/badge/Game%20mods-169-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
+[![Game mods](https://img.shields.io/badge/Game%20mods-170-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -214,6 +214,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Shin Megami Tensei V: Vengeance | Lyall | [1875830](https://store.steampowered.com/app/1875830) | [v1.0.0](./external/Lyall/SMTVFix/SMTVFix_1.0.0.zip) | 2025-09-20 | [SMTVFix](https://codeberg.org/Lyall/SMTVFix) |
 | SILENT HILL f | Lyall | [2947440](https://store.steampowered.com/app/2947440) | [v0.0.1](./external/Lyall/SHfFix/SHfFix_0.0.1.zip) | 2025-09-24 | [SHfFix](https://codeberg.org/Lyall/SHfFix) |
 | Sonic Racing: CrossWorlds | Lyall | [2486820](https://store.steampowered.com/app/2486820) | [v0.0.3](./external/Lyall/CrossWorldsFix/CrossWorldsFix_0.0.3.zip) | 2025-12-06 | [CrossWorldsFix](https://codeberg.org/Lyall/CrossWorldsFix) |
+| Sonic Frontiers | TLin-Y | [1237320](https://store.steampowered.com/app/1237320) | [v1.0.0](./Sonic%20Frontiers/Sonic-Frontiers-v1.0.0.zip) | 2026-11-26 | [README](./Sonic%20Frontiers/README.md) |
 | SONIC X SHADOW GENERATIONS | TLin-Y | [2513280](https://store.steampowered.com/app/2513280) | [v1.0.0](./SONIC%20X%20SHADOW%20GENERATIONS/SONIC-X-SHADOW-GENERATIONS-v1.0.0.zip) | 2026-11-08 | [README](./SONIC%20X%20SHADOW%20GENERATIONS/README.md) |
 | Soul Hackers 2 | Lyall | [1777620](https://store.steampowered.com/app/1777620) | [vv0.0.5](./external/Lyall/SoulHackers2Fix/SoulHackers2Fix_v0.0.5.zip) | 2022-09-08 | [SoulHackers2Fix](https://codeberg.org/Lyall/SoulHackers2Fix) |
 | STAR OCEAN - THE LAST HOPE - 4K & Full HD Remaster | Lyall | [609150](https://store.steampowered.com/app/609150) | [v0.9.1](./external/Lyall/SO4Fix/SO4Fix_0.9.1.zip) | 2025-06-06 | [SO4Fix](https://codeberg.org/Lyall/SO4Fix) |

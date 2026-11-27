@@ -157,6 +157,21 @@
       "wine_dll_overrides": ["winmm=n,b"]
     },
     {
+      "id": "sonic-frontiers",
+      "name": "Sonic Frontiers - Custom Aspect Ratio",
+      "steam_app_id": "1237320",
+      "install_dir": "SonicFrontiers",
+      "executable": "SonicFrontiers.exe",
+      "source": {
+        "kind": "archive",
+        "path": "Sonic Frontiers/Sonic-Frontiers-v1.0.0.zip",
+        "sha256": "5400dacd592a3071cfa1e95fbd5d92dbf0241caea4b6c52d42c2a00285d8d8cb"
+      },
+      "files": ["dinput8.dll", "SonicFrontiers_ARFix.asi", "SonicFrontiers_ARFix.ini"],
+      "ini_file": "SonicFrontiers_ARFix.ini",
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "star-ocean-the-second-story-r",
       "name": "STAR OCEAN THE SECOND STORY R - Custom Aspect Ratio",
       "steam_app_id": "2238900",
