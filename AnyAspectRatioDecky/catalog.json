@@ -6809,45 +6809,6 @@
       ]
     },
     {
-      "id": "final-fantasy-x-x2-hd-remaster-suwsf",
-      "name": "FINAL FANTASY X/X-2 HD Remaster - SUWSF Widescreen Patches",
-      "steam_app_id": "359870",
-      "install_dir": "FINAL FANTASY FFX&FFX-2 HD Remaster",
-      "executable": "FFX&X-2_LAUNCHER.exe",
-      "executable_alternatives": ["FFX.exe", "FFX-2.exe"],
-      "source": {
-        "kind": "archive",
-        "path": "external/Kamiccolo/Final Fantasy X-X2 HD Remaster SUWSF/Final Fantasy XX-2 HD Remaster 2560x1080 64x27 SUWSF.zip",
-        "sha256": "2d93c08ba9a8ad8f591be8a471cd883a7c8e847f1a9874fba43cf5ae5388e680"
-      },
-      "files": [
-        "d3d11.dll",
-        "SUWSF.asi",
-        "SUWSF.ini",
-        "LICENSE"
-      ],
-      "ini_file": "SUWSF.ini",
-      "ini_resolution_strings": [{"section": "UserSettings", "key": "Resolution"}],
-      "wine_dll_overrides": [
-        "d3d11=n,b"
-      ],
-      "credits": [
-        {
-          "name": "Kamiccolo",
-          "support": [
-            {
-              "label": "FFX/X-2",
-              "url": "https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/"
-            },
-            {
-              "label": "Ko-fi",
-              "url": "https://ko-fi.com/kamiccolo"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "final-fantasy-resonance-ultrawide",
       "name": "FINAL FANTASY RESONANCE - Ultrawide Mod",
       "steam_app_id": "3259780",

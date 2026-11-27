@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Game mods](https://img.shields.io/badge/Game%20mods-171-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
+[![Game mods](https://img.shields.io/badge/Game%20mods-170-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -53,8 +53,7 @@ Our thanks to the creators of the external mods are in [external/THANKS.md](./ex
 - **TechieW** — [EldenRingMods](https://github.com/techiew/EldenRingMods) (MIT), packaged as the [Elden Ring Ultrawide Fix](https://www.nexusmods.com/eldenring/mods/7870), for offline play.
 - **Refilo** — [Final Fantasy Resonance - Ultrawide Mod](https://www.nexusmods.com/finalfantasyresonance/mods/29).
 - **p1xel8ted** — [UltrawideFixes](https://github.com/p1xel8ted/UltrawideFixes) for Hollow Knight and Hollow Knight: Silksong.
-- **Kamiccolo** — [Final Fantasy X/X-2 HD Remaster patches](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/): [Ko-fi](https://ko-fi.com/kamiccolo).
-- **PhantomGamers** — [SUWSF](https://github.com/PhantomGamers/SUWSF), used by the Final Fantasy X/X-2 and Daemon X Machina patches.
+- **PhantomGamers** — [SUWSF](https://github.com/PhantomGamers/SUWSF), used by the Daemon X Machina patches.
 - **Yuki** — [Daemon X Machina: Titanic Scion Widescreen Fix](https://yuki.pet/daemon-x-machina-titanic-scion-widescreen-fix/).
 - **m.vico** — Keyblade Masters Ultrawide for [Kingdom Hearts I.5+II.5 ReMIX](https://www.nexusmods.com/kingdomheartsfinalmix/mods/230) and [Kingdom Hearts III](https://www.nexusmods.com/kingdomhearts3/mods/2553): [Ko-fi](https://ko-fi.com/mvico42517).
 - **rebtd7** — [FF13Fix](https://github.com/rebtd7/FF13Fix), based on OneTweakNG by Nucleoprotein.
@@ -134,7 +133,6 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | FINAL FANTASY RESONANCE | Refilo | [3259780](https://store.steampowered.com/app/3259780) | [v2.6.3](./external/Refilo/FFResonance%20Ultrawide/FFResonance%20Ultrawide%202.6.3%2029%202.6.3%202026-11-06T22-52Z%20ukvcoplGf.zip) | 2026-11-06 | [Nexus Mods](https://www.nexusmods.com/finalfantasyresonance/mods/29) |
 | FINAL FANTASY VII REBIRTH | Lyall | [2909400](https://store.steampowered.com/app/2909400) | [v0.0.13](./external/Lyall/FF7RebirthFix/FF7RebirthFix_0.0.13.zip) | 2026-06-04 | [FF7RebirthFix](https://codeberg.org/Lyall/FF7RebirthFix) |
 | FINAL FANTASY VII REMAKE INTERGRADE | Lyall | [1462040](https://store.steampowered.com/app/1462040) | [v0.0.2](./external/Lyall/FF7RemakeFix/FF7RemakeFix_0.0.2.zip) | 2026-01-30 | [FF7RemakeFix](https://codeberg.org/Lyall/FF7RemakeFix) |
-| FINAL FANTASY X/X-2 HD Remaster | Kamiccolo | [359870](https://store.steampowered.com/app/359870) | [SUWSF](./external/Kamiccolo/Final%20Fantasy%20X-X2%20HD%20Remaster%20SUWSF/Final%20Fantasy%20XX-2%20HD%20Remaster%202560x1080%2064x27%20SUWSF.zip) | 2022-11-01 | [PCGamingWiki](https://community.pcgamingwiki.com/files/file/2432-final-fantasy-xx-2-hd-remaster-anima-edition/) |
 | FINAL FANTASY XII THE ZODIAC AGE | TLin-Y | [595520](https://store.steampowered.com/app/595520) | [v1.0.0](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/Final-Fantasy-XII-The-Zodiac-Age-v1.0.0.zip) | 2026-11-11 | [README](./Final%20Fantasy%20XII%20The%20Zodiac%20Age/README.md) |
 | Final Fantasy XIII | TLin-Y, rebtd7 | [292120](https://store.steampowered.com/app/292120) | [Combined package v1.1.0](./external/rebtd7/FF13Fix/FF13-ARFix-with-FF13Fix-v1.1.0.zip) | 2026-11-23 | [README](./Final%20Fantasy%20XIII/README.md) |
 | Final Fantasy XIII-2 | TEODORMAX | [292140](https://store.steampowered.com/app/292140) | [v1.4.0](./external/TEODORMAX/FFXIII2UW/FFXIII2UW_1.4.0.zip) | 2026-07-17 | [FFXIII2UW](https://www.nexusmods.com/finalfantasyxiii2/mods/42) |
