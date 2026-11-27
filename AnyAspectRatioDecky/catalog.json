@@ -2322,7 +2322,7 @@
       "source": {
         "kind": "archive",
         "path": "Sonic Racing CrossWorlds/Sonic-Racing-CrossWorlds-v1.0.0.zip",
-        "sha256": "ce7f71b2c138c26d6a92658d2b5d83e5bb31d4da9e3fa9d6406277be28fe5ae3",
+        "sha256": "95a4b06f683408d9d200f1e52ce7e4ec9efc35ff6d098bec4a6902a36de6137d",
         "destination": "UNION/Binaries/Win64"
       },
       "files": ["UNION/Binaries/Win64/winmm.dll", "UNION/Binaries/Win64/CrossWorlds_ARFix.asi", "UNION/Binaries/Win64/CrossWorlds_ARFix.ini"],
