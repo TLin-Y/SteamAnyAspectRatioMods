@@ -4,7 +4,7 @@
 
 ![Sonic Racing CrossWorlds at 4:3, 16:10 and 32:9](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/Sonic%20Racing%20CrossWorlds/demo.jpg)
 
-Runs the game at any aspect ratio without black bars, in races, menus and cutscenes. Narrower screens keep the 16:9 side view and show more above and below; wider screens show more at the sides. Works with the full game and the demo.
+Runs the game at any aspect ratio without black bars, in races, menus and cutscenes. Narrower screens keep the 16:9 side view and show more above and below; wider screens show more at the sides. Works with the full game v2.0.0 and the demo.
 
 ## Install
 
