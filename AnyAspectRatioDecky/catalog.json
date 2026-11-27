@@ -1232,6 +1232,22 @@
       "wine_dll_overrides": ["dinput8=n,b"]
     },
     {
+      "id": "samurai-warriors-5",
+      "name": "SAMURAI WARRIORS 5 - Custom Aspect Ratio",
+      "steam_app_id": "1591530",
+      "install_dir": "SAMURAI WARRIORS 5",
+      "executable": "SW5.exe",
+      "source": {
+        "kind": "archive",
+        "path": "SAMURAI WARRIORS 5/Samurai-Warriors-5-v1.0.0.zip",
+        "sha256": "0cd549ad5365a21b058f8a7146f4d39caca637d369fa9679a1b73cdfb1c943e0"
+      },
+      "files": ["dinput8.dll", "SW5_ARFix.asi", "SW5_ARFix.ini"],
+      "ini_file": "SW5_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["dinput8=n,b"]
+    },
+    {
       "id": "samurai-warriors-spirit-of-sanada",
       "name": "SAMURAI WARRIORS: Spirit of Sanada - Custom Aspect Ratio",
       "steam_app_id": "595740",

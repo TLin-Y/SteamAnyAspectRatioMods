@@ -1,6 +1,6 @@
 # SteamAnyAspectRatioMods
 
-[![Game mods](https://img.shields.io/badge/Game%20mods-170-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
+[![Game mods](https://img.shields.io/badge/Game%20mods-171-2EA043?style=for-the-badge)](#game-mods) [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lin66961) [![Downloads (excl. mods)](https://img.shields.io/github/downloads/TLin-Y/SteamAnyAspectRatioMods/total?style=for-the-badge&label=Downloads%20%28excl.%20mods%29&color=0969DA)](https://github.com/TLin-Y/SteamAnyAspectRatioMods/releases)
 
 Play your favorite games at the aspect ratio you want (32:9 / 21:9 / 16:10 / 4:3 / 3:2 etc.), on the platform you choose. This collection provides easy to use, cross platform aspect ratio fixes for Steam games in Proton/Wine/Linux/MacOS/SteamOS/Windows.
 
@@ -207,6 +207,7 @@ The [MIT License](./LICENSE) applies only to original code and documentation aut
 | Rise of the Ronin | Lyall | [1340990](https://store.steampowered.com/app/1340990) | [v0.0.4](./external/Lyall/RiseOfTheRoninFix/RiseOfTheRoninFix_0.0.4.zip) | 2025-05-30 | [RiseOfTheRoninFix](https://codeberg.org/Lyall/RiseOfTheRoninFix) |
 | SAMURAI WARRIORS 4 DX | TLin-Y | [2719200](https://store.steampowered.com/app/2719200) | [v1.0.0](./SAMURAI%20WARRIORS%204%20DX/Samurai-Warriors-4-DX-v1.0.0.zip) | 2026-11-26 | [README](./SAMURAI%20WARRIORS%204%20DX/README.md) |
 | SAMURAI WARRIORS 4-II | TLin-Y | [348470](https://store.steampowered.com/app/348470) | [v1.0.0](./SAMURAI%20WARRIORS%204-II/Samurai-Warriors-4-II-v1.0.0.zip) | 2026-11-26 | [README](./SAMURAI%20WARRIORS%204-II/README.md) |
+| SAMURAI WARRIORS 5 | TLin-Y | [1591530](https://store.steampowered.com/app/1591530) | [v1.0.0](./SAMURAI%20WARRIORS%205/Samurai-Warriors-5-v1.0.0.zip) | 2026-11-27 | [README](./SAMURAI%20WARRIORS%205/README.md) |
 | SAMURAI WARRIORS: Spirit of Sanada | TLin-Y | [595740](https://store.steampowered.com/app/595740) | [v1.2.1](./Samurai%20Warriors%20Spirit%20of%20Sanada/Samurai-Warriors-Spirit-of-Sanada-v1.2.1.zip) | 2026-11-25 | [README](./Samurai%20Warriors%20Spirit%20of%20Sanada/README.md) |
 | SANABI | TLin-Y | [1562700](https://store.steampowered.com/app/1562700) | [v1.1.0](./SANABI/SANABI-v1.1.0.zip) | 2026-11-13 | [README](./SANABI/README.md) |
 | Sekiro: Shadows Die Twice - GOTY Edition | Lyall | [814380](https://store.steampowered.com/app/814380) | [v0.0.1](./external/Lyall/SekiroFix/SekiroFix_0.0.1.zip) | 2025-06-09 | [SekiroFix](https://codeberg.org/Lyall/SekiroFix) |
