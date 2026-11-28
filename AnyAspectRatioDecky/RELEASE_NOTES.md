@@ -1,4 +1,12 @@
-# AnyAspectRatio v2.1.0: one tap per game on Steam Deck, now also on Windows, macOS and Linux
+# AnyAspectRatio v2.2.0: one tap per game on Steam Deck, Windows, macOS and Linux, now with fixes from the author's page
+
+## New in 2.2.0
+
+- **New fixes:** DYNASTY WARRIORS 9, DYNASTY WARRIORS 9 Empires, Dynasty Warriors 8 Empires, ONE PIECE PIRATE WARRIORS 3, SAMURAI WARRIORS 4 DX, SAMURAI WARRIORS 4-II, SAMURAI WARRIORS 5 and Sonic Frontiers.
+- **My own fixes now** for FINAL FANTASY RESONANCE, Hades, Monster Hunter: World and Sonic Racing: CrossWorlds, replacing the third-party ones.
+- **Updated:** Devil May Cry 4 Special Edition, DYNASTY WARRIORS 6, 7 and 8, Plants vs. Zombies GOTY Edition, Rayman Legends, SAMURAI WARRIORS: Spirit of Sanada and Warriors Orochi 4 Ultimate.
+- **Fixes from the author's page.** Some authors don't allow their files to be shared, so I don't host them. Their fixes are listed again: press **Get** to open the author's page, download the zip, then **Scan**. The plugin finds the zip in your Downloads folder (or press **Choose zip**), installs it and sets your resolution. It keeps its own copy, so Remove still works after you delete the download. The first one is FINAL FANTASY X/X-2 HD Remaster (Kamiccolo). The Mods tab lists these authors under **External Source (untested)**.
+- **Choose what to delete.** The Mods tab's delete button now asks which local files to remove: caches, logs, or the saved author downloads.
 
 ## New in 2.1.0
 
@@ -51,7 +59,7 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 ### Games added or updated since 1.6.0
 
 - **New fixes:** Bloodstained: Ritual of the Night, DAVE THE DIVER, Guacamelee! 2, Guacamelee! Super Turbo Championship Edition, Rayman Legends, SANABI, SONIC X SHADOW GENERATIONS, and Ys VIII: Lacrimosa of DANA.
-- **Updated:** Absolum now uses our fix; both Guacamelee! fixes were updated after their initial addition. Ori and the Blind Forest: Definitive Edition has an additional manual download. The Prince of Persia: The Lost Crown listing now warns of reported Steam Deck crashes.
+- **Updated:** Absolum now uses my fix; both Guacamelee! fixes were updated after their initial addition. Ori and the Blind Forest: Definitive Edition has an additional manual download. The Prince of Persia: The Lost Crown listing now warns of reported Steam Deck crashes.
 - **Documentation:** Corrected the custom aspect-ratio instructions for Resident Evil 2 Remake and Warriors Orochi 3 Ultimate.
 
 ![Games tab](https://raw.githubusercontent.com/TLin-Y/SteamAnyAspectRatioMods/main/resources/games-tab.jpg?v=4556e8ed)
@@ -60,8 +68,8 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 - **One-tap Apply / Remove.** Pick a game, press Apply. Press Remove to undo it cleanly.
 - **Launch options handled for you.** Fixes that need a Proton DLL override get the right Steam launch option automatically. If you decline or it fails, the files are still installed.
-- **100+ games supported.** Our own fixes (Dark Souls III, Resident Evil 2/3/4/7/Village, Monster Hunter Rise, Ori, Tales of Arise, Dynasty Warriors, Warriors Orochi, Final Fantasy XIII, Visions of Mana, Ninja Gaiden Sigma 2 and more) plus fixes by [Lyall](https://codeberg.org/Lyall), redistributed unchanged. Full list with versions and dates: [main README](https://github.com/TLin-Y/SteamAnyAspectRatioMods#game-mods).
-- **Made for the Deck.** Our own fixes default to **16:10 (1280x800)**, matching the Deck screen.
+- **100+ games supported.** My own fixes (Dark Souls III, Resident Evil 2/3/4/7/Village, Monster Hunter Rise, Ori, Tales of Arise, Dynasty Warriors, Warriors Orochi, Final Fantasy XIII, Visions of Mana, Ninja Gaiden Sigma 2 and more) plus fixes by [Lyall](https://codeberg.org/Lyall), redistributed unchanged. Full list with versions and dates: [main README](https://github.com/TLin-Y/SteamAnyAspectRatioMods#game-mods).
+- **Made for the Deck.** My own fixes default to **16:10 (1280x800)**, matching the Deck screen.
 - **Finds your games everywhere.** Scans every Steam library, including the microSD card. If a game was moved and exists in two places, the bigger install wins.
 - **Non-Steam games work too.** Added a GOG or DRM-free copy as a non-Steam shortcut? Point it directly at a unique catalogued executable. Wrapper scripts cannot be matched safely.
 - **Edit settings in the plugin.** Change resolution, aspect ratio or FOV right from Game Mode. Changes save automatically.
@@ -79,28 +87,28 @@ Tired of black bars, stretched UI, or cropped cameras on your Deck's 16:10 scree
 
 You need a Steam Deck (or SteamOS) with [Decky Loader](https://decky.xyz).
 
-1. Download **AnyAspectRatio-2.1.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
+1. Download **AnyAspectRatio-2.2.0.zip** from the Assets below and put it on your Deck (for example in `Downloads`).
 2. In Game Mode open Decky (the `...` button), go to **Settings → General** and turn on **Developer mode**.
 3. Go to **Settings → Developer → Install Plugin from ZIP**, pick the zip and confirm.
-4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-2.1.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
+4. Open **AnyAspectRatio** in the Decky menu, go to the **Mods** tab, press **Import offline mods pack** and pick **AnyAspectRatio-Offline-Mods-2.2.0.zip** (also in the Assets, about 500 MB). If the pack has numbered parts, keep them together in one folder and select any part. Skip this step if your Deck is online.
 5. Press **Scan for supported games**.
 
 To update, install the newer zip the same way. To remove, uninstall it from the Decky plugin list.
 
-On Windows, macOS or Linux, download **AnyAspectRatio-Desktop-2.1.0** for your system from the Assets instead and follow the [desktop guide](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
+On Windows, macOS or Linux, download **AnyAspectRatio-Desktop-2.2.0** for your system from the Assets instead and follow the [desktop guide](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/AnyAspectRatioDesktop/README.md).
 
 ## Good to know
 
 - **Full-stretch fixes** (Monster Hunter Rise, Resident Evil 2/3/4/7/Village, Warriors Orochi 3): set the game's in-game resolution to **1280x720** and display scaling to **Stretch**, otherwise the picture will not stretch to fill the screen.
 
 - Resolution settings affect only catalogued fields in supported mods. Existing installations are not changed until you use **Update current** or apply a fix again.
-- Third-party fixes haven't all been tested by us. If one misbehaves, press Remove and tell us which game.
+- Third-party fixes haven't all been tested by me. If one misbehaves, press Remove and tell me which game.
 - Existing installs without a recorded applied archive hash are not labeled **New** until a full Apply records their version.
 - Some fixes are for specific game versions. If a game updates, a fix may need a new release.
 - Anti-cheat or online games: use fixes at your own risk.
 
 ## Credits and support
 
-Huge thanks to [Lyall](https://codeberg.org/Lyall) ([Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)), ThirteenAG (Ultimate ASI Loader), and all the mod authors who make this possible. See our [thanks to external mod authors](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/external/THANKS.md).
+Huge thanks to [Lyall](https://codeberg.org/Lyall) ([Patreon](https://www.patreon.com/Wintermance) | [Ko-fi](https://ko-fi.com/W7W01UAI9)), ThirteenAG (Ultimate ASI Loader), and all the mod authors who make this possible. See my [thanks to external mod authors](https://github.com/TLin-Y/SteamAnyAspectRatioMods/blob/main/external/THANKS.md).
 
 If this helps you, you can support me on [Ko-fi](https://ko-fi.com/lin66961). Bug reports and game requests: open an issue on [GitHub](https://github.com/TLin-Y/SteamAnyAspectRatioMods/issues).
