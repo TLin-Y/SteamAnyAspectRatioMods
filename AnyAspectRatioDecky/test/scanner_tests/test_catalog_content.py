@@ -23,7 +23,7 @@ LOADER_LICENSE = "LICENSE-Ultimate-ASI-Loader.txt"
 WIN64 = "Binaries/Win64"
 
 # Counts to bump when adding one of our own mods (see AGENTS.md, catalog step 5).
-OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 71, 70, 1, 0, 83
+OWN_MODS, OWN_ARCHIVES, OWN_DIRECTORIES, OWN_LOOSE_FILES, RESOLUTION_MODS = 72, 71, 1, 0, 84
 
 # Files our own zips may carry besides the mod files, README.md, the loader license and .jpg screenshots.
 ZIP_EXTRAS = {
@@ -472,7 +472,7 @@ class CatalogContentTests(unittest.TestCase):
         self.assertEqual(["Patreon", "Ko-fi"], [link["label"] for link in authors["Lyall"]["support"]])
         ordered = [author["external"] for author in summarize_credits(self.mods)]
         self.assertEqual(sorted(ordered), ordered)
-        self.assertEqual({"Kamiccolo", "Refilo"}, {name for name, author in authors.items() if author["external"]})
+        self.assertEqual({"Kamiccolo"}, {name for name, author in authors.items() if author["external"]})
 
     def test_ff13_package_carries_the_upstream_files_unchanged(self) -> None:
         ff13 = catalog_mod("final-fantasy-xiii")

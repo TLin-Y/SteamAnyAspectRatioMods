@@ -369,6 +369,24 @@
       "wine_dll_overrides": []
     },
     {
+      "id": "final-fantasy-resonance",
+      "name": "FINAL FANTASY RESONANCE - Custom Aspect Ratio",
+      "steam_app_id": "3259780",
+      "install_dir": "FINAL FANTASY RESONANCE",
+      "executable": "FFRS/Binaries/Win64/FFRS-Win64-Shipping.exe",
+      "executable_alternatives": ["FFRS.exe"],
+      "source": {
+        "kind": "archive",
+        "path": "FINAL FANTASY RESONANCE/FINAL-FANTASY-RESONANCE-v1.0.0.zip",
+        "sha256": "75a3c0b33ea8057fe19d0d200394e337f6e091a37a774af186ba8ab76e6b7f7f",
+        "destination": "FFRS/Binaries/Win64"
+      },
+      "files": ["FFRS/Binaries/Win64/winmm.dll", "FFRS/Binaries/Win64/FFRS_ARFix.asi", "FFRS/Binaries/Win64/FFRS_ARFix.ini"],
+      "ini_file": "FFRS/Binaries/Win64/FFRS_ARFix.ini",
+      "ini_resolution": [{"section": "Resolution", "width": "Width", "height": "Height", "kind": "pixels"}],
+      "wine_dll_overrides": ["winmm=n,b"]
+    },
+    {
       "id": "final-fantasy-xii-the-zodiac-age",
       "name": "FINAL FANTASY XII THE ZODIAC AGE - Custom Aspect Ratio",
       "steam_app_id": "595520",
@@ -6917,37 +6935,6 @@
     }
   ],
   "author_downloads": [
-    {
-      "id": "final-fantasy-resonance-ultrawide",
-      "name": "FINAL FANTASY RESONANCE - Ultrawide Mod",
-      "steam_app_id": "3259780",
-      "install_dir": "FINAL FANTASY RESONANCE",
-      "executable": "FFRS.exe",
-      "source": {
-        "kind": "author_download",
-        "page": "https://www.nexusmods.com/finalfantasyresonance/mods/29",
-        "destination": "FFRS/Binaries/Win64"
-      },
-      "files": [
-        "FFRS/Binaries/Win64/winmm.dll",
-        "FFRS/Binaries/Win64/refilomod/core/core_002_004.dll",
-        "FFRS/Binaries/Win64/refilomod/ultrawide/ultrawide.dll",
-        "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini"
-      ],
-      "ini_file": "FFRS/Binaries/Win64/refilomod/ultrawide/FFRS_UW.ini",
-      "wine_dll_overrides": ["winmm=n,b"],
-      "credits": [
-        {
-          "name": "Refilo",
-          "support": [
-            {
-              "label": "FF Resonance",
-              "url": "https://www.nexusmods.com/finalfantasyresonance/mods/29"
-            }
-          ]
-        }
-      ]
-    },
     {
       "id": "final-fantasy-x-x2-hd-remaster-suwsf",
       "name": "FINAL FANTASY X/X-2 HD Remaster - SUWSF Widescreen Patches",
