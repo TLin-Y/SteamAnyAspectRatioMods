@@ -191,7 +191,7 @@ PINNED = {
     "sanabi": {
         "steam_app_id": "1562700", "install_dir": "SANABI", "executable": "SNB.exe",
         "files": ("winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"), "ini_file": "SNB_ARFix.ini",
-        "wine_dll_overrides": ("winmm=n,b",), "source.kind": "archive", "source.path": "SANABI/SANABI-v1.1.0.zip",
+        "wine_dll_overrides": ("winmm=n,b",), "source.kind": "archive", "source.path": "SANABI/SANABI-v1.2.0.zip",
     },
     "undertale": {
         "install_dir": "Undertale", "executable": "UNDERTALE.exe", "source.kind": "archive",

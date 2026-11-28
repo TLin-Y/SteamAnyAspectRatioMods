@@ -6,8 +6,10 @@
 #include <atomic>
 #include <cstddef>
 #include <cstring>
+#include <mutex>
 #include <optional>
 #include <string_view>
+#include <unordered_map>
 #include <inipp/inipp.h>
 #include <safetyhook.hpp>
 #include <spdlog/spdlog.h>
@@ -18,10 +20,33 @@ namespace
     HMODULE thisModule = nullptr;
     SafetyHookMid propertiesEntryHook;
     SafetyHookMid propertiesExitHook;
+    SafetyHookInline fontAssetHook;
     std::atomic<bool> hooksReady{ false };
     std::atomic<bool> invalidCameraLogged{ false };
     bool enabled = true;
     bool maintainFOV = true;
+    float textScale = 1.0f;
+
+    struct FaceInfo
+    {
+        int faceIndex;
+        void* familyName;
+        void* styleName;
+        int pointSize;
+        float scale;
+    };
+
+    struct FontAsset
+    {
+        std::byte header[0x50];
+        FaceInfo faceInfo;
+    };
+
+    static_assert(offsetof(FaceInfo, pointSize) == 0x18);
+    static_assert(offsetof(FontAsset, faceInfo) + offsetof(FaceInfo, scale) == 0x6C);
+
+    std::mutex fontMutex;
+    std::unordered_map<FontAsset*, float> scaledFonts;
 
     struct PixelPerfectCamera
     {
@@ -203,6 +228,80 @@ namespace
         }
     }
 
+    void ReadFontAssetDefinition(FontAsset* fontAsset, void* method)
+    {
+        fontAssetHook.call<void>(fontAsset, method);
+        if (!fontAsset || !(fontAsset->faceInfo.scale > 0.0f))
+            return;
+
+        std::scoped_lock lock(fontMutex);
+        const auto found = scaledFonts.find(fontAsset);
+        if (found != scaledFonts.end() && found->second == fontAsset->faceInfo.scale)
+            return;
+        fontAsset->faceInfo.scale *= textScale;
+        scaledFonts[fontAsset] = fontAsset->faceInfo.scale;
+        if (scaledFonts.size() <= 32)
+            SPDLOG_INFO("Text scale applied to font asset: point size {}, scale {}.",
+                fontAsset->faceInfo.pointSize, fontAsset->faceInfo.scale);
+    }
+
+    bool InstallTextScaleHook(HMODULE gameAssembly)
+    {
+        auto* target = FindUnique(gameAssembly, "TMP_FontAsset.ReadFontAssetDefinition",
+            "48 89 5C 24 08 57 48 83 EC 30 80 3D ?? ?? ?? ?? 00 48 8B D9 0F 29 74 24 20 75 12 "
+            "8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? C6 05 ?? ?? ?? ?? 01 48 8B 0D ?? ?? ?? ?? 48 8B 7B 20 "
+            "F6 81 2F 01 00 00 02 74 0E 83 B9 E0 00 00 00 00 75 05 E8 ?? ?? ?? ?? 45 33 C0 33 D2 "
+            "48 8B CF E8 ?? ?? ?? ?? 84 C0 74 19 48 8B 4B 30 33 D2 E8", 0);
+        if (!target)
+        {
+            SPDLOG_ERROR("Font asset code not identified. Text scale not applied.");
+            return false;
+        }
+
+        auto result = SafetyHookInline::create(target, ReadFontAssetDefinition);
+        if (!result)
+        {
+            SPDLOG_ERROR("Cannot install text scale hook: error {}.", static_cast<int>(result.error().type));
+            return false;
+        }
+        fontAssetHook = std::move(*result);
+        SPDLOG_INFO("Text scale hook installed, scale {}.", textScale);
+        return true;
+    }
+
+    bool InstallCameraHooks(HMODULE gameAssembly)
+    {
+        auto* entry = FindUnique(gameAssembly, "Camera entry",
+            "89 54 24 10 53 41 55 41 56 48 81 EC 90 00 00 00 80 3D ?? ?? ?? ?? 00 45 8B E8 44 8B F2 48 8B D9", 0);
+        auto* exit = FindUnique(gameAssembly, "Camera exit",
+            "F3 0F 5E D0 F3 0F 11 53 48 40 84 FF 75 04 0F AF 73 28 F3 0F 10 0D ?? ?? ?? ?? 0F 28 74 24 60", 18);
+        if (!entry || !exit)
+        {
+            SPDLOG_ERROR("Camera code not identified. No camera hooks installed.");
+            return false;
+        }
+
+        auto entryResult = SafetyHookMid::create(entry, BeforeCalculateProperties);
+        if (!entryResult)
+        {
+            SPDLOG_ERROR("Cannot install camera entry hook: error {}.", static_cast<int>(entryResult.error().type));
+            return false;
+        }
+        propertiesEntryHook = std::move(*entryResult);
+        auto exitResult = SafetyHookMid::create(exit, AfterCalculateProperties);
+        if (!exitResult)
+        {
+            SPDLOG_ERROR("Cannot install camera exit hook: error {}. Removing entry hook.",
+                static_cast<int>(exitResult.error().type));
+            propertiesEntryHook.reset();
+            return false;
+        }
+        propertiesExitHook = std::move(*exitResult);
+        hooksReady.store(true);
+        SPDLOG_INFO("Camera hooks installed.");
+        return true;
+    }
+
     bool Initialize()
     {
         wchar_t modulePath[MAX_PATH]{};
@@ -265,12 +364,20 @@ namespace
                     return false;
                 }
             }
+            const auto& uiSection = ini.sections["UI"];
+            const auto found = uiSection.find("TextScale");
+            if (found != uiSection.end() &&
+                (!inipp::get_value(uiSection, "TextScale", textScale) || !(textScale >= 0.25f && textScale <= 4.0f)))
+            {
+                SPDLOG_ERROR("Invalid [UI] TextScale: {} (allowed 0.25 to 4).", found->second);
+                return false;
+            }
         }
         else
-            SPDLOG_INFO("No INI found: using Enabled=true, MaintainFOV=true; automatic window aspect.");
+            SPDLOG_INFO("No INI found: using Enabled=true, MaintainFOV=true, TextScale=1; automatic window aspect.");
 
-        SPDLOG_INFO("Enabled={}, MaintainFOV={}", enabled, maintainFOV);
-        if (!enabled)
+        SPDLOG_INFO("Enabled={}, MaintainFOV={}, TextScale={}", enabled, maintainFOV, textScale);
+        if (!enabled && textScale == 1.0f)
             return true;
 
         HMODULE gameAssembly = nullptr;
@@ -286,35 +393,9 @@ namespace
             return false;
         }
 
-        auto* entry = FindUnique(gameAssembly, "Camera entry",
-            "89 54 24 10 53 41 55 41 56 48 81 EC 90 00 00 00 80 3D ?? ?? ?? ?? 00 45 8B E8 44 8B F2 48 8B D9", 0);
-        auto* exit = FindUnique(gameAssembly, "Camera exit",
-            "F3 0F 5E D0 F3 0F 11 53 48 40 84 FF 75 04 0F AF 73 28 F3 0F 10 0D ?? ?? ?? ?? 0F 28 74 24 60", 18);
-        if (!entry || !exit)
-        {
-            SPDLOG_ERROR("Camera code not identified. No hooks installed.");
-            return false;
-        }
-
-        auto entryResult = SafetyHookMid::create(entry, BeforeCalculateProperties);
-        if (!entryResult)
-        {
-            SPDLOG_ERROR("Cannot install camera entry hook: error {}.", static_cast<int>(entryResult.error().type));
-            return false;
-        }
-        propertiesEntryHook = std::move(*entryResult);
-        auto exitResult = SafetyHookMid::create(exit, AfterCalculateProperties);
-        if (!exitResult)
-        {
-            SPDLOG_ERROR("Cannot install camera exit hook: error {}. Removing entry hook.",
-                static_cast<int>(exitResult.error().type));
-            propertiesEntryHook.reset();
-            return false;
-        }
-        propertiesExitHook = std::move(*exitResult);
-        hooksReady.store(true);
-        SPDLOG_INFO("Camera hooks installed.");
-        return true;
+        const bool textOk = textScale == 1.0f || InstallTextScaleHook(gameAssembly);
+        const bool cameraOk = !enabled || InstallCameraHooks(gameAssembly);
+        return cameraOk && textOk;
     }
 
     DWORD WINAPI Main(void*)

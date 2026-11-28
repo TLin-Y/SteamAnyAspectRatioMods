@@ -26,3 +26,12 @@ In `SNB_ARFix.ini`, `[AspectRatio] Enabled` turns the fix on or off. `MaintainFO
 Enabled = true
 MaintainFOV = true
 ```
+
+## Text Size
+
+To make the text bigger (menus and speech bubbles), set `TextScale` in `SNB_ARFix.ini`, for example `1.5` or `2.0`. `1.0` keeps the original size. Restart the game after changing it.
+
+```ini
+[UI]
+TextScale = 1.0
+```

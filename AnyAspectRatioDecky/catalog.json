@@ -1003,8 +1003,8 @@
       "executable": "SNB.exe",
       "source": {
         "kind": "archive",
-        "path": "SANABI/SANABI-v1.1.0.zip",
-        "sha256": "7eb97a633fb7a7e9511597e7a4d5fac9551769e35e078ae07e5a0c6f126efa71"
+        "path": "SANABI/SANABI-v1.2.0.zip",
+        "sha256": "098081f6dffe1a4d7af40b096e43bc36cfa05927b3d91a483f9d41ff6e4765d2"
       },
       "files": ["winmm.dll", "SNB_ARFix.asi", "SNB_ARFix.ini"],
       "ini_file": "SNB_ARFix.ini",
