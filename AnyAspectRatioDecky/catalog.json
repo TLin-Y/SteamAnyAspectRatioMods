@@ -578,8 +578,8 @@
       "executable": "MonsterHunterWorld.exe",
       "source": {
         "kind": "archive",
-        "path": "Monster Hunter World/Monster-Hunter-World-v1.0.0.zip",
-        "sha256": "21f9bb8927e98a6ebc50ab3308550f7c3e27034d93c4cda63f0eea0eb8259ba4"
+        "path": "Monster Hunter World/Monster-Hunter-World-v1.1.0.zip",
+        "sha256": "1740276f8c6fb732463a1280dd06640092f3da14944c9960df4df9a9540ff187"
       },
       "files": ["dinput8.dll", "MonsterHunterWorld_ARFix.asi", "MonsterHunterWorld_ARFix.ini"],
       "ini_file": "MonsterHunterWorld_ARFix.ini",

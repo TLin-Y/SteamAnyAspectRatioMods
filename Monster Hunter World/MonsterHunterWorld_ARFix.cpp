@@ -28,7 +28,7 @@ namespace Config
     void Load(const std::filesystem::path& ini)
     {
         centerHud = GetPrivateProfileIntW(L"HUD", L"Center16x9", 1, ini.c_str()) != 0;
-        SPDLOG_INFO("HUD kept in a centred 16:9 area below 16:9: {}.", centerHud);
+        SPDLOG_INFO("HUD kept in a centred 16:9 area: {}.", centerHud);
     }
 }
 
@@ -356,15 +356,19 @@ namespace Hud
     using Rect = std::int32_t[4];
 
     std::int32_t guiSize = 0;
+    std::atomic<std::int32_t> guiWidth = 0;
     std::atomic<std::int32_t> guiHeight = 0;
+    std::atomic<std::int32_t> offsetX = 0;
     std::atomic<std::int32_t> offsetY = 0;
     SafetyHookMid effectViewportHook;
+    SafetyHookMid scissorHook;
     std::vector<SafetyHookMid> layoutViewportHooks;
 
     Renderer::Size Fit16x9(Renderer::Size screen)
     {
+        const std::int32_t width16x9 = screen.height * 16 / 9;
         const std::int32_t height16x9 = screen.width * 9 / 16;
-        return { screen.width, (std::min)(screen.height, height16x9) };
+        return { (std::min)(screen.width, width16x9), (std::min)(screen.height, height16x9) };
     }
 
     void UpdateGuiSize()
@@ -379,34 +383,74 @@ namespace Hud
         auto& stored = Game::Field<Renderer::Size>(manager, guiSize);
         if (stored != gui)
             stored = gui;
-        if (gui.height < screen.height)
+        if (gui != screen)
             Game::Field<float>(manager, Renderer::layout.aspect) = static_cast<float>(gui.width) / static_cast<float>(gui.height);
+        guiWidth = gui.width;
         guiHeight = gui.height;
+        offsetX = (screen.width - gui.width) / 2;
         offsetY = (screen.height - gui.height) / 2;
+    }
+
+    bool IsShifted()
+    {
+        return offsetX > 0 || offsetY > 0;
+    }
+
+    void Shift(Rect& rect)
+    {
+        rect[0] += offsetX;
+        rect[1] += offsetY;
+        rect[2] += offsetX;
+        rect[3] += offsetY;
     }
 
     void OnLayoutViewport(SafetyHookContext& context)
     {
         UpdateGuiSize();
         auto& rect = *reinterpret_cast<Rect*>(context.rdx);
-        const std::int32_t shift = offsetY;
-        if (shift > 0 && rect[0] == 0 && rect[1] == 0 && rect[3] == guiHeight)
-        {
-            rect[1] += shift;
-            rect[3] += shift;
-        }
+        if (IsShifted() && rect[0] == 0 && rect[1] == 0 && rect[2] == guiWidth && rect[3] == guiHeight)
+            Shift(rect);
+    }
+
+    void OnScissor(SafetyHookContext& context)
+    {
+        const auto& viewport = *reinterpret_cast<const Rect*>(context.rbx + 0xF8);
+        Rect scissor;
+        std::memcpy(scissor, reinterpret_cast<const void*>(context.rdi + 0x6C), sizeof(scissor));
+        if (!IsShifted() || viewport[0] != offsetX || viewport[1] != offsetY)
+            return;
+        Shift(scissor);
+        auto& clipped = *reinterpret_cast<Rect*>(context.rsp + 0x40);
+        clipped[0] = (std::max)(viewport[0], scissor[0]);
+        clipped[1] = (std::max)(viewport[1], scissor[1]);
+        clipped[2] = (std::min)(viewport[2], scissor[2]);
+        clipped[3] = (std::min)(viewport[3], scissor[3]);
+        context.rsi = static_cast<std::uint32_t>(clipped[0]);
+        context.r10 = static_cast<std::uint32_t>(clipped[1]);
+        context.r11 = static_cast<std::uint32_t>(clipped[2]);
+        context.r9 = static_cast<std::uint32_t>(clipped[3]);
+    }
+
+    std::uint8_t* FindScissorClip()
+    {
+        const Game::Pattern clipScissorToViewport{
+            0x44, 0x8B, 0x93, 0xFC, 0x00, 0x00, 0x00, 0x44, 0x8B, 0x9B, 0x00, 0x01, 0x00, 0x00,
+            0x44, 0x8B, 0x8B, 0x04, 0x01, 0x00, 0x00, 0x8B, 0xB3, 0xF8, 0x00, 0x00, 0x00,
+            0x39, 0x77, 0x6C, 0x0F, 0x4F, 0x77, 0x6C, 0x44, 0x39, 0x57, 0x70, 0x89, 0x74, 0x24, 0x40,
+            0x44, 0x0F, 0x4F, 0x57, 0x70, 0x44, 0x39, 0x5F, 0x74, 0x44, 0x89, 0x54, 0x24, 0x44,
+            0x44, 0x0F, 0x4C, 0x5F, 0x74, 0x44, 0x39, 0x4F, 0x78, 0x44, 0x89, 0x5C, 0x24, 0x48,
+            0x44, 0x0F, 0x4C, 0x4F, 0x78, 0x44, 0x89, 0x4C, 0x24, 0x4C, 0x41, 0x3B, 0xF3 };
+        constexpr std::size_t compareLength = 3;
+        const auto found = Game::FindAll(clipScissorToViewport);
+        return found.size() == 1 ? found.front() + clipScissorToViewport.size() - compareLength : nullptr;
     }
 
     void OnEffectViewport(SafetyHookContext& context)
     {
         auto& rect = *reinterpret_cast<Rect*>(context.rdx);
-        const std::int32_t shift = offsetY;
         const Renderer::Size screen = Renderer::layout.Content();
-        if (shift > 0 && rect[0] == 0 && rect[1] == 0 && rect[2] == screen.width && rect[3] == screen.height)
-        {
-            rect[1] += shift;
-            rect[3] += shift;
-        }
+        if (IsShifted() && rect[0] == 0 && rect[1] == 0 && rect[2] == screen.width && rect[3] == screen.height)
+            Shift(rect);
     }
 
     struct SizeRead
@@ -551,8 +595,18 @@ namespace Hud
         guiSize = MostCommonAlternative(reads);
         std::erase_if(reads, [](const SizeRead& read) { return read.alternative != guiSize; });
         std::uint8_t* const setViewport = FindSetViewport();
+        std::uint8_t* const scissorClip = FindScissorClip();
+        if (!scissorClip)
+        {
+            SPDLOG_ERROR("GUI scissor clip not found.");
+            return false;
+        }
         if (!setViewport || !HookViewports(reads, setViewport))
             return false;
+        scissorHook = safetyhook::create_mid(scissorClip, OnScissor, safetyhook::MidHook::StartDisabled);
+        if (!scissorHook || !scissorHook.enable())
+            return false;
+        SPDLOG_INFO("GUI scissor clip at game+0x{:X}.", Game::Offset(scissorClip));
         UpdateGuiSize();
         for (const SizeRead& read : reads)
             if (!Game::Write(read.displacement, &guiSize, sizeof(guiSize)))

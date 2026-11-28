@@ -31,4 +31,4 @@ Edit `MonsterHunterWorld_ARFix.ini` and restart the game:
 Center16x9 = 0
 ```
 
-`Center16x9 = 1` keeps the HUD and menus in a centred 16:9 area on screens narrower than 16:9 (16:10, 4:3). Work in progress: name tags over characters are drawn too low and some title screen texts can be cut off.
+`Center16x9 = 1` keeps the HUD and menus in a centred 16:9 area (16:10, 4:3 and ultrawide). Work in progress: name tags over characters are drawn in the wrong place (too low below 16:9, missing on ultrawide), and some title screen texts can be cut off.
