@@ -789,32 +789,20 @@
       ]
     },
     {
-      "id": "hades-hephaistos",
-      "name": "Hades - Hephaistos Aspect Ratio Fix",
+      "id": "hades",
+      "name": "Hades - Custom Aspect Ratio",
       "steam_app_id": "1145360",
       "install_dir": "Hades",
       "executable": "x64/Hades.exe",
       "executable_alternatives": ["x64Vk/Hades.exe"],
       "source": {
         "kind": "archive",
-        "path": "external/NicolasBusseneau/Hephaistos/hephaistos-linux.zip",
-        "sha256": "6bc30941bfb4431a97fbe6ab1dd40fc102ca153a96af74bdad705296c2519050"
+        "path": "Hades/Hades-v1.0.0.zip",
+        "sha256": "afca87134770fd940729e141523f8ad35922eca05109130eeda2bebf4c643c2e"
       },
-      "files": ["hephaistos", "Hephaistos-README.md"],
-      "ini_file": null,
-      "display_tags": ["manual-setup"],
-      "wine_dll_overrides": [],
-      "credits": [
-        {
-          "name": "Nicolas Busseneau",
-          "support": [
-            {
-              "label": "Hades",
-              "url": "https://github.com/nbusseneau/hephaistos"
-            }
-          ]
-        }
-      ]
+      "files": ["x64/winmm.dll", "x64/Hades_ARFix.asi", "x64/Hades_ARFix.ini", "x64Vk/winmm.dll", "x64Vk/Hades_ARFix.asi", "x64Vk/Hades_ARFix.ini"],
+      "ini_file": "x64Vk/Hades_ARFix.ini",
+      "wine_dll_overrides": ["winmm=n,b"]
     },
     {
       "id": "ori-and-the-will-of-the-wisps",
